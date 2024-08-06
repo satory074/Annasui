@@ -22,35 +22,34 @@
     </div>
 
     <script>
+        const videoId = 'sm9';
         let player;
-        const playPauseBtn = document.getElementById('playPauseBtn');
-        const currentTimeSpan = document.getElementById('currentTime');
-        const durationSpan = document.getElementById('duration');
-        const videoId = 'sm9'; // 実際の動画IDを指定
 
-        // niconico外部プレイヤーAPIの読み込み
-        const script = document.createElement('script');
-        script.src = 'https://ext.nicovideo.jp/thumb_watch/' + videoId;
-        script.async = true;
-        document.body.appendChild(script);
+        function initPlayer() {
+            if (typeof niconico !== 'undefined' && niconico.darkplayer) {
+                player = niconico.darkplayer.create('playerContainer', {
+                    width: '640px',
+                    height: '360px',
+                    video: videoId
+                });
 
-        window.onNicoPlayerFactoryReady = function(NicoPlayerFactory) {
-            player = NicoPlayerFactory.create('playerContainer', {
-                width: '640px',
-                height: '360px',
-                video: videoId
-            });
+                const playPauseBtn = document.getElementById('playPauseBtn');
+                const currentTimeSpan = document.getElementById('currentTime');
+                const durationSpan = document.getElementById('duration');
 
-            player.on('play', updatePlayPauseButton);
-            player.on('pause', updatePlayPauseButton);
-            player.on('timeupdate', updateTime);
-            player.on('loadedmetadata', setDuration);
+                player.on('play', updatePlayPauseButton);
+                player.on('pause', updatePlayPauseButton);
+                player.on('timeupdate', updateTime);
+                player.on('loadedmetadata', setDuration);
 
-            playPauseBtn.addEventListener('click', togglePlayPause);
-        };
+                playPauseBtn.addEventListener('click', togglePlayPause);
+            } else {
+                console.error('niconico player API not loaded');
+            }
+        }
 
         function togglePlayPause() {
-            if (player.isPaused()) {
+            if (player.paused) {
                 player.play();
             } else {
                 player.pause();
@@ -58,15 +57,15 @@
         }
 
         function updatePlayPauseButton() {
-            playPauseBtn.textContent = player.isPaused() ? '再生' : '停止';
+            document.getElementById('playPauseBtn').textContent = player.paused ? '再生' : '停止';
         }
 
         function updateTime() {
-            currentTimeSpan.textContent = formatTime(player.getCurrentTime());
+            document.getElementById('currentTime').textContent = formatTime(player.currentTime);
         }
 
         function setDuration() {
-            durationSpan.textContent = formatTime(player.getDuration());
+            document.getElementById('duration').textContent = formatTime(player.duration);
         }
 
         function formatTime(time) {
@@ -74,6 +73,12 @@
             const seconds = Math.floor(time % 60);
             return `${minutes}:${seconds.toString().padStart(2, '0')}`;
         }
+
+        // Load niconico player API
+        const script = document.createElement('script');
+        script.src = `https://ext.nicovideo.jp/thumb_watch/${videoId}`;
+        script.onload = initPlayer;
+        document.body.appendChild(script);
     </script>
 </body>
 </html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>niconico外部プレイヤー</title>
+    <style>
+        #playerContainer {
+            width: 640px;
+            height: 360px;
+        }
+        #controls {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="playerContainer"></div>
+    <div id="controls">
+        <button id="playPauseBtn">再生/停止</button>
+        <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+    </div>
+
+    <script>
+        let player;
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const currentTimeSpan = document.getElementById('currentTime');
+        const durationSpan = document.getElementById('duration');
+
+        // niconico外部プレイヤーAPIの読み込み
+        const script = document.createElement('script');
+        script.src = 'https://ext.nicovideo.jp/thumb_watch/sm500873';
+        document.body.appendChild(script);
+
+        // プレイヤーの初期化
+        function initializePlayer() {
+            player = new niconico.darkplayer.create('playerContainer', {
+                width: '640px',
+                height: '360px',
+                video: 'sm500873'  // ここに実際の動画IDを指定
+            });
+
+            player.on('play', updatePlayPauseButton);
+            player.on('pause', updatePlayPauseButton);
+            player.on('timeupdate', updateTime);
+            player.on('loadedmetadata', setDuration);
+
+            playPauseBtn.addEventListener('click', togglePlayPause);
+        }
+
+        function togglePlayPause() {
+            if (player.paused) {
+                player.play();
+            } else {
+                player.pause();
+            }
+        }
+
+        function updatePlayPauseButton() {
+            playPauseBtn.textContent = player.paused ? '再生' : '停止';
+        }
+
+        function updateTime() {
+            currentTimeSpan.textContent = formatTime(player.currentTime);
+        }
+
+        function setDuration() {
+            durationSpan.textContent = formatTime(player.duration);
+        }
+
+        function formatTime(time) {
+            const minutes = Math.floor(time / 60);
+            const seconds = Math.floor(time % 60);
+            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // niconico外部プレイヤーAPIが読み込まれた後に実行
+        window.onNicoPlayerFactoryReady = initializePlayer;
+    </script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+webrick:
+  headers:
+    Content-Security-Policy: "default-src 'self' https://ext.nicovideo.jp; script-src 'self' 'unsafe-inline' https://ext.nicovideo.jp; style-src 'self' 'unsafe-inline'; frame-src https://embed.nicovideo.jp;"

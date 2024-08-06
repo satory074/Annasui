@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>niconico外部プレイヤー</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-eval' https://ext.nicovideo.jp https://embed.nicovideo.jp; frame-src https://embed.nicovideo.jp;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-eval' https:; frame-src https:; style-src 'self' 'unsafe-inline';">
     <style>
         #playerContainer {
             width: 640px;
@@ -16,84 +16,40 @@
     </style>
 </head>
 <body>
-    <div id="playerContainer"></div>
+    <div id="playerContainer">
+        <iframe
+            width="640"
+            height="360"
+            src="https://embed.nicovideo.jp/watch/sm9"
+            frameborder="0"
+            allow="autoplay"
+            allowfullscreen
+        ></iframe>
+    </div>
     <div id="controls">
         <button id="playPauseBtn">再生/停止</button>
         <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
     </div>
 
     <script>
-        const videoId = 'sm9';
-        let player;
+        const iframe = document.querySelector('iframe');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const currentTimeSpan = document.getElementById('currentTime');
+        const durationSpan = document.getElementById('duration');
 
-        function checkNiconicoAPI() {
-            if (typeof niconico !== 'undefined' && niconico.darkplayer) {
-                console.log('Niconico API loaded');
-                initPlayer();
-            } else {
-                console.log('Niconico API not loaded, retrying...');
-                setTimeout(checkNiconicoAPI, 1000);
-            }
-        }
+        playPauseBtn.addEventListener('click', () => {
+            iframe.contentWindow.postMessage({ 
+                eventName: 'play' 
+            }, 'https://embed.nicovideo.jp');
+        });
 
-        function initPlayer() {
-            console.log('niconico object:', niconico);
-            console.log('darkplayer object:', niconico.darkplayer);
-
-            if (typeof niconico !== 'undefined' && niconico.darkplayer) {
-                player = niconico.darkplayer.create('playerContainer', {
-                    width: '640px',
-                    height: '360px',
-                    video: videoId
-                });
-
-                const playPauseBtn = document.getElementById('playPauseBtn');
-                const currentTimeSpan = document.getElementById('currentTime');
-                const durationSpan = document.getElementById('duration');
-
-                player.on('play', updatePlayPauseButton);
-                player.on('pause', updatePlayPauseButton);
-                player.on('timeupdate', updateTime);
-                player.on('loadedmetadata', setDuration);
-
-                playPauseBtn.addEventListener('click', togglePlayPause);
-            } else {
-                console.error('niconico player API not loaded');
-                setTimeout(initPlayer, 1000); // Retry after 1 second
-            }
-        }
-
-        function togglePlayPause() {
-            if (player.paused) {
-                player.play();
-            } else {
-                player.pause();
-            }
-        }
-
-        function updatePlayPauseButton() {
-            document.getElementById('playPauseBtn').textContent = player.paused ? '再生' : '停止';
-        }
-
-        function updateTime() {
-            document.getElementById('currentTime').textContent = formatTime(player.currentTime);
-        }
-
-        function setDuration() {
-            document.getElementById('duration').textContent = formatTime(player.duration);
-        }
-
-        function formatTime(time) {
-            const minutes = Math.floor(time / 60);
-            const seconds = Math.floor(time % 60);
-            return `${minutes}:${seconds.toString().padStart(2, '0')}`;
-        }
-
-        // Load niconico player API
-        const script = document.createElement('script');
-        script.src = `https://ext.nicovideo.jp/thumb_watch/${videoId}`;
-        script.onload = checkNiconicoAPI;
-        document.body.appendChild(script);
+        window.addEventListener('message', (event) => {
+            if (event.origin !== 'https://embed.nicovideo.jp') return;
+            
+            console.log('Received message:', event.data);
+            // ここでイベントに応じて処理を行う
+            // 例: 再生状態、現在の再生時間、動画の長さなどを更新
+        });
     </script>
 </body>
 </html>

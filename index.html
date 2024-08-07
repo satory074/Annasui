@@ -3,53 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>niconico外部プレイヤー</title>
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-eval' https:; frame-src https:; style-src 'self' 'unsafe-inline';">
+    <title>ニコニコ風動画プレーヤー</title>
     <style>
-        #playerContainer {
-            width: 640px;
-            height: 360px;
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
         }
-        #controls {
+        .player-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        video {
+            width: 100%;
+            border-radius: 5px;
+        }
+        .controls {
             margin-top: 10px;
+            display: flex;
+            align-items: center;
+        }
+        button {
+            background-color: #1E90FF;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            margin-right: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #4169E1;
+        }
+        #progress {
+            flex-grow: 1;
+            margin: 0 10px;
+        }
+        #videoId {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <div id="playerContainer">
-        <iframe
-            width="640"
-            height="360"
-            src="https://embed.nicovideo.jp/watch/sm9"
-            frameborder="0"
-            allow="autoplay"
-            allowfullscreen
-        ></iframe>
-    </div>
-    <div id="controls">
-        <button id="playPauseBtn">再生/停止</button>
-        <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+    <div class="player-container">
+        <input type="text" id="videoId" placeholder="動画IDを入力">
+        <button id="loadBtn">動画を読み込む</button>
+        <video id="video" controls></video>
+        <div class="controls">
+            <button id="playPauseBtn">再生</button>
+            <button id="stopBtn">停止</button>
+            <input type="range" id="progress" min="0" max="100" value="0">
+            <span id="currentTime">0:00</span> / <span id="duration">0:00</span>
+        </div>
     </div>
 
     <script>
-        const iframe = document.querySelector('iframe');
+        const video = document.getElementById('video');
         const playPauseBtn = document.getElementById('playPauseBtn');
-        const currentTimeSpan = document.getElementById('currentTime');
-        const durationSpan = document.getElementById('duration');
+        const stopBtn = document.getElementById('stopBtn');
+        const progress = document.getElementById('progress');
+        const currentTime = document.getElementById('currentTime');
+        const duration = document.getElementById('duration');
+        const videoIdInput = document.getElementById('videoId');
+        const loadBtn = document.getElementById('loadBtn');
 
-        playPauseBtn.addEventListener('click', () => {
-            iframe.contentWindow.postMessage({ 
-                eventName: 'play' 
-            }, 'https://embed.nicovideo.jp');
-        });
+        loadBtn.addEventListener('click', loadVideo);
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        stopBtn.addEventListener('click', stopVideo);
+        progress.addEventListener('input', seekVideo);
+        video.addEventListener('timeupdate', updateProgress);
+        video.addEventListener('loadedmetadata', initializeVideo);
 
-        window.addEventListener('message', (event) => {
-            if (event.origin !== 'https://embed.nicovideo.jp') return;
-            
-            console.log('Received message:', event.data);
-            // ここでイベントに応じて処理を行う
-            // 例: 再生状態、現在の再生時間、動画の長さなどを更新
-        });
+        async function loadVideo() {
+            const videoId = videoIdInput.value;
+            if (!videoId) return;
+
+            try {
+                // Step 1: Fetch video data
+                const response = await fetch(`https://www.nicovideo.jp/watch/${videoId}?responseType=json`);
+                const data = await response.json();
+
+                // Step 2: Select video and audio quality (for simplicity, we're choosing the first options)
+                const videoQuality = data.media.domand.videos[0].id;
+                const audioQuality = data.media.domand.audios[0].id;
+
+                // Step 3: Get content URL
+                const accessRightResponse = await fetch(`https://nvapi.nicovideo.jp/v1/watch/${videoId}/access-rights/hls?actionTrackId=${data.video.ads.additionalParams.watchTrackId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Access-Right-Key': data.media.domand.accessRightKey,
+                        'X-Frontend-Version': '0',
+                        'X-Frontend-Id': '6',
+                        'X-Request-With': 'https://www.nicovideo.jp'
+                    },
+                    body: JSON.stringify({
+                        outputs: [[videoQuality, audioQuality]]
+                    })
+                });
+
+                const accessRightData = await accessRightResponse.json();
+
+                // Step 4: Set video source
+                video.src = accessRightData.data.contentUrl;
+            } catch (error) {
+                console.error('Error loading video:', error);
+            }
+        }
+
+        function togglePlayPause() {
+            if (video.paused) {
+                video.play();
+                playPauseBtn.textContent = '一時停止';
+            } else {
+                video.pause();
+                playPauseBtn.textContent = '再生';
+            }
+        }
+
+        function stopVideo() {
+            video.pause();
+            video.currentTime = 0;
+            playPauseBtn.textContent = '再生';
+        }
+
+        function seekVideo() {
+            const time = video.duration * (progress.value / 100);
+            video.currentTime = time;
+        }
+
+        function updateProgress() {
+            const value = (video.currentTime / video.duration) * 100;
+            progress.value = value;
+            currentTime.textContent = formatTime(video.currentTime);
+        }
+
+        function initializeVideo() {
+            duration.textContent = formatTime(video.duration);
+        }
+
+        function formatTime(time) {
+            const minutes = Math.floor(time / 60);
+            const seconds = Math.floor(time % 60);
+            return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+        }
     </script>
 </body>
 </html>

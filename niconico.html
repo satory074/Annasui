@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+    <head>
+        <meta charset="UTF-8" />
+        <title>ニコニコ動画埋め込み</title>
+    </head>
+    <body>
+        <script src="https://embed.nicovideo.jp/watch/sm500873/script?w=640&h=360"></script>
+        <noscript><a href="https://www.nicovideo.jp/watch/sm500873">Kumikyoku Nico Nico Douga</a></noscript>
+        <script>
+            window.addEventListener("message", function (event) {
+                if (event.origin !== "http://127.0.0.1:8080") {
+                    return;
+                }
+                console.log("iframe内でメッセージを受信:", event.data);
+
+                if (event.data.eventName === "playPause") {
+                    // ここに再生・停止のロジックを追加
+                    // 例えば、ニコニコ動画プレイヤーAPIを使用して再生・停止を制御
+                    console.log("再生・停止イベントを受信しました");
+                } else if (event.data.eventName === "getCurrentTime") {
+                    // 再生時間を取得して送信元に返信
+                    const currentTime = 0; // プレイヤーから現在の再生時間を取得
+                    event.source.postMessage(
+                        {
+                            eventName: "currentTime",
+                            data: {
+                                currentTime: currentTime,
+                            },
+                        },
+                        event.origin
+                    );
+                }
+            });
+        </script>
+    </body>
+</html>

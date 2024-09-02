@@ -5,10 +5,13 @@ document.addEventListener("DOMContentLoaded", function () {
     const playButton = document.getElementById("playButton");
     const currentTimeDisplay = document.getElementById("currentTime");
 
+    // iframeのオリジンを取得
+    const iframeOrigin = new URL(iframe.src).origin;
+
     // iframeにメッセージを送信する関数
     function postMessageToIframe(message) {
         console.log("iframeにメッセージを送信:", message);
-        iframe.contentWindow.postMessage(message, "http://127.0.0.1:8080");
+        iframe.contentWindow.postMessage(message, iframeOrigin);
     }
 
     // 再生/停止ボタンがクリックされたときの処理
@@ -19,7 +22,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // メッセージを受信したときの処理
     window.addEventListener("message", function (event) {
-        if (event.origin === "http://127.0.0.1:8080") {
+        if (event.origin === iframeOrigin) {
             console.log("メッセージを受信:", event.data);
             if (event.data.eventName === "currentTime") {
                 currentTimeDisplay.textContent = formatTime(event.data.data.currentTime);

@@ -125,10 +125,13 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                             
                             // 動画情報の処理
                             if (data.data) {
+                                console.log("loadComplete - raw data:", data.data);
                                 const normalizedInfo = normalizeVideoInfo(data.data, videoId);
                                 if (normalizedInfo) {
+                                    console.log("loadComplete - normalized info duration:", normalizedInfo.duration);
                                     setVideoInfo(normalizedInfo);
                                     const normalizedDuration = normalizeTimeValue(normalizedInfo.duration);
+                                    console.log("loadComplete - final duration:", normalizedDuration);
                                     setDuration(normalizedDuration);
                                     onDurationChange?.(normalizedDuration);
                                 }
@@ -147,16 +150,22 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
 
                         case "playerMetadataChange":
                             if (data.data) {
+                                console.log("playerMetadataChange - raw data:", data.data);
+                                
                                 // currentTimeの更新
                                 if (data.data.currentTime !== undefined) {
+                                    console.log("playerMetadataChange - raw currentTime:", data.data.currentTime);
                                     const normalizedTime = normalizeTimeValue(data.data.currentTime);
+                                    console.log("playerMetadataChange - normalized currentTime:", normalizedTime);
                                     setCurrentTime(normalizedTime);
                                     onTimeUpdate?.(normalizedTime);
                                 }
 
                                 // durationの更新
                                 if (data.data.duration !== undefined) {
+                                    console.log("playerMetadataChange - raw duration:", data.data.duration);
                                     const normalizedDuration = normalizeTimeValue(data.data.duration);
+                                    console.log("playerMetadataChange - normalized duration:", normalizedDuration);
                                     setDuration(normalizedDuration);
                                     onDurationChange?.(normalizedDuration);
                                 }
@@ -204,16 +213,32 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                             console.error("Player error:", data);
                             console.error("Full error details:", JSON.stringify(data, null, 2));
                             setCommandInProgress(false);
+                            
+                            // エラーの詳細な分析とログ出力
+                            let errorMessage = "不明なプレイヤーエラーが発生しました";
                             if (data.data?.message) {
-                                setPlayerError(data.data.message);
-                            } else {
-                                setPlayerError("不明なプレイヤーエラーが発生しました");
+                                errorMessage = data.data.message;
+                                console.error(`プレイヤーエラー詳細: ${errorMessage}`);
                             }
+                            if (data.data?.code) {
+                                console.error(`エラーコード: ${data.data.code}`);
+                            }
+                            if (data.data?.reason) {
+                                console.error(`エラー理由: ${data.data.reason}`);
+                            }
+                            
+                            setPlayerError(errorMessage);
                             break;
                     }
                 }
             } catch (error) {
                 console.error("Error handling message:", error);
+                console.error("Message event details:", {
+                    origin: event.origin,
+                    data: event.data,
+                    type: event.type
+                });
+                setPlayerError("メッセージ処理エラーが発生しました");
             }
         };
 
@@ -308,26 +333,75 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         }
 
         setCommandInProgress(true);
-        setCurrentTime(seekTime);
-
-        const numericSeekTime = Math.floor(Number(seekTime));
-
-        sendMessageToPlayer({
-            sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
-            playerId: PLAYER_CONFIG.PLAYER_ID,
-            eventName: "seek",
-            data: {
-                time: numericSeekTime,
-                _frontendId: PLAYER_CONFIG.FRONTEND_ID,
-                _frontendVersion: PLAYER_CONFIG.FRONTEND_VERSION
-            }
-        });
         
-        // シーク完了後に自動的にcommandInProgressをリセット
-        setTimeout(() => {
+        // 時間値の正規化 - 無効な値を防ぐ
+        const normalizedSeekTime = normalizeTimeValue(seekTime);
+        if (normalizedSeekTime < 0 || (duration > 0 && normalizedSeekTime > duration)) {
+            console.warn(`無効なシーク時間: ${seekTime}秒 (正規化後: ${normalizedSeekTime}秒, 動画長: ${duration}秒)`);
             setCommandInProgress(false);
-        }, PLAYER_CONFIG.SEEK_DEBOUNCE_MS);
-    }, [commandInProgress, sendMessageToPlayer]);
+            return;
+        }
+
+        // UIを先行更新
+        setCurrentTime(normalizedSeekTime);
+
+        const numericSeekTime = Math.floor(normalizedSeekTime);
+        
+        // 再生中の場合は pause → seek → play のシーケンスを実行
+        if (isPlaying) {
+            console.log(`再生中のシーク: ${numericSeekTime}秒へ (pause→seek→play シーケンス)`);
+            
+            // Step 1: 一時停止
+            sendMessageToPlayer({
+                sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
+                playerId: PLAYER_CONFIG.PLAYER_ID,
+                eventName: "pause"
+            });
+            
+            // Step 2: 少し待ってからシーク
+            setTimeout(() => {
+                sendMessageToPlayer({
+                    sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
+                    playerId: PLAYER_CONFIG.PLAYER_ID,
+                    eventName: "seek",
+                    data: {
+                        time: numericSeekTime,
+                        _frontendId: PLAYER_CONFIG.FRONTEND_ID,
+                        _frontendVersion: PLAYER_CONFIG.FRONTEND_VERSION
+                    }
+                });
+                
+                // Step 3: さらに待ってから再生再開
+                setTimeout(() => {
+                    sendMessageToPlayer({
+                        sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
+                        playerId: PLAYER_CONFIG.PLAYER_ID,
+                        eventName: "play"
+                    });
+                    
+                    setCommandInProgress(false);
+                }, 200);
+            }, 100);
+        } else {
+            // 停止中の場合は通常のシーク
+            console.log(`停止中のシーク: ${numericSeekTime}秒へ`);
+            
+            sendMessageToPlayer({
+                sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
+                playerId: PLAYER_CONFIG.PLAYER_ID,
+                eventName: "seek",
+                data: {
+                    time: numericSeekTime,
+                    _frontendId: PLAYER_CONFIG.FRONTEND_ID,
+                    _frontendVersion: PLAYER_CONFIG.FRONTEND_VERSION
+                }
+            });
+            
+            setTimeout(() => {
+                setCommandInProgress(false);
+            }, PLAYER_CONFIG.SEEK_DEBOUNCE_MS);
+        }
+    }, [commandInProgress, sendMessageToPlayer, isPlaying, duration]);
 
     // 音量調整
     const setVolume = useCallback((volume: number) => {

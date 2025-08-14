@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` - Build the production application
 - `npm start` - Start the production server
 - `npm run lint` - Run ESLint code quality checks
+- `npx tsc --noEmit` - Run TypeScript type checking without building
 
 ## Project Overview
 
@@ -52,6 +53,23 @@ Niconico player integration uses postMessage API with specific event types:
 - `seekStatusChange` - Seek operation status
 - `statusChange` - Playback state changes
 
+Message structure follows this pattern:
+```typescript
+{
+  sourceConnectorType: 1,
+  playerId: "1", 
+  eventName: "play" | "pause" | "seek" | "volumeChange",
+  data?: {
+    time?: number,        // For seek operations (seconds)
+    volume?: number,      // For volume (0-1 range)
+    _frontendId: 6,
+    _frontendVersion: 0
+  }
+}
+```
+
+Player communication requires specific initialization sequence and proper error handling due to iframe cross-origin restrictions.
+
 ### File Structure Notes
 - `src/data/medleys.ts` - Static medley data configuration
 - `src/lib/utils/` - Time formatting, video validation utilities
@@ -63,3 +81,22 @@ Niconico player integration uses postMessage API with specific event types:
 - Player uses iframe communication with `https://embed.nicovideo.jp`
 - Component state managed through React hooks, no external state management library
 - TypeScript strict mode enabled for type safety
+
+## Important Implementation Details
+
+### PostMessage API Integration
+- All Niconico player communication uses `window.postMessage` with origin verification
+- Seek operations require complex sequencing: pause → seek → resume playing state
+- Events may have processing delays, requiring defensive programming with timeouts
+- Player initialization needs specific message sequence with proper timing intervals
+
+### Data Flow Architecture
+- `page.tsx` serves as the main state coordinator, managing video ID and seek operations
+- Custom hooks (`useCurrentTrack`, `useMedleyData`, `useNicoPlayer`) handle specific data concerns
+- Song and chord data flows from static configuration through hooks to UI components
+- Time-based state synchronization between player events and UI components requires careful handling
+
+### Key Technical Constraints
+- Cross-origin iframe restrictions limit direct player access to postMessage only
+- Niconico API is undocumented and may change without notice
+- Player state synchronization can be inconsistent, requiring UI-first updates with eventual consistency

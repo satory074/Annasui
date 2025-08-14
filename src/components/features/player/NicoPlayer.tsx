@@ -46,7 +46,6 @@ export default function NicoPlayer({
               allowFullScreen
               allow="autoplay; fullscreen"
               className="w-full h-full border-0"
-              sandbox="allow-scripts allow-same-origin allow-presentation"
               onLoad={() => {
                 console.log("Iframe onLoad fired, URL:", embedUrl);
                 onIframeLoad();

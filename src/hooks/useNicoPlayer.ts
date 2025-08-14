@@ -38,13 +38,18 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
     const playerRef = useRef<HTMLIFrameElement | null>(null);
     const iframeLoadHandled = useRef(false);
     const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     // videoIdが変更されたときにiframeLoadHandledをリセット
     useEffect(() => {
-        // 既存のタイムアウトをクリア
+        // 既存のタイムアウトとインターバルをクリア
         if (initTimeoutRef.current) {
             clearTimeout(initTimeoutRef.current);
             initTimeoutRef.current = null;
+        }
+        if (syncIntervalRef.current) {
+            clearInterval(syncIntervalRef.current);
+            syncIntervalRef.current = null;
         }
         
         iframeLoadHandled.current = false;
@@ -61,6 +66,9 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
             if (initTimeoutRef.current) {
                 clearTimeout(initTimeoutRef.current);
             }
+            if (syncIntervalRef.current) {
+                clearInterval(syncIntervalRef.current);
+            }
         };
     }, [videoId]);
 
@@ -69,6 +77,29 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         if (playerRef.current?.contentWindow) {
             playerRef.current.contentWindow.postMessage(message, PLAYER_CONFIG.EMBED_ORIGIN);
             console.log("COMMAND TO PLAYER:", message);
+        }
+    }, []);
+
+    // 時間同期インターバルの開始
+    const startTimeSyncInterval = useCallback(() => {
+        if (syncIntervalRef.current) return; // 既に実行中の場合は何もしない
+        
+        syncIntervalRef.current = setInterval(() => {
+            if (playerReady && !commandInProgress) {
+                sendMessageToPlayer({
+                    sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
+                    playerId: PLAYER_CONFIG.PLAYER_ID,
+                    eventName: "getStatus",
+                });
+            }
+        }, PLAYER_CONFIG.POLLING_INTERVAL_MS);
+    }, [playerReady, commandInProgress, sendMessageToPlayer]);
+
+    // 時間同期インターバルの停止
+    const stopTimeSyncInterval = useCallback(() => {
+        if (syncIntervalRef.current) {
+            clearInterval(syncIntervalRef.current);
+            syncIntervalRef.current = null;
         }
     }, []);
 
@@ -109,6 +140,9 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                                 playerId: PLAYER_CONFIG.PLAYER_ID,
                                 eventName: "getStatus",
                             });
+                            
+                            // 連続的な時間同期の開始
+                            startTimeSyncInterval();
                             break;
 
                         case "playerMetadataChange":
@@ -154,8 +188,14 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                                 setIsPlaying(newIsPlaying);
                                 onPlayingChange?.(newIsPlaying);
                                 
-                                if (data.data.playerStatus !== PLAYER_STATUS.PLAYING) {
-                                    setCommandInProgress(false);
+                                // プレイヤーステータスが変更されたらcommandInProgressをリセット
+                                setCommandInProgress(false);
+                                
+                                // 再生状態に応じて時間同期の開始/停止
+                                if (newIsPlaying) {
+                                    startTimeSyncInterval();
+                                } else {
+                                    stopTimeSyncInterval();
                                 }
                             }
                             break;
@@ -179,7 +219,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
 
         window.addEventListener("message", handleMessage);
         return () => window.removeEventListener("message", handleMessage);
-    }, [sendMessageToPlayer, commandInProgress, onDurationChange, onPlayingChange, onTimeUpdate, videoId]);
+    }, [sendMessageToPlayer, commandInProgress, onDurationChange, onPlayingChange, onTimeUpdate, videoId, startTimeSyncInterval, stopTimeSyncInterval]);
 
     // iframeの読み込み完了時の処理
     const handleIframeLoad = useCallback(() => {
@@ -196,7 +236,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
             }
         }, 8000);
 
-        // 簡略化された初期化プロセス
+        // 最小限の初期化プロセス - registerCallbackを削除し直接getStatusを送信
         setTimeout(() => {
             if (!playerRef.current?.contentWindow) {
                 console.log("Player contentWindow not available");
@@ -205,24 +245,30 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
             }
 
             try {
-                // 単一の初期化メッセージのみ送信
-                const initMessage = {
+                console.log("Attempting direct status request without registerCallback");
+                
+                // プレイヤーの準備を仮定してgetStatusを直接送信
+                setPlayerReady(true);
+                
+                // 初期化完了後にステータス要求
+                sendMessageToPlayer({
                     sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
                     playerId: PLAYER_CONFIG.PLAYER_ID,
-                    eventName: "registerCallback",
-                    data: {
-                        _frontendId: PLAYER_CONFIG.FRONTEND_ID,
-                        _frontendVersion: PLAYER_CONFIG.FRONTEND_VERSION,
-                    },
-                };
-
-                console.log("Sending simplified init message:", initMessage);
-                sendMessageToPlayer(initMessage);
+                    eventName: "getStatus",
+                });
+                
+                // タイムアウトをクリア（成功と仮定）
+                if (initTimeoutRef.current) {
+                    clearTimeout(initTimeoutRef.current);
+                    initTimeoutRef.current = null;
+                }
+                
+                console.log("Direct initialization complete, player ready");
             } catch (error) {
                 console.error("Error during initialization:", error);
                 setPlayerError("プレイヤーの初期化に失敗しました");
             }
-        }, 500); // 短縮した遅延
+        }, 1000); // より長い遅延でプレイヤーの完全な読み込みを待つ
     }, [sendMessageToPlayer, playerReady]);
 
     // 再生/一時停止の切り替え
@@ -276,6 +322,11 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                 _frontendVersion: PLAYER_CONFIG.FRONTEND_VERSION
             }
         });
+        
+        // シーク完了後に自動的にcommandInProgressをリセット
+        setTimeout(() => {
+            setCommandInProgress(false);
+        }, PLAYER_CONFIG.SEEK_DEBOUNCE_MS);
     }, [commandInProgress, sendMessageToPlayer]);
 
     // 音量調整

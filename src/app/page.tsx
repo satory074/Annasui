@@ -4,7 +4,8 @@ import { useState } from "react";
 import { useMedleyData } from "@/hooks/useMedleyData";
 import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import Header from "@/components/layout/Header";
-import HLSPlayer from "@/components/features/player/HLSPlayer";
+import NicoPlayer from "@/components/features/player/NicoPlayer";
+import { useNicoPlayer } from "@/hooks/useNicoPlayer";
 import SongTimeline from "@/components/features/medley/SongTimeline";
 import ChordBar from "@/components/features/medley/ChordBar";
 import SongList from "@/components/features/medley/SongList";
@@ -15,17 +16,40 @@ export default function Home() {
     const [videoId, setVideoId] = useState<string>("sm500873");
     const [inputVideoId, setInputVideoId] = useState<string>("sm500873");
     const [isAnnotationMode, setIsAnnotationMode] = useState<boolean>(true);
-    const [currentTime, setCurrentTime] = useState<number>(0);
-    const [duration, setDuration] = useState<number>(0);
     const [videoInfo, setVideoInfo] = useState<VideoInfoType | null>(null);
 
     // メドレーデータの取得
     const { medleySongs, medleyChords, medleyTitle, medleyCreator } = useMedleyData(videoId);
     
-    // シンプルなシーク機能
+    // ニコニコプレイヤーの統合
+    const {
+        playerRef,
+        isPlaying,
+        currentTime,
+        duration,
+        playerError,
+        videoInfo: nicoVideoInfo,
+        togglePlayPause,
+        seek: nicoSeek,
+        getEmbedUrl,
+        handleIframeLoad,
+        clearError
+    } = useNicoPlayer({
+        videoId,
+        onTimeUpdate: () => {
+            // タイムラインの更新はuseNicoPlayerが自動処理
+        },
+        onDurationChange: () => {
+            // 動画の長さはuseNicoPlayerが自動処理
+        },
+        onPlayingChange: () => {
+            // 再生状態の変化はuseNicoPlayerが自動処理
+        }
+    });
+    
+    // シーク機能をnicoSeekに接続
     const seek = (seekTime: number) => {
-        setCurrentTime(seekTime);
-        // HLSPlayerで実際のシークは実装される
+        nicoSeek(seekTime);
     };
 
     // 現在のトラックの追跡
@@ -36,9 +60,8 @@ export default function Home() {
         e.preventDefault();
         console.info("Loading video:", inputVideoId);
         setVideoId(inputVideoId);
-        // 状態をリセット
-        setCurrentTime(0);
-        setDuration(0);
+        // ニコニコプレイヤーが状態をリセットするため、
+        // videoInfoのみローカル状態をリセット
         setVideoInfo(null);
     };
 
@@ -70,21 +93,25 @@ export default function Home() {
                 />
 
                 {/* 動画情報表示（通常モードのみ） */}
-                {!isAnnotationMode && videoInfo && (
+                {!isAnnotationMode && (nicoVideoInfo || videoInfo) && (
                     <div className="p-4 bg-gray-50 dark:bg-gray-700">
-                        <h2 className="text-lg font-bold">{videoInfo.title}</h2>
-                        <p className="text-sm text-gray-600">{videoInfo.videoId}</p>
+                        <h2 className="text-lg font-bold">{(nicoVideoInfo || videoInfo)?.title}</h2>
+                        <p className="text-sm text-gray-600">{(nicoVideoInfo || videoInfo)?.videoId}</p>
                     </div>
                 )}
 
                 {/* プレイヤーコンテナ */}
                 <div className="relative">
-                    <HLSPlayer
-                        videoId={videoId}
-                        onTimeUpdate={setCurrentTime}
-                        onDurationChange={setDuration}
-                        onPlayingChange={() => {}}
-                        onError={(error) => console.error('Player error:', error)}
+                    <NicoPlayer
+                        playerRef={playerRef}
+                        embedUrl={getEmbedUrl()}
+                        onIframeLoad={handleIframeLoad}
+                        isPlaying={isPlaying}
+                        currentTime={currentTime}
+                        duration={duration}
+                        playerError={playerError}
+                        onTogglePlayPause={togglePlayPause}
+                        onErrorDismiss={clearError}
                     />
                 </div>
 

@@ -34,6 +34,16 @@ export default function SongList({
   const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
   const SNAP_THRESHOLD = 1.0; // スナップする閾値（秒）
 
+  // タイムラインズーム機能の状態管理
+  const [timelineZoom, setTimelineZoom] = useState<number>(1.0); // ズーム倍率 (0.5-5.0)
+  const [timelineOffset, setTimelineOffset] = useState<number>(0); // 表示開始時刻
+  const [autoFollow, setAutoFollow] = useState<boolean>(true); // 自動追従モード
+
+  // タイムラインズーム関連の計算
+  const visibleDuration = duration / timelineZoom; // 表示される時間範囲
+  const visibleStartTime = timelineOffset; // 表示開始時刻
+  const visibleEndTime = Math.min(timelineOffset + visibleDuration, duration); // 表示終了時刻
+
   // 現在の時刻に再生中の全ての楽曲を取得（マッシュアップ対応）
   const getCurrentSongs = (): SongSection[] => {
     return songs.filter((song) => currentTime >= song.startTime && currentTime < song.endTime);
@@ -92,8 +102,8 @@ export default function SongList({
     if (!rect) return;
     
     const relativeX = e.clientX - rect.left;
-    const clickPositionInSong = relativeX - (song.startTime / duration) * rect.width;
-    const songWidth = ((song.endTime - song.startTime) / duration) * rect.width;
+    const clickPositionInSong = relativeX - ((song.startTime - visibleStartTime) / visibleDuration) * rect.width;
+    const songWidth = ((song.endTime - song.startTime) / visibleDuration) * rect.width;
     
     // どの部分をクリックしたかを判定
     let mode: 'move' | 'resize-start' | 'resize-end' = 'move';
@@ -122,7 +132,7 @@ export default function SongList({
     if (!rect) return;
     
     const deltaX = e.clientX - dragStart.x;
-    const deltaTime = (deltaX / rect.width) * duration;
+    const deltaTime = (deltaX / rect.width) * visibleDuration;
     const snapPoints = getSnapPoints(draggingSong.id);
     
     let newStartTime = dragStart.originalStartTime;
@@ -191,6 +201,64 @@ export default function SongList({
       e.stopPropagation();
       onEditSong(song);
     }
+  };
+
+  // マウスホイールズーム処理
+  const handleWheel = (e: React.WheelEvent) => {
+    if (e.ctrlKey || e.metaKey) {
+      e.preventDefault();
+      const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+      const newZoom = Math.max(0.5, Math.min(5.0, timelineZoom * zoomFactor));
+      
+      // マウス位置を基準にズーム
+      const rect = e.currentTarget.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseTimePosition = (mouseX / rect.width) * visibleDuration + visibleStartTime;
+      
+      setTimelineZoom(newZoom);
+      
+      // ズーム後にマウス位置が同じ時刻を指すように調整
+      const newVisibleDuration = duration / newZoom;
+      const newOffset = Math.max(0, Math.min(
+        duration - newVisibleDuration,
+        mouseTimePosition - (mouseX / rect.width) * newVisibleDuration
+      ));
+      setTimelineOffset(newOffset);
+    }
+  };
+
+  // タイムラインドラッグパン処理
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStartX, setDragStartX] = useState(0);
+  const [dragStartOffset, setDragStartOffset] = useState(0);
+
+  const handleTimelineDragStart = (e: React.MouseEvent) => {
+    if (timelineZoom > 1 && !isEditMode) {
+      setIsDragging(true);
+      setDragStartX(e.clientX);
+      setDragStartOffset(timelineOffset);
+      e.preventDefault();
+    }
+  };
+
+  const handleTimelineDragMove = (e: MouseEvent) => {
+    if (isDragging) {
+      const deltaX = e.clientX - dragStartX;
+      const timelineElement = document.querySelector('.timeline-container') as HTMLElement;
+      if (!timelineElement) return;
+      
+      const rect = timelineElement.getBoundingClientRect();
+      const deltaTime = -(deltaX / rect.width) * visibleDuration;
+      const newOffset = Math.max(0, Math.min(
+        duration - visibleDuration,
+        dragStartOffset + deltaTime
+      ));
+      setTimelineOffset(newOffset);
+    }
+  };
+
+  const handleTimelineDragEnd = () => {
+    setIsDragging(false);
   };
 
   // キーボードショートカット処理
@@ -280,7 +348,45 @@ export default function SongList({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, selectedSong, duration]);
 
+  // 自動追従モード: 現在の再生位置が表示範囲外に出た時に自動調整
+  useEffect(() => {
+    if (autoFollow && timelineZoom > 1) {
+      // 現在時刻が表示範囲外にある場合
+      if (currentTime < visibleStartTime || currentTime > visibleEndTime) {
+        // 現在時刻を中央に配置するように調整
+        const newOffset = Math.max(0, Math.min(
+          duration - visibleDuration,
+          currentTime - visibleDuration / 2
+        ));
+        setTimelineOffset(newOffset);
+      }
+    }
+  }, [currentTime, autoFollow, timelineZoom, visibleStartTime, visibleEndTime, visibleDuration, duration]);
+
+  // タイムラインドラッグイベントの登録/削除
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleTimelineDragMove);
+      document.addEventListener('mouseup', handleTimelineDragEnd);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleTimelineDragMove);
+        document.removeEventListener('mouseup', handleTimelineDragEnd);
+      };
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDragging]);
+
+  // 表示範囲内にある楽曲をフィルタリング
+  const getVisibleSongs = (): SongSection[] => {
+    return songs.filter((song) => {
+      // 楽曲が表示範囲と重なっているかチェック
+      return !(song.endTime <= visibleStartTime || song.startTime >= visibleEndTime);
+    });
+  };
+
   const currentSongs = getCurrentSongs();
+  const visibleSongs = getVisibleSongs();
 
   return (
     <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
@@ -321,9 +427,92 @@ export default function SongList({
         )}
       </div>
 
+      {/* タイムラインズームコントロール */}
+      <div className="mb-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+              ズーム:
+            </label>
+            <input
+              type="range"
+              min="0.5"
+              max="5"
+              step="0.1"
+              value={timelineZoom}
+              onChange={(e) => setTimelineZoom(parseFloat(e.target.value))}
+              className="w-24 h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
+            />
+            <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[2rem]">
+              {timelineZoom.toFixed(1)}x
+            </span>
+          </div>
+
+          {timelineZoom > 1 && (
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                位置:
+              </label>
+              <input
+                type="range"
+                min="0"
+                max={Math.max(0, duration - visibleDuration)}
+                step="1"
+                value={timelineOffset}
+                onChange={(e) => setTimelineOffset(parseFloat(e.target.value))}
+                className="w-32 h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500"
+              />
+              <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[3rem]">
+                {formatTime(timelineOffset)}
+              </span>
+            </div>
+          )}
+
+          <button
+            onClick={() => setAutoFollow(!autoFollow)}
+            className={`px-2 py-1 text-xs rounded transition-colors ${
+              autoFollow 
+                ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+            }`}
+            title="再生中の楽曲を自動的に表示範囲内に保つ"
+          >
+            自動追従: {autoFollow ? 'ON' : 'OFF'}
+          </button>
+
+          <div className="flex gap-1">
+            <button
+              onClick={() => setTimelineZoom(1)}
+              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+            >
+              1x
+            </button>
+            <button
+              onClick={() => setTimelineZoom(2)}
+              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+            >
+              2x
+            </button>
+            <button
+              onClick={() => setTimelineZoom(5)}
+              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+            >
+              5x
+            </button>
+          </div>
+        </div>
+
+        {timelineZoom > 1 && (
+          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+            表示範囲: {formatTime(visibleStartTime)} - {formatTime(visibleEndTime)} 
+            ({formatTime(visibleDuration)} / {formatTime(duration)})
+          </div>
+        )}
+      </div>
+
       <div className="overflow-auto max-h-80">
         <div className="space-y-2">
-            {songs.map((song) => {
+            {visibleSongs.map((song) => {
               const { hasOverlap, overlappingSongs } = detectOverlaps(song);
               const isCurrentlyPlaying = currentSongs.some(s => s.id === song.id);
               
@@ -373,17 +562,52 @@ export default function SongList({
                   </div>
 
                   {/* タイムライン */}
-                  <div className="timeline-container relative w-full h-8 bg-gray-100 dark:bg-gray-800 rounded border">
-                    {/* 時間グリッド（背景） */}
+                  <div 
+                    className={`timeline-container relative w-full h-8 bg-gray-100 dark:bg-gray-800 rounded border ${
+                      timelineZoom > 1 && !isEditMode ? 'cursor-grab' : ''
+                    } ${
+                      isDragging ? 'cursor-grabbing' : ''
+                    }`}
+                    onWheel={handleWheel}
+                    onMouseDown={handleTimelineDragStart}
+                  >
+                    {/* 時間グリッド（背景） - ズームレベルに応じて調整 */}
                     <div className="absolute inset-0 flex">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div 
-                          key={i} 
-                          className="border-l border-gray-300 dark:border-gray-600" 
-                          style={{ left: `${(i / 5) * 100}%` }}
-                        />
-                      ))}
+                      {Array.from({ length: Math.min(21, Math.max(6, Math.ceil(timelineZoom * 10))) }).map((_, i) => {
+                        const gridCount = Math.min(20, Math.max(5, Math.ceil(timelineZoom * 10)));
+                        return (
+                          <div 
+                            key={i} 
+                            className="border-l border-gray-300 dark:border-gray-600" 
+                            style={{ left: `${(i / gridCount) * 100}%` }}
+                          />
+                        );
+                      })}
                     </div>
+                    
+                    {/* 時間ラベル（ズーム時に表示） */}
+                    {timelineZoom > 1.5 && (
+                      <div className="absolute inset-0 pointer-events-none">
+                        {Array.from({ length: Math.min(11, Math.ceil(timelineZoom * 5)) }).map((_, i) => {
+                          const labelCount = Math.min(10, Math.ceil(timelineZoom * 5));
+                          const timeAtPosition = visibleStartTime + (i / labelCount) * visibleDuration;
+                          if (timeAtPosition > duration) return null;
+                          return (
+                            <div
+                              key={i}
+                              className="absolute top-0 text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 px-1 rounded"
+                              style={{ 
+                                left: `${(i / labelCount) * 100}%`,
+                                transform: 'translateX(-50%)',
+                                fontSize: '10px'
+                              }}
+                            >
+                              {formatTime(timeAtPosition)}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                     
                     {/* 楽曲タイムラインバー */}
                     <div
@@ -398,9 +622,9 @@ export default function SongList({
                       } ${
                         draggingSong?.id === song.id ? 'opacity-70 z-30' : ''
                       } select-none`}
-                      style={duration > 0 ? {
-                        left: `${(song.startTime / duration) * 100}%`,
-                        width: `${((song.endTime - song.startTime) / duration) * 100}%`,
+                      style={visibleDuration > 0 ? {
+                        left: `${Math.max(0, ((song.startTime - visibleStartTime) / visibleDuration) * 100)}%`,
+                        width: `${Math.min(100, ((song.endTime - song.startTime) / visibleDuration) * 100)}%`,
                       } : {}}
                       onClick={(e) => handleSongClick(e, song)}
                       onDoubleClick={(e) => handleSongDoubleClick(e, song)}
@@ -447,7 +671,8 @@ export default function SongList({
                     <div
                       className="absolute w-0.5 h-full bg-red-500 z-10"
                       style={{
-                        left: `${(currentTime / duration) * 100}%`,
+                        left: `${((currentTime - visibleStartTime) / visibleDuration) * 100}%`,
+                        display: currentTime >= visibleStartTime && currentTime <= visibleEndTime ? 'block' : 'none'
                       }}
                     />
                   </div>

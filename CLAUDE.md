@@ -34,7 +34,7 @@ This verification step is essential because the production environment uses stat
 Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
 
 ### Current Implementation Status
-**Phase 8+ Complete**: Timeline Unification & Advanced Annotation Editing
+**Phase 9 Complete**: Timeline Zoom & Advanced Navigation
 - ✅ Phase 1: Supabase database integration with fallback to static data
 - ✅ Phase 2: Drag-and-drop timeline editor with modal-based song editing  
 - ✅ Phase 3: Dynamic routing with individual medley pages and OGP metadata
@@ -45,7 +45,8 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ Phase 8: Advanced annotation editing with snap functionality, keyboard shortcuts, and undo/redo
 - ✅ **Timeline Unification**: Integrated SongTimeline functionality into SongList component for streamlined UX
 - ✅ **Song List UI Redesign**: Simplified layout with clean card design, full song title display, and enhanced visual feedback
-- 🔄 Phase 9: User authentication and collaborative editing (planned)
+- ✅ **Phase 9: Timeline Zoom System**: Complete zoom/pan functionality with dynamic grids, auto-follow, and precision editing
+- 🔄 Phase 10: User authentication and collaborative editing (planned)
 
 ## Core Architecture
 
@@ -143,6 +144,44 @@ The application's core functionality relies on postMessage communication with Ni
 - `SongDetailModal` - Read-only modal for displaying song information with play-from-here functionality
 - `ShareButtons` - Social sharing with platform-aware URL generation and native share API
 - `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights across platforms
+
+#### Timeline Zoom System (Phase 9)
+**CRITICAL**: Complete timeline zoom and navigation system for precision editing and efficient navigation of long medleys.
+
+**Zoom Control Architecture:**
+- **Zoom Range**: 0.5x to 5.0x magnification with 0.1x precision
+- **Position Control**: Dynamic offset slider for navigating zoomed timeline
+- **Auto-Follow Mode**: Automatic centering on current playback position
+- **Preset Buttons**: Quick access to 1x, 2x, 5x zoom levels
+
+**State Management:**
+```typescript
+const [timelineZoom, setTimelineZoom] = useState<number>(1.0); // 0.5-5.0
+const [timelineOffset, setTimelineOffset] = useState<number>(0); // Start position
+const [autoFollow, setAutoFollow] = useState<boolean>(true); // Auto-center
+
+// Calculated values
+const visibleDuration = duration / timelineZoom;
+const visibleStartTime = timelineOffset;
+const visibleEndTime = Math.min(timelineOffset + visibleDuration, duration);
+```
+
+**Advanced Navigation Features:**
+- **Mouse Wheel Zoom**: Ctrl/Cmd+wheel for precise zoom control centered on mouse position
+- **Drag Pan**: Click and drag timeline when zoomed for smooth navigation
+- **Smart Clipping**: Automatic filtering of songs outside visible range
+- **Dynamic Grids**: Time grid density adapts to zoom level (5x shows 12-second intervals)
+- **Time Labels**: Detailed time markers appear at 1.5x+ zoom for precision editing
+
+**Integration with Editing System:**
+- All drag-and-drop editing operations work seamlessly with zoom
+- Snap functionality adapts to zoom level for precise alignment
+- Position calculations automatically account for visible range:
+  ```typescript
+  // Zoom-aware positioning
+  left: `${((song.startTime - visibleStartTime) / visibleDuration) * 100}%`
+  width: `${((song.endTime - song.startTime) / visibleDuration) * 100}%`
+  ```
 
 #### Integrated Timeline Architecture (SongList Component)
 **IMPORTANT**: The timeline functionality has been unified into the SongList component, replacing the separate SongTimeline component.
@@ -251,6 +290,18 @@ This prevents `Infinity%` calculations when `useNicoPlayer` returns `duration=0`
   - Inline timeline bar click opens detail modal in view mode
   - Platform-specific behavior differences visible in console
 
+**Timeline Zoom System Testing:**
+- **Zoom Controls**: Use zoom slider (0.5x-5.0x) to test magnification levels
+- **Preset Buttons**: Click 1x, 2x, 5x buttons for quick zoom levels
+- **Position Navigation**: Use position slider when zoomed to navigate timeline
+- **Auto-Follow Mode**: Toggle "自動追従: ON/OFF" to test automatic centering on playback
+- **Mouse Wheel Zoom**: Hold Ctrl/Cmd and scroll to zoom centered on mouse position
+- **Drag Pan**: Click and drag timeline background when zoomed to pan view
+- **Dynamic Grids**: Observe time grid density changes at different zoom levels
+- **Time Labels**: Verify detailed time markers appear at 1.5x+ zoom
+- **Range Display**: Check "表示範囲" information updates correctly
+- **Song Clipping**: Confirm only visible-range songs appear in timeline
+
 **Annotation Editing Testing:**
 - **Edit Mode Features**: Click "編集モード" button to activate advanced editing
 - **Snap Functionality**: Toggle "スナップ: ON/OFF" button to test auto-snap behavior
@@ -260,6 +311,7 @@ This prevents `Infinity%` calculations when `useNicoPlayer` returns `duration=0`
 - **Inline Actions**: Edit/delete buttons appear in song list during edit mode
 - **Current Time Integration**: Edit modal shows "現在時刻" buttons for time setting
 - **History Management**: Make multiple edits to test 50-action history limit
+- **Zoom + Edit Integration**: Test all editing features work correctly at different zoom levels
 
 **Song List UI Testing:**
 - **Simplified Card-Based Layout**: Each song displays as a clean card with only color dot indicator (no time stamps or badges)
@@ -296,6 +348,18 @@ This prevents `Infinity%` calculations when `useNicoPlayer` returns `duration=0`
 - **Wrong player component loading**: Check platform prop is correctly passed from route to MedleyPageClient to MedleyPlayer
 - **YouTube videos not playing**: Verify YouTube embed URL format and CORS restrictions
 - **Platform detection failing**: Ensure static data includes `platform` field in MedleyData objects
+
+**Timeline Zoom Issues:**
+- **Zoom slider not responding**: Check `timelineZoom` state updates and range slider value binding
+- **Position slider not appearing**: Verify `timelineZoom > 1` condition and slider visibility logic
+- **Auto-follow not working**: Ensure `currentTime` updates trigger useEffect with proper dependencies
+- **Mouse wheel zoom not working**: Confirm Ctrl/Cmd key detection and preventDefault on wheel events
+- **Drag pan not functioning**: Check `isDragging` state and mouse event listeners attachment
+- **Songs disappearing when zoomed**: Verify `getVisibleSongs` filter logic and time range calculations
+- **Timeline bars positioned incorrectly**: Ensure position calculations use `visibleStartTime` and `visibleDuration`
+- **Grid density not updating**: Check grid count calculation based on `timelineZoom` value
+- **Time labels not showing**: Verify `timelineZoom > 1.5` condition and label positioning
+- **Editing broken in zoom mode**: Ensure drag calculations use `visibleDuration` instead of `duration`
 
 **Song List UI Issues:**
 - **Timeline bars not displaying**: Ensure `duration` prop is passed to SongList component

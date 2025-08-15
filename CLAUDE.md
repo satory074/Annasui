@@ -36,9 +36,11 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - Multi-platform video player support:
   - Native iframe postMessage API for Niconico player integration
   - YouTube iframe embed for YouTube videos
+  - HLS.js for advanced video streaming capabilities
 - Supabase for database and real-time data management (optional)
+- Additional capabilities: Axios for HTTP requests, Tone.js/Wavesurfer.js for audio processing (available but not currently used)
 - No external state management library (React hooks only)  
-- Static export configured for Netlify deployment
+- Static export configured for Netlify deployment with PostCSS and optimized builds
 
 ### Supabase Configuration (Optional)
 If you want to use dynamic data management instead of static files:
@@ -168,10 +170,12 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 - Seek functionality logs to console as placeholder for future implementation
 
 ### Production Deployment Configuration
-- Next.js configured for static export (`output: 'export'`)
+- Next.js configured for static export (`output: 'export'`, `trailingSlash: true`)
 - Static files generated to `.next/` directory
 - Images unoptimized for static hosting compatibility
 - Cross-origin iframe communication works in production environment
+- PostCSS integration with TailwindCSS 4 for build optimization
+- **CRITICAL**: All video IDs must be included in `generateStaticParams` for static export
 - Current production URL: https://illustrious-figolla-20f57e.netlify.app
 
 ### Key Technical Constraints
@@ -214,6 +218,8 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 - **Dynamic routes not generating**: Check `generateStaticParams` includes all required video IDs for both platforms
 - **Next.js 15 params errors**: All dynamic route components must handle `params: Promise<{...}>`
 - **Missing static paths**: Add new video IDs to respective `generateStaticParams` functions in platform directories
+- **404 errors on deployed site**: Video ID not in `generateStaticParams` - add missing IDs and redeploy
+- **Netlify deployment issues**: Use `npx netlify deploy --prod` and ensure `.next` directory is published
 
 ## Data Management Architecture
 

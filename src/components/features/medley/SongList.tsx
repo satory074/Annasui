@@ -398,17 +398,27 @@ export default function SongList({
                       } ${
                         draggingSong?.id === song.id ? 'opacity-70 z-30' : ''
                       } select-none`}
-                      style={{
+                      style={duration > 0 ? {
                         left: `${(song.startTime / duration) * 100}%`,
                         width: `${((song.endTime - song.startTime) / duration) * 100}%`,
-                      }}
+                      } : {}}
                       onClick={(e) => handleSongClick(e, song)}
                       onDoubleClick={(e) => handleSongDoubleClick(e, song)}
                       onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
                       title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで詳細表示'}`}
                     >
-                      <div className="text-xs text-white font-bold whitespace-nowrap overflow-visible px-2 leading-6 pointer-events-none relative z-20">
-                        {song.title}
+                      <div className="text-xs text-white font-bold px-2 leading-6 pointer-events-none relative z-20">
+                        <div 
+                          className="whitespace-nowrap"
+                          style={{
+                            // すべての楽曲タイトルをバー幅内に制限
+                            maxWidth: '100%',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis'
+                          }}
+                        >
+                          {song.title}
+                        </div>
                       </div>
                       {/* 重なり表示用の斜線パターン */}
                       {hasOverlap && (

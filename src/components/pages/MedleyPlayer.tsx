@@ -39,7 +39,7 @@ export default function MedleyPlayer({
     const [detailSong, setDetailSong] = useState<SongSection | null>(null);
 
     // メドレーデータの取得
-    const { medleySongs, medleyTitle, medleyCreator, loading, error } = useMedleyData(videoId);
+    const { medleySongs, medleyTitle, medleyCreator, medleyDuration, loading, error } = useMedleyData(videoId);
     
     // 編集機能
     const {
@@ -82,6 +82,9 @@ export default function MedleyPlayer({
         }
     });
     
+    // durationを決定（プレイヤーから取得できない場合は静的データを使用）
+    const effectiveDuration = duration > 0 ? duration : medleyDuration;
+    
     // シーク機能をプラットフォーム別に実装
     const seek = (seekTime: number) => {
         if (platform === 'youtube') {
@@ -94,7 +97,7 @@ export default function MedleyPlayer({
 
     // 初期時間へのシーク（ディープリンク対応）
     useEffect(() => {
-        if (initialTime > 0 && duration > 0 && initialTime <= duration) {
+        if (initialTime > 0 && effectiveDuration > 0 && initialTime <= effectiveDuration) {
             // プレイヤーが準備完了してから少し待ってシーク
             const timer = setTimeout(() => {
                 seek(initialTime);
@@ -103,7 +106,7 @@ export default function MedleyPlayer({
             return () => clearTimeout(timer);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [initialTime, duration]);
+    }, [initialTime, effectiveDuration]);
 
     // URLが変更された時の処理（ブラウザの戻る/進む対応）
     useEffect(() => {
@@ -130,7 +133,7 @@ export default function MedleyPlayer({
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [isEditMode, undo, redo]);
-
+    
     // 現在のトラックの追跡（編集中か元のデータかを切り替え）
     const displaySongs = isEditMode ? editingSongs : medleySongs;
     const { currentSong } = useCurrentTrack(currentTime, displaySongs);
@@ -173,7 +176,7 @@ export default function MedleyPlayer({
     };
 
     const handleSaveChanges = async () => {
-        const success = await saveMedley(videoId, medleyTitle, medleyCreator, duration);
+        const success = await saveMedley(videoId, medleyTitle, medleyCreator, effectiveDuration);
         if (success) {
             alert("変更を保存しました。");
             setIsEditMode(false);
@@ -344,7 +347,7 @@ export default function MedleyPlayer({
                     <SongList
                         songs={displaySongs}
                         currentTime={currentTime}
-                        duration={duration}
+                        duration={effectiveDuration}
                         onSeek={seek}
                         isEditMode={isEditMode}
                         onEditSong={handleEditSong}
@@ -392,7 +395,7 @@ export default function MedleyPlayer({
                 onSave={handleSaveSong}
                 onDelete={deleteSong}
                 isNew={isNewSong}
-                maxDuration={duration}
+                maxDuration={effectiveDuration}
                 currentTime={currentTime}
             />
 

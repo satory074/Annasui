@@ -202,10 +202,17 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 #### Component Integration Pattern
 - Platform-specific player components (`NicoPlayer`, `YouTubePlayer`) handle iframe embedding
 - `useNicoPlayer` hook manages Niconico player communication and state
-- `MedleyPlayer` component conditionally renders players based on platform prop
+- `MedleyPlayer` component conditionally renders players based on platform prop and implements `effectiveDuration` fallback
 - SongList component triggers actions through platform-aware seek methods with integrated timeline functionality
 - Seek operations automatically update current track detection (Niconico only currently)
 - Inline timeline bars support click-to-detail in view mode, drag-to-edit in edit mode
+
+**CRITICAL Duration Handling Pattern:**
+```typescript
+// Always use effectiveDuration fallback in MedleyPlayer.tsx
+const effectiveDuration = duration > 0 ? duration : medleyDuration;
+```
+This prevents `Infinity%` calculations when `useNicoPlayer` returns `duration=0` before player initialization.
 
 #### Seek Operation Implementation
 **Niconico Player - Critical Sequence for Stopped Player:**
@@ -270,6 +277,7 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - **Child elements intercepting clicks**: Use `pointer-events-none` on child elements
 - **Player not responding**: Check iframe load and postMessage origin verification
 - **Seek without automatic playback**: Add play command after seek when player is stopped
+- **Duration is 0 causing Infinity% positioning**: Use `effectiveDuration = duration > 0 ? duration : medleyDuration` fallback pattern
 
 **Data Management:**
 - **Database connection fails**: Check Supabase environment variables, app falls back to static data automatically
@@ -293,7 +301,7 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - **Timeline bars not displaying**: Ensure `duration` prop is passed to SongList component
 - **Song detail modal not opening**: Check `onShowSongDetail` callback is properly passed and implemented
 - **Timeline bars not clickable**: Verify click event handlers on timeline bar elements and edit mode state
-- **Song titles truncated**: Check timeline bar uses `whitespace-nowrap overflow-visible` classes instead of `truncate`
+- **Song titles overflowing timeline bars**: All song titles should use `overflow: hidden` and `textOverflow: ellipsis` for consistent display
 - **Overlap detection not working**: Check `detectOverlaps` function logic for time range intersection
 - **Current time indicator not moving**: Verify `currentTime` prop updates and position calculation
 - **Pulse animation not showing**: Ensure playing songs have `animate-pulse shadow-lg shadow-blue-400/50` classes
@@ -501,7 +509,7 @@ The architecture is designed for easy platform extensibility with minimal code c
 - **Streamlined design**: Focus on essential information with reduced visual clutter
 
 **Implementation Details:**
-- Timeline song titles use `whitespace-nowrap overflow-visible` instead of `truncate`
+- Timeline song titles use `overflow: hidden` and `textOverflow: ellipsis` for consistent display within bar boundaries
 - Playing songs styled with `ring-2 ring-blue-400 ring-offset-1 animate-pulse shadow-lg shadow-blue-400/50`
 - Card headers simplified to show only color dot indicators
 - Visual feedback concentrated in timeline bars rather than scattered across UI elements

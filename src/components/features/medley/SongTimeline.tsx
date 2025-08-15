@@ -1,13 +1,16 @@
 "use client";
 
 import { SongSection } from "@/types";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface SongTimelineProps {
   songs: SongSection[];
   currentTime: number;
   duration: number;
   onSeek: (time: number) => void;
+  isEditMode?: boolean;
+  onEditSong?: (song: SongSection) => void;
+  onUpdateSong?: (song: SongSection) => void;
 }
 
 export default function SongTimeline({
@@ -15,8 +18,14 @@ export default function SongTimeline({
   currentTime,
   duration,
   onSeek,
+  isEditMode = false,
+  onEditSong,
+  onUpdateSong,
 }: SongTimelineProps) {
   const timelineRef = useRef<HTMLDivElement>(null);
+  const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
+  const [dragMode, setDragMode] = useState<'move' | 'resize-start' | 'resize-end' | null>(null);
+  const [dragStart, setDragStart] = useState<{ x: number; originalStartTime: number; originalEndTime: number }>({ x: 0, originalStartTime: 0, originalEndTime: 0 });
 
   // 現在の再生時間に基づいてタイムラインを更新
   useEffect(() => {
@@ -53,11 +62,112 @@ export default function SongTimeline({
   // 現在の曲
   const currentSong = getCurrentSong();
 
+  // ドラッグ&ドロップ関連の関数
+  const handleMouseDown = (e: React.MouseEvent, song: SongSection) => {
+    if (!isEditMode || !onUpdateSong) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const rect = timelineRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const relativeX = e.clientX - rect.left;
+    const clickPositionInSong = relativeX - (song.startTime / duration) * rect.width;
+    const songWidth = ((song.endTime - song.startTime) / duration) * rect.width;
+    
+    // どの部分をクリックしたかを判定
+    let mode: 'move' | 'resize-start' | 'resize-end' = 'move';
+    if (clickPositionInSong < 8) {
+      mode = 'resize-start';
+    } else if (clickPositionInSong > songWidth - 8) {
+      mode = 'resize-end';
+    }
+    
+    setDraggingSong(song);
+    setDragMode(mode);
+    setDragStart({
+      x: e.clientX,
+      originalStartTime: song.startTime,
+      originalEndTime: song.endTime
+    });
+  };
+
+  const handleMouseMove = (e: MouseEvent) => {
+    if (!draggingSong || !dragMode || !onUpdateSong) return;
+    
+    const rect = timelineRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    
+    const deltaX = e.clientX - dragStart.x;
+    const deltaTime = (deltaX / rect.width) * duration;
+    
+    let newStartTime = dragStart.originalStartTime;
+    let newEndTime = dragStart.originalEndTime;
+    
+    if (dragMode === 'move') {
+      newStartTime = Math.max(0, dragStart.originalStartTime + deltaTime);
+      newEndTime = Math.min(duration, dragStart.originalEndTime + deltaTime);
+      
+      // 移動時は楽曲の長さを保持
+      const songDuration = dragStart.originalEndTime - dragStart.originalStartTime;
+      if (newStartTime + songDuration > duration) {
+        newStartTime = duration - songDuration;
+        newEndTime = duration;
+      } else {
+        newEndTime = newStartTime + songDuration;
+      }
+    } else if (dragMode === 'resize-start') {
+      newStartTime = Math.max(0, Math.min(dragStart.originalEndTime - 1, dragStart.originalStartTime + deltaTime));
+    } else if (dragMode === 'resize-end') {
+      newEndTime = Math.min(duration, Math.max(dragStart.originalStartTime + 1, dragStart.originalEndTime + deltaTime));
+    }
+    
+    // 更新されたsongを作成
+    const updatedSong: SongSection = {
+      ...draggingSong,
+      startTime: Math.round(newStartTime * 10) / 10, // 0.1秒単位に丸める
+      endTime: Math.round(newEndTime * 10) / 10
+    };
+    
+    onUpdateSong(updatedSong);
+  };
+
+  const handleMouseUp = () => {
+    setDraggingSong(null);
+    setDragMode(null);
+    setDragStart({ x: 0, originalStartTime: 0, originalEndTime: 0 });
+  };
+
+  // ドラッグイベントの登録/削除
+  useEffect(() => {
+    if (draggingSong && dragMode) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draggingSong, dragMode, dragStart, duration]);
+
+  // 楽曲セクションのダブルクリック処理
+  const handleSongDoubleClick = (e: React.MouseEvent, song: SongSection) => {
+    if (isEditMode && onEditSong) {
+      e.preventDefault();
+      e.stopPropagation();
+      onEditSong(song);
+    }
+  };
+
   return (
     <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
       <div className="flex justify-between items-center mb-2">
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
           楽曲タイムライン - 現在: {formatTime(currentTime)}
+          {isEditMode && <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">(編集モード: ドラッグで移動・リサイズ、ダブルクリックで編集)</span>}
         </h3>
         {currentSong && (
           <div className="text-sm bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
@@ -83,27 +193,42 @@ export default function SongTimeline({
         {songs.map((song) => {
           const songWidth = ((song.endTime - song.startTime) / duration) * 100;
           const songLeft = (song.startTime / duration) * 100;
+          const isDragging = draggingSong?.id === song.id;
 
           return (
             <div
               key={song.id}
               className={`absolute h-full ${song.color} flex items-center justify-center
-              ${currentSong?.id === song.id ? "border-2 border-white" : ""}`}
+              ${currentSong?.id === song.id ? "border-2 border-white" : ""}
+              ${isEditMode ? "cursor-move hover:opacity-80" : "cursor-pointer"}
+              ${isDragging ? "opacity-70 z-30" : ""}
+              select-none`}
               style={{
                 left: `${songLeft}%`,
                 width: `${songWidth}%`,
               }}
-              title={`${song.title} - ${song.artist} (${formatTime(song.startTime)} - ${formatTime(song.endTime)})`}
+              title={`${song.title} - ${song.artist} (${formatTime(song.startTime)} - ${formatTime(song.endTime)})${isEditMode ? " | ドラッグして移動・リサイズ" : ""}`}
+              onMouseDown={(e) => isEditMode ? handleMouseDown(e, song) : undefined}
+              onDoubleClick={(e) => handleSongDoubleClick(e, song)}
               onClick={(e) => {
-                e.stopPropagation(); // 親要素のクリックイベントを停止
-                console.log(`曲をクリック「${song.title}」: ${song.startTime}秒へシーク`);
-                // 厳密に数値として扱う
-                onSeek(Number(song.startTime));
+                if (!isEditMode) {
+                  e.stopPropagation();
+                  console.log(`曲をクリック「${song.title}」: ${song.startTime}秒へシーク`);
+                  onSeek(Number(song.startTime));
+                }
               }}
             >
-              <span className="text-xs text-gray-900 dark:text-white font-bold truncate px-1">
+              <span className="text-xs text-gray-900 dark:text-white font-bold truncate px-1 pointer-events-none">
                 {song.title}
               </span>
+              
+              {/* 編集モード時のリサイズハンドル */}
+              {isEditMode && (
+                <>
+                  <div className="absolute left-0 top-0 w-2 h-full bg-white bg-opacity-30 cursor-ew-resize"></div>
+                  <div className="absolute right-0 top-0 w-2 h-full bg-white bg-opacity-30 cursor-ew-resize"></div>
+                </>
+              )}
             </div>
           );
         })}

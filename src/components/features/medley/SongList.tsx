@@ -6,9 +6,19 @@ interface SongListProps {
   songs: SongSection[];
   currentTime: number;
   onSeek: (time: number) => void;
+  isEditMode?: boolean;
+  onEditSong?: (song: SongSection) => void;
+  onDeleteSong?: (songId: number) => void;
 }
 
-export default function SongList({ songs, currentTime, onSeek }: SongListProps) {
+export default function SongList({ 
+  songs, 
+  currentTime, 
+  onSeek, 
+  isEditMode = false, 
+  onEditSong, 
+  onDeleteSong 
+}: SongListProps) {
   // 現在再生中の曲を特定
   const getCurrentSong = (): SongSection | undefined => {
     return songs.find((song) => currentTime >= song.startTime && currentTime < song.endTime);
@@ -67,24 +77,47 @@ export default function SongList({ songs, currentTime, onSeek }: SongListProps) 
                 <td className="px-3 py-2">{song.genre || "-"}</td>
                 <td className="px-3 py-2">
                   <div className="flex space-x-2">
-                    <button
-                      onClick={() => {
-                        console.log(`リストから曲を再生:「${song.title}」 - ${song.startTime}秒`);
-                        onSeek(Number(song.startTime)); // 厳密に数値として渡す
-                      }}
-                      className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                    >
-                      再生
-                    </button>
-                    {song.originalLink && (
-                      <a
-                        href={song.originalLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
-                      >
-                        原曲
-                      </a>
+                    {!isEditMode ? (
+                      <>
+                        <button
+                          onClick={() => {
+                            console.log(`リストから曲を再生:「${song.title}」 - ${song.startTime}秒`);
+                            onSeek(Number(song.startTime)); // 厳密に数値として渡す
+                          }}
+                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          再生
+                        </button>
+                        {song.originalLink && (
+                          <a
+                            href={song.originalLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
+                          >
+                            原曲
+                          </a>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => onEditSong?.(song)}
+                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          編集
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`「${song.title}」を削除しますか？`)) {
+                              onDeleteSong?.(song.id);
+                            }
+                          }}
+                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
+                        >
+                          削除
+                        </button>
+                      </>
                     )}
                   </div>
                 </td>

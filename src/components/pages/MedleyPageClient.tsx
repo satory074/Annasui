@@ -1,16 +1,20 @@
 "use client";
 
 import { useSearchParams } from 'next/navigation';
-import MedleyPlayer from "@/components/pages/MedleyPlayer";
+import MedleyPlayer from "./MedleyPlayer";
 
-export default function Home() {
+interface MedleyPageClientProps {
+    videoId: string;
+}
+
+export default function MedleyPageClient({ videoId }: MedleyPageClientProps) {
     const searchParams = useSearchParams();
     const t = searchParams.get('t');
     const initialTime = t ? parseInt(t, 10) : 0;
 
     return (
         <MedleyPlayer 
-            initialVideoId="sm500873"
+            initialVideoId={videoId}
             initialTime={initialTime}
         />
     );

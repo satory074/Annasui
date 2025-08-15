@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+
 interface HeaderProps {
   inputVideoId: string;
   onInputVideoIdChange: (value: string) => void;
@@ -18,9 +20,17 @@ export default function Header({
   return (
     <div className="bg-pink-600 text-white p-4">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-bold">
-          ニコニコ楽曲アノテーションプレイヤー
-        </h1>
+        <div className="flex items-center gap-4">
+          <Link href="/" className="text-xl font-bold hover:text-pink-200 transition-colors">
+            ニコニコ楽曲アノテーションプレイヤー
+          </Link>
+          <Link 
+            href="/medleys" 
+            className="text-sm bg-pink-700 hover:bg-pink-800 px-3 py-1 rounded transition-colors"
+          >
+            メドレー一覧
+          </Link>
+        </div>
         <form onSubmit={onVideoIdSubmit} className="flex gap-2">
           <input
             type="text"

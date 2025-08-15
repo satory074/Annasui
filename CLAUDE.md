@@ -25,8 +25,29 @@ Anasui is a dedicated Niconico medley annotation player built with Next.js. It p
 - Next.js 15.2.1 with React 19.0.0 and TypeScript
 - TailwindCSS 4 for styling with Emotion for CSS-in-JS
 - Native iframe postMessage API for Niconico player integration
+- Supabase for database and real-time data management (optional)
 - No external state management library (React hooks only)  
 - Static export configured for Netlify deployment
+
+### Supabase Configuration (Optional)
+If you want to use dynamic data management instead of static files:
+
+1. **Setup Supabase Project**
+   - Create account at https://supabase.com
+   - Create new project
+   - Copy URL and anon key from Settings > API
+
+2. **Environment Variables**
+   - Copy `.env.example` to `.env.local`
+   - Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+3. **Database Setup**
+   - Run SQL from `supabase/schema.sql` in Supabase SQL Editor
+   - Run SQL from `supabase/seed.sql` to migrate existing data
+
+4. **Fallback Behavior**
+   - App automatically uses static data if Supabase is not configured
+   - No code changes needed - seamless fallback to static files
 
 ### Critical Implementation Details
 

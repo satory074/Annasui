@@ -14,8 +14,28 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ニコニコ動画プレイヤー - Songleスタイル",
-  description: "ニコニコ動画の外部プレイヤー。メドレー動画のアノテーション機能付き。",
+  title: "ニコニコメドレーアノテーションプレイヤー",
+  description: "ニコニコ動画のメドレー楽曲に詳細なアノテーション情報を提供するWebアプリケーション。Songleスタイルのタイムライン表示で、楽曲ごとの時間情報と詳細情報を確認できます。",
+  keywords: ["ニコニコ動画", "メドレー", "アノテーション", "楽曲情報", "タイムライン"],
+  authors: [{ name: "Anasui Team" }],
+  creator: "Anasui Team",
+  openGraph: {
+    title: "ニコニコメドレーアノテーションプレイヤー",
+    description: "ニコニコ動画のメドレー楽曲に詳細なアノテーション情報を提供するWebアプリケーション",
+    url: "https://anasui.netlify.app",
+    siteName: "ニコニコメドレーアノテーションプレイヤー",
+    type: "website",
+    locale: "ja_JP",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ニコニコメドレーアノテーションプレイヤー",
+    description: "ニコニコ動画のメドレー楽曲に詳細なアノテーション情報を提供するWebアプリケーション",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
@@ -24,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ja">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

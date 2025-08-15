@@ -12,17 +12,19 @@ interface SongListProps {
   onEditSong?: (song: SongSection) => void;
   onDeleteSong?: (songId: number) => void;
   onUpdateSong?: (song: SongSection) => void;
+  onShowSongDetail?: (song: SongSection) => void;
 }
 
 export default function SongList({ 
   songs, 
   currentTime, 
   duration,
-  onSeek, 
+  onSeek, // eslint-disable-line @typescript-eslint/no-unused-vars
   isEditMode = false, 
   onEditSong, 
   onDeleteSong,
-  onUpdateSong
+  onUpdateSong,
+  onShowSongDetail
 }: SongListProps) {
   // 編集機能の状態管理
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
@@ -178,7 +180,7 @@ export default function SongList({
       setSelectedSong(selectedSong?.id === song.id ? null : song);
     } else {
       e.stopPropagation();
-      onSeek(Number(song.startTime));
+      onShowSongDetail?.(song);
     }
   };
 
@@ -319,52 +321,70 @@ export default function SongList({
         )}
       </div>
 
-      <div className="overflow-auto max-h-64">
-        <table className="w-full text-sm text-left">
-          <thead className="text-xs text-gray-700 uppercase dark:text-gray-400 bg-gray-100 dark:bg-gray-800">
-            <tr>
-              <th className="px-3 py-2">曲名</th>
-              <th className="px-3 py-2">アーティスト</th>
-              <th className="px-3 py-2 w-64">タイムライン</th>
-              <th className="px-3 py-2">時間</th>
-              {isEditMode && <th className="px-3 py-2 w-24">操作</th>}
-            </tr>
-          </thead>
-          <tbody>
+      <div className="overflow-auto max-h-80">
+        <div className="space-y-2">
             {songs.map((song) => {
               const { hasOverlap, overlappingSongs } = detectOverlaps(song);
               const isCurrentlyPlaying = currentSongs.some(s => s.id === song.id);
               
               return (
-              <tr
-                key={song.id}
-                className={`border-b dark:border-gray-700 ${
-                  isCurrentlyPlaying
-                    ? "bg-blue-50 dark:bg-blue-900/20"
-                    : "hover:bg-gray-100 dark:hover:bg-gray-700"
-                }`}
-              >
-                <td className="px-3 py-2 font-medium">
-                  <div className="flex items-center">
-                    <div
-                      className="w-3 h-3 mr-2 rounded-full"
-                      style={{ backgroundColor: song.color.replace("bg-", "") }}
-                    ></div>
-                    {song.title}
-                    {isCurrentlyPlaying && (
-                      <span className="ml-2 text-xs text-white bg-blue-500 px-1.5 py-0.5 rounded">再生中</span>
-                    )}
-                    {hasOverlap && (
-                      <span className="ml-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded" title={`${overlappingSongs.length}曲と重複`}>
-                        重複
+                <div
+                  key={song.id}
+                  className={`relative p-3 rounded-lg border transition-all ${
+                    isCurrentlyPlaying
+                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                  }`}
+                >
+                  {/* ヘッダー情報 */}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: song.color.replace("bg-", "") }}
+                      ></div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">
+                        {formatTime(song.startTime)} - {formatTime(song.endTime)}
                       </span>
+                      {isCurrentlyPlaying && (
+                        <span className="text-xs text-white bg-blue-500 px-1.5 py-0.5 rounded">再生中</span>
+                      )}
+                      {hasOverlap && (
+                        <span className="text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded" title={`${overlappingSongs.length}曲と重複`}>
+                          重複
+                        </span>
+                      )}
+                    </div>
+                    {isEditMode && (
+                      <div className="flex gap-1">
+                        <button
+                          onClick={() => onEditSong?.(song)}
+                          className="p-1 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
+                          title="編集"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`「${song.title}」を削除しますか？`)) {
+                              onDeleteSong?.(song.id);
+                            }
+                          }}
+                          className="p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                          title="削除"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
                     )}
                   </div>
-                </td>
-                <td className="px-3 py-2">{song.artist}</td>
-                <td className="px-3 py-2">
-                  {/* ガントチャート形式のインラインタイムライン */}
-                  <div className="timeline-container relative w-full h-6 bg-gray-100 dark:bg-gray-800 rounded border">
+
+                  {/* タイムライン */}
+                  <div className="timeline-container relative w-full h-8 bg-gray-100 dark:bg-gray-800 rounded border">
                     {/* 時間グリッド（背景） */}
                     <div className="absolute inset-0 flex">
                       {Array.from({ length: 6 }).map((_, i) => (
@@ -378,7 +398,7 @@ export default function SongList({
                     
                     {/* 楽曲タイムラインバー */}
                     <div
-                      className={`absolute h-4 top-1 rounded-sm transition-all hover:h-5 hover:top-0.5 ${song.color} border border-gray-400 dark:border-gray-300 ${
+                      className={`absolute h-6 top-1 rounded-sm transition-all hover:h-7 hover:top-0.5 ${song.color} border border-gray-400 dark:border-gray-300 ${
                         hasOverlap ? 'opacity-80 border-2 border-orange-400' : ''
                       } ${
                         isCurrentlyPlaying ? 'ring-2 ring-blue-400 ring-offset-1' : ''
@@ -393,13 +413,13 @@ export default function SongList({
                         left: `${(song.startTime / duration) * 100}%`,
                         width: `${((song.endTime - song.startTime) / duration) * 100}%`,
                       }}
-                      onClick={(e) => isEditMode ? handleSongClick(e, song) : onSeek(song.startTime)}
+                      onClick={(e) => handleSongClick(e, song)}
                       onDoubleClick={(e) => handleSongDoubleClick(e, song)}
                       onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
-                      title={`${song.title}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ''}`}
+                      title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで詳細表示'}`}
                     >
-                      <div className="text-xs text-white font-bold truncate px-1 leading-4 pointer-events-none">
-                        {song.title.length > 8 ? song.title.substring(0, 8) + '...' : song.title}
+                      <div className="text-xs text-white font-bold truncate px-2 leading-6 pointer-events-none">
+                        {song.title}
                       </div>
                       {/* 重なり表示用の斜線パターン */}
                       {hasOverlap && (
@@ -432,49 +452,10 @@ export default function SongList({
                       }}
                     />
                   </div>
-                </td>
-                <td className="px-3 py-2">
-                  <button 
-                    onClick={() => onSeek(song.startTime)}
-                    className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                    title="この曲から再生"
-                  >
-                    {formatTime(song.startTime)} - {formatTime(song.endTime)}
-                  </button>
-                </td>
-                {isEditMode && (
-                  <td className="px-3 py-2">
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => onEditSong?.(song)}
-                        className="p-1 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
-                        title="編集"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                      <button
-                        onClick={() => {
-                          if (confirm(`「${song.title}」を削除しますか？`)) {
-                            onDeleteSong?.(song.id);
-                          }
-                        }}
-                        className="p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
-                        title="削除"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </td>
-                )}
-              </tr>
+                </div>
               );
             })}
-          </tbody>
-        </table>
+        </div>
       </div>
     </div>
   );

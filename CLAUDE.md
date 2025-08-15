@@ -44,6 +44,7 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ Phase 7: Enhanced sorting system with metadata-based ordering (new content discovery)
 - ✅ Phase 8: Advanced annotation editing with snap functionality, keyboard shortcuts, and undo/redo
 - ✅ **Timeline Unification**: Integrated SongTimeline functionality into SongList component for streamlined UX
+- ✅ **Song List UI Redesign**: Simplified layout with card-based design and click-to-detail functionality
 - 🔄 Phase 9: User authentication and collaborative editing (planned)
 
 ## Core Architecture
@@ -137,8 +138,9 @@ The application's core functionality relies on postMessage communication with Ni
 - `MedleyPageClient` - Client-side wrapper handling search params for deep linking and platform props
 - `NicoPlayer` - Niconico-specific iframe player with postMessage integration
 - `YouTubePlayer` - YouTube-specific iframe player (basic embed functionality)
-- `SongList` - Unified tabular song display with integrated Gantt chart timeline bars, complete editing functionality including drag-and-drop, snap, selection, and keyboard shortcuts
+- `SongList` - Unified card-based song display with integrated Gantt chart timeline bars, complete editing functionality including drag-and-drop, snap, selection, and keyboard shortcuts
 - `SongEditModal` - Modal for detailed song editing with time validation
+- `SongDetailModal` - Read-only modal for displaying song information with play-from-here functionality
 - `ShareButtons` - Social sharing with platform-aware URL generation and native share API
 - `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights across platforms
 
@@ -146,7 +148,7 @@ The application's core functionality relies on postMessage communication with Ni
 **IMPORTANT**: The timeline functionality has been unified into the SongList component, replacing the separate SongTimeline component.
 
 **Dual-Mode Timeline Behavior:**
-- **View Mode**: Click timeline bars in song list to seek to song start time
+- **View Mode**: Click timeline bars to open song detail modal with comprehensive information
 - **Edit Mode**: Full drag-and-drop editing with inline Gantt chart timeline bars
 - Position calculation: `(e.clientX - rect.left) / rect.width * duration`
 - **Always validate duration > 0** before calculating seek time to prevent 0-second seeks
@@ -179,10 +181,21 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 **Critical Timeline Patterns (SongList Integration):**
 - Child elements use `pointer-events-none` to avoid intercepting parent clicks
 - Resize handles positioned absolutely with `cursor-ew-resize` on timeline bars
-- Double-click timeline bars opens edit modal, single-click selects in edit mode
+- Double-click timeline bars opens edit modal, single-click behavior depends on mode:
+  - **View Mode**: Opens song detail modal with comprehensive information
+  - **Edit Mode**: Selects song for keyboard editing
 - Time values rounded to 0.1 second precision for smooth editing
 - Snap toggle button in song list header allows disabling auto-snap when needed
 - Timeline container uses `.timeline-container` class for drag operation targeting
+
+#### Song Detail Modal Architecture
+**Read-Only Information Display:**
+- Displays comprehensive song information including title, artist, timing, genre, and original links
+- Color-coded visual indicators matching timeline bar colors
+- Formatted time display with start/end times and calculated duration
+- "この曲から再生" button triggers seek operation and closes modal
+- Accessible design with proper ARIA labels and keyboard navigation
+- Modal state managed at MedleyPlayer level with `onShowSongDetail` callback
 
 #### Component Integration Pattern
 - Platform-specific player components (`NicoPlayer`, `YouTubePlayer`) handle iframe embedding
@@ -190,7 +203,7 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - `MedleyPlayer` component conditionally renders players based on platform prop
 - SongList component triggers actions through platform-aware seek methods with integrated timeline functionality
 - Seek operations automatically update current track detection (Niconico only currently)
-- Inline timeline bars in song list support click-to-seek to song start time
+- Inline timeline bars support click-to-detail in view mode, drag-to-edit in edit mode
 
 #### Seek Operation Implementation
 **Niconico Player - Critical Sequence for Stopped Player:**
@@ -225,8 +238,8 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - UI debug indicators show player ready state and communication status
 - Platform detection and player switching testable via URL structure
 - Seek functionality testable through:
-  - Song list click-to-play buttons (time column)
-  - Inline timeline bar click-to-seek (seeks to song start time)
+  - Song detail modal "この曲から再生" button (seeks to song start time)
+  - Inline timeline bar click opens detail modal in view mode
   - Platform-specific behavior differences visible in console
 
 **Annotation Editing Testing:**
@@ -239,12 +252,13 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - **Current Time Integration**: Edit modal shows "現在時刻" buttons for time setting
 - **History Management**: Make multiple edits to test 50-action history limit
 
-**Gantt Chart Timeline Testing:**
-- **Inline Timeline Bars**: Each song row displays a visual timeline bar in Gantt chart format
+**Song List UI Testing:**
+- **Card-Based Layout**: Each song displays as a card with header info and timeline bar
+- **Inline Timeline Bars**: Visual timeline bar in Gantt chart format with full song titles
+- **Song Detail Modal**: Click timeline bars in view mode to open detailed song information
 - **Overlap Detection**: Songs with time overlaps show orange "重複" badges and striped patterns
 - **Mashup Support**: When multiple songs play simultaneously, header shows "マッシュアップ: X曲同時再生中"
 - **Current Time Indicator**: Red vertical line shows real-time playback position across all timeline bars
-- **Interactive Seeking**: Click any timeline bar to seek to that song's start time
 - **Visual Feedback**: Current playing songs highlighted with blue rings, overlapping songs with orange borders
 
 ### Common Issues and Solutions
@@ -273,12 +287,14 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - **YouTube videos not playing**: Verify YouTube embed URL format and CORS restrictions
 - **Platform detection failing**: Ensure static data includes `platform` field in MedleyData objects
 
-**Gantt Chart Timeline Issues:**
+**Song List UI Issues:**
 - **Timeline bars not displaying**: Ensure `duration` prop is passed to SongList component
+- **Song detail modal not opening**: Check `onShowSongDetail` callback is properly passed and implemented
+- **Timeline bars not clickable**: Verify click event handlers on timeline bar elements and edit mode state
 - **Overlap detection not working**: Check `detectOverlaps` function logic for time range intersection
 - **Current time indicator not moving**: Verify `currentTime` prop updates and position calculation
-- **Timeline bars not clickable**: Check click event handlers on timeline bar elements
 - **Mashup indicator not showing**: Ensure multiple songs have overlapping time ranges in test data
+- **Edit/delete buttons missing**: Confirm edit mode is active and buttons are rendered in card headers
 
 **Build and Deployment:**
 - **Build deployment failing**: Ensure `public/favicon.ico` exists for Next.js build
@@ -331,7 +347,7 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 
 ### Component Architecture Patterns
 **Feature-Based Organization:**
-- `src/components/features/medley/` - Unified song list (with integrated timeline), edit modal components
+- `src/components/features/medley/` - Unified song list (with integrated timeline), edit modal, and detail modal components
 - `src/components/features/player/` - Niconico iframe integration
 - `src/components/features/share/` - Social sharing and URL generation
 - `src/components/features/statistics/` - Analytics and data visualization

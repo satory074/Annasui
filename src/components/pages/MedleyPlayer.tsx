@@ -10,6 +10,7 @@ import YouTubePlayer from "@/components/features/player/YouTubePlayer";
 import { useNicoPlayer } from "@/hooks/useNicoPlayer";
 import SongList from "@/components/features/medley/SongList";
 import SongEditModal from "@/components/features/medley/SongEditModal";
+import SongDetailModal from "@/components/features/medley/SongDetailModal";
 import ShareButtons from "@/components/features/share/ShareButtons";
 import { SongSection } from "@/types";
 
@@ -32,6 +33,10 @@ export default function MedleyPlayer({
     const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
     const [editingSong, setEditingSong] = useState<SongSection | null>(null);
     const [isNewSong, setIsNewSong] = useState<boolean>(false);
+    
+    // 楽曲詳細モーダル関連の状態
+    const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
+    const [detailSong, setDetailSong] = useState<SongSection | null>(null);
 
     // メドレーデータの取得
     const { medleySongs, medleyTitle, medleyCreator, loading, error } = useMedleyData(videoId);
@@ -149,6 +154,11 @@ export default function MedleyPlayer({
         } else {
             updateSong(song);
         }
+    };
+
+    const handleShowSongDetail = (song: SongSection) => {
+        setDetailSong(song);
+        setDetailModalOpen(true);
     };
 
     const handleToggleEditMode = () => {
@@ -340,6 +350,7 @@ export default function MedleyPlayer({
                         onEditSong={handleEditSong}
                         onDeleteSong={deleteSong}
                         onUpdateSong={updateSong}
+                        onShowSongDetail={handleShowSongDetail}
                     />
                 )}
 
@@ -383,6 +394,14 @@ export default function MedleyPlayer({
                 isNew={isNewSong}
                 maxDuration={duration}
                 currentTime={currentTime}
+            />
+
+            {/* 楽曲詳細モーダル */}
+            <SongDetailModal
+                isOpen={detailModalOpen}
+                onClose={() => setDetailModalOpen(false)}
+                song={detailSong}
+                onSeek={seek}
             />
         </div>
     );

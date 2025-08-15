@@ -343,17 +343,6 @@ export default function SongList({
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: song.color.replace("bg-", "") }}
                       ></div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {formatTime(song.startTime)} - {formatTime(song.endTime)}
-                      </span>
-                      {isCurrentlyPlaying && (
-                        <span className="text-xs text-white bg-blue-500 px-1.5 py-0.5 rounded">再生中</span>
-                      )}
-                      {hasOverlap && (
-                        <span className="text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded" title={`${overlappingSongs.length}曲と重複`}>
-                          重複
-                        </span>
-                      )}
                     </div>
                     {isEditMode && (
                       <div className="flex gap-1">
@@ -401,7 +390,7 @@ export default function SongList({
                       className={`absolute h-6 top-1 rounded-sm transition-all hover:h-7 hover:top-0.5 ${song.color} border border-gray-400 dark:border-gray-300 ${
                         hasOverlap ? 'opacity-80 border-2 border-orange-400' : ''
                       } ${
-                        isCurrentlyPlaying ? 'ring-2 ring-blue-400 ring-offset-1' : ''
+                        isCurrentlyPlaying ? 'ring-2 ring-blue-400 ring-offset-1 animate-pulse shadow-lg shadow-blue-400/50' : ''
                       } ${
                         selectedSong?.id === song.id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
                       } ${
@@ -418,7 +407,7 @@ export default function SongList({
                       onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
                       title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで詳細表示'}`}
                     >
-                      <div className="text-xs text-white font-bold truncate px-2 leading-6 pointer-events-none">
+                      <div className="text-xs text-white font-bold whitespace-nowrap overflow-visible px-2 leading-6 pointer-events-none relative z-20">
                         {song.title}
                       </div>
                       {/* 重なり表示用の斜線パターン */}

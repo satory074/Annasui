@@ -44,7 +44,7 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ Phase 7: Enhanced sorting system with metadata-based ordering (new content discovery)
 - ✅ Phase 8: Advanced annotation editing with snap functionality, keyboard shortcuts, and undo/redo
 - ✅ **Timeline Unification**: Integrated SongTimeline functionality into SongList component for streamlined UX
-- ✅ **Song List UI Redesign**: Simplified layout with card-based design and click-to-detail functionality
+- ✅ **Song List UI Redesign**: Simplified layout with clean card design, full song title display, and enhanced visual feedback
 - 🔄 Phase 9: User authentication and collaborative editing (planned)
 
 ## Core Architecture
@@ -180,6 +180,8 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 
 **Critical Timeline Patterns (SongList Integration):**
 - Child elements use `pointer-events-none` to avoid intercepting parent clicks
+- Song titles use `whitespace-nowrap overflow-visible relative z-20` for complete visibility
+- Timeline bars styled with `animate-pulse shadow-lg shadow-blue-400/50` when playing
 - Resize handles positioned absolutely with `cursor-ew-resize` on timeline bars
 - Double-click timeline bars opens edit modal, single-click behavior depends on mode:
   - **View Mode**: Opens song detail modal with comprehensive information
@@ -253,13 +255,13 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - **History Management**: Make multiple edits to test 50-action history limit
 
 **Song List UI Testing:**
-- **Card-Based Layout**: Each song displays as a card with header info and timeline bar
-- **Inline Timeline Bars**: Visual timeline bar in Gantt chart format with full song titles
+- **Simplified Card-Based Layout**: Each song displays as a clean card with only color dot indicator (no time stamps or badges)
+- **Full-Width Timeline Bars**: Visual timeline bar in Gantt chart format with complete song titles displayed (no truncation)
 - **Song Detail Modal**: Click timeline bars in view mode to open detailed song information
-- **Overlap Detection**: Songs with time overlaps show orange "重複" badges and striped patterns
+- **Overlap Detection**: Songs with time overlaps show striped patterns (no badges in header)
 - **Mashup Support**: When multiple songs play simultaneously, header shows "マッシュアップ: X曲同時再生中"
 - **Current Time Indicator**: Red vertical line shows real-time playback position across all timeline bars
-- **Visual Feedback**: Current playing songs highlighted with blue rings, overlapping songs with orange borders
+- **Enhanced Visual Feedback**: Current playing songs highlighted with blue rings, pulse animation, and shadow effects
 
 ### Common Issues and Solutions
 **Player Integration:**
@@ -291,9 +293,10 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - **Timeline bars not displaying**: Ensure `duration` prop is passed to SongList component
 - **Song detail modal not opening**: Check `onShowSongDetail` callback is properly passed and implemented
 - **Timeline bars not clickable**: Verify click event handlers on timeline bar elements and edit mode state
+- **Song titles truncated**: Check timeline bar uses `whitespace-nowrap overflow-visible` classes instead of `truncate`
 - **Overlap detection not working**: Check `detectOverlaps` function logic for time range intersection
 - **Current time indicator not moving**: Verify `currentTime` prop updates and position calculation
-- **Mashup indicator not showing**: Ensure multiple songs have overlapping time ranges in test data
+- **Pulse animation not showing**: Ensure playing songs have `animate-pulse shadow-lg shadow-blue-400/50` classes
 - **Edit/delete buttons missing**: Confirm edit mode is active and buttons are rendered in card headers
 
 **Build and Deployment:**
@@ -488,5 +491,19 @@ The architecture is designed for easy platform extensibility with minimal code c
 - CSS-in-JS approach with TailwindCSS for minimal runtime overhead
 - Proper image optimization warnings addressed for future improvements
 - Reduced layout shift with consistent aspect ratios (`aspect-video`)
+
+### Recent UI Improvements (Latest Update)
+**Song List Simplification:**
+- **Removed time stamps**: Song card headers no longer show start/end times for cleaner appearance
+- **Removed status badges**: "再生中" and "重複" badges eliminated from headers
+- **Full song title display**: Timeline bars show complete song titles without truncation
+- **Enhanced playing state**: Current songs identified by blue ring, pulse animation, and shadow effects only
+- **Streamlined design**: Focus on essential information with reduced visual clutter
+
+**Implementation Details:**
+- Timeline song titles use `whitespace-nowrap overflow-visible` instead of `truncate`
+- Playing songs styled with `ring-2 ring-blue-400 ring-offset-1 animate-pulse shadow-lg shadow-blue-400/50`
+- Card headers simplified to show only color dot indicators
+- Visual feedback concentrated in timeline bars rather than scattered across UI elements
 
 This design system follows modern media platform patterns (Spotify, YouTube, Niconico) while maintaining the platform's unique annotation-focused functionality.

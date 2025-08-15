@@ -20,13 +20,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
 
 ### Current Implementation Status
-**Phase 5 Complete**: Multi-platform support with unified URL structure
+**Phase 6 Complete**: Modern UI/UX with media platform-inspired design
 - ✅ Phase 1: Supabase database integration with fallback to static data
 - ✅ Phase 2: Drag-and-drop timeline editor with modal-based song editing  
 - ✅ Phase 3: Dynamic routing with individual medley pages and OGP metadata
 - ✅ Phase 4: Advanced search (cross-medley song search), pagination, and statistics dashboard
 - ✅ Phase 5: Multi-platform support (Niconico + YouTube) with unified homepage
-- 🔄 Phase 6: User authentication and collaborative editing (planned)
+- ✅ Phase 6: Modern UI/UX with responsive grid, enhanced cards, and unified search interface
+- 🔄 Phase 7: User authentication and collaborative editing (planned)
 
 ## Core Architecture
 
@@ -321,3 +322,74 @@ To add support for a new video platform (e.g., Twitch, bilibili):
 8. **Update metadata**: Customize OGP images and metadata in layout for platform-specific URLs
 
 The architecture is designed for easy platform extensibility with minimal code changes required.
+
+## Modern UI Design Architecture
+
+### Homepage Layout System
+**Media Platform-Inspired Design** (implemented in Phase 6):
+- **4-Column Responsive Grid**: Adapts from 1 column (mobile) to 4 columns (desktop)
+- **Card-Based Content Display**: Enhanced hover effects with scale animations and overlays
+- **Unified Search Interface**: Prominent search bar with tab-based mode switching
+- **Platform-Specific Visual Indicators**: Color-coded badges (YouTube red, Niconico orange)
+
+### Card Design Patterns
+**Modern Card Architecture:**
+```typescript
+// Card structure with hover states and platform badges
+<div className="group hover:scale-[1.02] transition-all duration-300">
+  {/* Thumbnail with hover overlay and play button */}
+  <div className="aspect-video relative overflow-hidden">
+    {/* Platform badge with backdrop blur */}
+    <span className="bg-red-600/90 backdrop-blur-sm">YouTube</span>
+    {/* Hover overlay with play button */}
+    <div className="opacity-0 group-hover:opacity-100">
+      <PlayButton />
+    </div>
+  </div>
+  {/* Content with genre tags and metadata */}
+</div>
+```
+
+### Search and Filter UI Patterns
+**Tab-Based Search Interface:**
+- Large, prominent search bar with search icon
+- Tab-style mode switching (メドレー検索 / 楽曲検索)
+- Structured filter panel with labels and organized controls
+- Real-time result counts with highlighted numbers
+
+**Filter State Management:**
+- `itemsPerPage` state for dynamic pagination (8/16/32/64 options)
+- Combined search/filter clearing with visual feedback
+- Responsive layout adapting filter controls for mobile
+
+### Visual Design System
+**Modern Aesthetic Principles:**
+- **Rounded corners**: `rounded-xl` for cards, `rounded-lg` for buttons
+- **Backdrop blur effects**: `backdrop-blur-sm` for overlays and badges
+- **Smooth transitions**: `transition-all duration-300` for interactions
+- **Hover states**: Scale, shadow, and color transitions
+- **Platform branding**: Color-coded badges matching platform identity
+
+### Component Modernization Patterns
+**Critical UI Updates in src/app/page.tsx:**
+- Title updated to "Anasui" branding with larger font (`text-4xl`)
+- Search bar with icon and improved focus states
+- Tab navigation with SVG icons and proper ARIA labels
+- Enhanced result display with card-style container
+- Platform-specific badge colors and backdrop blur effects
+
+### Responsive Design Strategy
+**Mobile-First Approach:**
+- Grid adapts: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`
+- Search bar maintains prominence on all screen sizes
+- Filter panel stacks appropriately on mobile
+- Touch-friendly target sizes (minimum 44px)
+
+### Performance Considerations
+**Optimized Layout:**
+- Smaller bundle size with efficient component structure
+- CSS-in-JS approach with TailwindCSS for minimal runtime overhead
+- Proper image optimization warnings addressed for future improvements
+- Reduced layout shift with consistent aspect ratios (`aspect-video`)
+
+This design system follows modern media platform patterns (Spotify, YouTube, Niconico) while maintaining the platform's unique annotation-focused functionality.

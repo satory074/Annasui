@@ -122,7 +122,7 @@ The application's core functionality relies on postMessage communication with Ni
 - `NicoPlayer` - Niconico-specific iframe player with postMessage integration
 - `YouTubePlayer` - YouTube-specific iframe player (basic embed functionality)
 - `SongTimeline` - Interactive timeline with drag-and-drop editing in edit mode
-- `SongList` - Tabular song display with edit/delete actions in edit mode
+- `SongList` - Simplified tabular song display with 3 columns: title, artist, and time duration
 - `SongEditModal` - Modal for detailed song editing with time validation
 - `ShareButtons` - Social sharing with platform-aware URL generation and native share API
 - `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights across platforms

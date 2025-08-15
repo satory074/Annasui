@@ -44,8 +44,6 @@ export default function SongList({
               <th className="px-3 py-2">曲名</th>
               <th className="px-3 py-2">アーティスト</th>
               <th className="px-3 py-2">時間</th>
-              <th className="px-3 py-2">ジャンル</th>
-              <th className="px-3 py-2">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -73,53 +71,6 @@ export default function SongList({
                 <td className="px-3 py-2">{song.artist}</td>
                 <td className="px-3 py-2">
                   {formatTime(song.startTime)} - {formatTime(song.endTime)}
-                </td>
-                <td className="px-3 py-2">{song.genre || "-"}</td>
-                <td className="px-3 py-2">
-                  <div className="flex space-x-2">
-                    {!isEditMode ? (
-                      <>
-                        <button
-                          onClick={() => {
-                            console.log(`リストから曲を再生:「${song.title}」 - ${song.startTime}秒`);
-                            onSeek(Number(song.startTime)); // 厳密に数値として渡す
-                          }}
-                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          再生
-                        </button>
-                        {song.originalLink && (
-                          <a
-                            href={song.originalLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-gray-600 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-300"
-                          >
-                            原曲
-                          </a>
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          onClick={() => onEditSong?.(song)}
-                          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          編集
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`「${song.title}」を削除しますか？`)) {
-                              onDeleteSong?.(song.id);
-                            }
-                          }}
-                          className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                        >
-                          削除
-                        </button>
-                      </>
-                    )}
-                  </div>
                 </td>
               </tr>
             ))}

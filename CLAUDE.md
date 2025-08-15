@@ -20,7 +20,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
 
 ### Current Implementation Status
-**Phase 7 Complete**: Enhanced sorting and discovery features
+**Phase 8 Complete**: Advanced Annotation Editing
 - ✅ Phase 1: Supabase database integration with fallback to static data
 - ✅ Phase 2: Drag-and-drop timeline editor with modal-based song editing  
 - ✅ Phase 3: Dynamic routing with individual medley pages and OGP metadata
@@ -28,7 +28,8 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ Phase 5: Multi-platform support (Niconico + YouTube) with unified homepage
 - ✅ Phase 6: Modern UI/UX with responsive grid, enhanced cards, and unified search interface
 - ✅ Phase 7: Enhanced sorting system with metadata-based ordering (new content discovery)
-- 🔄 Phase 8: User authentication and collaborative editing (planned)
+- ✅ Phase 8: Advanced annotation editing with snap functionality, keyboard shortcuts, and undo/redo
+- 🔄 Phase 9: User authentication and collaborative editing (planned)
 
 ## Core Architecture
 
@@ -134,23 +135,37 @@ The application's core functionality relies on postMessage communication with Ni
 - Position calculation: `(e.clientX - rect.left) / rect.width * duration`
 - **Always validate duration > 0** before calculating seek time to prevent 0-second seeks
 
-**Edit Mode Drag System:**
+**Advanced Edit Mode Features:**
 ```typescript
 // Drag mode detection based on click position within song segment
 let mode: 'move' | 'resize-start' | 'resize-end' = 'move';
 if (clickPositionInSong < 8) mode = 'resize-start';
 else if (clickPositionInSong > songWidth - 8) mode = 'resize-end';
 
-// Time conversion with bounds checking
+// Time conversion with bounds checking and snap support
 const deltaTime = (deltaX / rect.width) * duration;
-newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
+const snapPoints = getSnapPoints(draggingSong.id);
+newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 ```
+
+**Phase 8 Editing Enhancements:**
+- **Snap Functionality**: Auto-snap to adjacent song boundaries (1-second threshold)
+- **Song Selection**: Click songs to select, visual feedback with blue ring
+- **Keyboard Shortcuts**: Arrow keys for precise adjustments
+  - `← →`: Move entire song (0.5s steps, Shift: 0.1s, Ctrl: 1s)
+  - `↑ ↓`: Extend/shorten end time
+  - `Alt + ← →`: Adjust start time only
+  - `Esc`: Deselect song
+- **Undo/Redo System**: 50-action history with Ctrl+Z/Ctrl+Y shortcuts
+- **Inline Song Actions**: Edit/delete buttons directly in song list
+- **Current Time Integration**: "Current Time" buttons in edit modal to set boundaries from playback position
 
 **Critical Timeline Patterns:**
 - Child elements use `pointer-events-none` to avoid intercepting parent clicks
 - Resize handles positioned absolutely with `cursor-ew-resize`
-- Double-click opens edit modal, single-click triggers drag in edit mode
+- Double-click opens edit modal, single-click selects in edit mode
 - Time values rounded to 0.1 second precision for smooth editing
+- Snap toggle button allows disabling auto-snap when needed
 
 #### Component Integration Pattern
 - Platform-specific player components (`NicoPlayer`, `YouTubePlayer`) handle iframe embedding
@@ -197,6 +212,16 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
   - Timeline click-to-seek (anywhere on timeline bar)
   - Platform-specific behavior differences visible in console
 
+**Annotation Editing Testing:**
+- **Edit Mode Features**: Click "編集モード" button to activate advanced editing
+- **Snap Functionality**: Toggle "スナップ: ON/OFF" button to test auto-snap behavior
+- **Song Selection**: Click songs in timeline to see blue ring selection indicator
+- **Keyboard Shortcuts**: Select song then use arrow keys (with Shift/Ctrl modifiers)
+- **Undo/Redo**: Use Ctrl+Z/Ctrl+Y or click ↶/↷ buttons after making changes
+- **Inline Actions**: Edit/delete buttons appear in song list during edit mode
+- **Current Time Integration**: Edit modal shows "現在時刻" buttons for time setting
+- **History Management**: Make multiple edits to test 50-action history limit
+
 ### Common Issues and Solutions
 **Player Integration:**
 - **Seek operations fail or reset to beginning**: Ensure time values are converted to milliseconds (`* 1000`)
@@ -209,6 +234,14 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 - **Database connection fails**: Check Supabase environment variables, app falls back to static data automatically
 - **Edit mode not saving**: Verify `useMedleyEdit` hook is properly connected to save handler
 - **Search results empty**: Ensure search mode matches expected data (medley vs song search)
+
+**Annotation Editing Issues:**
+- **Undo/Redo not working**: Check keyboard event listeners are properly attached in edit mode
+- **Song selection not visible**: Ensure `ring-2 ring-blue-500` classes are applied to selected songs
+- **Snap not working**: Verify `isSnapEnabled` state and snap threshold (1.0 seconds)
+- **Keyboard shortcuts not responding**: Check edit mode is active and song is selected
+- **Current time button not updating**: Ensure `currentTime` prop is passed to SongEditModal
+- **Timeline selection not updating header**: Check selectedSong state is properly displayed in timeline header
 
 **Multi-Platform Issues:**
 - **Wrong player component loading**: Check platform prop is correctly passed from route to MedleyPageClient to MedleyPlayer
@@ -255,6 +288,14 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 - Optimistic UI updates with eventual database consistency
 - Add/update/delete operations with immediate visual feedback
 - Reset functionality to discard unsaved changes
+
+**Advanced Editing Features (Phase 8):**
+- **History Management**: `useMedleyEdit` maintains 50-action undo/redo history
+- **Atomic Operations**: All edits (add/update/delete/reorder) automatically add to history
+- **Keyboard Integration**: Global shortcuts for undo (Ctrl+Z) and redo (Ctrl+Y/Shift+Ctrl+Z)
+- **Song Selection State**: Timeline tracks selected song for keyboard editing
+- **Snap System**: Configurable snap-to-boundary with 1-second threshold
+- **Real-time Feedback**: Visual indicators for selected songs and editing modes
 
 ### Component Architecture Patterns
 **Feature-Based Organization:**

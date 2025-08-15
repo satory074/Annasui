@@ -42,11 +42,15 @@ export default function MedleyPlayer({
         editingSongs,
         hasChanges,
         isSaving,
+        canUndo,
+        canRedo,
         updateSong,
         addSong,
         deleteSong,
         saveMedley,
-        resetChanges
+        resetChanges,
+        undo,
+        redo
     } = useMedleyEdit(medleySongs);
     
     // ニコニコプレイヤーの統合
@@ -102,6 +106,26 @@ export default function MedleyPlayer({
         setVideoId(initialVideoId);
         setInputVideoId(initialVideoId);
     }, [initialVideoId]);
+
+    // Undo/Redoキーボードショートカット
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (isEditMode && (e.ctrlKey || e.metaKey)) {
+                if (e.key === 'z' && !e.shiftKey) {
+                    e.preventDefault();
+                    undo();
+                } else if ((e.key === 'y') || (e.key === 'z' && e.shiftKey)) {
+                    e.preventDefault();
+                    redo();
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [isEditMode, undo, redo]);
 
     // 現在のトラックの追跡（編集中か元のデータかを切り替え）
     const displaySongs = isEditMode ? editingSongs : medleySongs;
@@ -257,6 +281,24 @@ export default function MedleyPlayer({
                                         >
                                             楽曲追加
                                         </button>
+                                        <div className="flex items-center gap-1">
+                                            <button
+                                                onClick={undo}
+                                                disabled={!canUndo}
+                                                className="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                title="元に戻す (Ctrl+Z)"
+                                            >
+                                                ↶
+                                            </button>
+                                            <button
+                                                onClick={redo}
+                                                disabled={!canRedo}
+                                                className="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                title="やり直し (Ctrl+Y)"
+                                            >
+                                                ↷
+                                            </button>
+                                        </div>
                                         {hasChanges && (
                                             <span className="text-sm text-orange-600 dark:text-orange-400">
                                                 未保存の変更があります
@@ -352,6 +394,7 @@ export default function MedleyPlayer({
                 onDelete={deleteSong}
                 isNew={isNewSong}
                 maxDuration={duration}
+                currentTime={currentTime}
             />
         </div>
     );

@@ -11,6 +11,7 @@ interface SongEditModalProps {
   onDelete?: (songId: number) => void;
   isNew?: boolean;
   maxDuration?: number;
+  currentTime?: number;
 }
 
 export default function SongEditModal({
@@ -20,7 +21,8 @@ export default function SongEditModal({
   onSave,
   onDelete,
   isNew = false,
-  maxDuration = 0
+  maxDuration = 0,
+  currentTime = 0
 }: SongEditModalProps) {
   const [formData, setFormData] = useState<SongSection>({
     id: 0,
@@ -167,15 +169,25 @@ export default function SongEditModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               開始時間 <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={formatTime(formData.startTime)}
-              onChange={(e) => setFormData({ ...formData, startTime: parseTimeInput(e.target.value) })}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
-                errors.startTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
-              placeholder="mm:ss または秒数"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formatTime(formData.startTime)}
+                onChange={(e) => setFormData({ ...formData, startTime: parseTimeInput(e.target.value) })}
+                className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                  errors.startTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder="mm:ss または秒数"
+              />
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, startTime: Math.floor(currentTime) })}
+                className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
+                title="現在の再生位置を設定"
+              >
+                現在時刻
+              </button>
+            </div>
             {errors.startTime && (
               <p className="text-red-500 text-sm mt-1">{errors.startTime}</p>
             )}
@@ -186,15 +198,25 @@ export default function SongEditModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               終了時間 <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              value={formatTime(formData.endTime)}
-              onChange={(e) => setFormData({ ...formData, endTime: parseTimeInput(e.target.value) })}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
-                errors.endTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
-              placeholder="mm:ss または秒数"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formatTime(formData.endTime)}
+                onChange={(e) => setFormData({ ...formData, endTime: parseTimeInput(e.target.value) })}
+                className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                  errors.endTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                }`}
+                placeholder="mm:ss または秒数"
+              />
+              <button
+                type="button"
+                onClick={() => setFormData({ ...formData, endTime: Math.floor(currentTime) })}
+                className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
+                title="現在の再生位置を設定"
+              >
+                現在時刻
+              </button>
+            </div>
             {errors.endTime && (
               <p className="text-red-500 text-sm mt-1">{errors.endTime}</p>
             )}

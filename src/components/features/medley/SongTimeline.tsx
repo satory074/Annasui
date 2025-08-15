@@ -26,6 +26,9 @@ export default function SongTimeline({
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
   const [dragMode, setDragMode] = useState<'move' | 'resize-start' | 'resize-end' | null>(null);
   const [dragStart, setDragStart] = useState<{ x: number; originalStartTime: number; originalEndTime: number }>({ x: 0, originalStartTime: 0, originalEndTime: 0 });
+  const [isSnapEnabled, setIsSnapEnabled] = useState<boolean>(true);
+  const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
+  const SNAP_THRESHOLD = 1.0; // スナップする閾値（秒）
 
   // 現在の再生時間に基づいてタイムラインを更新
   useEffect(() => {
@@ -61,6 +64,29 @@ export default function SongTimeline({
 
   // 現在の曲
   const currentSong = getCurrentSong();
+
+  // スナップ機能のヘルパー関数
+  const getSnapPoints = (excludeSongId: number): number[] => {
+    const snapPoints: number[] = [0, duration]; // 開始と終了
+    songs.forEach(song => {
+      if (song.id !== excludeSongId) {
+        snapPoints.push(song.startTime, song.endTime);
+      }
+    });
+    return snapPoints.sort((a, b) => a - b);
+  };
+
+  const snapToNearestPoint = (time: number, snapPoints: number[]): number => {
+    if (!isSnapEnabled) return time;
+    
+    const nearestPoint = snapPoints.reduce((nearest, point) => {
+      const currentDistance = Math.abs(time - point);
+      const nearestDistance = Math.abs(time - nearest);
+      return currentDistance < nearestDistance ? point : nearest;
+    });
+    
+    return Math.abs(time - nearestPoint) <= SNAP_THRESHOLD ? nearestPoint : time;
+  };
 
   // ドラッグ&ドロップ関連の関数
   const handleMouseDown = (e: React.MouseEvent, song: SongSection) => {
@@ -101,26 +127,38 @@ export default function SongTimeline({
     
     const deltaX = e.clientX - dragStart.x;
     const deltaTime = (deltaX / rect.width) * duration;
+    const snapPoints = getSnapPoints(draggingSong.id);
     
     let newStartTime = dragStart.originalStartTime;
     let newEndTime = dragStart.originalEndTime;
     
     if (dragMode === 'move') {
-      newStartTime = Math.max(0, dragStart.originalStartTime + deltaTime);
-      newEndTime = Math.min(duration, dragStart.originalEndTime + deltaTime);
+      const rawStartTime = Math.max(0, dragStart.originalStartTime + deltaTime);
       
       // 移動時は楽曲の長さを保持
       const songDuration = dragStart.originalEndTime - dragStart.originalStartTime;
-      if (newStartTime + songDuration > duration) {
-        newStartTime = duration - songDuration;
+      
+      // スナップポイントに合わせて調整
+      newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
+      newEndTime = newStartTime + songDuration;
+      
+      // 境界チェック
+      if (newEndTime > duration) {
         newEndTime = duration;
-      } else {
-        newEndTime = newStartTime + songDuration;
+        newStartTime = duration - songDuration;
+      }
+      if (newStartTime < 0) {
+        newStartTime = 0;
+        newEndTime = songDuration;
       }
     } else if (dragMode === 'resize-start') {
-      newStartTime = Math.max(0, Math.min(dragStart.originalEndTime - 1, dragStart.originalStartTime + deltaTime));
+      const rawStartTime = Math.max(0, Math.min(dragStart.originalEndTime - 1, dragStart.originalStartTime + deltaTime));
+      newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
+      newStartTime = Math.max(0, Math.min(dragStart.originalEndTime - 1, newStartTime));
     } else if (dragMode === 'resize-end') {
-      newEndTime = Math.min(duration, Math.max(dragStart.originalStartTime + 1, dragStart.originalEndTime + deltaTime));
+      const rawEndTime = Math.min(duration, Math.max(dragStart.originalStartTime + 1, dragStart.originalEndTime + deltaTime));
+      newEndTime = snapToNearestPoint(rawEndTime, snapPoints);
+      newEndTime = Math.min(duration, Math.max(dragStart.originalStartTime + 1, newEndTime));
     }
     
     // 更新されたsongを作成
@@ -153,6 +191,17 @@ export default function SongTimeline({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [draggingSong, dragMode, dragStart, duration]);
 
+  // キーボードイベントの登録/削除
+  useEffect(() => {
+    if (isEditMode) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditMode, selectedSong, duration]);
+
   // 楽曲セクションのダブルクリック処理
   const handleSongDoubleClick = (e: React.MouseEvent, song: SongSection) => {
     if (isEditMode && onEditSong) {
@@ -162,13 +211,107 @@ export default function SongTimeline({
     }
   };
 
+  // 楽曲セクションのクリック処理（選択状態の管理）
+  const handleSongClick = (e: React.MouseEvent, song: SongSection) => {
+    if (isEditMode) {
+      e.stopPropagation();
+      setSelectedSong(selectedSong?.id === song.id ? null : song);
+    } else {
+      e.stopPropagation();
+      console.log(`曲をクリック「${song.title}」: ${song.startTime}秒へシーク`);
+      onSeek(Number(song.startTime));
+    }
+  };
+
+  // キーボードショートカット処理
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!isEditMode || !selectedSong || !onUpdateSong) return;
+
+    const step = e.shiftKey ? 0.1 : e.ctrlKey || e.metaKey ? 1.0 : 0.5; // Shift: 0.1秒, Ctrl/Cmd: 1秒, デフォルト: 0.5秒
+
+    let newStartTime = selectedSong.startTime;
+    let newEndTime = selectedSong.endTime;
+
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault();
+        if (e.altKey) {
+          // Alt+矢印: 開始時間のみ調整
+          newStartTime = Math.max(0, selectedSong.startTime - step);
+        } else {
+          // 楽曲全体を左に移動
+          const songDuration = selectedSong.endTime - selectedSong.startTime;
+          newStartTime = Math.max(0, selectedSong.startTime - step);
+          newEndTime = newStartTime + songDuration;
+        }
+        break;
+      case 'ArrowRight':
+        e.preventDefault();
+        if (e.altKey) {
+          // Alt+矢印: 開始時間のみ調整
+          newStartTime = Math.min(selectedSong.endTime - 0.1, selectedSong.startTime + step);
+        } else {
+          // 楽曲全体を右に移動
+          const songDuration = selectedSong.endTime - selectedSong.startTime;
+          newEndTime = Math.min(duration, selectedSong.endTime + step);
+          newStartTime = newEndTime - songDuration;
+        }
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        // 終了時間を延長
+        newEndTime = Math.min(duration, selectedSong.endTime + step);
+        break;
+      case 'ArrowDown':
+        e.preventDefault();
+        // 終了時間を短縮
+        newEndTime = Math.max(selectedSong.startTime + 0.1, selectedSong.endTime - step);
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setSelectedSong(null);
+        return;
+      default:
+        return;
+    }
+
+    const updatedSong: SongSection = {
+      ...selectedSong,
+      startTime: Math.round(newStartTime * 10) / 10,
+      endTime: Math.round(newEndTime * 10) / 10
+    };
+
+    onUpdateSong(updatedSong);
+    setSelectedSong(updatedSong);
+  };
+
   return (
     <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
       <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-          楽曲タイムライン - 現在: {formatTime(currentTime)}
-          {isEditMode && <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">(編集モード: ドラッグで移動・リサイズ、ダブルクリックで編集)</span>}
-        </h3>
+        <div className="flex items-center gap-4">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            楽曲タイムライン - 現在: {formatTime(currentTime)}
+            {isEditMode && (
+              <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">
+                (編集モード: クリックで選択, ドラッグで移動, 矢印キーで微調整)
+                {selectedSong && <span className="ml-1 text-green-600 dark:text-green-400">「{selectedSong.title}」選択中</span>}
+              </span>
+            )}
+          </h3>
+          {isEditMode && (
+            <button
+              onClick={() => setIsSnapEnabled(!isSnapEnabled)}
+              className={`px-2 py-1 text-xs rounded transition-colors ${
+                isSnapEnabled 
+                  ? 'bg-green-500 text-white hover:bg-green-600' 
+                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+              }`}
+              title="隣接する楽曲の境界にスナップ"
+            >
+              スナップ: {isSnapEnabled ? 'ON' : 'OFF'}
+            </button>
+          )}
+        </div>
         {currentSong && (
           <div className="text-sm bg-gray-200 dark:bg-gray-700 px-2 py-1 rounded">
             <span className="font-medium">{currentSong.title}</span>
@@ -200,6 +343,7 @@ export default function SongTimeline({
               key={song.id}
               className={`absolute h-full ${song.color} flex items-center justify-center
               ${currentSong?.id === song.id ? "border-2 border-white" : ""}
+              ${selectedSong?.id === song.id ? "ring-2 ring-blue-500 ring-offset-1" : ""}
               ${isEditMode ? "cursor-move hover:opacity-80" : "cursor-pointer"}
               ${isDragging ? "opacity-70 z-30" : ""}
               select-none`}
@@ -207,16 +351,10 @@ export default function SongTimeline({
                 left: `${songLeft}%`,
                 width: `${songWidth}%`,
               }}
-              title={`${song.title} - ${song.artist} (${formatTime(song.startTime)} - ${formatTime(song.endTime)})${isEditMode ? " | ドラッグして移動・リサイズ" : ""}`}
+              title={`${song.title} - ${song.artist} (${formatTime(song.startTime)} - ${formatTime(song.endTime)})${isEditMode ? " | ドラッグ移動, 矢印キーで微調整" : ""}`}
               onMouseDown={(e) => isEditMode ? handleMouseDown(e, song) : undefined}
               onDoubleClick={(e) => handleSongDoubleClick(e, song)}
-              onClick={(e) => {
-                if (!isEditMode) {
-                  e.stopPropagation();
-                  console.log(`曲をクリック「${song.title}」: ${song.startTime}秒へシーク`);
-                  onSeek(Number(song.startTime));
-                }
-              }}
+              onClick={(e) => handleSongClick(e, song)}
             >
               <span className="text-xs text-gray-900 dark:text-white font-bold truncate px-1 pointer-events-none">
                 {song.title}

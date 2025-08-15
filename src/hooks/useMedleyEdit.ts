@@ -7,18 +7,27 @@ interface UseMedleyEditReturn {
   editingSongs: SongSection[];
   hasChanges: boolean;
   isSaving: boolean;
+  canUndo: boolean;
+  canRedo: boolean;
   updateSong: (updatedSong: SongSection) => void;
   addSong: (newSong: Omit<SongSection, 'id'>) => void;
   deleteSong: (songId: number) => void;
   saveMedley: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number) => Promise<boolean>;
   resetChanges: (originalSongs: SongSection[]) => void;
   reorderSongs: (fromIndex: number, toIndex: number) => void;
+  undo: () => void;
+  redo: () => void;
 }
 
 export function useMedleyEdit(originalSongs: SongSection[]): UseMedleyEditReturn {
   const [editingSongs, setEditingSongs] = useState<SongSection[]>(originalSongs);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  
+  // Undo/Redo履歴管理
+  const [history, setHistory] = useState<SongSection[][]>([originalSongs]);
+  const [historyIndex, setHistoryIndex] = useState(0);
+  const MAX_HISTORY = 50; // 最大履歴数
 
   // 変更を検知するためのヘルパー関数
   const detectChanges = useCallback((newSongs: SongSection[]) => {
@@ -26,16 +35,42 @@ export function useMedleyEdit(originalSongs: SongSection[]): UseMedleyEditReturn
     setHasChanges(changed);
   }, [originalSongs]);
 
+  // 履歴に新しい状態を追加
+  const addToHistory = useCallback((newSongs: SongSection[]) => {
+    setHistory(prevHistory => {
+      // 現在の位置より後の履歴を削除（分岐した履歴を削除）
+      const newHistory = prevHistory.slice(0, historyIndex + 1);
+      
+      // 新しい状態を追加
+      newHistory.push([...newSongs]);
+      
+      // 最大履歴数を超えたら古いものを削除
+      if (newHistory.length > MAX_HISTORY) {
+        newHistory.shift();
+        setHistoryIndex(Math.max(0, historyIndex));
+      } else {
+        setHistoryIndex(newHistory.length - 1);
+      }
+      
+      return newHistory;
+    });
+  }, [historyIndex, MAX_HISTORY]);
+
+  // Undo/Redoの可能状態
+  const canUndo = historyIndex > 0;
+  const canRedo = historyIndex < history.length - 1;
+
   // 楽曲を更新
   const updateSong = useCallback((updatedSong: SongSection) => {
     setEditingSongs(prev => {
       const newSongs = prev.map(song =>
         song.id === updatedSong.id ? updatedSong : song
       );
+      addToHistory(newSongs);
       detectChanges(newSongs);
       return newSongs;
     });
-  }, [detectChanges]);
+  }, [detectChanges, addToHistory]);
 
   // 楽曲を追加
   const addSong = useCallback((newSong: Omit<SongSection, 'id'>) => {
@@ -46,19 +81,21 @@ export function useMedleyEdit(originalSongs: SongSection[]): UseMedleyEditReturn
     
     setEditingSongs(prev => {
       const newSongs = [...prev, songWithId].sort((a, b) => a.startTime - b.startTime);
+      addToHistory(newSongs);
       detectChanges(newSongs);
       return newSongs;
     });
-  }, [editingSongs, detectChanges]);
+  }, [editingSongs, detectChanges, addToHistory]);
 
   // 楽曲を削除
   const deleteSong = useCallback((songId: number) => {
     setEditingSongs(prev => {
       const newSongs = prev.filter(song => song.id !== songId);
+      addToHistory(newSongs);
       detectChanges(newSongs);
       return newSongs;
     });
-  }, [detectChanges]);
+  }, [detectChanges, addToHistory]);
 
   // 楽曲の順序を変更
   const reorderSongs = useCallback((fromIndex: number, toIndex: number) => {
@@ -66,10 +103,11 @@ export function useMedleyEdit(originalSongs: SongSection[]): UseMedleyEditReturn
       const newSongs = [...prev];
       const [movedSong] = newSongs.splice(fromIndex, 1);
       newSongs.splice(toIndex, 0, movedSong);
+      addToHistory(newSongs);
       detectChanges(newSongs);
       return newSongs;
     });
-  }, [detectChanges]);
+  }, [detectChanges, addToHistory]);
 
   // メドレーを保存
   const saveMedley = useCallback(async (
@@ -152,7 +190,31 @@ export function useMedleyEdit(originalSongs: SongSection[]): UseMedleyEditReturn
   const resetChanges = useCallback((originalSongs: SongSection[]) => {
     setEditingSongs(originalSongs);
     setHasChanges(false);
+    setHistory([originalSongs]);
+    setHistoryIndex(0);
   }, []);
+
+  // Undo機能
+  const undo = useCallback(() => {
+    if (canUndo) {
+      const newIndex = historyIndex - 1;
+      const previousState = history[newIndex];
+      setEditingSongs([...previousState]);
+      setHistoryIndex(newIndex);
+      detectChanges(previousState);
+    }
+  }, [canUndo, historyIndex, history, detectChanges]);
+
+  // Redo機能
+  const redo = useCallback(() => {
+    if (canRedo) {
+      const newIndex = historyIndex + 1;
+      const nextState = history[newIndex];
+      setEditingSongs([...nextState]);
+      setHistoryIndex(newIndex);
+      detectChanges(nextState);
+    }
+  }, [canRedo, historyIndex, history, detectChanges]);
 
   // 元のsongs配列が変更された時に編集中の配列も更新
   useEffect(() => {
@@ -165,11 +227,15 @@ export function useMedleyEdit(originalSongs: SongSection[]): UseMedleyEditReturn
     editingSongs,
     hasChanges,
     isSaving,
+    canUndo,
+    canRedo,
     updateSong,
     addSong,
     deleteSong,
     saveMedley,
     resetChanges,
-    reorderSongs
+    reorderSongs,
+    undo,
+    redo
   };
 }

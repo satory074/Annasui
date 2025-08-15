@@ -365,7 +365,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                     playerId: PLAYER_CONFIG.PLAYER_ID,
                     eventName: "seek",
                     data: {
-                        time: numericSeekTime,
+                        time: numericSeekTime * 1000, // 秒をミリ秒に変換
                         _frontendId: PLAYER_CONFIG.FRONTEND_ID,
                         _frontendVersion: PLAYER_CONFIG.FRONTEND_VERSION
                     }
@@ -383,23 +383,30 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                 }, 200);
             }, 100);
         } else {
-            // 停止中の場合は通常のシーク
-            console.log(`停止中のシーク: ${numericSeekTime}秒へ`);
+            // 停止中の場合は seek → play のシーケンスを実行
+            console.log(`停止中のシーク: ${numericSeekTime}秒へ (seek→play シーケンス)`);
             
             sendMessageToPlayer({
                 sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
                 playerId: PLAYER_CONFIG.PLAYER_ID,
                 eventName: "seek",
                 data: {
-                    time: numericSeekTime,
+                    time: numericSeekTime * 1000, // 秒をミリ秒に変換
                     _frontendId: PLAYER_CONFIG.FRONTEND_ID,
                     _frontendVersion: PLAYER_CONFIG.FRONTEND_VERSION
                 }
             });
             
+            // シーク後に自動的に再生を開始
             setTimeout(() => {
+                sendMessageToPlayer({
+                    sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
+                    playerId: PLAYER_CONFIG.PLAYER_ID,
+                    eventName: "play"
+                });
+                
                 setCommandInProgress(false);
-            }, PLAYER_CONFIG.SEEK_DEBOUNCE_MS);
+            }, 200);
         }
     }, [commandInProgress, sendMessageToPlayer, isPlaying, duration]);
 

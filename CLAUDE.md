@@ -117,3 +117,33 @@ The application's core functionality relies on postMessage communication with Ni
 - **Child elements intercepting clicks**: Use `pointer-events-none` on child elements
 - **Player not responding**: Check iframe load and postMessage origin verification
 - **Build deployment failing**: Ensure `public/favicon.ico` exists for Next.js build
+
+## Data Management Architecture
+
+### Medley Data Structure
+- Static medley definitions stored in `src/data/medleys.ts`
+- Each medley contains songs array with timing, colors, and metadata
+- Chord progression data with time-synced annotations
+- Video ID mapping system for dynamic data lookup
+
+### Key Data Flow Hooks
+- `useMedleyData(videoId)`: Retrieves medley configuration by video ID
+- `useCurrentTrack(currentTime, songs, chords)`: Derives active song/chord from playback position
+- `useNicoPlayer({videoId, callbacks})`: Manages all player state and communication
+
+### Component Architecture Patterns
+- Feature-based component organization under `src/components/features/`
+- Shared UI components in `src/components/ui/`
+- Player components handle iframe integration and controls
+- Medley components manage timeline visualization and interaction
+
+### Type System
+- Central type definitions for medley data structures
+- Strict typing for player communication interfaces
+- Time-based data validation utilities in `src/lib/utils/`
+
+### Important File Locations
+- Player constants: `src/lib/constants/player.ts`
+- Time utilities: `src/lib/utils/time.ts`
+- Video validation: `src/lib/utils/videoValidation.ts`
+- Main layout: `src/app/page.tsx`

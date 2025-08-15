@@ -50,6 +50,11 @@ The application's core functionality relies on postMessage communication with Ni
 }
 ```
 
+**CRITICAL: Time Unit Conversion**
+- Niconico player API expects time values in **milliseconds**, not seconds
+- All seek operations must multiply time by 1000: `time: seekTimeInSeconds * 1000`
+- This was a major bug that caused seek operations to fail - always convert seconds to milliseconds
+
 **State Synchronization:**
 - `commandInProgress` flag prevents command overlap and race conditions
 - Automatic cleanup of intervals/timeouts on component unmount
@@ -90,6 +95,13 @@ The application's core functionality relies on postMessage communication with Ni
 - Seek operations automatically update current track detection
 - Timeline and chord progression bars support click-to-seek anywhere on the bar
 
+#### Seek Operation Implementation
+**Critical Sequence for Stopped Player:**
+1. Send seek command with time in milliseconds
+2. Wait 200ms for seek to complete
+3. Send play command to start playback automatically
+4. This ensures seamless "click song → play from position" experience
+
 ### Production Deployment Configuration
 - Next.js configured for static export (`output: 'export'`)
 - Static files generated to `.next/` directory
@@ -113,9 +125,11 @@ The application's core functionality relies on postMessage communication with Ni
   - Chord progression click-to-seek (anywhere on chord bar)
 
 ### Common Issues and Solutions
+- **Seek operations fail or reset to beginning**: Ensure time values are converted to milliseconds (`* 1000`)
 - **Timeline clicks returning 0 seconds**: Video duration not loaded yet, check duration > 0
 - **Child elements intercepting clicks**: Use `pointer-events-none` on child elements
 - **Player not responding**: Check iframe load and postMessage origin verification
+- **Seek without automatic playback**: Add play command after seek when player is stopped
 - **Build deployment failing**: Ensure `public/favicon.ico` exists for Next.js build
 
 ## Data Management Architecture

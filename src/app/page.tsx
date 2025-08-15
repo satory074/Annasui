@@ -9,14 +9,10 @@ import { useNicoPlayer } from "@/hooks/useNicoPlayer";
 import SongTimeline from "@/components/features/medley/SongTimeline";
 import ChordBar from "@/components/features/medley/ChordBar";
 import SongList from "@/components/features/medley/SongList";
-import { VideoInfo as VideoInfoType } from "@/lib/utils/videoInfo";
-import ModeToggle from "@/components/ui/ModeToggle";
 
 export default function Home() {
     const [videoId, setVideoId] = useState<string>("sm500873");
     const [inputVideoId, setInputVideoId] = useState<string>("sm500873");
-    const [isAnnotationMode, setIsAnnotationMode] = useState<boolean>(true);
-    const [videoInfo, setVideoInfo] = useState<VideoInfoType | null>(null);
 
     // メドレーデータの取得
     const { medleySongs, medleyChords, medleyTitle, medleyCreator } = useMedleyData(videoId);
@@ -28,7 +24,6 @@ export default function Home() {
         currentTime,
         duration,
         playerError,
-        videoInfo: nicoVideoInfo,
         togglePlayPause,
         seek: nicoSeek,
         getEmbedUrl,
@@ -60,9 +55,7 @@ export default function Home() {
         e.preventDefault();
         console.info("Loading video:", inputVideoId);
         setVideoId(inputVideoId);
-        // ニコニコプレイヤーが状態をリセットするため、
-        // videoInfoのみローカル状態をリセット
-        setVideoInfo(null);
+        // ニコニコプレイヤーが状態をリセット
     };
 
     // 曲の開始時間へジャンプボタンの処理
@@ -82,23 +75,11 @@ export default function Home() {
                     inputVideoId={inputVideoId}
                     onInputVideoIdChange={setInputVideoId}
                     onVideoIdSubmit={handleVideoIdSubmit}
-                    medleyTitle={isAnnotationMode ? medleyTitle : ""}
-                    medleyCreator={isAnnotationMode ? medleyCreator : ""}
+                    medleyTitle={medleyTitle}
+                    medleyCreator={medleyCreator}
                 />
 
-                {/* モード切り替え */}
-                <ModeToggle
-                    isAnnotationMode={isAnnotationMode}
-                    onToggle={setIsAnnotationMode}
-                />
 
-                {/* 動画情報表示（通常モードのみ） */}
-                {!isAnnotationMode && (nicoVideoInfo || videoInfo) && (
-                    <div className="p-4 bg-gray-50 dark:bg-gray-700">
-                        <h2 className="text-lg font-bold">{(nicoVideoInfo || videoInfo)?.title}</h2>
-                        <p className="text-sm text-gray-600">{(nicoVideoInfo || videoInfo)?.videoId}</p>
-                    </div>
-                )}
 
                 {/* プレイヤーコンテナ */}
                 <div className="relative">
@@ -115,39 +96,34 @@ export default function Home() {
                     />
                 </div>
 
-                {/* アノテーション表示（アノテーションモードのみ） */}
-                {isAnnotationMode && (
-                    <>
-                        {/* 楽曲アノテーションタイムライン */}
-                        {medleySongs.length > 0 && (
-                            <SongTimeline
-                                songs={medleySongs}
-                                currentTime={currentTime}
-                                duration={duration}
-                                onSeek={seek}
-                            />
-                        )}
+                {/* 楽曲アノテーションタイムライン */}
+                {medleySongs.length > 0 && (
+                    <SongTimeline
+                        songs={medleySongs}
+                        currentTime={currentTime}
+                        duration={duration}
+                        onSeek={seek}
+                    />
+                )}
 
-                        {/* コード進行バー */}
-                        {medleyChords.length > 0 && (
-                            <ChordBar
-                                chords={medleyChords}
-                                currentTime={currentTime}
-                                duration={duration}
-                                currentChord={currentChord}
-                                onSeek={seek}
-                            />
-                        )}
+                {/* コード進行バー */}
+                {medleyChords.length > 0 && (
+                    <ChordBar
+                        chords={medleyChords}
+                        currentTime={currentTime}
+                        duration={duration}
+                        currentChord={currentChord}
+                        onSeek={seek}
+                    />
+                )}
 
-                        {/* 楽曲リスト */}
-                        {medleySongs.length > 0 && (
-                            <SongList
-                                songs={medleySongs}
-                                currentTime={currentTime}
-                                onSeek={seek}
-                            />
-                        )}
-                    </>
+                {/* 楽曲リスト */}
+                {medleySongs.length > 0 && (
+                    <SongList
+                        songs={medleySongs}
+                        currentTime={currentTime}
+                        onSeek={seek}
+                    />
                 )}
 
                 {/* フッター */}

@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Anasui is a Next.js application for playing and navigating Niconico video medleys with interactive song timelines and chord progressions. It provides a Songle-style annotation interface for Niconico videos through postMessage API integration.
+Anasui is a dedicated Niconico medley annotation player built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines and chord progressions, similar to Songle's annotation style. The application integrates with Niconico's embedded player through postMessage API communication.
 
 ## Core Architecture
 
@@ -62,10 +62,12 @@ The application's core functionality relies on postMessage communication with Ni
 - Time sync starts/stops based on playing state to optimize performance
 
 #### Data Flow Architecture
-- `page.tsx` coordinates video ID state and integrates NicoPlayer with UI components
-- `useCurrentTrack` derives current song/chord from playback time and medley data
+- `page.tsx` is the main application entry point, coordinating video ID state and integrating all components
+- The app operates in **medley annotation mode only** - no mode switching functionality
+- `useCurrentTrack` derives currently playing song/chord from playback time and medley data
 - `useMedleyData` loads static configuration for video annotations
 - Static medley data in `src/data/medleys.ts` defines song segments and chord progressions
+- All UI components (timeline, chord bar, song list) are always visible and functional
 
 #### Interactive Timeline Architecture
 **Critical Implementation Pattern for Timeline/Chord Clicking:**
@@ -147,9 +149,10 @@ The application's core functionality relies on postMessage communication with Ni
 
 ### Component Architecture Patterns
 - Feature-based component organization under `src/components/features/`
-- Shared UI components in `src/components/ui/`
-- Player components handle iframe integration and controls
-- Medley components manage timeline visualization and interaction
+- Layout components in `src/components/layout/` (Header)
+- Player components handle iframe integration and controls (`NicoPlayer`)
+- Medley components manage timeline visualization and interaction (`SongTimeline`, `ChordBar`, `SongList`)
+- **Note**: No mode toggle component exists - app is medley annotation only
 
 ### Type System
 - Central type definitions for medley data structures
@@ -157,7 +160,10 @@ The application's core functionality relies on postMessage communication with Ni
 - Time-based data validation utilities in `src/lib/utils/`
 
 ### Important File Locations
+- Main application: `src/app/page.tsx` 
+- Core player hook: `src/hooks/useNicoPlayer.ts`
+- Medley data management: `src/hooks/useMedleyData.ts`, `src/hooks/useCurrentTrack.ts`
+- Static medley definitions: `src/data/medleys.ts`
 - Player constants: `src/lib/constants/player.ts`
 - Time utilities: `src/lib/utils/time.ts`
 - Video validation: `src/lib/utils/videoValidation.ts`
-- Main layout: `src/app/page.tsx`

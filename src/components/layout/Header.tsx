@@ -19,7 +19,7 @@ export default function Header({
     <div className="bg-pink-600 text-white p-4">
       <div className="flex justify-between items-center">
         <h1 className="text-xl font-bold">
-          {medleyTitle ? "ニコニコ楽曲アノテーションプレイヤー" : "ニコニコ動画プレイヤー"}
+          ニコニコ楽曲アノテーションプレイヤー
         </h1>
         <form onSubmit={onVideoIdSubmit} className="flex gap-2">
           <input

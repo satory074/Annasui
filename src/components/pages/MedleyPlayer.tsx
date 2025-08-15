@@ -8,7 +8,6 @@ import Header from "@/components/layout/Header";
 import NicoPlayer from "@/components/features/player/NicoPlayer";
 import YouTubePlayer from "@/components/features/player/YouTubePlayer";
 import { useNicoPlayer } from "@/hooks/useNicoPlayer";
-import SongTimeline from "@/components/features/medley/SongTimeline";
 import SongList from "@/components/features/medley/SongList";
 import SongEditModal from "@/components/features/medley/SongEditModal";
 import ShareButtons from "@/components/features/share/ShareButtons";
@@ -330,19 +329,6 @@ export default function MedleyPlayer({
                     </div>
                 )}
 
-                {/* 楽曲アノテーションタイムライン */}
-                {!loading && displaySongs.length > 0 && (
-                    <SongTimeline
-                        songs={displaySongs}
-                        currentTime={currentTime}
-                        duration={duration}
-                        onSeek={seek}
-                        isEditMode={isEditMode}
-                        onEditSong={handleEditSong}
-                        onUpdateSong={updateSong}
-                    />
-                )}
-
                 {/* 楽曲リスト */}
                 {!loading && displaySongs.length > 0 && (
                     <SongList
@@ -353,6 +339,7 @@ export default function MedleyPlayer({
                         isEditMode={isEditMode}
                         onEditSong={handleEditSong}
                         onDeleteSong={deleteSong}
+                        onUpdateSong={updateSong}
                     />
                 )}
 

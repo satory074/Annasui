@@ -34,7 +34,7 @@ This verification step is essential because the production environment uses stat
 Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
 
 ### Current Implementation Status
-**Phase 8 Complete**: Advanced Annotation Editing
+**Phase 8+ Complete**: Timeline Unification & Advanced Annotation Editing
 - ✅ Phase 1: Supabase database integration with fallback to static data
 - ✅ Phase 2: Drag-and-drop timeline editor with modal-based song editing  
 - ✅ Phase 3: Dynamic routing with individual medley pages and OGP metadata
@@ -43,6 +43,7 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ Phase 6: Modern UI/UX with responsive grid, enhanced cards, and unified search interface
 - ✅ Phase 7: Enhanced sorting system with metadata-based ordering (new content discovery)
 - ✅ Phase 8: Advanced annotation editing with snap functionality, keyboard shortcuts, and undo/redo
+- ✅ **Timeline Unification**: Integrated SongTimeline functionality into SongList component for streamlined UX
 - 🔄 Phase 9: User authentication and collaborative editing (planned)
 
 ## Core Architecture
@@ -136,16 +137,17 @@ The application's core functionality relies on postMessage communication with Ni
 - `MedleyPageClient` - Client-side wrapper handling search params for deep linking and platform props
 - `NicoPlayer` - Niconico-specific iframe player with postMessage integration
 - `YouTubePlayer` - YouTube-specific iframe player (basic embed functionality)
-- `SongTimeline` - Interactive timeline with drag-and-drop editing in edit mode
-- `SongList` - Enhanced tabular song display with inline Gantt chart timeline bars showing song overlaps and duration visualization
+- `SongList` - Unified tabular song display with integrated Gantt chart timeline bars, complete editing functionality including drag-and-drop, snap, selection, and keyboard shortcuts
 - `SongEditModal` - Modal for detailed song editing with time validation
 - `ShareButtons` - Social sharing with platform-aware URL generation and native share API
 - `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights across platforms
 
-#### Interactive Timeline Architecture
+#### Integrated Timeline Architecture (SongList Component)
+**IMPORTANT**: The timeline functionality has been unified into the SongList component, replacing the separate SongTimeline component.
+
 **Dual-Mode Timeline Behavior:**
-- **View Mode**: Click-to-seek anywhere on timeline, song segments trigger playback
-- **Edit Mode**: Drag-and-drop song segments for repositioning and resizing
+- **View Mode**: Click timeline bars in song list to seek to song start time
+- **Edit Mode**: Full drag-and-drop editing with inline Gantt chart timeline bars
 - Position calculation: `(e.clientX - rect.left) / rect.width * duration`
 - **Always validate duration > 0** before calculating seek time to prevent 0-second seeks
 
@@ -174,20 +176,21 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - **Inline Song Actions**: Edit/delete buttons directly in song list
 - **Current Time Integration**: "Current Time" buttons in edit modal to set boundaries from playback position
 
-**Critical Timeline Patterns:**
+**Critical Timeline Patterns (SongList Integration):**
 - Child elements use `pointer-events-none` to avoid intercepting parent clicks
-- Resize handles positioned absolutely with `cursor-ew-resize`
-- Double-click opens edit modal, single-click selects in edit mode
+- Resize handles positioned absolutely with `cursor-ew-resize` on timeline bars
+- Double-click timeline bars opens edit modal, single-click selects in edit mode
 - Time values rounded to 0.1 second precision for smooth editing
-- Snap toggle button allows disabling auto-snap when needed
+- Snap toggle button in song list header allows disabling auto-snap when needed
+- Timeline container uses `.timeline-container` class for drag operation targeting
 
 #### Component Integration Pattern
 - Platform-specific player components (`NicoPlayer`, `YouTubePlayer`) handle iframe embedding
 - `useNicoPlayer` hook manages Niconico player communication and state
 - `MedleyPlayer` component conditionally renders players based on platform prop
-- UI components (timeline, song list) trigger actions through platform-aware seek methods
+- SongList component triggers actions through platform-aware seek methods with integrated timeline functionality
 - Seek operations automatically update current track detection (Niconico only currently)
-- Timeline supports click-to-seek anywhere on the bar
+- Inline timeline bars in song list support click-to-seek to song start time
 
 #### Seek Operation Implementation
 **Niconico Player - Critical Sequence for Stopped Player:**
@@ -222,14 +225,14 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - UI debug indicators show player ready state and communication status
 - Platform detection and player switching testable via URL structure
 - Seek functionality testable through:
-  - Song list click-to-play buttons
-  - Timeline click-to-seek (anywhere on timeline bar)
+  - Song list click-to-play buttons (time column)
+  - Inline timeline bar click-to-seek (seeks to song start time)
   - Platform-specific behavior differences visible in console
 
 **Annotation Editing Testing:**
 - **Edit Mode Features**: Click "編集モード" button to activate advanced editing
 - **Snap Functionality**: Toggle "スナップ: ON/OFF" button to test auto-snap behavior
-- **Song Selection**: Click songs in timeline to see blue ring selection indicator
+- **Song Selection**: Click inline timeline bars in song list to see blue ring selection indicator
 - **Keyboard Shortcuts**: Select song then use arrow keys (with Shift/Ctrl modifiers)
 - **Undo/Redo**: Use Ctrl+Z/Ctrl+Y or click ↶/↷ buttons after making changes
 - **Inline Actions**: Edit/delete buttons appear in song list during edit mode
@@ -328,7 +331,7 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 
 ### Component Architecture Patterns
 **Feature-Based Organization:**
-- `src/components/features/medley/` - Timeline, song list, edit modal components
+- `src/components/features/medley/` - Unified song list (with integrated timeline), edit modal components
 - `src/components/features/player/` - Niconico iframe integration
 - `src/components/features/share/` - Social sharing and URL generation
 - `src/components/features/statistics/` - Analytics and data visualization

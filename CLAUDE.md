@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Anasui is a dedicated Niconico medley annotation player built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines and chord progressions, similar to Songle's annotation style. The application integrates with Niconico's embedded player through postMessage API communication.
+Anasui is a dedicated Niconico medley annotation player built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, similar to Songle's annotation style. The application integrates with Niconico's embedded player through postMessage API communication.
 
 ## Core Architecture
 
@@ -25,7 +25,7 @@ Anasui is a dedicated Niconico medley annotation player built with Next.js. It p
 - Next.js 15.2.1 with React 19.0.0 and TypeScript
 - TailwindCSS 4 for styling with Emotion for CSS-in-JS
 - Native iframe postMessage API for Niconico player integration
-- No external state management library (React hooks only)
+- No external state management library (React hooks only)  
 - Static export configured for Netlify deployment
 
 ### Critical Implementation Details
@@ -64,15 +64,15 @@ The application's core functionality relies on postMessage communication with Ni
 #### Data Flow Architecture
 - `page.tsx` is the main application entry point, coordinating video ID state and integrating all components
 - The app operates in **medley annotation mode only** - no mode switching functionality
-- `useCurrentTrack` derives currently playing song/chord from playback time and medley data
+- `useCurrentTrack` derives currently playing song from playback time and medley data
 - `useMedleyData` loads static configuration for video annotations
-- Static medley data in `src/data/medleys.ts` defines song segments and chord progressions
-- All UI components (timeline, chord bar, song list) are always visible and functional
+- Static medley data in `src/data/medleys.ts` defines song segments
+- All UI components (timeline, song list) are always visible and functional
 
 #### Interactive Timeline Architecture
-**Critical Implementation Pattern for Timeline/Chord Clicking:**
+**Critical Implementation Pattern for Timeline Clicking:**
 - Parent containers handle click events with `onClick` handlers that calculate position
-- Child elements (songs/chords) use `pointer-events-none` to avoid intercepting clicks
+- Child elements (songs) use `pointer-events-none` to avoid intercepting clicks
 - Position calculation: `(e.clientX - rect.left) / rect.width * duration`
 - **Always validate duration > 0** before calculating seek time to prevent 0-second seeks
 - Example pattern:
@@ -95,7 +95,7 @@ The application's core functionality relies on postMessage communication with Ni
 - `useNicoPlayer` hook manages all player communication and state
 - UI components (timeline, song list) trigger actions through hook methods
 - Seek operations automatically update current track detection
-- Timeline and chord progression bars support click-to-seek anywhere on the bar
+- Timeline supports click-to-seek anywhere on the bar
 
 #### Seek Operation Implementation
 **Critical Sequence for Stopped Player:**
@@ -124,7 +124,6 @@ The application's core functionality relies on postMessage communication with Ni
 - Seek functionality testable through:
   - Song list click-to-play buttons
   - Timeline click-to-seek (anywhere on timeline bar)
-  - Chord progression click-to-seek (anywhere on chord bar)
 
 ### Common Issues and Solutions
 - **Seek operations fail or reset to beginning**: Ensure time values are converted to milliseconds (`* 1000`)
@@ -139,19 +138,18 @@ The application's core functionality relies on postMessage communication with Ni
 ### Medley Data Structure
 - Static medley definitions stored in `src/data/medleys.ts`
 - Each medley contains songs array with timing, colors, and metadata
-- Chord progression data with time-synced annotations
 - Video ID mapping system for dynamic data lookup
 
 ### Key Data Flow Hooks
 - `useMedleyData(videoId)`: Retrieves medley configuration by video ID
-- `useCurrentTrack(currentTime, songs, chords)`: Derives active song/chord from playback position
+- `useCurrentTrack(currentTime, songs)`: Derives active song from playback position
 - `useNicoPlayer({videoId, callbacks})`: Manages all player state and communication
 
 ### Component Architecture Patterns
 - Feature-based component organization under `src/components/features/`
 - Layout components in `src/components/layout/` (Header)
 - Player components handle iframe integration and controls (`NicoPlayer`)
-- Medley components manage timeline visualization and interaction (`SongTimeline`, `ChordBar`, `SongList`)
+- Medley components manage timeline visualization and interaction (`SongTimeline`, `SongList`)
 - **Note**: No mode toggle component exists - app is medley annotation only
 
 ### Type System

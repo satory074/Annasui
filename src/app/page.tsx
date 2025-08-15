@@ -7,7 +7,6 @@ import Header from "@/components/layout/Header";
 import NicoPlayer from "@/components/features/player/NicoPlayer";
 import { useNicoPlayer } from "@/hooks/useNicoPlayer";
 import SongTimeline from "@/components/features/medley/SongTimeline";
-import ChordBar from "@/components/features/medley/ChordBar";
 import SongList from "@/components/features/medley/SongList";
 
 export default function Home() {
@@ -15,7 +14,7 @@ export default function Home() {
     const [inputVideoId, setInputVideoId] = useState<string>("sm500873");
 
     // メドレーデータの取得
-    const { medleySongs, medleyChords, medleyTitle, medleyCreator } = useMedleyData(videoId);
+    const { medleySongs, medleyTitle, medleyCreator } = useMedleyData(videoId);
     
     // ニコニコプレイヤーの統合
     const {
@@ -48,7 +47,7 @@ export default function Home() {
     };
 
     // 現在のトラックの追跡
-    const { currentSong, currentChord } = useCurrentTrack(currentTime, medleySongs, medleyChords);
+    const { currentSong } = useCurrentTrack(currentTime, medleySongs);
 
     // 動画IDが変更されたときの処理
     const handleVideoIdSubmit = (e: React.FormEvent) => {
@@ -106,16 +105,6 @@ export default function Home() {
                     />
                 )}
 
-                {/* コード進行バー */}
-                {medleyChords.length > 0 && (
-                    <ChordBar
-                        chords={medleyChords}
-                        currentTime={currentTime}
-                        duration={duration}
-                        currentChord={currentChord}
-                        onSeek={seek}
-                    />
-                )}
 
                 {/* 楽曲リスト */}
                 {medleySongs.length > 0 && (

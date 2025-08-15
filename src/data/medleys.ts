@@ -77,26 +77,6 @@ export const sampleMedley1: MedleyData = {
       genre: "ボカロ",
       originalLink: "https://www.nicovideo.jp/watch/sm13636066"
     }
-  ],
-  chords: [
-    { id: 1, chord: "Em", startTime: 0, endTime: 15, color: "bg-purple-300" },
-    { id: 2, chord: "C", startTime: 15, endTime: 30, color: "bg-purple-200" },
-    { id: 3, chord: "G", startTime: 30, endTime: 45, color: "bg-blue-200" },
-    { id: 4, chord: "D", startTime: 45, endTime: 60, color: "bg-pink-200" },
-    { id: 5, chord: "Am", startTime: 60, endTime: 75, color: "bg-yellow-200" },
-    { id: 6, chord: "Em", startTime: 75, endTime: 90, color: "bg-purple-300" },
-    { id: 7, chord: "F", startTime: 90, endTime: 105, color: "bg-purple-200" },
-    { id: 8, chord: "G", startTime: 105, endTime: 120, color: "bg-blue-200" },
-    { id: 9, chord: "Am", startTime: 120, endTime: 135, color: "bg-pink-300" },
-    { id: 10, chord: "F", startTime: 135, endTime: 150, color: "bg-pink-200" },
-    { id: 11, chord: "C", startTime: 150, endTime: 165, color: "bg-pink-300" },
-    { id: 12, chord: "G", startTime: 165, endTime: 180, color: "bg-purple-300" },
-    { id: 13, chord: "Am", startTime: 180, endTime: 195, color: "bg-purple-200" },
-    { id: 14, chord: "F", startTime: 195, endTime: 210, color: "bg-blue-200" },
-    { id: 15, chord: "C", startTime: 210, endTime: 225, color: "bg-pink-200" },
-    { id: 16, chord: "G", startTime: 225, endTime: 240, color: "bg-yellow-200" },
-    { id: 17, chord: "Am", startTime: 240, endTime: 255, color: "bg-purple-300" },
-    { id: 18, chord: "F", startTime: 255, endTime: 270, color: "bg-purple-200" },
   ]
 };
 
@@ -167,18 +147,6 @@ export const sampleMedley2: MedleyData = {
       genre: "アニソン",
       originalLink: "https://www.youtube.com/watch?v=o6wtDPVkKqI"
     }
-  ],
-  chords: [
-    { id: 1, chord: "Fm", startTime: 0, endTime: 15, color: "bg-purple-300" },
-    { id: 2, chord: "D♭", startTime: 15, endTime: 30, color: "bg-purple-200" },
-    { id: 3, chord: "A♭", startTime: 30, endTime: 45, color: "bg-blue-200" },
-    { id: 4, chord: "E♭", startTime: 45, endTime: 60, color: "bg-pink-200" },
-    { id: 5, chord: "Cm", startTime: 60, endTime: 75, color: "bg-yellow-200" },
-    { id: 6, chord: "D", startTime: 75, endTime: 90, color: "bg-purple-300" },
-    { id: 7, chord: "Bm", startTime: 90, endTime: 105, color: "bg-purple-200" },
-    { id: 8, chord: "G", startTime: 105, endTime: 120, color: "bg-blue-200" },
-    { id: 9, chord: "A", startTime: 120, endTime: 135, color: "bg-pink-300" },
-    { id: 10, chord: "F", startTime: 135, endTime: 150, color: "bg-pink-200" }
   ]
 };
 
@@ -366,27 +334,6 @@ export const nicoMedley1: MedleyData = {
       genre: "ボカロ",
       originalLink: "https://www.nicovideo.jp/watch/sm982882"
     }
-  ],
-  chords: [
-    { id: 1, chord: "Em", startTime: 0, endTime: 30, color: "bg-cyan-200" },
-    { id: 2, chord: "Am", startTime: 30, endTime: 80, color: "bg-yellow-200" },
-    { id: 3, chord: "F", startTime: 80, endTime: 130, color: "bg-purple-200" },
-    { id: 4, chord: "Cm", startTime: 130, endTime: 190, color: "bg-red-200" },
-    { id: 5, chord: "G", startTime: 190, endTime: 240, color: "bg-blue-200" },
-    { id: 6, chord: "C", startTime: 240, endTime: 290, color: "bg-green-200" },
-    { id: 7, chord: "Am", startTime: 290, endTime: 340, color: "bg-orange-200" },
-    { id: 8, chord: "F", startTime: 340, endTime: 390, color: "bg-yellow-100" },
-    { id: 9, chord: "G", startTime: 390, endTime: 450, color: "bg-pink-200" },
-    { id: 10, chord: "Em", startTime: 450, endTime: 510, color: "bg-green-100" },
-    { id: 11, chord: "F", startTime: 510, endTime: 580, color: "bg-cyan-100" },
-    { id: 12, chord: "C", startTime: 580, endTime: 640, color: "bg-yellow-100" },
-    { id: 13, chord: "Am", startTime: 640, endTime: 720, color: "bg-purple-100" },
-    { id: 14, chord: "G", startTime: 720, endTime: 780, color: "bg-red-100" },
-    { id: 15, chord: "C", startTime: 780, endTime: 840, color: "bg-orange-100" },
-    { id: 16, chord: "F", startTime: 840, endTime: 900, color: "bg-blue-100" },
-    { id: 17, chord: "Em", startTime: 900, endTime: 960, color: "bg-purple-100" },
-    { id: 18, chord: "Am", startTime: 960, endTime: 1020, color: "bg-pink-100" },
-    { id: 19, chord: "Em", startTime: 1020, endTime: 1062, color: "bg-cyan-100" }
   ]
 };
 

@@ -631,14 +631,13 @@ export default function SongList({
                       onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
                       title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで詳細表示'}`}
                     >
-                      <div className="text-xs text-white font-bold px-2 leading-6 pointer-events-none relative z-20">
+                      <div className="text-xs text-white font-bold px-2 leading-6 pointer-events-none relative z-30">
                         <div 
-                          className="whitespace-nowrap"
+                          className="whitespace-nowrap bg-black bg-opacity-60 rounded px-1"
                           style={{
-                            // すべての楽曲タイトルをバー幅内に制限
-                            maxWidth: '100%',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis'
+                            // タイトルをバーの幅を超えても表示（オーバーフロー許可）
+                            overflow: 'visible',
+                            position: 'relative'
                           }}
                         >
                           {song.title}

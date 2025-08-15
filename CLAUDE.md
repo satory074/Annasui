@@ -20,14 +20,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
 
 ### Current Implementation Status
-**Phase 6 Complete**: Modern UI/UX with media platform-inspired design
+**Phase 7 Complete**: Enhanced sorting and discovery features
 - ✅ Phase 1: Supabase database integration with fallback to static data
 - ✅ Phase 2: Drag-and-drop timeline editor with modal-based song editing  
 - ✅ Phase 3: Dynamic routing with individual medley pages and OGP metadata
 - ✅ Phase 4: Advanced search (cross-medley song search), pagination, and statistics dashboard
 - ✅ Phase 5: Multi-platform support (Niconico + YouTube) with unified homepage
 - ✅ Phase 6: Modern UI/UX with responsive grid, enhanced cards, and unified search interface
-- 🔄 Phase 7: User authentication and collaborative editing (planned)
+- ✅ Phase 7: Enhanced sorting system with metadata-based ordering (new content discovery)
+- 🔄 Phase 8: User authentication and collaborative editing (planned)
 
 ## Core Architecture
 
@@ -271,7 +272,8 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 
 ### Type System Architecture
 **Centralized Type Definitions:**
-- `src/types/features/medley.ts` - SongSection, MedleyData types with platform field
+- `src/types/features/medley.ts` - SongSection, MedleyData types with platform field and metadata
+  - Extended with `createdAt`, `updatedAt`, `viewCount` for enhanced sorting
 - `src/types/features/player.ts` - PlayerState, PlayerMessage interfaces
 - Platform-aware type definitions support 'niconico' | 'youtube' | future platforms
 - Database types auto-generated from Supabase schema
@@ -282,8 +284,13 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 - **Medley Search**: Title and creator name matching
 - **Song Search**: Cross-medley song and artist search with deep linking
 - **Advanced Filtering**: Genre-based filtering with dynamic options
-- **Sorting**: Multi-field sorting (title, creator, duration, song count)
-- **Pagination**: Client-side pagination with configurable page size
+- **Enhanced Sorting**: Multi-field sorting with metadata-based discovery
+  - 🆕 新着順 (createdAt desc) - Default for new content discovery
+  - 🔥 人気順 (viewCount desc) - Popular content based on view count
+  - 📝 更新順 (updatedAt desc) - Recently updated annotations
+  - 🎲 ランダム - Random order for content discovery
+  - Traditional sorts: title, creator, duration, song count
+- **Pagination**: Client-side pagination with configurable page size (8/16/32/64)
 
 ### Critical File Locations
 **Core Application:**
@@ -294,8 +301,8 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 - Database client: `src/lib/supabase.ts`
 
 **Static Configuration:**
-- Niconico medley definitions: `src/data/medleys.ts`
-- YouTube medley definitions: `src/data/youtubeMedleys.ts`
+- Niconico medley definitions: `src/data/medleys.ts` (includes metadata for sorting)
+- YouTube medley definitions: `src/data/youtubeMedleys.ts` (includes metadata for sorting)
 - Database schema: `supabase/schema.sql`, `supabase/seed.sql`
 - Next.js config: `next.config.ts` (static export + image optimization)
 
@@ -316,10 +323,11 @@ To add support for a new video platform (e.g., Twitch, bilibili):
 2. **Add platform to types**: Update `platform?: 'niconico' | 'youtube' | 'newplatform'` in `src/types/features/medley.ts`
 3. **Create player component**: `src/components/features/player/NewPlatformPlayer.tsx`
 4. **Update MedleyPlayer**: Add conditional rendering for new platform in `src/components/pages/MedleyPlayer.tsx`
-5. **Create data file**: `src/data/newplatformMedleys.ts` with platform-specific medley data
+5. **Create data file**: `src/data/newplatformMedleys.ts` with platform-specific medley data including metadata fields
 6. **Update homepage**: Import and include new platform data in `src/app/page.tsx`
 7. **Add static paths**: Include video IDs in `generateStaticParams` for static export
 8. **Update metadata**: Customize OGP images and metadata in layout for platform-specific URLs
+9. **Include metadata**: Ensure `createdAt`, `updatedAt`, `viewCount` are populated for sorting features
 
 The architecture is designed for easy platform extensibility with minimal code changes required.
 

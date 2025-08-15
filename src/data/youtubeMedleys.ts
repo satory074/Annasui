@@ -7,6 +7,9 @@ export const youtubeSampleMedley1: MedleyData = {
   creator: "Sample Creator",
   duration: 212,
   platform: "youtube",
+  createdAt: "2009-10-25T06:57:08Z",
+  updatedAt: "2023-11-20T12:30:00Z",
+  viewCount: 1400000000,
   songs: [
     {
       id: 1,

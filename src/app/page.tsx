@@ -13,8 +13,8 @@ export default function Home() {
     const [searchTerm, setSearchTerm] = useState("");
     const [genreFilter, setGenreFilter] = useState("");
     const [searchMode, setSearchMode] = useState<"medley" | "song">("medley");
-    const [sortBy, setSortBy] = useState<"title" | "creator" | "duration" | "songCount">("title");
-    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+    const [sortBy, setSortBy] = useState<"title" | "creator" | "duration" | "songCount" | "createdAt" | "updatedAt" | "viewCount" | "random">("createdAt");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
     const [currentPage, setCurrentPage] = useState(1);
     const [showStatistics, setShowStatistics] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(8);
@@ -75,6 +75,11 @@ export default function Home() {
             }
         })
         .sort((a, b) => {
+            // ランダムソートの場合は特別処理
+            if (sortBy === "random") {
+                return Math.random() - 0.5;
+            }
+
             let valueA, valueB;
             
             switch (sortBy) {
@@ -93,6 +98,18 @@ export default function Home() {
                 case "songCount":
                     valueA = a.songs.length;
                     valueB = b.songs.length;
+                    break;
+                case "createdAt":
+                    valueA = new Date(a.createdAt || '1970-01-01').getTime();
+                    valueB = new Date(b.createdAt || '1970-01-01').getTime();
+                    break;
+                case "updatedAt":
+                    valueA = new Date(a.updatedAt || '1970-01-01').getTime();
+                    valueB = new Date(b.updatedAt || '1970-01-01').getTime();
+                    break;
+                case "viewCount":
+                    valueA = a.viewCount || 0;
+                    valueB = b.viewCount || 0;
                     break;
                 default:
                     return 0;
@@ -321,6 +338,10 @@ export default function Home() {
                                         }}
                                         className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm"
                                     >
+                                        <option value="createdAt-desc">🆕 新着順</option>
+                                        <option value="viewCount-desc">🔥 人気順（再生回数）</option>
+                                        <option value="updatedAt-desc">📝 更新順</option>
+                                        <option value="random-asc">🎲 ランダム</option>
                                         <option value="title-asc">タイトル(昇順)</option>
                                         <option value="title-desc">タイトル(降順)</option>
                                         <option value="creator-asc">作者名(昇順)</option>
@@ -329,6 +350,9 @@ export default function Home() {
                                         <option value="duration-desc">再生時間(長い順)</option>
                                         <option value="songCount-asc">楽曲数(少ない順)</option>
                                         <option value="songCount-desc">楽曲数(多い順)</option>
+                                        <option value="createdAt-asc">投稿日(古い順)</option>
+                                        <option value="viewCount-asc">再生回数(少ない順)</option>
+                                        <option value="updatedAt-asc">更新日(古い順)</option>
                                     </select>
                                 </div>
                                 <div>

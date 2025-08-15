@@ -7,6 +7,9 @@ export const sampleMedley1: MedleyData = {
   creator: "メドレー製作者",
   duration: 600,
   platform: "niconico",
+  createdAt: "2025-01-15T09:30:00Z",
+  updatedAt: "2025-01-16T14:20:00Z",
+  viewCount: 245000,
   songs: [
     {
       id: 1,
@@ -88,6 +91,9 @@ export const sampleMedley2: MedleyData = {
   creator: "J-POPメドレー制作委員会",
   duration: 480,
   platform: "niconico",
+  createdAt: "2025-01-10T16:45:00Z",
+  updatedAt: "2025-01-12T10:15:00Z",
+  viewCount: 128000,
   songs: [
     {
       id: 1,
@@ -159,6 +165,9 @@ export const nicoMedley1: MedleyData = {
   creator: "しも",
   duration: 1062, // 17分42秒
   platform: "niconico",
+  createdAt: "2007-07-05T20:30:00Z",
+  updatedAt: "2024-12-15T08:00:00Z",
+  viewCount: 15800000,
   songs: [
     {
       id: 1,

@@ -348,6 +348,7 @@ export default function MedleyPlayer({
                     <SongList
                         songs={displaySongs}
                         currentTime={currentTime}
+                        duration={duration}
                         onSeek={seek}
                         isEditMode={isEditMode}
                         onEditSong={handleEditSong}

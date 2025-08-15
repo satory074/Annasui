@@ -15,6 +15,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npx netlify sites:list` - List existing Netlify sites
 - `npx netlify link --id <site-id>` - Link to existing Netlify site
 
+### Development Workflow
+**CRITICAL**: After implementing new features or fixes, always follow this verification process:
+
+1. **Local Testing**: Run `npm run dev` and test functionality on http://localhost:3000
+2. **Type Safety**: Run `npx tsc --noEmit` and `npm run lint` to ensure code quality
+3. **Production Deployment**: Deploy with `npx netlify deploy --prod` 
+4. **Production Verification**: Test the deployed application at https://illustrious-figolla-20f57e.netlify.app to ensure:
+   - All new features work correctly in production environment
+   - Cross-origin iframe communication functions properly
+   - Static export generation includes all required routes
+   - No console errors or missing resources
+
+This verification step is essential because the production environment uses static export and cross-origin iframe embedding, which can behave differently than local development.
+
 ## Project Overview
 
 Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
@@ -123,7 +137,7 @@ The application's core functionality relies on postMessage communication with Ni
 - `NicoPlayer` - Niconico-specific iframe player with postMessage integration
 - `YouTubePlayer` - YouTube-specific iframe player (basic embed functionality)
 - `SongTimeline` - Interactive timeline with drag-and-drop editing in edit mode
-- `SongList` - Simplified tabular song display with 3 columns: title, artist, and time duration
+- `SongList` - Enhanced tabular song display with inline Gantt chart timeline bars showing song overlaps and duration visualization
 - `SongEditModal` - Modal for detailed song editing with time validation
 - `ShareButtons` - Social sharing with platform-aware URL generation and native share API
 - `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights across platforms
@@ -222,6 +236,14 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - **Current Time Integration**: Edit modal shows "現在時刻" buttons for time setting
 - **History Management**: Make multiple edits to test 50-action history limit
 
+**Gantt Chart Timeline Testing:**
+- **Inline Timeline Bars**: Each song row displays a visual timeline bar in Gantt chart format
+- **Overlap Detection**: Songs with time overlaps show orange "重複" badges and striped patterns
+- **Mashup Support**: When multiple songs play simultaneously, header shows "マッシュアップ: X曲同時再生中"
+- **Current Time Indicator**: Red vertical line shows real-time playback position across all timeline bars
+- **Interactive Seeking**: Click any timeline bar to seek to that song's start time
+- **Visual Feedback**: Current playing songs highlighted with blue rings, overlapping songs with orange borders
+
 ### Common Issues and Solutions
 **Player Integration:**
 - **Seek operations fail or reset to beginning**: Ensure time values are converted to milliseconds (`* 1000`)
@@ -247,6 +269,13 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - **Wrong player component loading**: Check platform prop is correctly passed from route to MedleyPageClient to MedleyPlayer
 - **YouTube videos not playing**: Verify YouTube embed URL format and CORS restrictions
 - **Platform detection failing**: Ensure static data includes `platform` field in MedleyData objects
+
+**Gantt Chart Timeline Issues:**
+- **Timeline bars not displaying**: Ensure `duration` prop is passed to SongList component
+- **Overlap detection not working**: Check `detectOverlaps` function logic for time range intersection
+- **Current time indicator not moving**: Verify `currentTime` prop updates and position calculation
+- **Timeline bars not clickable**: Check click event handlers on timeline bar elements
+- **Mashup indicator not showing**: Ensure multiple songs have overlapping time ranges in test data
 
 **Build and Deployment:**
 - **Build deployment failing**: Ensure `public/favicon.ico` exists for Next.js build

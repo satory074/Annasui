@@ -17,7 +17,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Anasui is a dedicated Niconico medley annotation player built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, similar to Songle's annotation style. The application integrates with Niconico's embedded player through postMessage API communication.
+Anasui is a comprehensive Niconico medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the Niconico medley community.
+
+### Current Implementation Status
+**Phase 4 Complete**: Database functionality with advanced search, filtering, pagination, and statistics
+- ✅ Phase 1: Supabase database integration with fallback to static data
+- ✅ Phase 2: Drag-and-drop timeline editor with modal-based song editing  
+- ✅ Phase 3: Dynamic routing with individual medley pages and OGP metadata
+- ✅ Phase 4: Advanced search (cross-medley song search), pagination, and statistics dashboard
+- 🔄 Phase 5: User authentication and collaborative editing (planned)
 
 ## Core Architecture
 
@@ -83,33 +91,49 @@ The application's core functionality relies on postMessage communication with Ni
 - Time sync starts/stops based on playing state to optimize performance
 
 #### Data Flow Architecture
-- `page.tsx` is the main application entry point, coordinating video ID state and integrating all components
-- The app operates in **medley annotation mode only** - no mode switching functionality
-- `useCurrentTrack` derives currently playing song from playback time and medley data
-- `useMedleyData` loads static configuration for video annotations
-- Static medley data in `src/data/medleys.ts` defines song segments
-- All UI components (timeline, song list) are always visible and functional
+**Dual-Mode Data Management:**
+- **Static Mode**: Falls back to `src/data/medleys.ts` when Supabase is not configured
+- **Database Mode**: Uses Supabase PostgreSQL with real-time capabilities when configured
+- `useMedleyData` automatically detects and switches between modes based on environment variables
+
+**Page Structure:**
+- `/` - Home page with default medley (sm500873) and deep linking support (?t=seconds)
+- `/[videoId]` - Individual medley pages with dynamic OGP metadata generation
+- `/medleys` - Searchable database of all medleys with advanced filtering
+
+**Component Architecture:**
+- `MedleyPlayer` - Core reusable player component with edit mode support
+- `MedleyPageClient` - Client-side wrapper handling search params for deep linking
+- `SongTimeline` - Interactive timeline with drag-and-drop editing in edit mode
+- `SongList` - Tabular song display with edit/delete actions in edit mode
+- `SongEditModal` - Modal for detailed song editing with time validation
+- `ShareButtons` - Social sharing with URL generation and native share API
+- `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights
 
 #### Interactive Timeline Architecture
-**Critical Implementation Pattern for Timeline Clicking:**
-- Parent containers handle click events with `onClick` handlers that calculate position
-- Child elements (songs) use `pointer-events-none` to avoid intercepting clicks
+**Dual-Mode Timeline Behavior:**
+- **View Mode**: Click-to-seek anywhere on timeline, song segments trigger playback
+- **Edit Mode**: Drag-and-drop song segments for repositioning and resizing
 - Position calculation: `(e.clientX - rect.left) / rect.width * duration`
 - **Always validate duration > 0** before calculating seek time to prevent 0-second seeks
-- Example pattern:
-```tsx
-<div onClick={(e) => {
-  if (duration <= 0) return;
-  const rect = e.currentTarget.getBoundingClientRect();
-  const ratio = (e.clientX - rect.left) / rect.width;
-  const seekTime = duration * ratio;
-  onSeek(seekTime);
-}}>
-  {items.map(item => (
-    <div className="pointer-events-none">{item.content}</div>
-  ))}
-</div>
+
+**Edit Mode Drag System:**
+```typescript
+// Drag mode detection based on click position within song segment
+let mode: 'move' | 'resize-start' | 'resize-end' = 'move';
+if (clickPositionInSong < 8) mode = 'resize-start';
+else if (clickPositionInSong > songWidth - 8) mode = 'resize-end';
+
+// Time conversion with bounds checking
+const deltaTime = (deltaX / rect.width) * duration;
+newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 ```
+
+**Critical Timeline Patterns:**
+- Child elements use `pointer-events-none` to avoid intercepting parent clicks
+- Resize handles positioned absolutely with `cursor-ew-resize`
+- Double-click opens edit modal, single-click triggers drag in edit mode
+- Time values rounded to 0.1 second precision for smooth editing
 
 #### Component Integration Pattern
 - `NicoPlayer` component handles iframe embedding and debug display
@@ -147,42 +171,96 @@ The application's core functionality relies on postMessage communication with Ni
   - Timeline click-to-seek (anywhere on timeline bar)
 
 ### Common Issues and Solutions
+**Player Integration:**
 - **Seek operations fail or reset to beginning**: Ensure time values are converted to milliseconds (`* 1000`)
 - **Timeline clicks returning 0 seconds**: Video duration not loaded yet, check duration > 0
 - **Child elements intercepting clicks**: Use `pointer-events-none` on child elements
 - **Player not responding**: Check iframe load and postMessage origin verification
 - **Seek without automatic playback**: Add play command after seek when player is stopped
+
+**Data Management:**
+- **Database connection fails**: Check Supabase environment variables, app falls back to static data automatically
+- **Edit mode not saving**: Verify `useMedleyEdit` hook is properly connected to save handler
+- **Search results empty**: Ensure search mode matches expected data (medley vs song search)
+
+**Build and Deployment:**
 - **Build deployment failing**: Ensure `public/favicon.ico` exists for Next.js build
+- **Dynamic routes not generating**: Check `generateStaticParams` includes all required video IDs
+- **Next.js 15 params errors**: All dynamic route components must handle `params: Promise<{...}>`
 
 ## Data Management Architecture
 
-### Medley Data Structure
-- Static medley definitions stored in `src/data/medleys.ts`
-- Each medley contains songs array with timing, colors, and metadata
-- Video ID mapping system for dynamic data lookup
+### Dual-Source Data Strategy
+**Static Fallback System:**
+- Primary: Supabase PostgreSQL database for production data management
+- Fallback: Static definitions in `src/data/medleys.ts` when database unavailable
+- Automatic detection based on environment variable configuration
+- Zero-config development experience with graceful degradation
+
+**Database Schema (Supabase):**
+```sql
+-- Core tables: medleys, songs with RLS policies
+-- Automatic updated_at triggers and UUID primary keys
+-- Foreign key relationships for data integrity
+```
 
 ### Key Data Flow Hooks
-- `useMedleyData(videoId)`: Retrieves medley configuration by video ID
-- `useCurrentTrack(currentTime, songs)`: Derives active song from playback position
-- `useNicoPlayer({videoId, callbacks})`: Manages all player state and communication
+- `useMedleyData(videoId)`: Dual-source data retrieval with loading states
+- `useMedleyDataApi()`: Direct Supabase API access with error handling
+- `useMedleyEdit(songs)`: Local editing state with change detection and persistence
+- `useCurrentTrack(currentTime, songs)`: Real-time active song calculation
+- `useNicoPlayer({videoId, callbacks})`: Complete player state and communication management
+
+### Editing State Management
+**Local-First Editing Pattern:**
+- Changes stored in local state until explicit save
+- `hasChanges` flag tracks unsaved modifications
+- Optimistic UI updates with eventual database consistency
+- Add/update/delete operations with immediate visual feedback
+- Reset functionality to discard unsaved changes
 
 ### Component Architecture Patterns
-- Feature-based component organization under `src/components/features/`
-- Layout components in `src/components/layout/` (Header)
-- Player components handle iframe integration and controls (`NicoPlayer`)
-- Medley components manage timeline visualization and interaction (`SongTimeline`, `SongList`)
-- **Note**: No mode toggle component exists - app is medley annotation only
+**Feature-Based Organization:**
+- `src/components/features/medley/` - Timeline, song list, edit modal components
+- `src/components/features/player/` - Niconico iframe integration
+- `src/components/features/share/` - Social sharing and URL generation
+- `src/components/features/statistics/` - Analytics and data visualization
+- `src/components/pages/` - Page-level reusable components
+- `src/components/layout/` - Navigation and header components
 
-### Type System
-- Central type definitions for medley data structures
-- Strict typing for player communication interfaces
-- Time-based data validation utilities in `src/lib/utils/`
+**Page Structure Patterns:**
+- Server components for metadata generation (`layout.tsx`, `page.tsx`)
+- Client components for interactive features (`*Client.tsx`)
+- Dynamic routing with `generateStaticParams` for static export compatibility
 
-### Important File Locations
-- Main application: `src/app/page.tsx` 
-- Core player hook: `src/hooks/useNicoPlayer.ts`
-- Medley data management: `src/hooks/useMedleyData.ts`, `src/hooks/useCurrentTrack.ts`
-- Static medley definitions: `src/data/medleys.ts`
+### Type System Architecture
+**Centralized Type Definitions:**
+- `src/types/features/medley.ts` - SongSection, MedleyData types
+- `src/types/features/player.ts` - PlayerState, PlayerMessage interfaces
+- Database types auto-generated from Supabase schema
+- Type conversion utilities between database and application types
+
+### Search and Filtering Architecture
+**Multi-Mode Search System:**
+- **Medley Search**: Title and creator name matching
+- **Song Search**: Cross-medley song and artist search with deep linking
+- **Advanced Filtering**: Genre-based filtering with dynamic options
+- **Sorting**: Multi-field sorting (title, creator, duration, song count)
+- **Pagination**: Client-side pagination with configurable page size
+
+### Critical File Locations
+**Core Application:**
+- Entry points: `src/app/page.tsx`, `src/app/[videoId]/page.tsx`, `src/app/medleys/page.tsx`
+- Player integration: `src/hooks/useNicoPlayer.ts`
+- Data management: `src/hooks/useMedleyData.ts`, `src/lib/api/medleys.ts`
+- Database client: `src/lib/supabase.ts`
+
+**Static Configuration:**
+- Medley definitions: `src/data/medleys.ts`
+- Database schema: `supabase/schema.sql`, `supabase/seed.sql`
+- Next.js config: `next.config.ts` (static export + image optimization)
+
+**Player Integration:**
 - Player constants: `src/lib/constants/player.ts`
 - Time utilities: `src/lib/utils/time.ts`
 - Video validation: `src/lib/utils/videoValidation.ts`

@@ -17,22 +17,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Anasui is a comprehensive Niconico medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the Niconico medley community.
+Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
 
 ### Current Implementation Status
-**Phase 4 Complete**: Database functionality with advanced search, filtering, pagination, and statistics
+**Phase 5 Complete**: Multi-platform support with unified URL structure
 - ✅ Phase 1: Supabase database integration with fallback to static data
 - ✅ Phase 2: Drag-and-drop timeline editor with modal-based song editing  
 - ✅ Phase 3: Dynamic routing with individual medley pages and OGP metadata
 - ✅ Phase 4: Advanced search (cross-medley song search), pagination, and statistics dashboard
-- 🔄 Phase 5: User authentication and collaborative editing (planned)
+- ✅ Phase 5: Multi-platform support (Niconico + YouTube) with unified homepage
+- 🔄 Phase 6: User authentication and collaborative editing (planned)
 
 ## Core Architecture
 
 ### Technology Stack
 - Next.js 15.2.1 with React 19.0.0 and TypeScript
 - TailwindCSS 4 for styling with Emotion for CSS-in-JS
-- Native iframe postMessage API for Niconico player integration
+- Multi-platform video player support:
+  - Native iframe postMessage API for Niconico player integration
+  - YouTube iframe embed for YouTube videos
 - Supabase for database and real-time data management (optional)
 - No external state management library (React hooks only)  
 - Static export configured for Netlify deployment
@@ -90,25 +93,35 @@ The application's core functionality relies on postMessage communication with Ni
 - UI-first updates with eventual consistency from player events
 - Time sync starts/stops based on playing state to optimize performance
 
+#### Multi-Platform Architecture
+**Platform Support:**
+- **Niconico**: Full integration with postMessage API for seek/play/pause controls
+- **YouTube**: Basic iframe embed (seek functionality planned for future implementation)
+- **Extensible**: Architecture supports adding new platforms (Twitch, bilibili, etc.)
+
+**URL Structure:**
+- `/` - Homepage with unified medley database (searchable across all platforms)
+- `/niconico/[videoId]` - Niconico medley player pages with full interactive features
+- `/youtube/[videoId]` - YouTube medley player pages with basic playback
+- Deep linking support: `?t=seconds` parameter for timestamp links
+
 #### Data Flow Architecture
 **Dual-Mode Data Management:**
-- **Static Mode**: Falls back to `src/data/medleys.ts` when Supabase is not configured
+- **Static Mode**: Falls back to `src/data/medleys.ts` and `src/data/youtubeMedleys.ts` when Supabase is not configured
 - **Database Mode**: Uses Supabase PostgreSQL with real-time capabilities when configured
 - `useMedleyData` automatically detects and switches between modes based on environment variables
-
-**Page Structure:**
-- `/` - Home page with default medley (sm500873) and deep linking support (?t=seconds)
-- `/[videoId]` - Individual medley pages with dynamic OGP metadata generation
-- `/medleys` - Searchable database of all medleys with advanced filtering
+- Platform-specific data files support different video platforms seamlessly
 
 **Component Architecture:**
-- `MedleyPlayer` - Core reusable player component with edit mode support
-- `MedleyPageClient` - Client-side wrapper handling search params for deep linking
+- `MedleyPlayer` - Core reusable player component with platform detection and edit mode support
+- `MedleyPageClient` - Client-side wrapper handling search params for deep linking and platform props
+- `NicoPlayer` - Niconico-specific iframe player with postMessage integration
+- `YouTubePlayer` - YouTube-specific iframe player (basic embed functionality)
 - `SongTimeline` - Interactive timeline with drag-and-drop editing in edit mode
 - `SongList` - Tabular song display with edit/delete actions in edit mode
 - `SongEditModal` - Modal for detailed song editing with time validation
-- `ShareButtons` - Social sharing with URL generation and native share API
-- `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights
+- `ShareButtons` - Social sharing with platform-aware URL generation and native share API
+- `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights across platforms
 
 #### Interactive Timeline Architecture
 **Dual-Mode Timeline Behavior:**
@@ -136,18 +149,23 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 - Time values rounded to 0.1 second precision for smooth editing
 
 #### Component Integration Pattern
-- `NicoPlayer` component handles iframe embedding and debug display
-- `useNicoPlayer` hook manages all player communication and state
-- UI components (timeline, song list) trigger actions through hook methods
-- Seek operations automatically update current track detection
+- Platform-specific player components (`NicoPlayer`, `YouTubePlayer`) handle iframe embedding
+- `useNicoPlayer` hook manages Niconico player communication and state
+- `MedleyPlayer` component conditionally renders players based on platform prop
+- UI components (timeline, song list) trigger actions through platform-aware seek methods
+- Seek operations automatically update current track detection (Niconico only currently)
 - Timeline supports click-to-seek anywhere on the bar
 
 #### Seek Operation Implementation
-**Critical Sequence for Stopped Player:**
+**Niconico Player - Critical Sequence for Stopped Player:**
 1. Send seek command with time in milliseconds
 2. Wait 200ms for seek to complete
 3. Send play command to start playback automatically
 4. This ensures seamless "click song → play from position" experience
+
+**YouTube Player:**
+- Currently uses basic iframe embed without seek API integration
+- Seek functionality logs to console as placeholder for future implementation
 
 ### Production Deployment Configuration
 - Next.js configured for static export (`output: 'export'`)
@@ -163,12 +181,15 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 - Some player internal errors are expected and don't affect functionality
 
 ### Development Testing
-- Default video ID "sm500873" (組曲『ニコニコ動画』) for consistent testing
-- Console logging enabled for postMessage debugging
+- Default Niconico video ID "sm500873" (組曲『ニコニコ動画』) for consistent testing
+- Default YouTube video ID "dQw4w9WgXcQ" for multi-platform testing
+- Console logging enabled for postMessage debugging (Niconico)
 - UI debug indicators show player ready state and communication status
+- Platform detection and player switching testable via URL structure
 - Seek functionality testable through:
   - Song list click-to-play buttons
   - Timeline click-to-seek (anywhere on timeline bar)
+  - Platform-specific behavior differences visible in console
 
 ### Common Issues and Solutions
 **Player Integration:**
@@ -183,17 +204,25 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 - **Edit mode not saving**: Verify `useMedleyEdit` hook is properly connected to save handler
 - **Search results empty**: Ensure search mode matches expected data (medley vs song search)
 
+**Multi-Platform Issues:**
+- **Wrong player component loading**: Check platform prop is correctly passed from route to MedleyPageClient to MedleyPlayer
+- **YouTube videos not playing**: Verify YouTube embed URL format and CORS restrictions
+- **Platform detection failing**: Ensure static data includes `platform` field in MedleyData objects
+
 **Build and Deployment:**
 - **Build deployment failing**: Ensure `public/favicon.ico` exists for Next.js build
-- **Dynamic routes not generating**: Check `generateStaticParams` includes all required video IDs
+- **Dynamic routes not generating**: Check `generateStaticParams` includes all required video IDs for both platforms
 - **Next.js 15 params errors**: All dynamic route components must handle `params: Promise<{...}>`
+- **Missing static paths**: Add new video IDs to respective `generateStaticParams` functions in platform directories
 
 ## Data Management Architecture
 
 ### Dual-Source Data Strategy
 **Static Fallback System:**
 - Primary: Supabase PostgreSQL database for production data management
-- Fallback: Static definitions in `src/data/medleys.ts` when database unavailable
+- Fallback: Platform-specific static definitions when database unavailable:
+  - `src/data/medleys.ts` - Niconico video data
+  - `src/data/youtubeMedleys.ts` - YouTube video data
 - Automatic detection based on environment variable configuration
 - Zero-config development experience with graceful degradation
 
@@ -235,8 +264,9 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 
 ### Type System Architecture
 **Centralized Type Definitions:**
-- `src/types/features/medley.ts` - SongSection, MedleyData types
+- `src/types/features/medley.ts` - SongSection, MedleyData types with platform field
 - `src/types/features/player.ts` - PlayerState, PlayerMessage interfaces
+- Platform-aware type definitions support 'niconico' | 'youtube' | future platforms
 - Database types auto-generated from Supabase schema
 - Type conversion utilities between database and application types
 
@@ -250,17 +280,38 @@ newStartTime = Math.max(0, Math.min(maxTime, originalTime + deltaTime));
 
 ### Critical File Locations
 **Core Application:**
-- Entry points: `src/app/page.tsx`, `src/app/[videoId]/page.tsx`, `src/app/medleys/page.tsx`
-- Player integration: `src/hooks/useNicoPlayer.ts`
+- Entry points: `src/app/page.tsx` (unified homepage), `src/app/niconico/[videoId]/page.tsx`, `src/app/youtube/[videoId]/page.tsx`
+- Player integration: `src/hooks/useNicoPlayer.ts` (Niconico-specific)
+- Player components: `src/components/features/player/NicoPlayer.tsx`, `src/components/features/player/YouTubePlayer.tsx`
 - Data management: `src/hooks/useMedleyData.ts`, `src/lib/api/medleys.ts`
 - Database client: `src/lib/supabase.ts`
 
 **Static Configuration:**
-- Medley definitions: `src/data/medleys.ts`
+- Niconico medley definitions: `src/data/medleys.ts`
+- YouTube medley definitions: `src/data/youtubeMedleys.ts`
 - Database schema: `supabase/schema.sql`, `supabase/seed.sql`
 - Next.js config: `next.config.ts` (static export + image optimization)
 
-**Player Integration:**
+**Platform Integration:**
 - Player constants: `src/lib/constants/player.ts`
 - Time utilities: `src/lib/utils/time.ts`
 - Video validation: `src/lib/utils/videoValidation.ts`
+
+**Route Structure:**
+- Platform-specific layouts: `src/app/niconico/[videoId]/layout.tsx`, `src/app/youtube/[videoId]/layout.tsx`
+- Shared components: `src/components/pages/MedleyPlayer.tsx`, `src/components/pages/MedleyPageClient.tsx`
+
+## Adding New Platforms
+
+To add support for a new video platform (e.g., Twitch, bilibili):
+
+1. **Create route structure**: `src/app/[platform]/[videoId]/page.tsx` and `layout.tsx`
+2. **Add platform to types**: Update `platform?: 'niconico' | 'youtube' | 'newplatform'` in `src/types/features/medley.ts`
+3. **Create player component**: `src/components/features/player/NewPlatformPlayer.tsx`
+4. **Update MedleyPlayer**: Add conditional rendering for new platform in `src/components/pages/MedleyPlayer.tsx`
+5. **Create data file**: `src/data/newplatformMedleys.ts` with platform-specific medley data
+6. **Update homepage**: Import and include new platform data in `src/app/page.tsx`
+7. **Add static paths**: Include video IDs in `generateStaticParams` for static export
+8. **Update metadata**: Customize OGP images and metadata in layout for platform-specific URLs
+
+The architecture is designed for easy platform extensibility with minimal code changes required.

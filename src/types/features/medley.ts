@@ -17,4 +17,5 @@ export type MedleyData = {
   creator?: string;     // 制作者
   duration: number;     // 総再生時間（秒）
   songs: SongSection[]; // 楽曲セクション配列
+  platform?: 'niconico' | 'youtube'; // プラットフォーム（オプション、デフォルトは'niconico'）
 };

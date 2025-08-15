@@ -6,6 +6,7 @@ export const sampleMedley1: MedleyData = {
   title: "ボカロメドレー2025",
   creator: "メドレー製作者",
   duration: 600,
+  platform: "niconico",
   songs: [
     {
       id: 1,
@@ -86,6 +87,7 @@ export const sampleMedley2: MedleyData = {
   title: "J-POPメドレー2025",
   creator: "J-POPメドレー制作委員会",
   duration: 480,
+  platform: "niconico",
   songs: [
     {
       id: 1,
@@ -156,6 +158,7 @@ export const nicoMedley1: MedleyData = {
   title: "組曲『ニコニコ動画』",
   creator: "しも",
   duration: 1062, // 17分42秒
+  platform: "niconico",
   songs: [
     {
       id: 1,

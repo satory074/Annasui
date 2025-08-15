@@ -6,6 +6,7 @@ import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import { useMedleyEdit } from "@/hooks/useMedleyEdit";
 import Header from "@/components/layout/Header";
 import NicoPlayer from "@/components/features/player/NicoPlayer";
+import YouTubePlayer from "@/components/features/player/YouTubePlayer";
 import { useNicoPlayer } from "@/hooks/useNicoPlayer";
 import SongTimeline from "@/components/features/medley/SongTimeline";
 import SongList from "@/components/features/medley/SongList";
@@ -16,11 +17,13 @@ import { SongSection } from "@/types";
 interface MedleyPlayerProps {
   initialVideoId?: string;
   initialTime?: number; // ディープリンク用
+  platform?: 'niconico' | 'youtube';
 }
 
 export default function MedleyPlayer({ 
   initialVideoId = "sm500873", 
-  initialTime = 0 
+  initialTime = 0,
+  platform = 'niconico'
 }: MedleyPlayerProps) {
     const [videoId, setVideoId] = useState<string>(initialVideoId);
     const [inputVideoId, setInputVideoId] = useState<string>(initialVideoId);
@@ -71,9 +74,14 @@ export default function MedleyPlayer({
         }
     });
     
-    // シーク機能をnicoSeekに接続
+    // シーク機能をプラットフォーム別に実装
     const seek = (seekTime: number) => {
-        nicoSeek(seekTime);
+        if (platform === 'youtube') {
+            // YouTube用のシーク実装（将来的にYouTube APIを使用）
+            console.log('YouTube seek not implemented yet:', seekTime);
+        } else {
+            nicoSeek(seekTime);
+        }
     };
 
     // 初期時間へのシーク（ディープリンク対応）
@@ -163,7 +171,7 @@ export default function MedleyPlayer({
     // 共有URL生成
     const generateShareUrl = () => {
         const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-        const path = videoId === "sm500873" ? "/" : `/${videoId}`;
+        const path = `/${platform}/${videoId}`;
         const timeParam = currentTime > 0 ? `?t=${Math.floor(currentTime)}` : '';
         return `${baseUrl}${path}${timeParam}`;
     };
@@ -182,17 +190,24 @@ export default function MedleyPlayer({
 
                 {/* プレイヤーコンテナ */}
                 <div className="relative">
-                    <NicoPlayer
-                        playerRef={playerRef}
-                        embedUrl={getEmbedUrl()}
-                        onIframeLoad={handleIframeLoad}
-                        isPlaying={isPlaying}
-                        currentTime={currentTime}
-                        duration={duration}
-                        playerError={playerError}
-                        onTogglePlayPause={togglePlayPause}
-                        onErrorDismiss={clearError}
-                    />
+                    {platform === 'youtube' ? (
+                        <YouTubePlayer
+                            videoId={videoId}
+                            className="w-full aspect-video"
+                        />
+                    ) : (
+                        <NicoPlayer
+                            playerRef={playerRef}
+                            embedUrl={getEmbedUrl()}
+                            onIframeLoad={handleIframeLoad}
+                            isPlaying={isPlaying}
+                            currentTime={currentTime}
+                            duration={duration}
+                            playerError={playerError}
+                            onTogglePlayPause={togglePlayPause}
+                            onErrorDismiss={clearError}
+                        />
+                    )}
                 </div>
 
                 {/* データロード状態とエラー表示 */}

@@ -110,16 +110,6 @@ export default function SongEditModal({
     return parseInt(timeString) || 0;
   };
 
-  const colorOptions = [
-    { value: "bg-red-400", label: "赤", color: "#f87171" },
-    { value: "bg-blue-400", label: "青", color: "#60a5fa" },
-    { value: "bg-green-400", label: "緑", color: "#4ade80" },
-    { value: "bg-yellow-400", label: "黄", color: "#facc15" },
-    { value: "bg-purple-400", label: "紫", color: "#c084fc" },
-    { value: "bg-pink-400", label: "ピンク", color: "#f472b6" },
-    { value: "bg-orange-400", label: "オレンジ", color: "#fb923c" },
-    { value: "bg-cyan-400", label: "シアン", color: "#22d3ee" },
-  ];
 
   if (!isOpen) return null;
 
@@ -222,43 +212,7 @@ export default function SongEditModal({
             )}
           </div>
 
-          {/* カラー選択 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              カラー
-            </label>
-            <div className="grid grid-cols-4 gap-2">
-              {colorOptions.map((option) => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, color: option.value })}
-                  className={`p-2 rounded-md border-2 flex items-center justify-center ${
-                    formData.color === option.value
-                      ? 'border-gray-900 dark:border-white'
-                      : 'border-gray-300 dark:border-gray-600'
-                  }`}
-                  style={{ backgroundColor: option.color }}
-                >
-                  <span className="text-white text-xs font-medium">{option.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
 
-          {/* ジャンル */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              ジャンル
-            </label>
-            <input
-              type="text"
-              value={formData.genre}
-              onChange={(e) => setFormData({ ...formData, genre: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              placeholder="ジャンルを入力"
-            />
-          </div>
 
           {/* 元動画リンク */}
           <div>

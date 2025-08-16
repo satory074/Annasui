@@ -53,13 +53,6 @@ export default function SongDetailModal({
         </div>
 
         <div className="space-y-4">
-          {/* カラー表示 */}
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-6 h-6 rounded-full ${song.color} border border-gray-300 dark:border-gray-600`}
-            ></div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">楽曲カラー</span>
-          </div>
 
           {/* 楽曲名 */}
           <div>

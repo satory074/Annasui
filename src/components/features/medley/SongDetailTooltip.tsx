@@ -89,9 +89,6 @@ export default function SongDetailTooltip({
     >
       {/* ヘッダー */}
       <div className="flex items-center gap-3 mb-3">
-        <div
-          className={`w-4 h-4 rounded-full ${song.color} border border-gray-300 dark:border-gray-600 flex-shrink-0`}
-        ></div>
         <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">楽曲詳細</div>
       </div>
 
@@ -135,15 +132,6 @@ export default function SongDetailTooltip({
           </div>
         </div>
 
-        {/* ジャンル */}
-        {song.genre && (
-          <div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ジャンル</div>
-            <div className="text-sm text-gray-900 dark:text-white">
-              {song.genre}
-            </div>
-          </div>
-        )}
 
         {/* 元動画リンク */}
         {song.originalLink && (

@@ -466,25 +466,6 @@ export default function SongList({
             </span>
           </div>
 
-          {timelineZoom > 1 && (
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                位置:
-              </label>
-              <input
-                type="range"
-                min="0"
-                max={Math.max(0, duration - visibleDuration)}
-                step="1"
-                value={timelineOffset}
-                onChange={(e) => setTimelineOffset(parseFloat(e.target.value))}
-                className="w-32 h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-green-500"
-              />
-              <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[3rem]">
-                {formatTime(timelineOffset)}
-              </span>
-            </div>
-          )}
 
           <button
             onClick={() => setAutoFollow(!autoFollow)}
@@ -520,12 +501,6 @@ export default function SongList({
           </div>
         </div>
 
-        {timelineZoom > 1 && (
-          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-            表示範囲: {formatTime(visibleStartTime)} - {formatTime(visibleEndTime)} 
-            ({formatTime(visibleDuration)} / {formatTime(duration)})
-          </div>
-        )}
       </div>
 
       <div className="overflow-auto max-h-80">
@@ -594,7 +569,7 @@ export default function SongList({
                     
                     {/* 楽曲タイムラインバー */}
                     <div
-                      className={`absolute h-6 top-1 rounded-sm transition-all hover:h-7 hover:top-0 ${song.color} border border-gray-400 dark:border-gray-300 ${
+                      className={`absolute h-6 top-1 rounded-sm transition-all hover:h-7 hover:top-0 bg-gray-600 border border-gray-400 dark:border-gray-300 ${
                         hasOverlap ? 'opacity-80 border-2 border-orange-400' : ''
                       } ${
                         isCurrentlyPlaying ? 'ring-2 ring-blue-400 ring-offset-1 animate-pulse shadow-lg shadow-blue-400/50' : ''

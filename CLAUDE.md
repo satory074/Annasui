@@ -54,6 +54,7 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ **Song List UI Redesign**: Simplified layout with clean card design, full song title display, and enhanced visual feedback
 - ✅ **Phase 9: Timeline Zoom System**: Complete zoom/pan functionality with dynamic grids, auto-follow, and precision editing
 - ✅ **Phase 10: Advanced Tooltip System**: Hover-based song details with intelligent positioning and click-to-dismiss functionality
+- ✅ **UI Simplification Phase**: Removed unnecessary visual elements (colors, genres, position controls) for cleaner interface
 - 🔄 Phase 11: User authentication and collaborative editing (planned)
 
 ## Core Architecture
@@ -240,8 +241,8 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 
 #### Song Detail Modal Architecture
 **Read-Only Information Display:**
-- Displays comprehensive song information including title, artist, timing, genre, and original links
-- Color-coded visual indicators matching timeline bar colors
+- Displays comprehensive song information including title, artist, timing, and original links
+- Simplified design with no color indicators - focus on essential information
 - Formatted time display with start/end times and calculated duration
 - "この曲から再生" button triggers seek operation and closes modal
 - Accessible design with proper ARIA labels and keyboard navigation
@@ -363,8 +364,9 @@ const effectiveDuration = medleyDuration || duration;
 - **Zoom + Edit Integration**: Test all editing features work correctly at different zoom levels
 
 **Song List UI Testing:**
-- **Simplified Card-Based Layout**: Each song displays as a clean card with only color dot indicator (no time stamps or badges)
+- **Simplified Card-Based Layout**: Each song displays as a clean card with no color indicators, time stamps, or badges
 - **Full-Width Timeline Bars**: Visual timeline bar in Gantt chart format with complete song titles displayed (no truncation)
+- **Unified Color Scheme**: All timeline bars use consistent gray color (bg-gray-600) for visual harmony
 - **Song Detail Modal**: Click timeline bars in view mode to open detailed song information
 - **Overlap Detection**: Songs with time overlaps show striped patterns (no badges in header)
 - **Mashup Support**: When multiple songs play simultaneously, header shows "マッシュアップ: X曲同時再生中"
@@ -430,7 +432,7 @@ const effectiveDuration = medleyDuration || duration;
 - **Current time indicator not moving**: Verify `currentTime` prop updates and position calculation
 - **Pulse animation not showing**: Ensure playing songs have `animate-pulse shadow-lg shadow-blue-400/50` classes
 - **Edit/delete buttons missing**: Confirm edit mode is active and buttons are rendered at timeline bar right edge (`absolute right-2 top-1 z-40`)
-- **Color dots showing**: Header color indicators have been removed - ensure no legacy color dot rendering code remains
+- **Color-related issues**: All color indicators, dots, and selection interfaces have been removed for simplified UI - timeline bars use unified gray color (bg-gray-600)
 
 **Tooltip System Issues:**
 - **Tooltip not appearing on hover**: Check `onHoverSong` callback is properly passed to SongList and connected to MedleyPlayer
@@ -650,6 +652,14 @@ The architecture is designed for easy platform extensibility with minimal code c
 - **Optimized container heights**: Timeline container (`h-10` → `h-8`), bars (`h-8` → `h-6`) for space efficiency
 - **Compacted zoom controls**: Reduced padding and button sizes for streamlined interface
 - **Increased song density**: List height optimized (`max-h-96` → `max-h-80`) for better screen space utilization
+
+**UI Simplification Phase (Latest Update):**
+- **Timeline Bar Colors**: Removed individual song colors (bg-red-400, bg-blue-400, etc.), unified to single gray color (bg-gray-600)
+- **Edit Modal Simplification**: Removed color selection and genre input fields from song editing interface
+- **Tooltip Cleanup**: Removed color dots and genre display from hover tooltips for cleaner information presentation
+- **Detail Modal Streamlining**: Removed color indicator section from song detail modals
+- **Zoom Control Simplification**: Removed position slider and display range text, keeping only essential zoom, auto-follow, and preset controls
+- **Visual Consistency**: All timeline bars now use consistent styling with unified color scheme for better visual harmony
 
 **Implementation Details:**
 - Timeline song titles use `overflow: hidden` and `textOverflow: ellipsis` for consistent display within bar boundaries

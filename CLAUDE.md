@@ -572,10 +572,19 @@ The architecture is designed for easy platform extensibility with minimal code c
 - **Enhanced playing state**: Current songs identified by blue ring, pulse animation, and shadow effects only
 - **Streamlined design**: Focus on essential information with reduced visual clutter
 
+**Timeline Layout Optimization:**
+- **Reduced spacing**: Card padding (`p-3` → `p-2`), margins (`mb-3` → `mb-2`), and inter-card spacing (`space-y-2` → `space-y-1`)
+- **Enhanced timeline bars**: Increased height (`h-8` → `h-10` for container, `h-6` → `h-8` for bars) for better visibility
+- **Improved text readability**: Font size increased (`text-xs` → `text-sm`) with proper line height (`leading-8`)
+- **Expanded display area**: Timeline list height increased (`max-h-80` → `max-h-96`) to show more content
+- **Refined grid lines**: Softened grid appearance with `opacity-50` for better contrast with timeline bars
+- **Compact zoom controls**: Reduced padding and spacing in zoom control section for space efficiency
+
 **Implementation Details:**
 - Timeline song titles use `overflow: hidden` and `textOverflow: ellipsis` for consistent display within bar boundaries
 - Playing songs styled with `ring-2 ring-blue-400 ring-offset-1 animate-pulse shadow-lg shadow-blue-400/50`
 - Card headers simplified to show only color dot indicators
 - Visual feedback concentrated in timeline bars rather than scattered across UI elements
+- Grid lines use `border-gray-200 dark:border-gray-700 opacity-50` for subtle background presence
 
 This design system follows modern media platform patterns (Spotify, YouTube, Niconico) while maintaining the platform's unique annotation-focused functionality.

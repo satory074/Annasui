@@ -389,8 +389,8 @@ export default function SongList({
   const visibleSongs = getVisibleSongs();
 
   return (
-    <div className="p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-      <div className="flex justify-between items-center mb-3">
+    <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+      <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-4">
           <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
             楽曲リスト - 現在: {formatTime(currentTime)}
@@ -428,8 +428,8 @@ export default function SongList({
       </div>
 
       {/* タイムラインズームコントロール */}
-      <div className="mb-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-4">
+      <div className="mb-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
               ズーム:
@@ -483,19 +483,19 @@ export default function SongList({
           <div className="flex gap-1">
             <button
               onClick={() => setTimelineZoom(1)}
-              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+              className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
             >
               1x
             </button>
             <button
               onClick={() => setTimelineZoom(2)}
-              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+              className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
             >
               2x
             </button>
             <button
               onClick={() => setTimelineZoom(5)}
-              className="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+              className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
             >
               5x
             </button>
@@ -510,8 +510,8 @@ export default function SongList({
         )}
       </div>
 
-      <div className="overflow-auto max-h-80">
-        <div className="space-y-2">
+      <div className="overflow-auto max-h-96">
+        <div className="space-y-1">
             {visibleSongs.map((song) => {
               const { hasOverlap, overlappingSongs } = detectOverlaps(song);
               const isCurrentlyPlaying = currentSongs.some(s => s.id === song.id);
@@ -519,14 +519,14 @@ export default function SongList({
               return (
                 <div
                   key={song.id}
-                  className={`relative p-3 rounded-lg border transition-all ${
+                  className={`relative p-2 rounded-lg border transition-all ${
                     isCurrentlyPlaying
                       ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
                       : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   }`}
                 >
                   {/* ヘッダー情報 */}
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-1">
                     <div className="flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-full"
@@ -563,7 +563,7 @@ export default function SongList({
 
                   {/* タイムライン */}
                   <div 
-                    className={`timeline-container relative w-full h-8 bg-gray-100 dark:bg-gray-800 rounded border ${
+                    className={`timeline-container relative w-full h-10 bg-gray-100 dark:bg-gray-800 rounded border ${
                       timelineZoom > 1 && !isEditMode ? 'cursor-grab' : ''
                     } ${
                       isDragging ? 'cursor-grabbing' : ''
@@ -578,7 +578,7 @@ export default function SongList({
                         return (
                           <div 
                             key={i} 
-                            className="border-l border-gray-300 dark:border-gray-600" 
+                            className="border-l border-gray-200 dark:border-gray-700 opacity-50" 
                             style={{ left: `${(i / gridCount) * 100}%` }}
                           />
                         );
@@ -611,7 +611,7 @@ export default function SongList({
                     
                     {/* 楽曲タイムラインバー */}
                     <div
-                      className={`absolute h-6 top-1 rounded-sm transition-all hover:h-7 hover:top-0.5 ${song.color} border border-gray-400 dark:border-gray-300 ${
+                      className={`absolute h-8 top-1 rounded-sm transition-all hover:h-9 hover:top-0.5 ${song.color} border border-gray-400 dark:border-gray-300 ${
                         hasOverlap ? 'opacity-80 border-2 border-orange-400' : ''
                       } ${
                         isCurrentlyPlaying ? 'ring-2 ring-blue-400 ring-offset-1 animate-pulse shadow-lg shadow-blue-400/50' : ''
@@ -631,7 +631,7 @@ export default function SongList({
                       onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
                       title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで詳細表示'}`}
                     >
-                      <div className="text-xs text-white font-bold px-2 leading-6 pointer-events-none relative z-30">
+                      <div className="text-sm text-white font-bold px-2 leading-8 pointer-events-none relative z-30">
                         <div 
                           className="whitespace-nowrap bg-black bg-opacity-60 rounded px-1"
                           style={{

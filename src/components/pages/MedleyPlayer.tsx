@@ -11,6 +11,7 @@ import { useNicoPlayer } from "@/hooks/useNicoPlayer";
 import SongList from "@/components/features/medley/SongList";
 import SongEditModal from "@/components/features/medley/SongEditModal";
 import SongDetailModal from "@/components/features/medley/SongDetailModal";
+import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
 import ShareButtons from "@/components/features/share/ShareButtons";
 import { SongSection } from "@/types";
 
@@ -37,6 +38,14 @@ export default function MedleyPlayer({
     // 楽曲詳細モーダル関連の状態
     const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
     const [detailSong, setDetailSong] = useState<SongSection | null>(null);
+    
+    // ツールチップ関連の状態
+    const [tooltipSong, setTooltipSong] = useState<SongSection | null>(null);
+    const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+    const [isTooltipVisible, setIsTooltipVisible] = useState<boolean>(false);
+    const [isHoveringTooltip, setIsHoveringTooltip] = useState<boolean>(false);
+    const [isHoveringSong, setIsHoveringSong] = useState<boolean>(false);
+    const [hideTooltipTimeout, setHideTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
 
     // メドレーデータの取得
     const { medleySongs, medleyTitle, medleyCreator, medleyDuration, loading, error } = useMedleyData(videoId);
@@ -133,6 +142,41 @@ export default function MedleyPlayer({
             document.removeEventListener('keydown', handleKeyDown);
         };
     }, [isEditMode, undo, redo]);
+
+    // コンポーネントのアンマウント時にタイムアウトをクリーンアップ
+    useEffect(() => {
+        return () => {
+            if (hideTooltipTimeout) {
+                clearTimeout(hideTooltipTimeout);
+            }
+        };
+    }, [hideTooltipTimeout]);
+
+    // ドキュメントクリックでツールチップを非表示
+    useEffect(() => {
+        const handleDocumentClick = () => {
+            if (isTooltipVisible) {
+                setIsTooltipVisible(false);
+                setIsHoveringTooltip(false);
+                setIsHoveringSong(false);
+                if (hideTooltipTimeout) {
+                    clearTimeout(hideTooltipTimeout);
+                    setHideTooltipTimeout(null);
+                }
+                // 少し遅延してからツールチップをクリア
+                setTimeout(() => {
+                    setTooltipSong(null);
+                }, 100);
+            }
+        };
+
+        if (isTooltipVisible) {
+            document.addEventListener('click', handleDocumentClick);
+            return () => {
+                document.removeEventListener('click', handleDocumentClick);
+            };
+        }
+    }, [isTooltipVisible, hideTooltipTimeout]);
     
     // 現在のトラックの追跡（編集中か元のデータかを切り替え）
     const displaySongs = isEditMode ? editingSongs : medleySongs;
@@ -162,6 +206,56 @@ export default function MedleyPlayer({
     const handleShowSongDetail = (song: SongSection) => {
         setDetailSong(song);
         setDetailModalOpen(true);
+    };
+    
+    const handleHoverSong = (song: SongSection | null, position: { x: number; y: number }) => {
+        if (song) {
+            // 既存のタイムアウトをクリア
+            if (hideTooltipTimeout) {
+                clearTimeout(hideTooltipTimeout);
+                setHideTooltipTimeout(null);
+            }
+            
+            setTooltipSong(song);
+            setTooltipPosition(position);
+            setIsTooltipVisible(true);
+            setIsHoveringSong(true);
+        } else {
+            setIsHoveringSong(false);
+            
+            // タイムアウトを設定して遅延後に非表示
+            const timeout = setTimeout(() => {
+                if (!isHoveringTooltip && !isHoveringSong) {
+                    setIsTooltipVisible(false);
+                    setTooltipSong(null);
+                }
+            }, 200); // 200ms の遅延
+            
+            setHideTooltipTimeout(timeout);
+        }
+    };
+
+    const handleTooltipMouseEnter = () => {
+        // 既存のタイムアウトをクリア
+        if (hideTooltipTimeout) {
+            clearTimeout(hideTooltipTimeout);
+            setHideTooltipTimeout(null);
+        }
+        setIsHoveringTooltip(true);
+    };
+
+    const handleTooltipMouseLeave = () => {
+        setIsHoveringTooltip(false);
+        
+        // タイムアウトを設定して遅延後に非表示
+        const timeout = setTimeout(() => {
+            if (!isHoveringTooltip && !isHoveringSong) {
+                setIsTooltipVisible(false);
+                setTooltipSong(null);
+            }
+        }, 200); // 200ms の遅延
+        
+        setHideTooltipTimeout(timeout);
     };
 
     const handleToggleEditMode = () => {
@@ -354,6 +448,7 @@ export default function MedleyPlayer({
                         onDeleteSong={deleteSong}
                         onUpdateSong={updateSong}
                         onShowSongDetail={handleShowSongDetail}
+                        onHoverSong={handleHoverSong}
                     />
                 )}
 
@@ -405,6 +500,16 @@ export default function MedleyPlayer({
                 onClose={() => setDetailModalOpen(false)}
                 song={detailSong}
                 onSeek={seek}
+            />
+            
+            {/* 楽曲詳細ツールチップ */}
+            <SongDetailTooltip
+                song={tooltipSong}
+                isVisible={isTooltipVisible}
+                position={tooltipPosition}
+                onSeek={seek}
+                onMouseEnter={handleTooltipMouseEnter}
+                onMouseLeave={handleTooltipMouseLeave}
             />
         </div>
     );

@@ -41,7 +41,7 @@ This verification step is essential because the production environment uses stat
 Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
 
 ### Current Implementation Status
-**Phase 9 Complete**: Timeline Zoom & Advanced Navigation
+**Phase 10 Complete**: Advanced Tooltip System & UX Enhancement
 - ✅ Phase 1: Supabase database integration with fallback to static data
 - ✅ Phase 2: Drag-and-drop timeline editor with modal-based song editing  
 - ✅ Phase 3: Dynamic routing with individual medley pages and OGP metadata
@@ -53,7 +53,8 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ **Timeline Unification**: Integrated SongTimeline functionality into SongList component for streamlined UX
 - ✅ **Song List UI Redesign**: Simplified layout with clean card design, full song title display, and enhanced visual feedback
 - ✅ **Phase 9: Timeline Zoom System**: Complete zoom/pan functionality with dynamic grids, auto-follow, and precision editing
-- 🔄 Phase 10: User authentication and collaborative editing (planned)
+- ✅ **Phase 10: Advanced Tooltip System**: Hover-based song details with intelligent positioning and click-to-dismiss functionality
+- 🔄 Phase 11: User authentication and collaborative editing (planned)
 
 ## Core Architecture
 
@@ -149,6 +150,7 @@ The application's core functionality relies on postMessage communication with Ni
 - `SongList` - Unified card-based song display with integrated Gantt chart timeline bars, complete editing functionality including drag-and-drop, snap, selection, and keyboard shortcuts
 - `SongEditModal` - Modal for detailed song editing with time validation
 - `SongDetailModal` - Read-only modal for displaying song information with play-from-here functionality
+- `SongDetailTooltip` - Hover-based lightweight song information display with intelligent positioning and interaction management
 - `ShareButtons` - Social sharing with platform-aware URL generation and native share API
 - `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights across platforms
 
@@ -245,6 +247,46 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - Accessible design with proper ARIA labels and keyboard navigation
 - Modal state managed at MedleyPlayer level with `onShowSongDetail` callback
 
+#### Advanced Tooltip System (Phase 10)
+**CRITICAL**: Hover-based song detail display with intelligent interaction management.
+
+**Tooltip Architecture:**
+- `SongDetailTooltip` component provides lightweight song information on hover
+- Intelligent positioning system prevents display cutoff at screen edges
+- Automatic position adjustment based on viewport boundaries and tooltip dimensions
+- Fixed positioning with z-index layering for proper display hierarchy
+
+**Hover State Management:**
+```typescript
+const [isHoveringTooltip, setIsHoveringTooltip] = useState<boolean>(false);
+const [isHoveringSong, setIsHoveringSong] = useState<boolean>(false);
+const [hideTooltipTimeout, setHideTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
+```
+
+**Smart Interaction Flow:**
+- **Timeline Bar Hover**: Tooltip appears with 0ms delay positioned beside timeline bar
+- **Tooltip Hover**: Mouse can move to tooltip, keeping it visible for interaction
+- **Click-to-Dismiss**: Clicking anywhere outside tooltip dismisses it immediately
+- **Timeout Management**: 200ms delay before hiding when both timeline and tooltip lose hover
+- **Click Propagation**: Tooltip clicks use `e.stopPropagation()` to prevent dismissal
+
+**Position Calculation:**
+```typescript
+// Intelligent positioning with screen edge detection
+const adjustedX = position.x + tooltipWidth + padding > window.innerWidth 
+  ? position.x - tooltipWidth - padding 
+  : position.x;
+const adjustedY = position.y + tooltipHeight + padding > window.innerHeight
+  ? position.y - tooltipHeight - padding
+  : position.y;
+```
+
+**Integration Patterns:**
+- **View Mode**: Hover shows tooltip, click seeks to song start time
+- **Edit Mode**: Hover disabled, click selects song for editing
+- **Timeout Cleanup**: All timeouts cleared on component unmount and state changes
+- **Event Coordination**: Document click listener only active when tooltip visible
+
 #### Component Integration Pattern
 - Platform-specific player components (`NicoPlayer`, `YouTubePlayer`) handle iframe embedding
 - `useNicoPlayer` hook manages Niconico player communication and state
@@ -329,6 +371,16 @@ const effectiveDuration = medleyDuration || duration;
 - **Current Time Indicator**: Red vertical line shows real-time playback position across all timeline bars
 - **Enhanced Visual Feedback**: Current playing songs highlighted with blue rings, pulse animation, and shadow effects
 
+**Tooltip System Testing:**
+- **Hover Display**: Move mouse over timeline bars in view mode to trigger tooltip appearance
+- **Position Adjustment**: Test tooltip positioning near screen edges (top, bottom, left, right)
+- **Mouse Movement**: Move mouse from timeline bar to tooltip - tooltip should remain visible
+- **Click to Seek**: Click "この曲から再生" button in tooltip to test seek functionality
+- **Click Dismissal**: Click anywhere outside tooltip to test dismissal behavior
+- **Timeout Behavior**: Move mouse away from both timeline and tooltip - should dismiss after 200ms delay
+- **Edit Mode**: Verify tooltip is disabled when edit mode is active
+- **Mobile Testing**: Test tap-based interaction on touch devices
+
 ### Common Issues and Solutions
 **Player Integration:**
 - **Seek operations fail or reset to beginning**: Ensure time values are converted to milliseconds (`* 1000`)
@@ -379,6 +431,16 @@ const effectiveDuration = medleyDuration || duration;
 - **Pulse animation not showing**: Ensure playing songs have `animate-pulse shadow-lg shadow-blue-400/50` classes
 - **Edit/delete buttons missing**: Confirm edit mode is active and buttons are rendered at timeline bar right edge (`absolute right-2 top-1 z-40`)
 - **Color dots showing**: Header color indicators have been removed - ensure no legacy color dot rendering code remains
+
+**Tooltip System Issues:**
+- **Tooltip not appearing on hover**: Check `onHoverSong` callback is properly passed to SongList and connected to MedleyPlayer
+- **Tooltip appears but immediately disappears**: Verify `isHoveringTooltip` and `isHoveringSong` state management and timeout logic
+- **Tooltip positioned incorrectly**: Check `adjustedPosition` calculation in useEffect and ensure viewport boundary detection
+- **Tooltip doesn't dismiss on click**: Ensure document click listener is attached when `isTooltipVisible` is true
+- **"この曲から再生" button not working**: Verify `onSeek` prop is passed to tooltip and click handler calls seek function
+- **Tooltip shows in edit mode**: Check `!isEditMode` condition in hover event handlers
+- **Memory leaks with timeouts**: Ensure `hideTooltipTimeout` is cleared in cleanup functions and component unmount
+- **Tooltip flickers during mouse movement**: Verify 200ms delay timing and proper timeout management
 
 **Build and Deployment:**
 - **Build deployment failing**: Ensure `public/favicon.ico` exists for Next.js build
@@ -431,7 +493,7 @@ const effectiveDuration = medleyDuration || duration;
 
 ### Component Architecture Patterns
 **Feature-Based Organization:**
-- `src/components/features/medley/` - Unified song list (with integrated timeline), edit modal, and detail modal components
+- `src/components/features/medley/` - Unified song list (with integrated timeline), edit modal, detail modal, and tooltip components
 - `src/components/features/player/` - Niconico iframe integration
 - `src/components/features/share/` - Social sharing and URL generation
 - `src/components/features/statistics/` - Analytics and data visualization

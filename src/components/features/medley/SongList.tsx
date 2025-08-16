@@ -13,18 +13,20 @@ interface SongListProps {
   onDeleteSong?: (songId: number) => void;
   onUpdateSong?: (song: SongSection) => void;
   onShowSongDetail?: (song: SongSection) => void;
+  onHoverSong?: (song: SongSection | null, position: { x: number; y: number }) => void;
 }
 
 export default function SongList({ 
   songs, 
   currentTime, 
   duration,
-  onSeek, // eslint-disable-line @typescript-eslint/no-unused-vars
+  onSeek,
   isEditMode = false, 
   onEditSong, 
   onDeleteSong,
   onUpdateSong,
-  onShowSongDetail
+  onShowSongDetail, // eslint-disable-line @typescript-eslint/no-unused-vars
+  onHoverSong
 }: SongListProps) {
   // 編集機能の状態管理
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
@@ -190,7 +192,8 @@ export default function SongList({
       setSelectedSong(selectedSong?.id === song.id ? null : song);
     } else {
       e.stopPropagation();
-      onShowSongDetail?.(song);
+      // ビューモードでは楽曲の開始位置にシーク
+      onSeek(song.startTime);
     }
   };
 
@@ -200,6 +203,24 @@ export default function SongList({
       e.preventDefault();
       e.stopPropagation();
       onEditSong(song);
+    }
+  };
+
+  // マウスホバーイベント処理
+  const handleSongHover = (e: React.MouseEvent, song: SongSection) => {
+    if (!isEditMode && onHoverSong) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const position = {
+        x: rect.right + 8, // タイムラインバーの右側に表示
+        y: rect.top
+      };
+      onHoverSong(song, position);
+    }
+  };
+
+  const handleSongLeave = () => {
+    if (!isEditMode && onHoverSong) {
+      onHoverSong(null, { x: 0, y: 0 });
     }
   };
 
@@ -591,7 +612,9 @@ export default function SongList({
                       onClick={(e) => handleSongClick(e, song)}
                       onDoubleClick={(e) => handleSongDoubleClick(e, song)}
                       onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
-                      title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで詳細表示'}`}
+                      onMouseEnter={(e) => handleSongHover(e, song)}
+                      onMouseLeave={handleSongLeave}
+                      title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで再生'}`}
                     >
                       <div className="text-xs text-white font-bold px-2 leading-6 pointer-events-none relative z-30">
                         <div 

@@ -163,7 +163,7 @@ export const nicoMedley1: MedleyData = {
   videoId: "sm500873",
   title: "組曲『ニコニコ動画』",
   creator: "しも",
-  duration: 1062, // 17分42秒
+  duration: 573, // 9分33秒（正確な長さ）
   platform: "niconico",
   createdAt: "2007-07-05T20:30:00Z",
   updatedAt: "2024-12-15T08:00:00Z",
@@ -171,180 +171,303 @@ export const nicoMedley1: MedleyData = {
   songs: [
     {
       id: 1,
-      title: "Ievan Polkka",
-      artist: "初音ミク",
+      title: "エージェント夜を往く",
+      artist: "THE iDOLM@STER",
       startTime: 0,
-      endTime: 30,
-      color: "bg-cyan-400",
-      genre: "ボカロ",
-      originalLink: "https://www.nicovideo.jp/watch/sm982882"
+      endTime: 45,
+      color: "bg-blue-400",
+      genre: "ゲーム音楽",
+      originalLink: ""
     },
     {
       id: 2,
-      title: "魔理沙は大変なものを盗んでいきました",
-      artist: "ARM+夕野ヨシミ feat. 焼飯",
-      startTime: 30,
-      endTime: 80,
+      title: "ハレ晴レユカイ",
+      artist: "平野綾, 茅原実里, 後藤邑子",
+      startTime: 45,
+      endTime: 74,
       color: "bg-yellow-400",
-      genre: "東方",
-      originalLink: "https://www.nicovideo.jp/watch/sm62856"
+      genre: "アニソン",
+      originalLink: ""
     },
     {
       id: 3,
       title: "患部で止まってすぐ溶ける〜狂気の優曇華院",
-      artist: "ARM",
-      startTime: 80,
-      endTime: 130,
+      artist: "ARM (IOSYS)",
+      startTime: 74,
+      endTime: 85,
       color: "bg-purple-400",
       genre: "東方",
-      originalLink: "https://www.nicovideo.jp/watch/sm166406"
+      originalLink: ""
     },
     {
       id: 4,
-      title: "最終鬼畜妹フランドール・S",
-      artist: "ビートまりお",
-      startTime: 130,
-      endTime: 190,
+      title: "Help me, ERINNNNNN!!",
+      artist: "beatMARIO (COOL&CREATE)",
+      startTime: 85,
+      endTime: 97,
       color: "bg-red-400",
       genre: "東方",
-      originalLink: "https://www.nicovideo.jp/watch/sm24806"
+      originalLink: ""
     },
     {
       id: 5,
-      title: "エージェント夜を往く",
-      artist: "中島らも",
-      startTime: 190,
-      endTime: 240,
-      color: "bg-blue-400",
-      genre: "その他"
+      title: "nowhere",
+      artist: "MADLAX",
+      startTime: 97,
+      endTime: 120,
+      color: "bg-green-400",
+      genre: "アニソン",
+      originalLink: ""
     },
     {
       id: 6,
-      title: "カラフル",
-      artist: "島谷ひとみ",
-      startTime: 240,
-      endTime: 290,
-      color: "bg-green-400",
-      genre: "J-POP"
+      title: "クリティアスの牙",
+      artist: "遊戯王デュエルモンスターズ",
+      startTime: 120,
+      endTime: 140,
+      color: "bg-orange-400",
+      genre: "アニソン",
+      originalLink: ""
     },
     {
       id: 7,
-      title: "you",
-      artist: "Shinji Orito",
-      startTime: 290,
-      endTime: 340,
-      color: "bg-orange-400",
-      genre: "ゲーム音楽"
+      title: "GONG",
+      artist: "スーパーロボット大戦α外伝",
+      startTime: 140,
+      endTime: 151,
+      color: "bg-cyan-400",
+      genre: "ゲーム音楽",
+      originalLink: ""
     },
     {
       id: 8,
-      title: "ドナルド教",
-      artist: "ドナルド・マクドナルド",
-      startTime: 340,
-      endTime: 390,
-      color: "bg-yellow-500",
-      genre: "MAD"
+      title: "森のキノコにご用心",
+      artist: "スーパーマリオRPG",
+      startTime: 151,
+      endTime: 162,
+      color: "bg-green-500",
+      genre: "ゲーム音楽",
+      originalLink: ""
     },
     {
       id: 9,
-      title: "創聖のアクエリオン",
-      artist: "AKINO",
-      startTime: 390,
-      endTime: 450,
-      color: "bg-pink-400",
-      genre: "アニソン"
+      title: "Butter-Fly",
+      artist: "デジモンアドベンチャー",
+      startTime: 162,
+      endTime: 172,
+      color: "bg-orange-500",
+      genre: "アニソン",
+      originalLink: ""
     },
     {
       id: 10,
-      title: "森のキノコにご用心",
-      artist: "中川翔子",
-      startTime: 450,
-      endTime: 510,
-      color: "bg-green-500",
-      genre: "その他"
+      title: "真赤な誓い",
+      artist: "武装錬金",
+      startTime: 172,
+      endTime: 196,
+      color: "bg-red-500",
+      genre: "アニソン",
+      originalLink: ""
     },
     {
       id: 11,
-      title: "メルト",
-      artist: "ryo",
-      startTime: 510,
-      endTime: 580,
-      color: "bg-cyan-500",
-      genre: "ボカロ",
-      originalLink: "https://www.nicovideo.jp/watch/sm1715919"
+      title: "エアーマンが倒せない（カラオケ版）",
+      artist: "せら",
+      startTime: 196,
+      endTime: 215,
+      color: "bg-blue-500",
+      genre: "ニコニコ",
+      originalLink: "https://www.nicovideo.jp/watch/sm350170"
     },
     {
       id: 12,
-      title: "ハレ晴レユカイ",
-      artist: "平野綾, 茅原実里, 後藤邑子",
-      startTime: 580,
-      endTime: 640,
-      color: "bg-yellow-300",
-      genre: "アニソン"
+      title: "勇気VS意地",
+      artist: "テニスの王子様ミュージカル",
+      startTime: 215,
+      endTime: 224,
+      color: "bg-yellow-500",
+      genre: "その他",
+      originalLink: ""
     },
     {
       id: 13,
-      title: "God knows...",
-      artist: "平野綾",
-      startTime: 640,
-      endTime: 720,
-      color: "bg-purple-500",
-      genre: "アニソン"
+      title: "アンインストール",
+      artist: "ぼくらの",
+      startTime: 224,
+      endTime: 247,
+      color: "bg-gray-400",
+      genre: "アニソン",
+      originalLink: ""
     },
     {
       id: 14,
-      title: "思い出は億千万",
-      artist: "檜山修之",
-      startTime: 720,
-      endTime: 780,
-      color: "bg-red-300",
-      genre: "アニソン"
+      title: "鳥の詩",
+      artist: "AIR",
+      startTime: 247,
+      endTime: 271,
+      color: "bg-cyan-500",
+      genre: "ゲーム音楽",
+      originalLink: ""
     },
     {
       id: 15,
-      title: "愛をとりもどせ!!",
-      artist: "クリスタルキング",
-      startTime: 780,
-      endTime: 840,
-      color: "bg-orange-300",
-      genre: "アニソン"
+      title: "you",
+      artist: "ひぐらしのなく頃に解",
+      startTime: 271,
+      endTime: 293,
+      color: "bg-purple-500",
+      genre: "ゲーム音楽",
+      originalLink: ""
     },
     {
       id: 16,
-      title: "ガンダム (翔べ!ガンダム)",
-      artist: "池田鴻",
-      startTime: 840,
-      endTime: 900,
-      color: "bg-blue-300",
-      genre: "アニソン"
+      title: "魔理沙は大変なものを盗んでいきました",
+      artist: "ARM (IOSYS)",
+      startTime: 293,
+      endTime: 340,
+      color: "bg-yellow-300",
+      genre: "東方",
+      originalLink: ""
     },
     {
       id: 17,
-      title: "エヴァンゲリオン",
-      artist: "高橋洋子",
-      startTime: 900,
-      endTime: 960,
-      color: "bg-purple-300",
-      genre: "アニソン"
+      title: "Dr. WILY STAGE 1",
+      artist: "ロックマン2",
+      startTime: 340,
+      endTime: 402,
+      color: "bg-blue-300",
+      genre: "ゲーム音楽",
+      originalLink: ""
     },
     {
       id: 18,
-      title: "True My Heart",
-      artist: "ave;new feat. 佐倉紗織",
-      startTime: 960,
-      endTime: 1020,
-      color: "bg-pink-300",
-      genre: "ゲーム音楽"
+      title: "God knows...",
+      artist: "涼宮ハルヒの憂鬱",
+      startTime: 402,
+      endTime: 427,
+      color: "bg-purple-300",
+      genre: "アニソン",
+      originalLink: ""
     },
     {
       id: 19,
-      title: "Ievan Polkka (エンディング)",
-      artist: "初音ミク",
-      startTime: 1020,
-      endTime: 1062,
+      title: "もってけ！セーラーふく",
+      artist: "らき☆すた",
+      startTime: 427,
+      endTime: 448,
+      color: "bg-pink-400",
+      genre: "アニソン",
+      originalLink: ""
+    },
+    {
+      id: 20,
+      title: "ガチャガチャきゅ〜と・フィギュ@メイト",
+      artist: "フィギュ@ラジオ",
+      startTime: 448,
+      endTime: 464,
+      color: "bg-pink-500",
+      genre: "その他",
+      originalLink: ""
+    },
+    {
+      id: 21,
+      title: "創聖のアクエリオン",
+      artist: "AKINO",
+      startTime: 464,
+      endTime: 486,
+      color: "bg-orange-300",
+      genre: "アニソン",
+      originalLink: ""
+    },
+    {
+      id: 22,
+      title: "ふたりのもじぴったん",
+      artist: "ことばのパズル もじぴったん",
+      startTime: 486,
+      endTime: 495,
+      color: "bg-green-300",
+      genre: "ゲーム音楽",
+      originalLink: ""
+    },
+    {
+      id: 23,
+      title: "つるぺったん",
+      artist: "NYO (Silver Forest)",
+      startTime: 495,
+      endTime: 507,
+      color: "bg-yellow-200",
+      genre: "東方",
+      originalLink: ""
+    },
+    {
+      id: 24,
+      title: "地上BGM（Here we go!）",
+      artist: "スーパーマリオワールド",
+      startTime: 507,
+      endTime: 515,
+      color: "bg-red-300",
+      genre: "ゲーム音楽",
+      originalLink: ""
+    },
+    {
+      id: 25,
+      title: "true my heart",
+      artist: "ナースリィ♪ライム",
+      startTime: 515,
+      endTime: 531,
+      color: "bg-pink-300",
+      genre: "ゲーム音楽",
+      originalLink: ""
+    },
+    {
+      id: 26,
+      title: "kiss my lips",
+      artist: "ave;new feat. 佐倉紗織",
+      startTime: 531,
+      endTime: 538,
       color: "bg-cyan-300",
-      genre: "ボカロ",
-      originalLink: "https://www.nicovideo.jp/watch/sm982882"
+      genre: "その他",
+      originalLink: ""
+    },
+    {
+      id: 27,
+      title: "Rodeo Machine",
+      artist: "HALFBY",
+      startTime: 538,
+      endTime: 548,
+      color: "bg-blue-200",
+      genre: "その他",
+      originalLink: ""
+    },
+    {
+      id: 28,
+      title: "序曲",
+      artist: "ドラゴンクエスト",
+      startTime: 548,
+      endTime: 561,
+      color: "bg-purple-200",
+      genre: "ゲーム音楽",
+      originalLink: ""
+    },
+    {
+      id: 29,
+      title: "メインテーマ",
+      artist: "ファイナルファンタジー",
+      startTime: 561,
+      endTime: 569,
+      color: "bg-gray-300",
+      genre: "ゲーム音楽",
+      originalLink: ""
+    },
+    {
+      id: 30,
+      title: "ガチャガチャきゅ〜と・フィギュ@メイト",
+      artist: "フィギュ@メイト",
+      startTime: 569,
+      endTime: 573,
+      color: "bg-orange-200",
+      genre: "その他",
+      originalLink: ""
     }
   ]
 };

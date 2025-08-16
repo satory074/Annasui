@@ -389,27 +389,24 @@ export default function SongList({
   const visibleSongs = getVisibleSongs();
 
   return (
-    <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center gap-4">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+    <div className="p-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+      <div className="flex justify-between items-center mb-1">
+        <div className="flex items-center gap-3">
+          <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
             楽曲リスト - 現在: {formatTime(currentTime)}
-            {isEditMode && (
-              <span className="ml-2 text-xs text-blue-600 dark:text-blue-400">
-                (編集モード: クリックで選択, ドラッグで移動, 矢印キーで微調整)
-                {selectedSong && <span className="ml-1 text-green-600 dark:text-green-400">「{selectedSong.title}」選択中</span>}
-              </span>
+            {isEditMode && selectedSong && (
+              <span className="ml-2 text-xs text-green-600 dark:text-green-400">「{selectedSong.title}」選択中</span>
             )}
             {currentSongs.length > 1 && (
-              <span className="ml-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded">
-                マッシュアップ: {currentSongs.length}曲同時再生中
+              <span className="ml-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded">
+                マッシュアップ: {currentSongs.length}曲
               </span>
             )}
           </h3>
           {isEditMode && (
             <button
               onClick={() => setIsSnapEnabled(!isSnapEnabled)}
-              className={`px-2 py-1 text-xs rounded transition-colors ${
+              className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
                 isSnapEnabled 
                   ? 'bg-green-500 text-white hover:bg-green-600' 
                   : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
@@ -428,8 +425,8 @@ export default function SongList({
       </div>
 
       {/* タイムラインズームコントロール */}
-      <div className="mb-2 p-2 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-3">
+      <div className="mb-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2">
           <div className="flex items-center gap-2">
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
               ズーム:
@@ -470,7 +467,7 @@ export default function SongList({
 
           <button
             onClick={() => setAutoFollow(!autoFollow)}
-            className={`px-2 py-1 text-xs rounded transition-colors ${
+            className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
               autoFollow 
                 ? 'bg-blue-500 text-white hover:bg-blue-600' 
                 : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
@@ -503,15 +500,15 @@ export default function SongList({
         </div>
 
         {timelineZoom > 1 && (
-          <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">
             表示範囲: {formatTime(visibleStartTime)} - {formatTime(visibleEndTime)} 
             ({formatTime(visibleDuration)} / {formatTime(duration)})
           </div>
         )}
       </div>
 
-      <div className="overflow-auto max-h-96">
-        <div className="space-y-1">
+      <div className="overflow-auto max-h-80">
+        <div className="space-y-0.5">
             {visibleSongs.map((song) => {
               const { hasOverlap, overlappingSongs } = detectOverlaps(song);
               const isCurrentlyPlaying = currentSongs.some(s => s.id === song.id);
@@ -519,51 +516,16 @@ export default function SongList({
               return (
                 <div
                   key={song.id}
-                  className={`relative p-2 rounded-lg border transition-all ${
+                  className={`relative p-1 rounded-lg border transition-all ${
                     isCurrentlyPlaying
                       ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
                       : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
                   }`}
                 >
-                  {/* ヘッダー情報 */}
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: song.color.replace("bg-", "") }}
-                      ></div>
-                    </div>
-                    {isEditMode && (
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => onEditSong?.(song)}
-                          className="p-1 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors"
-                          title="編集"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm(`「${song.title}」を削除しますか？`)) {
-                              onDeleteSong?.(song.id);
-                            }
-                          }}
-                          className="p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
-                          title="削除"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    )}
-                  </div>
 
                   {/* タイムライン */}
                   <div 
-                    className={`timeline-container relative w-full h-10 bg-gray-100 dark:bg-gray-800 rounded border ${
+                    className={`timeline-container relative w-full h-8 bg-gray-100 dark:bg-gray-800 rounded border ${
                       timelineZoom > 1 && !isEditMode ? 'cursor-grab' : ''
                     } ${
                       isDragging ? 'cursor-grabbing' : ''
@@ -611,7 +573,7 @@ export default function SongList({
                     
                     {/* 楽曲タイムラインバー */}
                     <div
-                      className={`absolute h-8 top-1 rounded-sm transition-all hover:h-9 hover:top-0.5 ${song.color} border border-gray-400 dark:border-gray-300 ${
+                      className={`absolute h-6 top-1 rounded-sm transition-all hover:h-7 hover:top-0 ${song.color} border border-gray-400 dark:border-gray-300 ${
                         hasOverlap ? 'opacity-80 border-2 border-orange-400' : ''
                       } ${
                         isCurrentlyPlaying ? 'ring-2 ring-blue-400 ring-offset-1 animate-pulse shadow-lg shadow-blue-400/50' : ''
@@ -631,7 +593,7 @@ export default function SongList({
                       onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
                       title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで詳細表示'}`}
                     >
-                      <div className="text-sm text-white font-bold px-2 leading-8 pointer-events-none relative z-30">
+                      <div className="text-xs text-white font-bold px-2 leading-6 pointer-events-none relative z-30">
                         <div 
                           className="whitespace-nowrap bg-black bg-opacity-60 rounded px-1"
                           style={{
@@ -665,6 +627,34 @@ export default function SongList({
                         </>
                       )}
                     </div>
+                    
+                    {/* 編集ボタン（編集モード時のみ、タイムライン右端に配置） */}
+                    {isEditMode && (
+                      <div className="absolute right-2 top-1 flex gap-1 z-40">
+                        <button
+                          onClick={() => onEditSong?.(song)}
+                          className="p-0.5 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded transition-colors bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600"
+                          title="編集"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`「${song.title}」を削除しますか？`)) {
+                              onDeleteSong?.(song.id);
+                            }
+                          }}
+                          className="p-0.5 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600"
+                          title="削除"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                    )}
                     
                     {/* 現在再生位置インジケーター */}
                     <div

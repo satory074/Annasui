@@ -82,8 +82,8 @@ export default function MedleyPlayer({
         }
     });
     
-    // durationを決定（プレイヤーから取得できない場合は静的データを使用）
-    const effectiveDuration = duration > 0 ? duration : medleyDuration;
+    // durationを決定（静的データを優先、プレイヤーデータはフォールバック）
+    const effectiveDuration = medleyDuration || duration;
     
     // シーク機能をプラットフォーム別に実装
     const seek = (seekTime: number) => {

@@ -29,6 +29,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This verification step is essential because the production environment uses static export and cross-origin iframe embedding, which can behave differently than local development.
 
+### 動作確認の重要事項
+**CRITICAL**: 機能の動作確認は必ずプロダクション環境（https://illustrious-figolla-20f57e.netlify.app）で行うこと。
+ローカル環境（localhost）での確認は開発時のみとし、最終的な動作確認は常にプロダクション環境を使用する。
+- 問題の報告や機能の検証は、プロダクション環境での動作に基づいて行う
+- ローカル環境とプロダクション環境では、iframe通信やstatic export等の違いにより動作が異なる場合がある
+- バグ修正や新機能の実装後は、必ずプロダクション環境でテストを実施してから完了とする
+
 ## Project Overview
 
 Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
@@ -248,10 +255,10 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 
 **CRITICAL Duration Handling Pattern:**
 ```typescript
-// Always use effectiveDuration fallback in MedleyPlayer.tsx
-const effectiveDuration = duration > 0 ? duration : medleyDuration;
+// UPDATED: Prioritize static data over player data in MedleyPlayer.tsx
+const effectiveDuration = medleyDuration || duration;
 ```
-This prevents `Infinity%` calculations when `useNicoPlayer` returns `duration=0` before player initialization.
+**IMPORTANT**: Static data duration takes priority over player duration to ensure correct timeline positioning. This prevents misalignment when player returns actual video duration that differs from annotation data. This prevents `Infinity%` calculations when `useNicoPlayer` returns `duration=0` before player initialization, and ensures timeline bars are positioned correctly even when player duration doesn't match expected medley length.
 
 #### Seek Operation Implementation
 **Niconico Player - Critical Sequence for Stopped Player:**
@@ -329,7 +336,8 @@ This prevents `Infinity%` calculations when `useNicoPlayer` returns `duration=0`
 - **Child elements intercepting clicks**: Use `pointer-events-none` on child elements
 - **Player not responding**: Check iframe load and postMessage origin verification
 - **Seek without automatic playback**: Add play command after seek when player is stopped
-- **Duration is 0 causing Infinity% positioning**: Use `effectiveDuration = duration > 0 ? duration : medleyDuration` fallback pattern
+- **Duration is 0 causing Infinity% positioning**: Use `effectiveDuration = medleyDuration || duration` fallback pattern (static data priority)
+- **Timeline bars positioned incorrectly**: Ensure static data duration is prioritized over player duration to prevent misalignment when video ID doesn't match annotation data
 
 **Data Management:**
 - **Database connection fails**: Check Supabase environment variables, app falls back to static data automatically

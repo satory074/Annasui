@@ -7,7 +7,6 @@ interface SongListProps {
   songs: SongSection[];
   currentTime: number;
   duration: number;
-  onSeek: (time: number) => void;
   isEditMode?: boolean;
   onEditSong?: (song: SongSection) => void;
   onDeleteSong?: (songId: number) => void;
@@ -20,12 +19,11 @@ export default function SongList({
   songs, 
   currentTime, 
   duration,
-  onSeek,
   isEditMode = false, 
   onEditSong, 
   onDeleteSong,
   onUpdateSong,
-  onShowSongDetail, // eslint-disable-line @typescript-eslint/no-unused-vars
+  onShowSongDetail,
   onHoverSong
 }: SongListProps) {
   // 編集機能の状態管理
@@ -192,8 +190,8 @@ export default function SongList({
       setSelectedSong(selectedSong?.id === song.id ? null : song);
     } else {
       e.stopPropagation();
-      // ビューモードでは楽曲の開始位置にシーク
-      onSeek(song.startTime);
+      // ビューモードでは楽曲詳細モーダルを開く
+      onShowSongDetail?.(song);
     }
   };
 
@@ -248,39 +246,7 @@ export default function SongList({
     }
   };
 
-  // タイムラインドラッグパン処理
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStartX, setDragStartX] = useState(0);
-  const [dragStartOffset, setDragStartOffset] = useState(0);
 
-  const handleTimelineDragStart = (e: React.MouseEvent) => {
-    if (timelineZoom > 1 && !isEditMode) {
-      setIsDragging(true);
-      setDragStartX(e.clientX);
-      setDragStartOffset(timelineOffset);
-      e.preventDefault();
-    }
-  };
-
-  const handleTimelineDragMove = (e: MouseEvent) => {
-    if (isDragging) {
-      const deltaX = e.clientX - dragStartX;
-      const timelineElement = document.querySelector('.timeline-container') as HTMLElement;
-      if (!timelineElement) return;
-      
-      const rect = timelineElement.getBoundingClientRect();
-      const deltaTime = -(deltaX / rect.width) * visibleDuration;
-      const newOffset = Math.max(0, Math.min(
-        duration - visibleDuration,
-        dragStartOffset + deltaTime
-      ));
-      setTimelineOffset(newOffset);
-    }
-  };
-
-  const handleTimelineDragEnd = () => {
-    setIsDragging(false);
-  };
 
   // キーボードショートカット処理
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -384,19 +350,6 @@ export default function SongList({
     }
   }, [currentTime, autoFollow, timelineZoom, visibleStartTime, visibleEndTime, visibleDuration, duration]);
 
-  // タイムラインドラッグイベントの登録/削除
-  useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleTimelineDragMove);
-      document.addEventListener('mouseup', handleTimelineDragEnd);
-      
-      return () => {
-        document.removeEventListener('mousemove', handleTimelineDragMove);
-        document.removeEventListener('mouseup', handleTimelineDragEnd);
-      };
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging]);
 
   // 表示範囲内にある楽曲をフィルタリング
   const getVisibleSongs = (): SongSection[] => {
@@ -521,13 +474,8 @@ export default function SongList({
 
                   {/* タイムライン */}
                   <div 
-                    className={`timeline-container relative w-full h-8 bg-gray-100 dark:bg-gray-800 rounded border ${
-                      timelineZoom > 1 && !isEditMode ? 'cursor-grab' : ''
-                    } ${
-                      isDragging ? 'cursor-grabbing' : ''
-                    }`}
+                    className="timeline-container relative w-full h-8 bg-gray-100 dark:bg-gray-800 rounded border"
                     onWheel={handleWheel}
-                    onMouseDown={handleTimelineDragStart}
                   >
                     {/* 時間グリッド（背景） - ズームレベルに応じて調整 */}
                     <div className="absolute inset-0 flex">

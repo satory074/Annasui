@@ -187,7 +187,6 @@ const visibleEndTime = Math.min(timelineOffset + visibleDuration, duration);
 
 **Advanced Navigation Features:**
 - **Mouse Wheel Zoom**: Ctrl/Cmd+wheel for precise zoom control centered on mouse position
-- **Drag Pan**: Click and drag timeline when zoomed for smooth navigation
 - **Smart Clipping**: Automatic filtering of songs outside visible range
 - **Dynamic Grids**: Time grid density adapts to zoom level (5x shows 12-second intervals)
 - **Time Labels**: Detailed time markers appear at 1.5x+ zoom for precision editing
@@ -369,7 +368,6 @@ const effectiveDuration = medleyDuration || duration;
 - **Position Navigation**: Use position slider when zoomed to navigate timeline
 - **Auto-Follow Mode**: Toggle "自動追従: ON/OFF" to test automatic centering on playback
 - **Mouse Wheel Zoom**: Hold Ctrl/Cmd and scroll to zoom centered on mouse position
-- **Drag Pan**: Click and drag timeline background when zoomed to pan view
 - **Dynamic Grids**: Observe time grid density changes at different zoom levels
 - **Time Labels**: Verify detailed time markers appear at 1.5x+ zoom
 - **Range Display**: Check "表示範囲" information updates correctly
@@ -440,7 +438,6 @@ const effectiveDuration = medleyDuration || duration;
 - **Position slider not appearing**: Verify `timelineZoom > 1` condition and slider visibility logic
 - **Auto-follow not working**: Ensure `currentTime` updates trigger useEffect with proper dependencies
 - **Mouse wheel zoom not working**: Confirm Ctrl/Cmd key detection and preventDefault on wheel events
-- **Drag pan not functioning**: Check `isDragging` state and mouse event listeners attachment
 - **Songs disappearing when zoomed**: Verify `getVisibleSongs` filter logic and time range calculations
 - **Timeline bars positioned incorrectly**: Ensure position calculations use `visibleStartTime` and `visibleDuration`
 - **Grid density not updating**: Check grid count calculation based on `timelineZoom` value

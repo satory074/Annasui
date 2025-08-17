@@ -13,6 +13,21 @@ interface SongListProps {
   onUpdateSong?: (song: SongSection) => void;
   onShowSongDetail?: (song: SongSection) => void;
   onHoverSong?: (song: SongSection | null, position: { x: number; y: number }) => void;
+  // 統合されたコントロール用の props
+  shareUrl?: string;
+  shareTitle?: string;
+  originalVideoUrl?: string;
+  onToggleEditMode?: () => void;
+  onAddSong?: () => void;
+  onSaveChanges?: () => void;
+  onResetChanges?: () => void;
+  hasChanges?: boolean;
+  isSaving?: boolean;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  currentSong?: SongSection;
 }
 
 export default function SongList({ 
@@ -24,7 +39,21 @@ export default function SongList({
   onDeleteSong,
   onUpdateSong,
   onShowSongDetail,
-  onHoverSong
+  onHoverSong,
+  shareUrl,
+  shareTitle,
+  originalVideoUrl,
+  onToggleEditMode,
+  onAddSong,
+  onSaveChanges,
+  onResetChanges,
+  hasChanges = false,
+  isSaving = false,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
+  currentSong // eslint-disable-line @typescript-eslint/no-unused-vars
 }: SongListProps) {
   // 編集機能の状態管理
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
@@ -363,98 +392,204 @@ export default function SongList({
   const visibleSongs = getVisibleSongs();
 
   return (
-    <div className="p-2 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-      <div className="flex justify-between items-center mb-1">
-        <div className="flex items-center gap-3">
-          <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
-            楽曲リスト - 現在: {formatTime(currentTime)}
-            {isEditMode && selectedSong && (
-              <span className="ml-2 text-xs text-green-600 dark:text-green-400">「{selectedSong.title}」選択中</span>
+    <div className="bg-gray-50 dark:bg-gray-900">
+      {/* 統一スティッキーコントロールヘッダー */}
+      <div className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        {/* セクション1: 再生ステータス + 共有エリア */}
+        <div className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center">
+            {/* 左側: 再生ステータス */}
+            <div className="flex items-center gap-4">
+              <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
+                現在: {formatTime(currentTime)}
+                {isEditMode && selectedSong && (
+                  <span className="ml-2 text-xs text-green-600 dark:text-green-400">「{selectedSong.title}」選択中</span>
+                )}
+                {currentSongs.length > 1 && (
+                  <span className="ml-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded">
+                    マッシュアップ: {currentSongs.length}曲
+                  </span>
+                )}
+              </h3>
+              {currentSongs.length > 0 && (
+                <div className="text-xs text-gray-500 dark:text-gray-400">
+                  再生中: {currentSongs.map(s => s.title).join(', ')}
+                </div>
+              )}
+            </div>
+            {/* 右側: 共有ボタン */}
+            {shareUrl && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({ title: shareTitle, url: shareUrl });
+                    } else {
+                      navigator.clipboard.writeText(shareUrl);
+                      alert('URLをクリップボードにコピーしました');
+                    }
+                  }}
+                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                  title="この動画を共有"
+                >
+                  共有
+                </button>
+                {originalVideoUrl && (
+                  <a
+                    href={originalVideoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors flex items-center gap-1"
+                    title="元動画を見る"
+                  >
+                    元動画
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v7a2 2 0 002 2h4m-6-9v2m0 4h.01m4.09-.5L10 14l4-4.5" />
+                    </svg>
+                  </a>
+                )}
+              </div>
             )}
-            {currentSongs.length > 1 && (
-              <span className="ml-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded">
-                マッシュアップ: {currentSongs.length}曲
+          </div>
+        </div>
+
+        {/* セクション2: 編集コントロール */}
+        <div className="px-3 py-2 bg-gray-100 dark:bg-gray-800">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onToggleEditMode}
+                className={`px-3 py-1 text-xs rounded font-medium transition-colors ${
+                  isEditMode
+                    ? 'bg-orange-500 text-white hover:bg-orange-600'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+              >
+                {isEditMode ? '編集終了' : '編集モード'}
+              </button>
+              {isEditMode && (
+                <>
+                  <button
+                    onClick={onAddSong}
+                    className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                  >
+                    楽曲追加
+                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={onUndo}
+                      disabled={!canUndo}
+                      className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                      title="元に戻す (Ctrl+Z)"
+                    >
+                      ↶
+                    </button>
+                    <button
+                      onClick={onRedo}
+                      disabled={!canRedo}
+                      className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                      title="やり直し (Ctrl+Y)"
+                    >
+                      ↷
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => setIsSnapEnabled(!isSnapEnabled)}
+                    className={`px-2 py-1 text-xs rounded transition-colors ${
+                      isSnapEnabled 
+                        ? 'bg-green-500 text-white hover:bg-green-600' 
+                        : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                    }`}
+                    title="隣接する楽曲の境界にスナップ"
+                  >
+                    スナップ: {isSnapEnabled ? 'ON' : 'OFF'}
+                  </button>
+                  {hasChanges && (
+                    <span className="text-xs text-orange-600 dark:text-orange-400">
+                      未保存の変更があります
+                    </span>
+                  )}
+                </>
+              )}
+            </div>
+            {isEditMode && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onResetChanges}
+                  disabled={!hasChanges}
+                  className="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                >
+                  リセット
+                </button>
+                <button
+                  onClick={onSaveChanges}
+                  disabled={!hasChanges || isSaving}
+                  className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                >
+                  {isSaving ? '保存中...' : '変更を保存'}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* セクション3: ズームコントロール */}
+        <div className="px-3 py-1 bg-gray-50 dark:bg-gray-900">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                ズーム:
+              </label>
+              <input
+                type="range"
+                min="0.5"
+                max="5"
+                step="0.1"
+                value={timelineZoom}
+                onChange={(e) => setTimelineZoom(parseFloat(e.target.value))}
+                className="w-20 h-1 bg-gray-300 dark:bg-gray-600 rounded appearance-none cursor-pointer accent-blue-500"
+              />
+              <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[2rem]">
+                {timelineZoom.toFixed(1)}x
               </span>
-            )}
-          </h3>
-          {isEditMode && (
+            </div>
             <button
-              onClick={() => setIsSnapEnabled(!isSnapEnabled)}
-              className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
-                isSnapEnabled 
-                  ? 'bg-green-500 text-white hover:bg-green-600' 
+              onClick={() => setAutoFollow(!autoFollow)}
+              className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                autoFollow 
+                  ? 'bg-blue-500 text-white hover:bg-blue-600' 
                   : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
               }`}
-              title="隣接する楽曲の境界にスナップ"
+              title="再生中の楽曲を自動的に表示範囲内に保つ"
             >
-              スナップ: {isSnapEnabled ? 'ON' : 'OFF'}
+              自動追従: {autoFollow ? 'ON' : 'OFF'}
             </button>
-          )}
-        </div>
-        {currentSongs.length > 0 && (
-          <div className="text-xs text-gray-500 dark:text-gray-400">
-            再生中: {currentSongs.map(s => s.title).join(', ')}
-          </div>
-        )}
-      </div>
-
-      {/* タイムラインズームコントロール */}
-      <div className="mb-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-              ズーム:
-            </label>
-            <input
-              type="range"
-              min="0.5"
-              max="5"
-              step="0.1"
-              value={timelineZoom}
-              onChange={(e) => setTimelineZoom(parseFloat(e.target.value))}
-              className="w-24 h-2 bg-gray-300 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer accent-blue-500"
-            />
-            <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[2rem]">
-              {timelineZoom.toFixed(1)}x
-            </span>
-          </div>
-
-
-          <button
-            onClick={() => setAutoFollow(!autoFollow)}
-            className={`px-1.5 py-0.5 text-xs rounded transition-colors ${
-              autoFollow 
-                ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-            }`}
-            title="再生中の楽曲を自動的に表示範囲内に保つ"
-          >
-            自動追従: {autoFollow ? 'ON' : 'OFF'}
-          </button>
-
-          <div className="flex gap-1">
-            <button
-              onClick={() => setTimelineZoom(1)}
-              className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-            >
-              1x
-            </button>
-            <button
-              onClick={() => setTimelineZoom(2)}
-              className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-            >
-              2x
-            </button>
-            <button
-              onClick={() => setTimelineZoom(5)}
-              className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-            >
-              5x
-            </button>
+            <div className="flex gap-1">
+              <button
+                onClick={() => setTimelineZoom(1)}
+                className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+              >
+                1x
+              </button>
+              <button
+                onClick={() => setTimelineZoom(2)}
+                className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+              >
+                2x
+              </button>
+              <button
+                onClick={() => setTimelineZoom(5)}
+                className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
+              >
+                5x
+              </button>
+            </div>
           </div>
         </div>
-
       </div>
+
+      {/* メインコンテンツエリア */}
+      <div className="p-2">
 
       <div>
         <div className="space-y-0.5">
@@ -608,6 +743,7 @@ export default function SongList({
               );
             })}
         </div>
+      </div>
       </div>
     </div>
   );

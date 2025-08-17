@@ -12,7 +12,6 @@ import SongList from "@/components/features/medley/SongList";
 import SongEditModal from "@/components/features/medley/SongEditModal";
 import SongDetailModal from "@/components/features/medley/SongDetailModal";
 import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
-import ShareButtons from "@/components/features/share/ShareButtons";
 import { SongSection } from "@/types";
 
 interface MedleyPlayerProps {
@@ -317,9 +316,18 @@ export default function MedleyPlayer({
         return `${baseUrl}${path}${timeParam}`;
     };
 
+    // 元動画URL生成
+    const generateOriginalVideoUrl = () => {
+        if (platform === 'youtube') {
+            return `https://www.youtube.com/watch?v=${videoId}`;
+        } else {
+            return `https://www.nicovideo.jp/watch/${videoId}`;
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-            <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 shadow-lg overflow-hidden">
+            <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 shadow-lg">
                 {/* ヘッダー */}
                 <Header
                     inputVideoId={inputVideoId}
@@ -327,6 +335,7 @@ export default function MedleyPlayer({
                     onVideoIdSubmit={handleVideoIdSubmit}
                     medleyTitle={medleyTitle}
                     medleyCreator={medleyCreator}
+                    showSearch={false}
                 />
 
                 {/* プレイヤーコンテナ */}
@@ -368,90 +377,8 @@ export default function MedleyPlayer({
                     </div>
                 )}
 
-                {/* 共有ボタン */}
-                {!loading && displaySongs.length > 0 && (
-                    <ShareButtons 
-                        url={generateShareUrl()}
-                        title={`${medleyTitle} | ニコニコメドレーアノテーションプレイヤー`}
-                        currentTime={currentTime}
-                        currentSong={currentSong || undefined}
-                    />
-                )}
 
-                {/* 編集コントロールバー */}
-                {!loading && displaySongs.length > 0 && (
-                    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-4">
-                                <button
-                                    onClick={handleToggleEditMode}
-                                    className={`px-4 py-2 rounded-md font-medium ${
-                                        isEditMode
-                                            ? 'bg-orange-500 text-white hover:bg-orange-600'
-                                            : 'bg-blue-500 text-white hover:bg-blue-600'
-                                    }`}
-                                >
-                                    {isEditMode ? '編集モード終了' : '編集モード'}
-                                </button>
-                                
-                                {isEditMode && (
-                                    <>
-                                        <button
-                                            onClick={handleAddSong}
-                                            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600"
-                                        >
-                                            楽曲追加
-                                        </button>
-                                        <div className="flex items-center gap-1">
-                                            <button
-                                                onClick={undo}
-                                                disabled={!canUndo}
-                                                className="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                title="元に戻す (Ctrl+Z)"
-                                            >
-                                                ↶
-                                            </button>
-                                            <button
-                                                onClick={redo}
-                                                disabled={!canRedo}
-                                                className="px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                title="やり直し (Ctrl+Y)"
-                                            >
-                                                ↷
-                                            </button>
-                                        </div>
-                                        {hasChanges && (
-                                            <span className="text-sm text-orange-600 dark:text-orange-400">
-                                                未保存の変更があります
-                                            </span>
-                                        )}
-                                    </>
-                                )}
-                            </div>
-
-                            {isEditMode && (
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        onClick={() => resetChanges(medleySongs)}
-                                        disabled={!hasChanges}
-                                        className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 disabled:opacity-50"
-                                    >
-                                        リセット
-                                    </button>
-                                    <button
-                                        onClick={handleSaveChanges}
-                                        disabled={!hasChanges || isSaving}
-                                        className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 disabled:opacity-50"
-                                    >
-                                        {isSaving ? '保存中...' : '変更を保存'}
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* 楽曲リスト */}
+                {/* 楽曲リスト（統合コントロール付き） */}
                 {!loading && displaySongs.length > 0 && (
                     <SongList
                         songs={displaySongs}
@@ -463,6 +390,21 @@ export default function MedleyPlayer({
                         onUpdateSong={updateSong}
                         onShowSongDetail={handleShowSongDetail}
                         onHoverSong={handleHoverSong}
+                        // 統合されたコントロール用の props
+                        shareUrl={generateShareUrl()}
+                        shareTitle={`${medleyTitle} | ニコニコメドレーアノテーションプレイヤー`}
+                        originalVideoUrl={generateOriginalVideoUrl()}
+                        onToggleEditMode={handleToggleEditMode}
+                        onAddSong={handleAddSong}
+                        onSaveChanges={handleSaveChanges}
+                        onResetChanges={() => resetChanges(medleySongs)}
+                        hasChanges={hasChanges}
+                        isSaving={isSaving}
+                        canUndo={canUndo}
+                        canRedo={canRedo}
+                        onUndo={undo}
+                        onRedo={redo}
+                        currentSong={currentSong || undefined}
                     />
                 )}
 

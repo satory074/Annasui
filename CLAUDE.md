@@ -637,12 +637,14 @@ The architecture is designed for easy platform extensibility with minimal code c
 - **Platform branding**: Color-coded badges matching platform identity
 
 ### Component Modernization Patterns
-**Critical UI Updates in src/app/page.tsx:**
-- Title updated to "Anasui" branding with larger font (`text-4xl`)
-- Search bar with icon and improved focus states
-- Tab navigation with SVG icons and proper ARIA labels
-- Enhanced result display with card-style container
-- Platform-specific badge colors and backdrop blur effects
+**Critical UI Updates:**
+- **Header Component (src/components/layout/Header.tsx)**: Complete redesign with gradient background, "Anasui" branding, SVG icons, and responsive layout
+- **Homepage (src/app/page.tsx)**: Title updated to "Anasui" branding with larger font (`text-4xl`)
+- **Search Interface**: Search bar with integrated magnifying glass icon and improved focus states
+- **Navigation**: Tab navigation with SVG icons and proper ARIA labels
+- **Result Display**: Enhanced result display with card-style container
+- **Platform Indicators**: Platform-specific badge colors and backdrop blur effects
+- **Debug Information**: Production optimization with development-only debug displays
 
 ### Responsive Design Strategy
 **Mobile-First Approach:**
@@ -659,6 +661,15 @@ The architecture is designed for easy platform extensibility with minimal code c
 - Reduced layout shift with consistent aspect ratios (`aspect-video`)
 
 ### Recent UI Improvements (Latest Update)
+**Header Design Modernization:**
+- **Gradient Background**: Updated from pink (`bg-pink-600`) to modern dark gradient (`bg-gradient-to-r from-gray-800 to-gray-900`)
+- **Brand Identity Update**: Changed site name from "ニコニコ楽曲アノテーションプレイヤー" to "Anasui" with eye icon
+- **Icon Integration**: Added SVG icons throughout header (home, search, list icons) for intuitive navigation
+- **Responsive Layout**: Improved mobile-first design with `flex-col sm:flex-row` for better stacking
+- **Enhanced Input Design**: Search field with integrated magnifying glass icon and focus states
+- **Visual Hierarchy**: Video information display with larger titles and organized creator information
+- **Production Optimization**: Debug information now only displays in development environment (`process.env.NODE_ENV === 'development'`)
+
 **Song List Simplification:**
 - **Removed time stamps**: Song card headers no longer show start/end times for cleaner appearance
 - **Removed status badges**: "再生中" and "重複" badges eliminated from headers
@@ -666,7 +677,7 @@ The architecture is designed for easy platform extensibility with minimal code c
 - **Enhanced playing state**: Current songs identified by blue ring, pulse animation, and shadow effects only
 - **Streamlined design**: Focus on essential information with reduced visual clutter
 
-**Timeline Layout Optimization (Latest Update):**
+**Timeline Layout Optimization:**
 - **Removed color dot headers**: Eliminated redundant color indicators since timeline bars already provide color information
 - **Minimized spacing**: Card padding (`p-3` → `p-2` → `p-1`), margins reduced throughout for maximum density
 - **Repositioned edit controls**: Edit/delete buttons moved to timeline bar right edge in edit mode only
@@ -674,7 +685,7 @@ The architecture is designed for easy platform extensibility with minimal code c
 - **Compacted zoom controls**: Reduced padding and button sizes for streamlined interface
 - **Increased song density**: List height optimized (`max-h-96` → `max-h-80`) for better screen space utilization
 
-**UI Simplification Phase (Latest Update):**
+**UI Simplification Phase:**
 - **Timeline Bar Colors**: Removed individual song colors (bg-red-400, bg-blue-400, etc.), unified to single blue color (bg-blue-500 dark:bg-blue-600)
 - **Enhanced Visual Hierarchy**: Timeline bars now use consistent blue coloring that harmonizes with play state indicators (ring-blue-400)
 - **Song Title Background**: Semi-transparent background (bg-white/90 dark:bg-slate-900/50) allows blue timeline to show through while maintaining readability

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { formatTime } from "@/lib/utils/time";
 import ErrorMessage from "@/components/ui/ErrorMessage";
+import PlayerControls from "./PlayerControls";
 
 interface NicoPlayerProps {
   playerRef: React.RefObject<HTMLIFrameElement | null>;
@@ -11,8 +12,12 @@ interface NicoPlayerProps {
   isPlaying: boolean;
   currentTime: number;
   duration: number;
+  volume: number;
   playerError: string | null;
   onTogglePlayPause: () => void;
+  onSeek: (seekTime: number) => void;
+  onVolumeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onToggleFullscreen: () => void;
   onErrorDismiss?: () => void;
 }
 
@@ -23,8 +28,12 @@ export default function NicoPlayer({
   isPlaying,
   currentTime,
   duration,
+  volume,
   playerError,
   onTogglePlayPause,
+  onSeek,
+  onVolumeChange,
+  onToggleFullscreen,
   onErrorDismiss,
 }: NicoPlayerProps) {
   const [browserReady] = useState(true);
@@ -35,9 +44,11 @@ export default function NicoPlayer({
       <div className="aspect-video bg-black relative">
         {browserReady && (
           <>
-            <div className="absolute top-2 left-2 bg-blue-800 bg-opacity-70 text-white px-2 py-1 rounded text-xs z-10">
-              URL: {embedUrl}
-            </div>
+            {process.env.NODE_ENV === 'development' && (
+              <div className="absolute top-2 left-2 bg-blue-800 bg-opacity-70 text-white px-2 py-1 rounded text-xs z-10">
+                URL: {embedUrl}
+              </div>
+            )}
             <iframe
               ref={playerRef}
               src={embedUrl}
@@ -57,15 +68,19 @@ export default function NicoPlayer({
           </>
         )}
 
-        {/* オーバーレイ表示（再生状態デバッグ用） */}
-        <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-          {isPlaying ? "再生中" : "停止中"} - {formatTime(currentTime)} / {formatTime(duration)}
-        </div>
-        
-        {/* デバッグ情報 */}
-        <div className="absolute top-2 left-2 bg-blue-800 bg-opacity-70 text-white px-2 py-1 rounded text-xs">
-          Player: {playerRef.current ? "✓" : "✗"} | Ready: {playerRef.current?.contentWindow ? "✓" : "✗"}
-        </div>
+        {process.env.NODE_ENV === 'development' && (
+          <>
+            {/* オーバーレイ表示（再生状態デバッグ用） */}
+            <div className="absolute top-12 right-2 bg-black bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+              {isPlaying ? "再生中" : "停止中"} - {formatTime(currentTime)} / {duration > 0 && duration < 10800 ? formatTime(duration) : '--:--'}
+            </div>
+            
+            {/* デバッグ情報 */}
+            <div className="absolute top-20 left-2 bg-blue-800 bg-opacity-70 text-white px-2 py-1 rounded text-xs">
+              Player: {playerRef.current ? "✓" : "✗"} | Ready: {playerRef.current?.contentWindow ? "✓" : "✗"}
+            </div>
+          </>
+        )}
 
         {/* 代替コントロールオーバーレイ - iframe操作の代替 */}
         <div 
@@ -117,6 +132,18 @@ export default function NicoPlayer({
           />
         )}
       </div>
+
+      {/* プレイヤーコントロール */}
+      <PlayerControls
+        isPlaying={isPlaying}
+        currentTime={currentTime}
+        duration={duration}
+        volume={volume}
+        onTogglePlayPause={onTogglePlayPause}
+        onSeek={onSeek}
+        onVolumeChange={onVolumeChange}
+        onToggleFullscreen={onToggleFullscreen}
+      />
     </div>
   );
 }

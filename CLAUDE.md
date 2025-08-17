@@ -10,6 +10,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run lint` - Run ESLint code quality checks
 - `npx tsc --noEmit` - Run TypeScript type checking without building
 
+### Testing Commands
+No dedicated test framework is currently configured. Testing is performed through:
+- Manual testing on `http://localhost:3000` for development
+- Production verification on `https://illustrious-figolla-20f57e.netlify.app` for deployment validation
+- Browser console monitoring for postMessage communication debugging
+
 ### Deployment Commands
 - `npx netlify deploy --prod` - Deploy to production on Netlify (auto-builds)
 - `npx netlify sites:list` - List existing Netlify sites
@@ -55,6 +61,7 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ **Phase 9: Timeline Zoom System**: Complete zoom/pan functionality with dynamic grids, auto-follow, and precision editing
 - ✅ **Phase 10: Advanced Tooltip System**: Hover-based song details with intelligent positioning and click-to-dismiss functionality
 - ✅ **UI Simplification Phase**: Removed unnecessary visual elements (colors, genres, position controls) for cleaner interface
+- ✅ **Player Controls Integration**: Fully functional seek bar with volume control, addressing critical time synchronization issues
 - 🔄 Phase 11: User authentication and collaborative editing (planned)
 
 ## Core Architecture
@@ -116,7 +123,8 @@ The application's core functionality relies on postMessage communication with Ni
 **CRITICAL: Time Unit Conversion**
 - Niconico player API expects time values in **milliseconds**, not seconds
 - All seek operations must multiply time by 1000: `time: seekTimeInSeconds * 1000`
-- This was a major bug that caused seek operations to fail - always convert seconds to milliseconds
+- **playerMetadataChange events return time in milliseconds** - must convert to seconds: `timeInSeconds = timeInMs / 1000`
+- This was a major bug that caused seek operations to fail and seek bar synchronization issues - always handle unit conversion properly
 
 **State Synchronization:**
 - `commandInProgress` flag prevents command overlap and race conditions
@@ -148,6 +156,7 @@ The application's core functionality relies on postMessage communication with Ni
 - `MedleyPageClient` - Client-side wrapper handling search params for deep linking and platform props
 - `NicoPlayer` - Niconico-specific iframe player with postMessage integration
 - `YouTubePlayer` - YouTube-specific iframe player (basic embed functionality)
+- `PlayerControls` - Complete player control interface with seek bar, play/pause, volume, and fullscreen controls
 - `SongList` - Unified card-based song display with integrated Gantt chart timeline bars, complete editing functionality including drag-and-drop, snap, selection, and keyboard shortcuts
 - `SongEditModal` - Modal for detailed song editing with time validation
 - `SongDetailModal` - Read-only modal for displaying song information with play-from-here functionality
@@ -314,6 +323,20 @@ const effectiveDuration = medleyDuration || duration;
 - Currently uses basic iframe embed without seek API integration
 - Seek functionality logs to console as placeholder for future implementation
 
+#### Player Controls Integration
+**PlayerControls Component:**
+- Complete seek bar functionality with real-time synchronization
+- Volume control with slider interface
+- Play/pause toggle with visual feedback
+- Fullscreen toggle button
+- Time display showing current time and total duration
+
+**Integration Pattern:**
+- `useNicoPlayer` hook manages volume state and player communication
+- `NicoPlayer` component integrates PlayerControls with proper prop passing
+- `MedleyPlayer` handles volume change events and passes callbacks
+- **CRITICAL**: Seek bar synchronization requires proper milliseconds/seconds conversion in `playerMetadataChange` events
+
 ### Production Deployment Configuration
 - Next.js configured for static export (`output: 'export'`, `trailingSlash: true`)
 - Static files generated to `.next/` directory
@@ -386,6 +409,7 @@ const effectiveDuration = medleyDuration || duration;
 ### Common Issues and Solutions
 **Player Integration:**
 - **Seek operations fail or reset to beginning**: Ensure time values are converted to milliseconds (`* 1000`)
+- **Seek bar synchronization issues**: playerMetadataChange events return time in milliseconds - convert to seconds (`/ 1000`). This was a critical bug where 3 seconds of playback would show as 3000 seconds on the seek bar
 - **Timeline clicks returning 0 seconds**: Video duration not loaded yet, check duration > 0
 - **Child elements intercepting clicks**: Use `pointer-events-none` on child elements
 - **Player not responding**: Check iframe load and postMessage origin verification

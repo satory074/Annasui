@@ -456,7 +456,7 @@ export default function SongList({
 
       </div>
 
-      <div className="overflow-auto max-h-80">
+      <div>
         <div className="space-y-0.5">
             {visibleSongs.map((song) => {
               const { hasOverlap, overlappingSongs } = detectOverlaps(song);

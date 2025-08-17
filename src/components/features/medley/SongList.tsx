@@ -468,13 +468,13 @@ export default function SongList({
                   className={`relative p-1 rounded-lg border transition-all ${
                     isCurrentlyPlaying
                       ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                      : "bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      : "bg-white dark:bg-slate-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700/50"
                   }`}
                 >
 
                   {/* タイムライン */}
                   <div 
-                    className="timeline-container relative w-full h-8 bg-gray-100 dark:bg-gray-800 rounded border"
+                    className="timeline-container relative w-full h-8 bg-blue-50 dark:bg-blue-900/10"
                     onWheel={handleWheel}
                   >
                     {/* 時間グリッド（背景） - ズームレベルに応じて調整 */}
@@ -517,12 +517,12 @@ export default function SongList({
                     
                     {/* 楽曲タイムラインバー */}
                     <div
-                      className={`absolute h-6 top-1 rounded-sm transition-all hover:h-7 hover:top-0 bg-gray-600 border border-gray-400 dark:border-gray-300 ${
-                        hasOverlap ? 'opacity-80 border-2 border-orange-400' : ''
+                      className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 bg-blue-500 dark:bg-blue-600 ${
+                        hasOverlap ? 'opacity-80' : ''
                       } ${
-                        isCurrentlyPlaying ? 'ring-2 ring-blue-400 ring-offset-1 animate-pulse shadow-lg shadow-blue-400/50' : ''
+                        isCurrentlyPlaying ? 'ring-2 ring-blue-400 animate-pulse' : ''
                       } ${
-                        selectedSong?.id === song.id ? 'ring-2 ring-blue-500 ring-offset-1' : ''
+                        selectedSong?.id === song.id ? 'ring-2 ring-blue-500' : ''
                       } ${
                         isEditMode ? 'cursor-move hover:opacity-80' : 'cursor-pointer'
                       } ${
@@ -539,9 +539,9 @@ export default function SongList({
                       onMouseLeave={handleSongLeave}
                       title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで再生'}`}
                     >
-                      <div className="text-xs text-white font-bold px-2 leading-6 pointer-events-none relative z-30">
+                      <div className="text-xs text-gray-900 dark:text-white font-medium px-2 leading-6 pointer-events-none relative z-30">
                         <div 
-                          className="whitespace-nowrap bg-black bg-opacity-60 rounded px-1"
+                          className="whitespace-nowrap bg-white/90 dark:bg-slate-900/50 rounded px-1 shadow-sm"
                           style={{
                             // タイトルをバーの幅を超えても表示（オーバーフロー許可）
                             overflow: 'visible',
@@ -565,13 +565,6 @@ export default function SongList({
                         </div>
                       )}
 
-                      {/* 編集モード時のリサイズハンドル */}
-                      {isEditMode && (
-                        <>
-                          <div className="absolute left-0 top-0 w-2 h-full bg-white bg-opacity-30 cursor-ew-resize"></div>
-                          <div className="absolute right-0 top-0 w-2 h-full bg-white bg-opacity-30 cursor-ew-resize"></div>
-                        </>
-                      )}
                     </div>
                     
                     {/* 編集ボタン（編集モード時のみ、タイムライン右端に配置） */}

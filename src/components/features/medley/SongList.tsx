@@ -28,6 +28,9 @@ interface SongListProps {
   onUndo?: () => void;
   onRedo?: () => void;
   currentSong?: SongSection;
+  // メドレー情報
+  medleyTitle?: string;
+  medleyCreator?: string;
 }
 
 export default function SongList({ 
@@ -53,7 +56,9 @@ export default function SongList({
   canRedo = false,
   onUndo,
   onRedo,
-  currentSong // eslint-disable-line @typescript-eslint/no-unused-vars
+  currentSong, // eslint-disable-line @typescript-eslint/no-unused-vars
+  medleyTitle,
+  medleyCreator
 }: SongListProps) {
   // 編集機能の状態管理
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
@@ -397,6 +402,25 @@ export default function SongList({
       <div className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         {/* セクション1: 再生ステータス + 共有エリア */}
         <div className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+          {/* メドレータイトルと制作者 */}
+          {(medleyTitle || medleyCreator) && (
+            <div className="mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+              {medleyTitle && (
+                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  {medleyTitle}
+                </h2>
+              )}
+              {medleyCreator && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  制作: {medleyCreator}
+                </p>
+              )}
+            </div>
+          )}
+          
           <div className="flex justify-between items-center">
             {/* 左側: 再生ステータス */}
             <div className="flex items-center gap-4">

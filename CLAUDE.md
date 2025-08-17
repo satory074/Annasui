@@ -735,6 +735,14 @@ The architecture is designed for easy platform extensibility with minimal code c
 - Reduced layout shift with consistent aspect ratios (`aspect-video`)
 
 ### Recent UI Improvements (Latest Update)
+**Sticky Header Enhancement:**
+- **Medley Information Integration**: Added medley title and creator display to sticky header for constant visibility during scrolling
+- **Streamlined Header**: Removed duplicate medley title/creator from main header to eliminate redundancy
+- **Prominent Display**: Medley title in large font (`text-lg font-bold`) with creator attribution including user icon
+- **Conditional Rendering**: Only displays medley information when available, with proper border separation
+- **Dark Mode Support**: Consistent styling for both light and dark themes
+- **Header Simplification**: Removed redundant medley title/creator props and display to eliminate UI duplication
+
 **Header Design Modernization:**
 - **Gradient Background**: Updated from pink (`bg-pink-600`) to modern dark gradient (`bg-gradient-to-r from-gray-800 to-gray-900`)
 - **Brand Identity Update**: Changed site name from "ニコニコ楽曲アノテーションプレイヤー" to "Anasui" with eye icon

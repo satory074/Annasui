@@ -333,8 +333,6 @@ export default function MedleyPlayer({
                     inputVideoId={inputVideoId}
                     onInputVideoIdChange={setInputVideoId}
                     onVideoIdSubmit={handleVideoIdSubmit}
-                    medleyTitle={medleyTitle}
-                    medleyCreator={medleyCreator}
                     showSearch={false}
                 />
 
@@ -405,6 +403,9 @@ export default function MedleyPlayer({
                         onUndo={undo}
                         onRedo={redo}
                         currentSong={currentSong || undefined}
+                        // メドレー情報
+                        medleyTitle={medleyTitle}
+                        medleyCreator={medleyCreator}
                     />
                 )}
 

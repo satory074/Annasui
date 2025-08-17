@@ -6,8 +6,6 @@ interface HeaderProps {
   inputVideoId: string;
   onInputVideoIdChange: (value: string) => void;
   onVideoIdSubmit: (e: React.FormEvent) => void;
-  medleyTitle: string;
-  medleyCreator: string;
   showSearch?: boolean;
 }
 
@@ -15,8 +13,6 @@ export default function Header({
   inputVideoId,
   onInputVideoIdChange,
   onVideoIdSubmit,
-  medleyTitle,
-  medleyCreator,
   showSearch = true,
 }: HeaderProps) {
   return (
@@ -66,19 +62,6 @@ export default function Header({
           </form>
         )}
       </div>
-      {medleyTitle && (
-        <div className="mt-4 pt-4 border-t border-gray-700">
-          <h2 className="text-lg font-semibold text-white mb-1">{medleyTitle}</h2>
-          {medleyCreator && (
-            <p className="text-sm text-gray-300 flex items-center gap-2">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd"/>
-              </svg>
-              制作: {medleyCreator}
-            </p>
-          )}
-        </div>
-      )}
     </div>
   );
 }

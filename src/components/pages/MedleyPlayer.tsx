@@ -72,9 +72,13 @@ export default function MedleyPlayer({
         isPlaying,
         currentTime,
         duration,
+        volume,
         playerError,
+        playerReady,
         togglePlayPause,
         seek: nicoSeek,
+        setVolume,
+        toggleFullscreen,
         getEmbedUrl,
         handleIframeLoad,
         clearError
@@ -104,18 +108,25 @@ export default function MedleyPlayer({
         }
     };
 
+    // ボリューム変更ハンドラ
+    const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newVolume = parseInt(e.target.value);
+        setVolume(newVolume);
+    };
+
     // 初期時間へのシーク（ディープリンク対応）
     useEffect(() => {
-        if (initialTime > 0 && effectiveDuration > 0 && initialTime <= effectiveDuration) {
-            // プレイヤーが準備完了してから少し待ってシーク
+        if (initialTime > 0 && effectiveDuration > 0 && initialTime <= effectiveDuration && playerReady) {
+            // プレイヤーが準備完了してからシーク（待機時間を短縮）
             const timer = setTimeout(() => {
+                console.log(`Initial time seek to ${initialTime} seconds`);
                 seek(initialTime);
-            }, 2000);
+            }, 500);
             
             return () => clearTimeout(timer);
         }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [initialTime, effectiveDuration]);
+    }, [initialTime, effectiveDuration, playerReady]);
 
     // URLが変更された時の処理（ブラウザの戻る/進む対応）
     useEffect(() => {
@@ -333,8 +344,12 @@ export default function MedleyPlayer({
                             isPlaying={isPlaying}
                             currentTime={currentTime}
                             duration={duration}
+                            volume={volume}
                             playerError={playerError}
                             onTogglePlayPause={togglePlayPause}
+                            onSeek={seek}
+                            onVolumeChange={handleVolumeChange}
+                            onToggleFullscreen={toggleFullscreen}
                             onErrorDismiss={clearError}
                         />
                     )}
@@ -442,7 +457,6 @@ export default function MedleyPlayer({
                         songs={displaySongs}
                         currentTime={currentTime}
                         duration={effectiveDuration}
-                        onSeek={seek}
                         isEditMode={isEditMode}
                         onEditSong={handleEditSong}
                         onDeleteSong={deleteSong}

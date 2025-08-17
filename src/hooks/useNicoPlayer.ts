@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { PLAYER_CONFIG, PLAYER_STATUS, SEEK_STATUS } from '@/lib/constants/player';
+import { PLAYER_CONFIG, PLAYER_STATUS } from '@/lib/constants/player';
 import { normalizeTimeValue } from '@/lib/utils/time';
 import { VideoInfo, normalizeVideoInfo } from '@/lib/utils/videoInfo';
 
@@ -15,7 +15,9 @@ interface UseNicoPlayerReturn {
     isPlaying: boolean;
     currentTime: number;
     duration: number;
+    volume: number;
     playerError: string | null;
+    playerReady: boolean;
     videoInfo: VideoInfo | null;
     togglePlayPause: () => void;
     seek: (seekTime: number) => void;
@@ -24,13 +26,21 @@ interface UseNicoPlayerReturn {
     getEmbedUrl: () => string;
     handleIframeLoad: () => void;
     clearError: () => void;
+    // デバッグ・監視情報
+    debugInfo: {
+        timeCorruptionCount: number;
+        lastCorruptionTime: number;
+        seekAttemptCount: number;
+        seekSuccessCount: number;
+        logPlayerStatus: () => void;
+    };
 }
 
 export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayingChange }: UseNicoPlayerProps): UseNicoPlayerReturn {
     const [isPlaying, setIsPlaying] = useState(false);
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
-    const [commandInProgress, setCommandInProgress] = useState(false);
+    const [volume, setVolumeState] = useState(50); // デフォルトボリューム50%
     const [playerReady, setPlayerReady] = useState(false);
     const [playerError, setPlayerError] = useState<string | null>(null);
     const [videoInfo, setVideoInfo] = useState<VideoInfo | null>(null);
@@ -39,8 +49,18 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
     const iframeLoadHandled = useRef(false);
     const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
+    const previousTimeRef = useRef<number>(0); // 前回の正常な時間値を保持
 
-    // videoIdが変更されたときにiframeLoadHandledをリセット
+    // プレイヤーステータス監視関数（簡略化）
+    const logPlayerStatus = useCallback(() => {
+        console.log(`📊 PLAYER STATUS:`);
+        console.log(`  🎬 Video: ${videoId}`);
+        console.log(`  ⏱️ Duration: ${duration}s | Current: ${currentTime.toFixed(1)}s`);
+        console.log(`  🎮 Player Ready: ${playerReady} | Playing: ${isPlaying}`);
+        console.log(`  🔗 Player Connection: ${!!playerRef.current?.contentWindow ? 'Connected' : 'Disconnected'}`);
+    }, [videoId, duration, currentTime, playerReady, isPlaying]);
+
+    // videoIdが変更されたときの初期化処理（簡略化）
     useEffect(() => {
         // 既存のタイムアウトとインターバルをクリア
         if (initTimeoutRef.current) {
@@ -52,15 +72,18 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
             syncIntervalRef.current = null;
         }
         
+        // 状態をリセット
         iframeLoadHandled.current = false;
         setCurrentTime(0);
         setDuration(0);
+        setVolumeState(50); // ボリュームもリセット
         setIsPlaying(false);
-        setCommandInProgress(false);
         setPlayerReady(false);
         setPlayerError(null);
         setVideoInfo(null);
-        console.log("Video ID changed, resetting player state:", videoId);
+        previousTimeRef.current = 0;
+        
+        console.log("🔄 Player state reset for video:", videoId);
         
         return () => {
             if (initTimeoutRef.current) {
@@ -72,28 +95,30 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         };
     }, [videoId]);
 
-    // プレイヤーへの通信を直接処理する安全な関数
+    // プレイヤーへのメッセージ送信（簡略化）
     const sendMessageToPlayer = useCallback((message: Record<string, unknown>) => {
         if (playerRef.current?.contentWindow) {
             playerRef.current.contentWindow.postMessage(message, PLAYER_CONFIG.EMBED_ORIGIN);
-            console.log("COMMAND TO PLAYER:", message);
+            console.log("📤 PLAYER COMMAND:", message.eventName, message.data);
+        } else {
+            console.warn('⚠️ Player not available for message:', message.eventName);
         }
     }, []);
 
-    // 時間同期インターバルの開始
+    // 時間同期インターバルの開始（改善版）
     const startTimeSyncInterval = useCallback(() => {
-        if (syncIntervalRef.current) return; // 既に実行中の場合は何もしない
+        if (syncIntervalRef.current) return;
         
         syncIntervalRef.current = setInterval(() => {
-            if (playerReady && !commandInProgress) {
+            if (playerReady) {
                 sendMessageToPlayer({
                     sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
                     playerId: PLAYER_CONFIG.PLAYER_ID,
                     eventName: "getStatus",
                 });
             }
-        }, PLAYER_CONFIG.POLLING_INTERVAL_MS);
-    }, [playerReady, commandInProgress, sendMessageToPlayer]);
+        }, 250); // ポーリング間隔を250msに変更（負荷軽減）
+    }, [playerReady, sendMessageToPlayer]);
 
     // 時間同期インターバルの停止
     const stopTimeSyncInterval = useCallback(() => {
@@ -103,18 +128,68 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         }
     }, []);
 
-    // メッセージイベントハンドラー
+    // PostMessageの検証関数
+    const validatePlayerMessage = (data: unknown): boolean => {
+        // 基本的な構造チェック
+        if (!data || typeof data !== 'object') {
+            console.warn('⚠️ Invalid message: not an object', data);
+            return false;
+        }
+
+        const messageData = data as Record<string, unknown>;
+
+        // eventNameの存在チェック
+        if (!messageData.eventName || typeof messageData.eventName !== 'string') {
+            console.warn('⚠️ Invalid message: missing or invalid eventName', data);
+            return false;
+        }
+
+        // dataフィールドがある場合の検証
+        if (messageData.data && typeof messageData.data !== 'object') {
+            console.warn('⚠️ Invalid message: data field is not an object', data);
+            return false;
+        }
+
+        // 時間関連フィールドの検証
+        const nestedData = messageData.data as Record<string, unknown> | undefined;
+        if (nestedData && nestedData.currentTime !== undefined) {
+            if (typeof nestedData.currentTime !== 'number' || !isFinite(nestedData.currentTime)) {
+                console.warn('⚠️ Invalid currentTime in message', nestedData.currentTime);
+                return false;
+            }
+        }
+
+        if (nestedData && nestedData.duration !== undefined) {
+            if (typeof nestedData.duration !== 'number' || !isFinite(nestedData.duration)) {
+                console.warn('⚠️ Invalid duration in message', nestedData.duration);
+                return false;
+            }
+        }
+
+        return true;
+    };
+
+    // メッセージイベントハンドラー（強化された検証付き）
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            if (event.origin !== PLAYER_CONFIG.EMBED_ORIGIN) return;
+            if (event.origin !== PLAYER_CONFIG.EMBED_ORIGIN) {
+                console.warn(`⚠️ Message from unauthorized origin: ${event.origin}`);
+                return;
+            }
 
             try {
                 const data = event.data;
 
+                // メッセージの妥当性を検証
+                if (!validatePlayerMessage(data)) {
+                    console.error('❌ Message validation failed, ignoring message');
+                    return;
+                }
+
                 if (data && data.eventName) {
                     switch (data.eventName) {
                         case "loadComplete":
-                            console.log("Player load complete");
+                            console.log("Player load complete - setting playerReady to true");
                             setPlayerReady(true);
                             
                             // タイムアウトをクリア
@@ -123,7 +198,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                                 initTimeoutRef.current = null;
                             }
                             
-                            // 動画情報の処理
+                            // 動画情報の処理（強化されたduration検証付き）
                             if (data.data) {
                                 console.log("loadComplete - raw data:", data.data);
                                 const normalizedInfo = normalizeVideoInfo(data.data, videoId);
@@ -132,9 +207,21 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                                     setVideoInfo(normalizedInfo);
                                     const normalizedDuration = normalizeTimeValue(normalizedInfo.duration);
                                     console.log("loadComplete - final duration:", normalizedDuration);
-                                    setDuration(normalizedDuration);
-                                    onDurationChange?.(normalizedDuration);
+                                    
+                                    // durationの妥当性をより厳密にチェック（最大3時間）
+                                    if (normalizedDuration > 0 && isFinite(normalizedDuration) && normalizedDuration < 10800) { // 3時間未満
+                                        setDuration(normalizedDuration);
+                                        onDurationChange?.(normalizedDuration);
+                                        console.log(`✅ Valid duration set: ${normalizedDuration}s`);
+                                    } else {
+                                        console.warn(`⚠️ Invalid duration from loadComplete: ${normalizedDuration}s, ignoring`);
+                                        // 異常値の場合はdurationを0のままにして、静的データのフォールバックを使用
+                                    }
+                                } else {
+                                    console.warn("⚠️ Could not normalize video info from loadComplete data");
                                 }
+                            } else {
+                                console.warn("⚠️ No data in loadComplete event");
                             }
                             
                             // 初期化完了後にステータス要求
@@ -146,48 +233,50 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                             
                             // 連続的な時間同期の開始
                             startTimeSyncInterval();
+                            
+                            // キューされたシークは後でuseEffectで処理する
+                            
+                            // プレイヤー準備完了を明確にログ出力
+                            console.log("*** PLAYER FULLY INITIALIZED - Ready for seek operations ***");
                             break;
 
                         case "playerMetadataChange":
                             if (data.data) {
-                                console.log("playerMetadataChange - raw data:", data.data);
-                                
-                                // currentTimeの更新
+                                // currentTimeの更新（ミリ秒→秒変換付き）
                                 if (data.data.currentTime !== undefined) {
-                                    console.log("playerMetadataChange - raw currentTime:", data.data.currentTime);
-                                    const normalizedTime = normalizeTimeValue(data.data.currentTime);
-                                    console.log("playerMetadataChange - normalized currentTime:", normalizedTime);
-                                    setCurrentTime(normalizedTime);
-                                    onTimeUpdate?.(normalizedTime);
+                                    const rawTimeMs = data.data.currentTime;
+                                    const rawTime = rawTimeMs / 1000; // ミリ秒を秒に変換
+                                    
+                                    // durationが異常値（0または3時間超）の場合は、currentTimeも慎重に処理
+                                    const maxTime = duration > 0 && duration < 10800 ? duration : 10800;
+                                    const validatedTime = Math.max(0, Math.min(rawTime, maxTime));
+                                    
+                                    // 値が変化した場合のみ更新
+                                    if (Math.abs(validatedTime - previousTimeRef.current) > 0.1) {
+                                        setCurrentTime(validatedTime);
+                                        onTimeUpdate?.(validatedTime);
+                                        previousTimeRef.current = validatedTime;
+                                    }
                                 }
 
-                                // durationの更新
+                                // durationの更新（ミリ秒→秒変換付き）
                                 if (data.data.duration !== undefined) {
-                                    console.log("playerMetadataChange - raw duration:", data.data.duration);
-                                    const normalizedDuration = normalizeTimeValue(data.data.duration);
-                                    console.log("playerMetadataChange - normalized duration:", normalizedDuration);
-                                    setDuration(normalizedDuration);
-                                    onDurationChange?.(normalizedDuration);
+                                    const newDurationMs = data.data.duration;
+                                    const newDuration = newDurationMs / 1000; // ミリ秒を秒に変換
+                                    // 3時間（10800秒）を超えるdurationは異常値として無視
+                                    if (newDuration > 0 && isFinite(newDuration) && newDuration < 10800) {
+                                        setDuration(newDuration);
+                                        onDurationChange?.(newDuration);
+                                    } else if (newDuration >= 10800) {
+                                        console.warn(`⚠️ Abnormal duration rejected: ${newDuration}s (${(newDuration/3600).toFixed(1)} hours)`);
+                                        // 異常値は無視し、既存のduration値を維持
+                                    }
                                 }
                             }
                             break;
 
                         case "seekStatusChange":
-                            if (data.data) {
-                                if (data.data.seekStatus === SEEK_STATUS.COMPLETE && commandInProgress) {
-                                    setTimeout(() => {
-                                        sendMessageToPlayer({
-                                            sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
-                                            playerId: PLAYER_CONFIG.PLAYER_ID,
-                                            eventName: "getStatus",
-                                        });
-                                    }, PLAYER_CONFIG.SEEK_DEBOUNCE_MS);
-
-                                    setCommandInProgress(false);
-                                } else if (data.data.seekStatus === SEEK_STATUS.IN_PROGRESS || data.data.seekStatus === SEEK_STATUS.STARTED) {
-                                    setCommandInProgress(true);
-                                }
-                            }
+                            // シーク関連の処理は簡略化（必要に応じて後で実装）
                             break;
 
                         case "playerStatusChange":
@@ -196,9 +285,6 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                                 const newIsPlaying = data.data.playerStatus === PLAYER_STATUS.PLAYING;
                                 setIsPlaying(newIsPlaying);
                                 onPlayingChange?.(newIsPlaying);
-                                
-                                // プレイヤーステータスが変更されたらcommandInProgressをリセット
-                                setCommandInProgress(false);
                                 
                                 // 再生状態に応じて時間同期の開始/停止
                                 if (newIsPlaying) {
@@ -211,8 +297,6 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
 
                         case "error":
                             console.error("Player error:", data);
-                            console.error("Full error details:", JSON.stringify(data, null, 2));
-                            setCommandInProgress(false);
                             
                             // エラーの詳細な分析とログ出力
                             let errorMessage = "不明なプレイヤーエラーが発生しました";
@@ -244,7 +328,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
 
         window.addEventListener("message", handleMessage);
         return () => window.removeEventListener("message", handleMessage);
-    }, [sendMessageToPlayer, commandInProgress, onDurationChange, onPlayingChange, onTimeUpdate, videoId, startTimeSyncInterval, stopTimeSyncInterval]);
+    }, [sendMessageToPlayer, onDurationChange, onPlayingChange, onTimeUpdate, videoId, startTimeSyncInterval, stopTimeSyncInterval, duration]);
 
     // iframeの読み込み完了時の処理
     const handleIframeLoad = useCallback(() => {
@@ -253,15 +337,15 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         console.log("Player iframe loaded - initializing...");
         iframeLoadHandled.current = true;
 
-        // タイムアウトを設定
+        // タイムアウトを設定（30秒に延長）
         initTimeoutRef.current = setTimeout(() => {
             if (!playerReady) {
                 console.error("Player initialization timeout");
                 setPlayerError("プレイヤーの初期化がタイムアウトしました。SafeModeに切り替えてください。");
             }
-        }, 8000);
+        }, 30000);
 
-        // 最小限の初期化プロセス - registerCallbackを削除し直接getStatusを送信
+        // 最小限の初期化プロセス - loadCompleteイベントを待つ方式に変更
         setTimeout(() => {
             if (!playerRef.current?.contentWindow) {
                 console.log("Player contentWindow not available");
@@ -270,11 +354,9 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
             }
 
             try {
-                console.log("Attempting direct status request without registerCallback");
+                console.log("Requesting initial status - waiting for loadComplete event");
                 
-                // プレイヤーの準備を仮定してgetStatusを直接送信
-                setPlayerReady(true);
-                
+                // loadCompleteイベントを待つため、playerReadyは設定しない
                 // 初期化完了後にステータス要求
                 sendMessageToPlayer({
                     sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
@@ -282,13 +364,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                     eventName: "getStatus",
                 });
                 
-                // タイムアウトをクリア（成功と仮定）
-                if (initTimeoutRef.current) {
-                    clearTimeout(initTimeoutRef.current);
-                    initTimeoutRef.current = null;
-                }
-                
-                console.log("Direct initialization complete, player ready");
+                console.log("Initial status request sent, waiting for loadComplete");
             } catch (error) {
                 console.error("Error during initialization:", error);
                 setPlayerError("プレイヤーの初期化に失敗しました");
@@ -296,122 +372,66 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         }, 1000); // より長い遅延でプレイヤーの完全な読み込みを待つ
     }, [sendMessageToPlayer, playerReady]);
 
-    // 再生/一時停止の切り替え
+    // 再生/一時停止の切り替え（簡略化）
     const togglePlayPause = useCallback(() => {
-        console.log("togglePlayPause called:", { 
-            hasPlayer: !!playerRef.current, 
-            hasContentWindow: !!playerRef.current?.contentWindow,
-            commandInProgress, 
-            isPlaying,
-            playerReady,
-            iframeLoaded: iframeLoadHandled.current
-        });
-        
-        if (playerRef.current?.contentWindow && !commandInProgress && playerReady) {
-            setCommandInProgress(true);
+        if (playerRef.current?.contentWindow && playerReady) {
             const eventName = isPlaying ? "pause" : "play";
-            console.log(`Sending ${eventName} command to player`);
+            console.log(`▶️ TOGGLE: ${eventName}`);
             sendMessageToPlayer({
                 sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
                 playerId: PLAYER_CONFIG.PLAYER_ID,
                 eventName: eventName,
             });
-        } else {
-            console.log("Cannot toggle play/pause:", {
-                noPlayer: !playerRef.current?.contentWindow,
-                commandInProgress,
-                playerReady,
-                playerRef: !!playerRef.current
-            });
         }
-    }, [isPlaying, commandInProgress, playerReady, sendMessageToPlayer]);
+    }, [isPlaying, playerReady, sendMessageToPlayer]);
 
-    // シーク操作
+    // シンプルで信頼性の高いseek実装
     const seek = useCallback((seekTime: number) => {
-        if (!playerRef.current?.contentWindow || commandInProgress) {
+        // 基本的な検証のみ
+        if (!playerReady || !playerRef.current?.contentWindow) {
+            console.warn('🚫 Seek blocked: Player not ready');
+            return;
+        }
+        
+        if (seekTime < 0 || (duration > 0 && seekTime > duration)) {
+            console.warn('🚫 Seek blocked: Invalid time');
             return;
         }
 
-        setCommandInProgress(true);
+        // UIを即座に更新
+        setCurrentTime(seekTime);
+        previousTimeRef.current = seekTime;
         
-        // 時間値の正規化 - 無効な値を防ぐ
-        const normalizedSeekTime = normalizeTimeValue(seekTime);
-        if (normalizedSeekTime < 0 || (duration > 0 && normalizedSeekTime > duration)) {
-            console.warn(`無効なシーク時間: ${seekTime}秒 (正規化後: ${normalizedSeekTime}秒, 動画長: ${duration}秒)`);
-            setCommandInProgress(false);
-            return;
-        }
+        const timeInMilliseconds = Math.floor(seekTime * 1000);
+        console.log(`🎯 SEEK: ${seekTime}s → ${timeInMilliseconds}ms`);
 
-        // UIを先行更新
-        setCurrentTime(normalizedSeekTime);
+        // プレイヤーにシークコマンドを送信
+        sendMessageToPlayer({
+            sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
+            playerId: PLAYER_CONFIG.PLAYER_ID,
+            eventName: "seek",
+            data: {
+                time: timeInMilliseconds,
+                _frontendId: PLAYER_CONFIG.FRONTEND_ID,
+                _frontendVersion: PLAYER_CONFIG.FRONTEND_VERSION
+            }
+        });
 
-        const numericSeekTime = Math.floor(normalizedSeekTime);
-        
-        // 再生中の場合は pause → seek → play のシーケンスを実行
-        if (isPlaying) {
-            console.log(`再生中のシーク: ${numericSeekTime}秒へ (pause→seek→play シーケンス)`);
-            
-            // Step 1: 一時停止
-            sendMessageToPlayer({
-                sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
-                playerId: PLAYER_CONFIG.PLAYER_ID,
-                eventName: "pause"
-            });
-            
-            // Step 2: 少し待ってからシーク
-            setTimeout(() => {
-                sendMessageToPlayer({
-                    sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
-                    playerId: PLAYER_CONFIG.PLAYER_ID,
-                    eventName: "seek",
-                    data: {
-                        time: numericSeekTime * 1000, // 秒をミリ秒に変換
-                        _frontendId: PLAYER_CONFIG.FRONTEND_ID,
-                        _frontendVersion: PLAYER_CONFIG.FRONTEND_VERSION
-                    }
-                });
-                
-                // Step 3: さらに待ってから再生再開
-                setTimeout(() => {
-                    sendMessageToPlayer({
-                        sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
-                        playerId: PLAYER_CONFIG.PLAYER_ID,
-                        eventName: "play"
-                    });
-                    
-                    setCommandInProgress(false);
-                }, 200);
-            }, 100);
-        } else {
-            // 停止中の場合は seek → play のシーケンスを実行
-            console.log(`停止中のシーク: ${numericSeekTime}秒へ (seek→play シーケンス)`);
-            
-            sendMessageToPlayer({
-                sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
-                playerId: PLAYER_CONFIG.PLAYER_ID,
-                eventName: "seek",
-                data: {
-                    time: numericSeekTime * 1000, // 秒をミリ秒に変換
-                    _frontendId: PLAYER_CONFIG.FRONTEND_ID,
-                    _frontendVersion: PLAYER_CONFIG.FRONTEND_VERSION
-                }
-            });
-            
-            // シーク後に自動的に再生を開始
-            setTimeout(() => {
+        // 停止中なら再生開始
+        if (!isPlaying) {
+            requestAnimationFrame(() => {
                 sendMessageToPlayer({
                     sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
                     playerId: PLAYER_CONFIG.PLAYER_ID,
                     eventName: "play"
                 });
-                
-                setCommandInProgress(false);
-            }, 200);
+            });
         }
-    }, [commandInProgress, sendMessageToPlayer, isPlaying, duration]);
+    }, [playerReady, duration, isPlaying, sendMessageToPlayer]);
 
     // 音量調整
     const setVolume = useCallback((volume: number) => {
+        setVolumeState(volume); // ローカル状態を更新
         sendMessageToPlayer({
             sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
             playerId: PLAYER_CONFIG.PLAYER_ID,
@@ -447,7 +467,9 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         isPlaying,
         currentTime,
         duration,
+        volume,
         playerError,
+        playerReady,
         videoInfo,
         togglePlayPause,
         seek,
@@ -456,5 +478,13 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         getEmbedUrl,
         handleIframeLoad,
         clearError,
+        // デバッグ情報（簡略化）
+        debugInfo: {
+            timeCorruptionCount: 0,
+            lastCorruptionTime: 0,
+            seekAttemptCount: 0,
+            seekSuccessCount: 0,
+            logPlayerStatus,
+        },
     };
 }

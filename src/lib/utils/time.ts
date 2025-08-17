@@ -5,12 +5,49 @@ export function formatTime(time: number): string {
 }
 
 export function normalizeTimeValue(timeValue: number): number {
-    // 明らかに異常に大きい値（10000秒以上）は秒に変換
-    // 通常の動画であれば数千秒（1-3時間程度）はあり得るので、閾値を上げる
-    if (timeValue > 10000) {
-        return timeValue / 1000;
+    // NaNや無効な値のチェック
+    if (!isFinite(timeValue) || timeValue < 0) {
+        console.warn(`⚠️ Invalid time value: ${timeValue}, returning 0`);
+        return 0;
     }
 
-    // すでに適切な秒単位の値と判断
+    // 通常の秒単位値として扱う（異常値チェックを削除）
     return timeValue;
+}
+
+export function validateAndClampTime(currentTime: number, duration: number, previousTime: number = 0): number {
+    // NaNや無効な値のチェック
+    if (!isFinite(currentTime) || currentTime < 0) {
+        console.warn(`⚠️ Invalid currentTime: ${currentTime}, using previous value: ${previousTime}`);
+        return previousTime;
+    }
+
+    // durationが有効でない場合はそのまま返す
+    if (!isFinite(duration) || duration <= 0) {
+        return currentTime;
+    }
+
+    // currentTimeがdurationを超過している場合はクランプ（前回値使用を削除）
+    if (currentTime > duration) {
+        return duration;
+    }
+
+    return currentTime;
+}
+
+export function detectTimeCorruption(currentTime: number, duration: number): boolean {
+    // durationが有効でない場合は判定不可
+    if (!isFinite(duration) || duration <= 0) {
+        return false;
+    }
+
+    // currentTimeがdurationの2倍を超える場合は明らかに異常
+    const corruptionThreshold = duration * 2;
+    const isCorrupted = currentTime > corruptionThreshold;
+    
+    if (isCorrupted) {
+        console.error(`🚨 PLAYER TIME CORRUPTION DETECTED: currentTime=${currentTime}s, duration=${duration}s (ratio: ${(currentTime/duration).toFixed(2)}x)`);
+    }
+    
+    return isCorrupted;
 }

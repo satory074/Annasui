@@ -64,14 +64,11 @@ export default function SongList({
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
   const [dragMode, setDragMode] = useState<'move' | 'resize-start' | 'resize-end' | null>(null);
   const [dragStart, setDragStart] = useState<{ x: number; originalStartTime: number; originalEndTime: number }>({ x: 0, originalStartTime: 0, originalEndTime: 0 });
-  const [isSnapEnabled, setIsSnapEnabled] = useState<boolean>(true);
   const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
-  const SNAP_THRESHOLD = 1.0; // スナップする閾値（秒）
 
   // タイムラインズーム機能の状態管理
   const [timelineZoom, setTimelineZoom] = useState<number>(1.0); // ズーム倍率 (0.5-5.0)
   const [timelineOffset, setTimelineOffset] = useState<number>(0); // 表示開始時刻
-  const [autoFollow, setAutoFollow] = useState<boolean>(true); // 自動追従モード
 
   // タイムラインズーム関連の計算
   const visibleDuration = duration / timelineZoom; // 表示される時間範囲
@@ -83,28 +80,6 @@ export default function SongList({
     return songs.filter((song) => currentTime >= song.startTime && currentTime < song.endTime);
   };
 
-  // スナップ機能のヘルパー関数
-  const getSnapPoints = (excludeSongId: number): number[] => {
-    const snapPoints: number[] = [0, duration]; // 開始と終了
-    songs.forEach(song => {
-      if (song.id !== excludeSongId) {
-        snapPoints.push(song.startTime, song.endTime);
-      }
-    });
-    return snapPoints.sort((a, b) => a - b);
-  };
-
-  const snapToNearestPoint = (time: number, snapPoints: number[]): number => {
-    if (!isSnapEnabled) return time;
-    
-    const nearestPoint = snapPoints.reduce((nearest, point) => {
-      const currentDistance = Math.abs(time - point);
-      const nearestDistance = Math.abs(time - nearest);
-      return currentDistance < nearestDistance ? point : nearest;
-    });
-    
-    return Math.abs(time - nearestPoint) <= SNAP_THRESHOLD ? nearestPoint : time;
-  };
 
   // 楽曲の重なりを検出し、表示レイヤーを計算
   const detectOverlaps = (targetSong: SongSection): { hasOverlap: boolean; overlappingSongs: SongSection[] } => {
@@ -167,7 +142,6 @@ export default function SongList({
     
     const deltaX = e.clientX - dragStart.x;
     const deltaTime = (deltaX / rect.width) * visibleDuration;
-    const snapPoints = getSnapPoints(draggingSong.id);
     
     let newStartTime = dragStart.originalStartTime;
     let newEndTime = dragStart.originalEndTime;
@@ -178,8 +152,7 @@ export default function SongList({
       // 移動時は楽曲の長さを保持
       const songDuration = dragStart.originalEndTime - dragStart.originalStartTime;
       
-      // スナップポイントに合わせて調整
-      newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
+      newStartTime = rawStartTime;
       newEndTime = newStartTime + songDuration;
       
       // 境界チェック
@@ -192,13 +165,9 @@ export default function SongList({
         newEndTime = songDuration;
       }
     } else if (dragMode === 'resize-start') {
-      const rawStartTime = Math.max(0, Math.min(dragStart.originalEndTime - 1, dragStart.originalStartTime + deltaTime));
-      newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
-      newStartTime = Math.max(0, Math.min(dragStart.originalEndTime - 1, newStartTime));
+      newStartTime = Math.max(0, Math.min(dragStart.originalEndTime - 1, dragStart.originalStartTime + deltaTime));
     } else if (dragMode === 'resize-end') {
-      const rawEndTime = Math.min(duration, Math.max(dragStart.originalStartTime + 1, dragStart.originalEndTime + deltaTime));
-      newEndTime = snapToNearestPoint(rawEndTime, snapPoints);
-      newEndTime = Math.min(duration, Math.max(dragStart.originalStartTime + 1, newEndTime));
+      newEndTime = Math.min(duration, Math.max(dragStart.originalStartTime + 1, dragStart.originalEndTime + deltaTime));
     }
     
     // 更新されたsongを作成
@@ -369,20 +338,6 @@ export default function SongList({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEditMode, selectedSong, duration]);
 
-  // 自動追従モード: 現在の再生位置が表示範囲外に出た時に自動調整
-  useEffect(() => {
-    if (autoFollow && timelineZoom > 1) {
-      // 現在時刻が表示範囲外にある場合
-      if (currentTime < visibleStartTime || currentTime > visibleEndTime) {
-        // 現在時刻を中央に配置するように調整
-        const newOffset = Math.max(0, Math.min(
-          duration - visibleDuration,
-          currentTime - visibleDuration / 2
-        ));
-        setTimelineOffset(newOffset);
-      }
-    }
-  }, [currentTime, autoFollow, timelineZoom, visibleStartTime, visibleEndTime, visibleDuration, duration]);
 
 
   // 表示範囲内にある楽曲をフィルタリング
@@ -517,17 +472,6 @@ export default function SongList({
                       ↷
                     </button>
                   </div>
-                  <button
-                    onClick={() => setIsSnapEnabled(!isSnapEnabled)}
-                    className={`px-2 py-1 text-xs rounded transition-colors ${
-                      isSnapEnabled 
-                        ? 'bg-green-500 text-white hover:bg-green-600' 
-                        : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-                    }`}
-                    title="隣接する楽曲の境界にスナップ"
-                  >
-                    スナップ: {isSnapEnabled ? 'ON' : 'OFF'}
-                  </button>
                   {hasChanges && (
                     <span className="text-xs text-orange-600 dark:text-orange-400">
                       未保存の変更があります
@@ -577,17 +521,6 @@ export default function SongList({
                 {timelineZoom.toFixed(1)}x
               </span>
             </div>
-            <button
-              onClick={() => setAutoFollow(!autoFollow)}
-              className={`px-2 py-0.5 text-xs rounded transition-colors ${
-                autoFollow 
-                  ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                  : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
-              }`}
-              title="再生中の楽曲を自動的に表示範囲内に保つ"
-            >
-              自動追従: {autoFollow ? 'ON' : 'OFF'}
-            </button>
             <div className="flex gap-1">
               <button
                 onClick={() => setTimelineZoom(1)}

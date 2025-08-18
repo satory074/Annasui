@@ -63,7 +63,8 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ **UI Simplification Phase**: Removed unnecessary visual elements (colors, genres, position controls) for cleaner interface
 - ✅ **Player Controls Integration**: Fully functional seek bar with volume control, addressing critical time synchronization issues
 - ✅ **Phase 11: Unified Sticky Container**: Integrated all controls into single sticky header, reducing screen usage from 26.8% to ~15%
-- 🔄 Phase 12: User authentication and collaborative editing (planned)
+- ✅ **Song Database Integration**: Complete song database system with search modal for selecting songs from existing medley data when adding new songs in edit mode
+- 🔄 Phase 13: User authentication and collaborative editing (planned)
 
 ## Core Architecture
 
@@ -159,7 +160,8 @@ The application's core functionality relies on postMessage communication with Ni
 - `YouTubePlayer` - YouTube-specific iframe player (basic embed functionality)
 - `PlayerControls` - Complete player control interface with seek bar, play/pause, volume, and fullscreen controls
 - `SongList` - Unified card-based song display with integrated Gantt chart timeline bars, complete editing functionality including drag-and-drop, snap, selection, and keyboard shortcuts
-- `SongEditModal` - Modal for detailed song editing with time validation
+- `SongEditModal` - Modal for detailed song editing with time validation and database song selection support
+- `SongSearchModal` - Database-driven song selection modal with search functionality and card-based display
 - `SongDetailModal` - Read-only modal for displaying song information with play-from-here functionality
 - `SongDetailTooltip` - Hover-based lightweight song information display with intelligent positioning and interaction management
 - `ShareButtons` - Social sharing with platform-aware URL generation and native share API
@@ -247,6 +249,50 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - Time values rounded to 0.1 second precision for smooth editing
 - Snap toggle button in song list header allows disabling auto-snap when needed
 - Timeline container uses `.timeline-container` class for drag operation targeting
+
+#### Song Database Integration System
+**CRITICAL**: Complete database-driven song addition system for edit mode functionality.
+
+**Song Database Architecture:**
+- `SongDatabaseEntry` interface with id, title, artist, originalLink, genre, usageCount, and medleys array
+- Built from all medley data sources (Niconico + YouTube) with automatic deduplication
+- Normalized search using `normalizeSongInfo()` for consistent matching across different text formats
+- Cached database with `getSongDatabase()` for performance optimization
+
+**Two-Step Song Addition Flow:**
+1. **Song Selection Modal**: `SongSearchModal` displays searchable database with real-time filtering
+2. **Edit Modal**: `SongEditModal` shows selected song in card format with time input fields only
+
+**Song Search Modal (`SongSearchModal`):**
+- Real-time search across song titles and artists with normalized text matching
+- Card-based display showing song title, artist, usage count, genre, and medley references
+- Manual addition fallback when no search results found
+- Integration with `songDatabase.ts` utility for data management
+
+**Enhanced Song Edit Modal:**
+- **Database Mode**: Shows selected song information in card format matching search modal
+- **Manual Mode**: Traditional input fields for title, artist, and original link
+- Card display includes: prominent title, artist subtext, genre badge, original link with icon
+- Informational message explaining database selection
+- Only timing fields (start/end time) editable when from database
+
+**Key Implementation Files:**
+- `src/lib/utils/songDatabase.ts` - Core database utility with search and caching
+- `src/components/features/medley/SongSearchModal.tsx` - Search and selection interface
+- `src/components/features/medley/SongEditModal.tsx` - Enhanced edit modal with dual modes
+- Integration points in `MedleyPlayer.tsx` for two-step flow management
+
+**Database Building Process:**
+```typescript
+// Extracts and deduplicates songs from all platform data
+const songMap = new Map<string, SongDatabaseEntry>();
+allMedleys.forEach(medley => {
+  medley.songs.forEach(song => {
+    const normalizedId = normalizeSongInfo(song.title, song.artist);
+    // Aggregates usage count and medley references
+  });
+});
+```
 
 #### Song Detail Modal Architecture
 **Read-Only Information Display:**
@@ -425,6 +471,10 @@ const effectiveDuration = medleyDuration || duration;
 
 **Annotation Editing Testing:**
 - **Edit Mode Features**: Click "編集モード" button to activate advanced editing
+- **Database Song Addition**: Click "楽曲追加" button to test song database search modal
+- **Song Search Modal**: Search for songs by title/artist, verify card-based display with usage counts
+- **Two-Step Addition Flow**: Select song from database → verify card format in edit modal
+- **Manual Addition**: Use "手動で新しい楽曲を追加" for traditional input-based song creation
 - **Snap Functionality**: Toggle "スナップ: ON/OFF" button to test auto-snap behavior
 - **Song Selection**: Click inline timeline bars in song list to see blue ring selection indicator
 - **Keyboard Shortcuts**: Select song then use arrow keys (with Shift/Ctrl modifiers)
@@ -635,6 +685,7 @@ const effectiveDuration = medleyDuration || duration;
 **Static Configuration:**
 - Niconico medley definitions: `src/data/medleys.ts` (includes metadata for sorting)
 - YouTube medley definitions: `src/data/youtubeMedleys.ts` (includes metadata for sorting)
+- Song database utility: `src/lib/utils/songDatabase.ts` (song extraction, search, caching)
 - Database schema: `supabase/schema.sql`, `supabase/seed.sql`
 - Next.js config: `next.config.ts` (static export + image optimization)
 

@@ -12,6 +12,7 @@ interface SongEditModalProps {
   isNew?: boolean;
   maxDuration?: number;
   currentTime?: number;
+  isFromDatabase?: boolean; // 楽曲DBから選択されたかどうか
 }
 
 export default function SongEditModal({
@@ -22,7 +23,8 @@ export default function SongEditModal({
   onDelete,
   isNew = false,
   maxDuration = 0,
-  currentTime = 0
+  currentTime = 0,
+  isFromDatabase = false
 }: SongEditModalProps) {
   const [formData, setFormData] = useState<SongSection>({
     id: 0,
@@ -117,42 +119,86 @@ export default function SongEditModal({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
-          {isNew ? "楽曲を追加" : "楽曲を編集"}
+          {isNew ? (isFromDatabase ? "楽曲DBから追加" : "楽曲を追加") : "楽曲を編集"}
         </h2>
+        
+        {/* 楽曲DBから選択された場合の楽曲情報をカード形式で表示 */}
+        {isFromDatabase && isNew && (
+          <div className="mb-6">
+            <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
+              <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-1">
+                {formData.title}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
+                {formData.artist}
+              </p>
+              
+              {/* ジャンルとリンク情報 */}
+              <div className="flex items-center gap-4 text-xs">
+                {formData.genre && (
+                  <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">
+                    {formData.genre}
+                  </span>
+                )}
+                {formData.originalLink && (
+                  <a
+                    href={formData.originalLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    元動画
+                  </a>
+                )}
+              </div>
+            </div>
+            <p className="text-sm text-blue-800 dark:text-blue-200 mt-2 text-center">
+              楽曲データベースから選択されました。開始時間と終了時間を設定してください。
+            </p>
+          </div>
+        )}
 
         <div className="space-y-4">
-          {/* 楽曲名 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              楽曲名 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
-                errors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-              }`}
-              placeholder="楽曲名を入力"
-            />
-            {errors.title && (
-              <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-            )}
-          </div>
+          {/* 楽曲名・アーティスト名（手動入力時のみ表示） */}
+          {!isFromDatabase && (
+            <>
+              {/* 楽曲名 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  楽曲名 <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                    errors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  }`}
+                  placeholder="楽曲名を入力"
+                />
+                {errors.title && (
+                  <p className="text-red-500 text-sm mt-1">{errors.title}</p>
+                )}
+              </div>
 
-          {/* アーティスト名 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              アーティスト名
-            </label>
-            <input
-              type="text"
-              value={formData.artist}
-              onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              placeholder="アーティスト名を入力"
-            />
-          </div>
+              {/* アーティスト名 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  アーティスト名
+                </label>
+                <input
+                  type="text"
+                  value={formData.artist}
+                  onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  placeholder="アーティスト名を入力"
+                />
+              </div>
+            </>
+          )}
 
           {/* 開始時間 */}
           <div>
@@ -214,19 +260,21 @@ export default function SongEditModal({
 
 
 
-          {/* 元動画リンク */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              元動画リンク
-            </label>
-            <input
-              type="url"
-              value={formData.originalLink || ""}
-              onChange={(e) => setFormData({ ...formData, originalLink: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
-              placeholder="https://..."
-            />
-          </div>
+          {/* 元動画リンク（手動入力時のみ表示） */}
+          {!isFromDatabase && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                元動画リンク
+              </label>
+              <input
+                type="url"
+                value={formData.originalLink || ""}
+                onChange={(e) => setFormData({ ...formData, originalLink: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                placeholder="https://..."
+              />
+            </div>
+          )}
         </div>
 
         {/* ボタン */}

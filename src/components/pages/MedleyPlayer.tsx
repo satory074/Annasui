@@ -12,7 +12,9 @@ import SongList from "@/components/features/medley/SongList";
 import SongEditModal from "@/components/features/medley/SongEditModal";
 import SongDetailModal from "@/components/features/medley/SongDetailModal";
 import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
+import SongSearchModal from "@/components/features/medley/SongSearchModal";
 import { SongSection } from "@/types";
+import { SongDatabaseEntry, createSongFromDatabase } from "@/lib/utils/songDatabase";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -33,6 +35,10 @@ export default function MedleyPlayer({
     const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
     const [editingSong, setEditingSong] = useState<SongSection | null>(null);
     const [isNewSong, setIsNewSong] = useState<boolean>(false);
+    
+    // 楽曲検索モーダル関連の状態
+    const [songSearchModalOpen, setSongSearchModalOpen] = useState<boolean>(false);
+    const [selectedDatabaseSong, setSelectedDatabaseSong] = useState<SongDatabaseEntry | null>(null);
     
     // 楽曲詳細モーダル関連の状態
     const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
@@ -200,6 +206,28 @@ export default function MedleyPlayer({
     };
 
     const handleAddSong = () => {
+        setSelectedDatabaseSong(null);
+        setSongSearchModalOpen(true);
+    };
+    
+    // 楽曲DB検索モーダルのハンドラ
+    const handleSelectSongFromDatabase = (dbSong: SongDatabaseEntry) => {
+        setSongSearchModalOpen(false);
+        setSelectedDatabaseSong(dbSong);
+        
+        // 楽曲DBから基本情報を取得して編集モーダルを開く
+        const songTemplate = createSongFromDatabase(dbSong, 0, 0);
+        setEditingSong({
+            id: Date.now(), // 一時的なID
+            ...songTemplate
+        });
+        setIsNewSong(true);
+        setEditModalOpen(true);
+    };
+    
+    const handleManualAddSong = () => {
+        setSongSearchModalOpen(false);
+        setSelectedDatabaseSong(null);
         setEditingSong(null);
         setIsNewSong(true);
         setEditModalOpen(true);
@@ -442,13 +470,25 @@ export default function MedleyPlayer({
             {/* 楽曲編集モーダル */}
             <SongEditModal
                 isOpen={editModalOpen}
-                onClose={() => setEditModalOpen(false)}
+                onClose={() => {
+                    setEditModalOpen(false);
+                    setSelectedDatabaseSong(null);
+                }}
                 song={editingSong}
                 onSave={handleSaveSong}
                 onDelete={deleteSong}
                 isNew={isNewSong}
                 maxDuration={effectiveDuration}
                 currentTime={currentTime}
+                isFromDatabase={selectedDatabaseSong !== null}
+            />
+
+            {/* 楽曲検索モーダル */}
+            <SongSearchModal
+                isOpen={songSearchModalOpen}
+                onClose={() => setSongSearchModalOpen(false)}
+                onSelectSong={handleSelectSongFromDatabase}
+                onManualAdd={handleManualAddSong}
             />
 
             {/* 楽曲詳細モーダル */}

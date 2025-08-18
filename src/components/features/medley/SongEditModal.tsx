@@ -122,8 +122,8 @@ export default function SongEditModal({
           {isNew ? (isFromDatabase ? "楽曲DBから追加" : "楽曲を追加") : "楽曲を編集"}
         </h2>
         
-        {/* 楽曲DBから選択された場合の楽曲情報をカード形式で表示 */}
-        {isFromDatabase && isNew && (
+        {/* 楽曲情報をカード形式で表示（楽曲DBから選択 または 既存楽曲の編集）*/}
+        {(isFromDatabase || !isNew) && (
           <div className="mb-6">
             <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
               <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-1">
@@ -156,14 +156,17 @@ export default function SongEditModal({
               </div>
             </div>
             <p className="text-sm text-blue-800 dark:text-blue-200 mt-2 text-center">
-              楽曲データベースから選択されました。開始時間と終了時間を設定してください。
+              {isFromDatabase && isNew 
+                ? "楽曲データベースから選択されました。開始時間と終了時間を設定してください。"
+                : "楽曲情報を確認し、開始時間と終了時間を編集してください。"
+              }
             </p>
           </div>
         )}
 
         <div className="space-y-4">
-          {/* 楽曲名・アーティスト名（手動入力時のみ表示） */}
-          {!isFromDatabase && (
+          {/* 楽曲名・アーティスト名（新規楽曲の手動追加時のみ表示） */}
+          {isNew && !isFromDatabase && (
             <>
               {/* 楽曲名 */}
               <div>
@@ -260,8 +263,8 @@ export default function SongEditModal({
 
 
 
-          {/* 元動画リンク（手動入力時のみ表示） */}
-          {!isFromDatabase && (
+          {/* 元動画リンク（新規楽曲の手動追加時のみ表示） */}
+          {isNew && !isFromDatabase && (
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 元動画リンク

@@ -272,9 +272,11 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 **Enhanced Song Edit Modal:**
 - **Database Mode**: Shows selected song information in card format matching search modal
 - **Manual Mode**: Traditional input fields for title, artist, and original link
+- **Existing Song Edit Mode**: Shows song information in consistent card format (unified UI)
 - Card display includes: prominent title, artist subtext, genre badge, original link with icon
-- Informational message explaining database selection
-- Only timing fields (start/end time) editable when from database
+- Informational message explaining database selection or edit context
+- Only timing fields (start/end time) editable when from database or editing existing songs
+- **CRITICAL UI Consistency**: Both new song addition from database AND existing song editing use the same card-based layout for visual consistency
 
 **Key Implementation Files:**
 - `src/lib/utils/songDatabase.ts` - Core database utility with search and caching
@@ -489,6 +491,7 @@ const effectiveDuration = medleyDuration || duration;
 - **Full-Width Timeline Bars**: Visual timeline bar in Gantt chart format with complete song titles displayed (no truncation)
 - **Unified Color Scheme**: All timeline bars use consistent blue color (bg-blue-500 dark:bg-blue-600) for visual harmony
 - **Song Detail Modal**: Click timeline bars in view mode to open detailed song information
+- **Song Edit Modal Consistency**: Click edit button to open modal with consistent card-based song information display
 - **Overlap Detection**: Songs with time overlaps show striped patterns (no badges in header)
 - **Mashup Support**: When multiple songs play simultaneously, header shows "マッシュアップ: X曲同時再生中"
 - **Current Time Indicator**: Red vertical line shows real-time playback position across all timeline bars

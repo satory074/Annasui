@@ -4,7 +4,19 @@ const nextConfig: NextConfig = {
   output: 'export',
   trailingSlash: true,
   images: {
-    unoptimized: true
+    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'img.youtube.com',
+        pathname: '/vi/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'nicovideo.cdn.nimg.jp',
+        pathname: '/thumbnails/**',
+      }
+    ]
   }
 };
 

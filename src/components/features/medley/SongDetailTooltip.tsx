@@ -2,6 +2,7 @@
 
 import { SongSection } from "@/types";
 import { useEffect, useState } from "react";
+import { getThumbnailUrl, handleThumbnailError } from "@/lib/utils/thumbnail";
 
 interface SongDetailTooltipProps {
   song: SongSection | null;
@@ -43,7 +44,7 @@ export default function SongDetailTooltip({
   useEffect(() => {
     if (isVisible && typeof window !== 'undefined') {
       const tooltipWidth = 320; // 推定幅
-      const tooltipHeight = 280; // 推定高さ
+      const tooltipHeight = 300; // サムネイル分高さを増加
       const padding = 16;
 
       let adjustedX = position.x;
@@ -75,6 +76,8 @@ export default function SongDetailTooltip({
 
   if (!isVisible || !song) return null;
 
+  const thumbnailUrl = song.originalLink ? getThumbnailUrl(song.originalLink) : null;
+
   return (
     <div
       className="fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 p-4 max-w-sm transition-all duration-200 opacity-100 scale-100"
@@ -87,8 +90,23 @@ export default function SongDetailTooltip({
       onMouseLeave={onMouseLeave}
       onClick={(e) => e.stopPropagation()}
     >
-      {/* ヘッダー */}
-      <div className="flex items-center gap-3 mb-3">
+      {/* ヘッダーとサムネイル */}
+      <div className="flex items-start gap-3 mb-3">
+        {thumbnailUrl && song.originalLink && (
+          <a
+            href={song.originalLink}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex-shrink-0 rounded overflow-hidden hover:opacity-80 transition-opacity"
+          >
+            <img
+              src={thumbnailUrl}
+              alt={`${song.title} サムネイル`}
+              className="w-20 h-11 object-cover bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+              onError={(e) => handleThumbnailError(e.currentTarget, song.originalLink!)}
+            />
+          </a>
+        )}
         <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">楽曲詳細</div>
       </div>
 

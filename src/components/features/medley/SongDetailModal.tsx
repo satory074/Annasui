@@ -1,6 +1,7 @@
 "use client";
 
 import { SongSection } from "@/types";
+import { getThumbnailUrl, handleThumbnailError } from "@/lib/utils/thumbnail";
 
 interface SongDetailModalProps {
   isOpen: boolean;
@@ -35,6 +36,8 @@ export default function SongDetailModal({
 
   if (!isOpen || !song) return null;
 
+  const thumbnailUrl = song.originalLink ? getThumbnailUrl(song.originalLink) : null;
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
@@ -51,6 +54,25 @@ export default function SongDetailModal({
             </svg>
           </button>
         </div>
+
+        {/* サムネイル画像 */}
+        {thumbnailUrl && song.originalLink && (
+          <div className="mb-4">
+            <a
+              href={song.originalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block rounded-lg overflow-hidden hover:opacity-80 transition-opacity"
+            >
+              <img
+                src={thumbnailUrl}
+                alt={`${song.title} サムネイル`}
+                className="w-full aspect-video object-cover bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                onError={(e) => handleThumbnailError(e.currentTarget, song.originalLink!)}
+              />
+            </a>
+          </div>
+        )}
 
         <div className="space-y-4">
 

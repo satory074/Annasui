@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { SongSection } from "@/types";
+import { getThumbnailUrl, handleThumbnailError } from "@/lib/utils/thumbnail";
 
 interface SongEditModalProps {
   isOpen: boolean;
@@ -125,34 +126,59 @@ export default function SongEditModal({
         {/* 楽曲情報をカード形式で表示（楽曲DBから選択 または 既存楽曲の編集）*/}
         {(isFromDatabase || !isNew) && (
           <div className="mb-6">
-            <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
-              <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-1">
-                {formData.title}
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-3">
-                {formData.artist}
-              </p>
+            <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 flex gap-4">
+              {/* サムネイル画像 */}
+              {formData.originalLink && (
+                (() => {
+                  const thumbnailUrl = getThumbnailUrl(formData.originalLink);
+                  return thumbnailUrl ? (
+                    <a
+                      href={formData.originalLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-shrink-0 rounded overflow-hidden hover:opacity-80 transition-opacity"
+                    >
+                      <img
+                        src={thumbnailUrl}
+                        alt={`${formData.title} サムネイル`}
+                        className="w-16 h-9 object-cover bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600"
+                        onError={(e) => handleThumbnailError(e.currentTarget, formData.originalLink!)}
+                      />
+                    </a>
+                  ) : null;
+                })()
+              )}
               
-              {/* ジャンルとリンク情報 */}
-              <div className="flex items-center gap-4 text-xs">
-                {formData.genre && (
-                  <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">
-                    {formData.genre}
-                  </span>
-                )}
-                {formData.originalLink && (
-                  <a
-                    href={formData.originalLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                    </svg>
-                    元動画
-                  </a>
-                )}
+              {/* 楽曲情報 */}
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-1 truncate">
+                  {formData.title}
+                </h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 truncate">
+                  {formData.artist}
+                </p>
+                
+                {/* ジャンルとリンク情報 */}
+                <div className="flex items-center gap-4 text-xs">
+                  {formData.genre && (
+                    <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">
+                      {formData.genre}
+                    </span>
+                  )}
+                  {formData.originalLink && (
+                    <a
+                      href={formData.originalLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                      元動画
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
             <p className="text-sm text-blue-800 dark:text-blue-200 mt-2 text-center">

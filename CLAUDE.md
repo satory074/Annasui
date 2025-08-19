@@ -299,11 +299,53 @@ allMedleys.forEach(medley => {
 #### Song Detail Modal Architecture
 **Read-Only Information Display:**
 - Displays comprehensive song information including title, artist, timing, and original links
+- **Thumbnail Integration**: Full-size thumbnail display with automatic platform detection (YouTube/Niconico)
 - Simplified design with no color indicators - focus on essential information
 - Formatted time display with start/end times and calculated duration
 - "この曲から再生" button triggers seek operation and closes modal
 - Accessible design with proper ARIA labels and keyboard navigation
 - Modal state managed at MedleyPlayer level with `onShowSongDetail` callback
+
+#### Thumbnail Display System
+**CRITICAL**: Complete multi-platform thumbnail display system for song originalLinks.
+
+**Thumbnail Architecture:**
+- `src/lib/utils/thumbnail.ts` - Core utility for thumbnail URL generation
+- Multi-platform support: YouTube (`img.youtube.com/vi/{videoId}/{quality}.jpg`) and Niconico (`nicovideo.cdn.nimg.jp/thumbnails/{numericId}/{numericId}.L`)
+- Automatic platform detection from originalLink URLs
+- Cascading fallback system for error handling
+
+**Next.js Configuration:**
+```typescript
+// next.config.ts - Required remote image patterns
+images: {
+  unoptimized: true,
+  remotePatterns: [
+    { protocol: 'https', hostname: 'img.youtube.com', pathname: '/vi/**' },
+    { protocol: 'https', hostname: 'nicovideo.cdn.nimg.jp', pathname: '/thumbnails/**' }
+  ]
+}
+```
+
+**Implementation Components:**
+- **SongDetailModal**: Full-size thumbnail (aspect-video) above song details
+- **SongDetailTooltip**: Compact thumbnail (80x45px) in tooltip header 
+- **SongEditModal**: Card-layout thumbnail (64x36px) for database/existing songs
+
+**Error Handling:**
+```typescript
+// Progressive fallback for Niconico thumbnails
+handleThumbnailError(imgElement, originalLink) {
+  // L → M → default → placeholder → hidden
+}
+```
+
+**Key Features:**
+- URL parsing for sm{numericId} extraction from Niconico URLs
+- YouTube quality options (default, mqdefault, hqdefault, maxresdefault)
+- SVG placeholder generation for failed Niconico thumbnails
+- Automatic retry with lower quality on load failures
+- Click-through functionality to original video links
 
 #### Advanced Tooltip System (Phase 10)
 **CRITICAL**: Hover-based song detail display with intelligent interaction management.
@@ -506,6 +548,16 @@ const effectiveDuration = medleyDuration || duration;
 - **Timeout Behavior**: Move mouse away from both timeline and tooltip - should dismiss after 200ms delay
 - **Edit Mode**: Verify tooltip is disabled when edit mode is active
 - **Mobile Testing**: Test tap-based interaction on touch devices
+- **Thumbnail Display**: Verify thumbnails appear in tooltips for songs with originalLinks
+
+**Thumbnail System Testing:**
+- **YouTube Thumbnails**: Test thumbnail display for YouTube originalLinks (e.g., `https://www.youtube.com/watch?v=VIDEO_ID`)
+- **Niconico Thumbnails**: Test thumbnail display for Niconico originalLinks (e.g., `https://www.nicovideo.jp/watch/smXXXXXX`)
+- **Fallback Behavior**: Test error handling by accessing songs with invalid/broken originalLinks
+- **Modal Integration**: Verify full-size thumbnails in SongDetailModal with click-through to original videos
+- **Tooltip Integration**: Verify compact thumbnails in SongDetailTooltip with proper sizing
+- **Edit Modal Integration**: Verify card-layout thumbnails in SongEditModal for database/existing songs
+- **Cross-Platform Testing**: Test both platforms in production environment to ensure CDN access
 
 **Unified Sticky Container Testing:**
 - **Screen Usage Optimization**: Verify total sticky area uses approximately 15% of viewport height (reduced from 26.8%)
@@ -591,6 +643,17 @@ const effectiveDuration = medleyDuration || duration;
 - **Button sizes inconsistent**: Verify unified button sizing (`px-3 py-1` for edit controls, `px-2 py-1` for share buttons)
 - **Visual inconsistency**: Check consistent background colors and spacing across all three sections
 - **Missing functionality**: Confirm no features were lost during integration - all original controls should be present and functional
+
+**Thumbnail System Issues:**
+- **Thumbnails not displaying**: Check `originalLink` field exists and contains valid YouTube/Niconico URLs
+- **Next.js image errors**: Ensure `remotePatterns` are configured in `next.config.ts` for both YouTube and Niconico CDNs
+- **Niconico thumbnails failing**: Verify CDN URL format matches pattern: `https://nicovideo.cdn.nimg.jp/thumbnails/{numericId}/{numericId}.L`
+- **YouTube thumbnails broken**: Check video ID extraction from URLs and ensure public video availability
+- **Error handling not working**: Verify `handleThumbnailError` function is properly called with `onError` attribute on img elements
+- **Placeholder not showing**: Ensure SVG placeholder generation works for completely failed Niconico thumbnails
+- **Click-through broken**: Check thumbnail links use correct `originalLink` URLs with proper `target="_blank"` and `rel="noopener noreferrer"`
+- **Sizing issues**: Verify responsive sizing classes for different contexts (modal: `aspect-video`, tooltip: `w-20 h-11`, edit: `w-16 h-9`)
+- **Build failures**: Thumbnail URLs are external - ensure Next.js `images.unoptimized: true` for static export compatibility
 
 **Build and Deployment:**
 - **Build deployment failing**: Ensure `public/favicon.ico` exists for Next.js build
@@ -696,6 +759,7 @@ const effectiveDuration = medleyDuration || duration;
 - Player constants: `src/lib/constants/player.ts`
 - Time utilities: `src/lib/utils/time.ts`
 - Video validation: `src/lib/utils/videoValidation.ts`
+- Thumbnail utilities: `src/lib/utils/thumbnail.ts` (YouTube/Niconico thumbnail generation)
 
 **Route Structure:**
 - Platform-specific layouts: `src/app/niconico/[videoId]/layout.tsx`, `src/app/youtube/[videoId]/layout.tsx`

@@ -19,7 +19,7 @@ export const sampleMedley1: MedleyData = {
       endTime: 90,
       color: "bg-red-400",
       genre: "ボカロ",
-      originalLink: "https://www.nicovideo.jp/watch/sm13274270"
+      originalLink: "https://www.nicovideo.jp/watch/sm15630734"
     },
     {
       id: 2,
@@ -79,7 +79,7 @@ export const sampleMedley1: MedleyData = {
       endTime: 600,
       color: "bg-pink-400",
       genre: "ボカロ",
-      originalLink: "https://www.nicovideo.jp/watch/sm13636066"
+      originalLink: "https://www.nicovideo.jp/watch/sm20503793"
     }
   ]
 };
@@ -187,7 +187,7 @@ export const nicoMedley1: MedleyData = {
       endTime: 74,
       color: "bg-yellow-400",
       genre: "アニソン",
-      originalLink: ""
+      originalLink: "https://www.nicovideo.jp/watch/sm2621549"
     },
     {
       id: 3,
@@ -327,7 +327,7 @@ export const nicoMedley1: MedleyData = {
       endTime: 340,
       color: "bg-yellow-300",
       genre: "東方",
-      originalLink: ""
+      originalLink: "https://www.nicovideo.jp/watch/sm201996"
     },
     {
       id: 17,

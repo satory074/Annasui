@@ -47,7 +47,7 @@ This verification step is essential because the production environment uses stat
 Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
 
 ### Current Implementation Status
-**Phase 11 Complete**: Unified Sticky Container Architecture & Screen Optimization
+**Phase 12 Complete**: Timeline Synchronization & Visual Unification
 - ✅ Phase 1: Supabase database integration with fallback to static data
 - ✅ Phase 2: Drag-and-drop timeline editor with modal-based song editing  
 - ✅ Phase 3: Dynamic routing with individual medley pages and OGP metadata
@@ -65,6 +65,7 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ **Phase 11: Unified Sticky Container**: Integrated all controls into single sticky header, reducing screen usage from 26.8% to ~15%
 - ✅ **Song Database Integration**: Complete song database system with search modal for selecting songs from existing medley data when adding new songs in edit mode
 - ✅ **TempoTrack System**: Logic Pro-style tempo editing with DIV-based rendering for precise BPM control and visual feedback
+- ✅ **Phase 12: Timeline Synchronization**: Perfect alignment of PlayerControls, SongList, and TempoTrack position indicators with unified visual design and zoom integration
 - 🔄 Phase 13: User authentication and collaborative editing (planned)
 
 ## Core Architecture
@@ -510,18 +511,42 @@ const effectiveDuration = medleyDuration || duration;
 - Currently uses basic iframe embed without seek API integration
 - Seek functionality logs to console as placeholder for future implementation
 
-#### Player Controls Integration
+#### Player Controls Integration & Timeline Synchronization
+**CRITICAL**: Complete timeline synchronization system ensuring perfect alignment across all components.
+
 **PlayerControls Component:**
-- Complete seek bar functionality with real-time synchronization
+- **Visual Seek Bar**: Replaced `<input type="range">` with custom div-based timeline bar matching SongList and TempoTrack
+- **Red Position Indicator**: `w-0.5 bg-red-500 z-10` line synchronized across all timeline components
+- **Zoom-Aware Display**: Respects `visibleStartTime` and `visibleDuration` for consistent scale with other timelines
 - Volume control with slider interface
 - Play/pause toggle with visual feedback
 - Fullscreen toggle button
-- Time display showing current time and total duration
+- Time display with zoom range indicators
+
+**Unified Position Calculation:**
+```typescript
+// All timeline components use identical positioning logic
+const getSeekBarPosition = (time: number): number => {
+  if (effectiveVisibleDuration <= 0) return 0;
+  // Range validation prevents out-of-bounds display
+  if (time < effectiveVisibleStartTime || time > effectiveVisibleStartTime + effectiveVisibleDuration) {
+    return -1; // Hide when outside visible range
+  }
+  return ((time - effectiveVisibleStartTime) / effectiveVisibleDuration) * 100;
+};
+```
+
+**Timeline Synchronization Architecture:**
+- **PlayerControls**: Visual timeline bar with red position indicator and progress bar
+- **SongList**: Individual song timeline bars with red position indicators
+- **TempoTrack**: Tempo editing interface with red position indicator
+- All components use identical height (`h-8`), padding (`px-3 py-2`), and position calculation logic
 
 **Integration Pattern:**
 - `useNicoPlayer` hook manages volume state and player communication
-- `NicoPlayer` component integrates PlayerControls with proper prop passing
-- `MedleyPlayer` handles volume change events and passes callbacks
+- Zoom state managed in `SongList` component and passed up to `MedleyPlayer` via `onZoomChange` callback
+- `MedleyPlayer` distributes zoom state (`visibleStartTime`, `visibleDuration`) to all player components
+- **CRITICAL**: All position calculations must use the same formula to ensure perfect alignment
 - **CRITICAL**: Seek bar synchronization requires proper milliseconds/seconds conversion in `playerMetadataChange` events
 
 ### Production Deployment Configuration
@@ -674,6 +699,15 @@ const effectiveDuration = medleyDuration || duration;
 - **Grid density not updating**: Check grid count calculation based on `timelineZoom` value
 - **Time labels not showing**: Verify `timelineZoom > 1.5` condition and label positioning
 - **Editing broken in zoom mode**: Ensure drag calculations use `visibleDuration` instead of `duration`
+
+**Timeline Synchronization Issues:**
+- **Position indicators misaligned**: Ensure all components (PlayerControls, SongList, TempoTrack) use identical position calculation: `((time - visibleStartTime) / visibleDuration) * 100`
+- **Seek bar not matching timeline**: Verify PlayerControls uses same `visibleStartTime` and `visibleDuration` props from zoom state
+- **Red indicators at different positions**: Check that all components use same styling: `w-0.5 bg-red-500 z-10`
+- **PlayerControls not updating with zoom**: Ensure `onZoomChange` callback properly updates zoom state in MedleyPlayer
+- **Range validation failures**: Verify all components hide indicators when `time < visibleStartTime || time > visibleStartTime + visibleDuration`
+- **Height inconsistencies**: All timeline containers must use same height class: `h-8`
+- **Padding differences**: All components should use consistent padding: `px-3 py-2` for containers
 
 **Song List UI Issues:**
 - **Timeline bars not displaying**: Ensure `duration` prop is passed to SongList component

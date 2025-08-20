@@ -48,6 +48,10 @@ export default function MedleyPlayer({
     const [tooltipSong, setTooltipSong] = useState<SongSection | null>(null);
     const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const [isTooltipVisible, setIsTooltipVisible] = useState<boolean>(false);
+    
+    // ズーム状態の管理
+    const [visibleStartTime, setVisibleStartTime] = useState<number>(0);
+    const [visibleDuration, setVisibleDuration] = useState<number | undefined>(undefined);
     const [isHoveringTooltip, setIsHoveringTooltip] = useState<boolean>(false);
     const [isHoveringSong, setIsHoveringSong] = useState<boolean>(false);
     const [hideTooltipTimeout, setHideTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -318,6 +322,12 @@ export default function MedleyPlayer({
         }
     };
 
+    // ズーム状態変更のハンドラー
+    const handleZoomChange = (newVisibleStartTime: number, newVisibleDuration: number) => {
+        setVisibleStartTime(newVisibleStartTime);
+        setVisibleDuration(newVisibleDuration);
+    };
+
     // 動画IDが変更されたときの処理
     const handleVideoIdSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -373,6 +383,16 @@ export default function MedleyPlayer({
                         <YouTubePlayer
                             videoId={videoId}
                             className="w-full aspect-video"
+                            isPlaying={isPlaying}
+                            currentTime={currentTime}
+                            duration={duration}
+                            volume={volume}
+                            onTogglePlayPause={togglePlayPause}
+                            onSeek={seek}
+                            onVolumeChange={handleVolumeChange}
+                            onToggleFullscreen={toggleFullscreen}
+                            visibleStartTime={visibleStartTime}
+                            visibleDuration={visibleDuration}
                         />
                     ) : (
                         <NicoPlayer
@@ -389,6 +409,8 @@ export default function MedleyPlayer({
                             onVolumeChange={handleVolumeChange}
                             onToggleFullscreen={toggleFullscreen}
                             onErrorDismiss={clearError}
+                            visibleStartTime={visibleStartTime}
+                            visibleDuration={visibleDuration}
                         />
                     )}
                 </div>
@@ -441,6 +463,8 @@ export default function MedleyPlayer({
                         initialBpm={initialBpm}
                         tempoChanges={tempoChanges}
                         onUpdateTempo={updateTempo}
+                        // ズーム状態通知
+                        onZoomChange={handleZoomChange}
                     />
                 )}
 

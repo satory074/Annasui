@@ -36,6 +36,8 @@ interface SongListProps {
   initialBpm?: number;
   tempoChanges?: TempoChange[];
   onUpdateTempo?: (initialBpm: number, tempoChanges: TempoChange[]) => void;
+  // ズーム状態通知
+  onZoomChange?: (visibleStartTime: number, visibleDuration: number) => void;
 }
 
 export default function SongList({ 
@@ -66,7 +68,8 @@ export default function SongList({
   medleyCreator,
   initialBpm = 120,
   tempoChanges = [],
-  onUpdateTempo
+  onUpdateTempo,
+  onZoomChange
 }: SongListProps) {
   // 編集機能の状態管理
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
@@ -82,6 +85,11 @@ export default function SongList({
   const visibleDuration = duration / timelineZoom; // 表示される時間範囲
   const visibleStartTime = timelineOffset; // 表示開始時刻
   const visibleEndTime = Math.min(timelineOffset + visibleDuration, duration); // 表示終了時刻
+
+  // ズーム状態変更時に親コンポーネントに通知
+  useEffect(() => {
+    onZoomChange?.(visibleStartTime, visibleDuration);
+  }, [visibleStartTime, visibleDuration, onZoomChange]);
 
   // 現在の時刻に再生中の全ての楽曲を取得（マッシュアップ対応）
   const getCurrentSongs = (): SongSection[] => {
@@ -642,7 +650,7 @@ export default function SongList({
 
                   {/* タイムライン */}
                   <div 
-                    className="timeline-container relative w-full h-8 bg-blue-50 dark:bg-blue-900/10"
+                    className="timeline-container relative w-full h-8 bg-blue-50 dark:bg-blue-900/10 ml-0"
                     onWheel={handleWheel}
                   >
                     {/* 時間グリッド（背景） - ズームレベルに応じて調整 */}

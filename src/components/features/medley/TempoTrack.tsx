@@ -374,7 +374,7 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
   };
 
   return (
-    <div className="mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2">
+    <div className="mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
       <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center justify-between">
         <span>テンポトラック</span>
         {isEditMode && (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import PlayerControls from "./PlayerControls";
 
 interface YouTubePlayerProps {
     videoId: string;
@@ -11,6 +12,18 @@ interface YouTubePlayerProps {
     autoplay?: boolean;
     seekTo?: number;
     className?: string;
+    // プレイヤーコントロール用のプロパティ
+    isPlaying?: boolean;
+    currentTime?: number;
+    duration?: number;
+    volume?: number;
+    onTogglePlayPause?: () => void;
+    onSeek?: (seekTime: number) => void;
+    onVolumeChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onToggleFullscreen?: () => void;
+    // ズーム対応プロパティ
+    visibleStartTime?: number;
+    visibleDuration?: number;
 }
 
 export default function YouTubePlayer({
@@ -18,7 +31,17 @@ export default function YouTubePlayer({
     onReady,
     autoplay = false,
     seekTo,
-    className = "w-full aspect-video"
+    className = "w-full aspect-video",
+    isPlaying = false,
+    currentTime = 0,
+    duration = 0,
+    volume = 50,
+    onTogglePlayPause,
+    onSeek,
+    onVolumeChange,
+    onToggleFullscreen,
+    visibleStartTime,
+    visibleDuration,
 }: YouTubePlayerProps) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -48,16 +71,34 @@ export default function YouTubePlayer({
 
     return (
         <div className="relative">
-            <iframe
-                ref={iframeRef}
-                className={className}
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-                title={`YouTube video ${videoId}`}
-            />
-            <div className="absolute top-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
-                YouTube Player
+            <div className="aspect-video bg-black relative">
+                <iframe
+                    ref={iframeRef}
+                    className={className}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    title={`YouTube video ${videoId}`}
+                />
+                <div className="absolute top-2 left-2 bg-red-800 bg-opacity-70 text-white text-xs px-2 py-1 rounded">
+                    YouTube Player
+                </div>
             </div>
+            
+            {/* プレイヤーコントロール */}
+            {(onTogglePlayPause || onSeek) && (
+                <PlayerControls
+                    isPlaying={isPlaying}
+                    currentTime={currentTime}
+                    duration={duration}
+                    volume={volume}
+                    onTogglePlayPause={onTogglePlayPause || (() => {})}
+                    onSeek={onSeek || (() => {})}
+                    onVolumeChange={onVolumeChange || (() => {})}
+                    onToggleFullscreen={onToggleFullscreen || (() => {})}
+                    visibleStartTime={visibleStartTime}
+                    visibleDuration={visibleDuration}
+                />
+            )}
         </div>
     );
 }

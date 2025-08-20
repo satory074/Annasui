@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS public.medleys (
     title TEXT NOT NULL,
     creator TEXT,
     duration INTEGER NOT NULL,
+    initial_bpm INTEGER DEFAULT 120,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -28,10 +29,22 @@ CREATE TABLE IF NOT EXISTS public.songs (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create tempo_changes table
+CREATE TABLE IF NOT EXISTS public.tempo_changes (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    medley_id UUID NOT NULL REFERENCES public.medleys(id) ON DELETE CASCADE,
+    time INTEGER NOT NULL,
+    bpm INTEGER NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 -- Create indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_medleys_video_id ON public.medleys(video_id);
 CREATE INDEX IF NOT EXISTS idx_songs_medley_id ON public.songs(medley_id);
 CREATE INDEX IF NOT EXISTS idx_songs_order_index ON public.songs(order_index);
+CREATE INDEX IF NOT EXISTS idx_tempo_changes_medley_id ON public.tempo_changes(medley_id);
+CREATE INDEX IF NOT EXISTS idx_tempo_changes_time ON public.tempo_changes(time);
 
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -51,9 +64,14 @@ CREATE TRIGGER update_songs_updated_at
     BEFORE UPDATE ON public.songs 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+CREATE TRIGGER update_tempo_changes_updated_at 
+    BEFORE UPDATE ON public.tempo_changes 
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
 -- Enable Row Level Security (RLS)
 ALTER TABLE public.medleys ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.songs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tempo_changes ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for public read access
 CREATE POLICY "Allow public read access on medleys" ON public.medleys
@@ -76,4 +94,17 @@ CREATE POLICY "Allow public update on songs" ON public.songs
     FOR UPDATE USING (true);
 
 CREATE POLICY "Allow public delete on songs" ON public.songs
+    FOR DELETE USING (true);
+
+-- Create policies for tempo_changes
+CREATE POLICY "Allow public read access on tempo_changes" ON public.tempo_changes
+    FOR SELECT USING (true);
+
+CREATE POLICY "Allow public insert on tempo_changes" ON public.tempo_changes
+    FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Allow public update on tempo_changes" ON public.tempo_changes
+    FOR UPDATE USING (true);
+
+CREATE POLICY "Allow public delete on tempo_changes" ON public.tempo_changes
     FOR DELETE USING (true);

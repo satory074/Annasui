@@ -1,8 +1,20 @@
 import { supabase, type Database } from '@/lib/supabase'
-import type { MedleyData, SongSection } from '@/types'
+import type { MedleyData, SongSection, TempoChange } from '@/types'
 
-type MedleyRow = Database['public']['Tables']['medleys']['Row']
+type MedleyRow = Database['public']['Tables']['medleys']['Row'] & {
+  initial_bpm?: number
+}
 type SongRow = Database['public']['Tables']['songs']['Row']
+
+// Manual type definition for tempo_changes table (not yet in generated types)
+type TempoChangeRow = {
+  id: string
+  medley_id: string
+  time: number
+  bpm: number
+  created_at: string
+  updated_at: string
+}
 
 // Database row to app type conversion
 function convertDbRowToSongSection(song: SongRow): SongSection {
@@ -18,15 +30,25 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
   }
 }
 
-function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyData {
+function convertDbRowToTempoChange(tempoChange: TempoChangeRow): TempoChange {
+  return {
+    time: tempoChange.time,
+    bpm: tempoChange.bpm
+  }
+}
+
+function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[], tempoChanges: TempoChangeRow[] = []): MedleyData {
   const sortedSongs = songs.sort((a, b) => a.order_index - b.order_index)
+  const sortedTempoChanges = tempoChanges.sort((a, b) => a.time - b.time)
   
   return {
     videoId: medley.video_id,
     title: medley.title,
     creator: medley.creator || '',
     duration: medley.duration,
-    songs: sortedSongs.map(convertDbRowToSongSection)
+    songs: sortedSongs.map(convertDbRowToSongSection),
+    initialBpm: medley.initial_bpm || 120,
+    tempoChanges: sortedTempoChanges.map(convertDbRowToTempoChange)
   }
 }
 
@@ -64,7 +86,18 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
       throw songsError
     }
 
-    return convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[])
+    // Get tempo changes data
+    const { data: tempoChanges, error: tempoError } = await supabase
+      .from('tempo_changes')
+      .select('*')
+      .eq('medley_id', medley.id as string)
+      .order('time', { ascending: true })
+
+    if (tempoError) {
+      throw tempoError
+    }
+
+    return convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[], (tempoChanges || []) as TempoChangeRow[])
   } catch (error) {
     console.error('Error fetching medley:', error)
     return null
@@ -91,20 +124,34 @@ export async function getAllMedleys(): Promise<MedleyData[]> {
       return []
     }
 
-    // Get songs for each medley
+    // Get songs and tempo changes for each medley
     const medleyDataPromises = medleys.map(async (medley) => {
-      const { data: songs, error: songsError } = await supabase!
-        .from('songs')
-        .select('*')
-        .eq('medley_id', medley.id as string)
-        .order('order_index', { ascending: true })
+      const [songsResult, tempoResult] = await Promise.all([
+        supabase!
+          .from('songs')
+          .select('*')
+          .eq('medley_id', medley.id as string)
+          .order('order_index', { ascending: true }),
+        supabase!
+          .from('tempo_changes')
+          .select('*')
+          .eq('medley_id', medley.id as string)
+          .order('time', { ascending: true })
+      ])
 
-      if (songsError) {
-        console.error('Error fetching songs for medley:', medley.id, songsError)
-        return convertDbRowToMedleyData(medley as MedleyRow, [])
+      if (songsResult.error) {
+        console.error('Error fetching songs for medley:', medley.id, songsResult.error)
+      }
+      
+      if (tempoResult.error) {
+        console.error('Error fetching tempo changes for medley:', medley.id, tempoResult.error)
       }
 
-      return convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[])
+      return convertDbRowToMedleyData(
+        medley as MedleyRow, 
+        (songsResult.data || []) as SongRow[], 
+        (tempoResult.data || []) as TempoChangeRow[]
+      )
     })
 
     return await Promise.all(medleyDataPromises)
@@ -127,7 +174,8 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
         video_id: medleyData.videoId,
         title: medleyData.title,
         creator: medleyData.creator || null,
-        duration: medleyData.duration
+        duration: medleyData.duration,
+        initial_bpm: medleyData.initialBpm || 120
       })
       .select()
       .single()
@@ -158,7 +206,38 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
       throw songsError
     }
 
-    return convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[])
+    // Insert tempo changes (including automatic start position)
+    const tempoChangesToInsert = []
+    
+    // Always add start position tempo change
+    tempoChangesToInsert.push({
+      medley_id: medley.id as string,
+      time: 0,
+      bpm: medleyData.initialBpm || 120
+    })
+    
+    // Add additional tempo changes (excluding time 0 if present to avoid duplicates)
+    if (medleyData.tempoChanges) {
+      const additionalChanges = medleyData.tempoChanges
+        .filter(change => change.time > 0)
+        .map(change => ({
+          medley_id: medley.id as string,
+          time: change.time,
+          bpm: change.bpm
+        }))
+      tempoChangesToInsert.push(...additionalChanges)
+    }
+
+    const { data: tempoChanges, error: tempoError } = await supabase
+      .from('tempo_changes')
+      .insert(tempoChangesToInsert)
+      .select()
+
+    if (tempoError) {
+      throw tempoError
+    }
+
+    return convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[], (tempoChanges || []) as TempoChangeRow[])
   } catch (error) {
     console.error('Error creating medley:', error)
     return null
@@ -176,7 +255,8 @@ export async function updateMedley(videoId: string, updates: Partial<Omit<Medley
       .update({
         title: updates.title,
         creator: updates.creator,
-        duration: updates.duration
+        duration: updates.duration,
+        initial_bpm: updates.initialBpm
       })
       .eq('video_id', videoId)
       .select()
@@ -186,18 +266,66 @@ export async function updateMedley(videoId: string, updates: Partial<Omit<Medley
       throw error
     }
 
-    // Get updated songs
-    const { data: songs, error: songsError } = await supabase
-      .from('songs')
-      .select('*')
-      .eq('medley_id', medley.id as string)
-      .order('order_index', { ascending: true })
+    // Update tempo changes if provided
+    if (updates.tempoChanges !== undefined) {
+      // Delete existing tempo changes
+      await supabase
+        .from('tempo_changes')
+        .delete()
+        .eq('medley_id', medley.id as string)
 
-    if (songsError) {
-      throw songsError
+      // Insert new tempo changes (including automatic start position)
+      const tempoChangesToInsert = []
+      
+      // Always add start position tempo change
+      tempoChangesToInsert.push({
+        medley_id: medley.id as string,
+        time: 0,
+        bpm: updates.initialBpm || 120
+      })
+      
+      // Add additional tempo changes (excluding time 0 if present to avoid duplicates)
+      const additionalChanges = updates.tempoChanges
+        .filter(change => change.time > 0)
+        .map(change => ({
+          medley_id: medley.id as string,
+          time: change.time,
+          bpm: change.bpm
+        }))
+      tempoChangesToInsert.push(...additionalChanges)
+
+      await supabase
+        .from('tempo_changes')
+        .insert(tempoChangesToInsert)
     }
 
-    return convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[])
+    // Get updated data
+    const [songsResult, tempoResult] = await Promise.all([
+      supabase
+        .from('songs')
+        .select('*')
+        .eq('medley_id', medley.id as string)
+        .order('order_index', { ascending: true }),
+      supabase
+        .from('tempo_changes')
+        .select('*')
+        .eq('medley_id', medley.id as string)
+        .order('time', { ascending: true })
+    ])
+
+    if (songsResult.error) {
+      throw songsResult.error
+    }
+    
+    if (tempoResult.error) {
+      throw tempoResult.error
+    }
+
+    return convertDbRowToMedleyData(
+      medley as MedleyRow, 
+      (songsResult.data || []) as SongRow[], 
+      (tempoResult.data || []) as TempoChangeRow[]
+    )
   } catch (error) {
     console.error('Error updating medley:', error)
     return null

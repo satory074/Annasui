@@ -68,7 +68,10 @@ export default function MedleyPlayer({
         saveMedley,
         resetChanges,
         undo,
-        redo
+        redo,
+        initialBpm,
+        tempoChanges,
+        updateTempo
     } = useMedleyEdit(medleySongs);
     
     // ニコニコプレイヤーの統合
@@ -434,6 +437,10 @@ export default function MedleyPlayer({
                         // メドレー情報
                         medleyTitle={medleyTitle}
                         medleyCreator={medleyCreator}
+                        // テンポトラック情報
+                        initialBpm={initialBpm}
+                        tempoChanges={tempoChanges}
+                        onUpdateTempo={updateTempo}
                     />
                 )}
 

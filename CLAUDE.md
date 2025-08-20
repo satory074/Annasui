@@ -64,6 +64,7 @@ Anasui is a comprehensive multi-platform medley annotation platform built with N
 - ✅ **Player Controls Integration**: Fully functional seek bar with volume control, addressing critical time synchronization issues
 - ✅ **Phase 11: Unified Sticky Container**: Integrated all controls into single sticky header, reducing screen usage from 26.8% to ~15%
 - ✅ **Song Database Integration**: Complete song database system with search modal for selecting songs from existing medley data when adding new songs in edit mode
+- ✅ **TempoTrack System**: Logic Pro-style tempo editing with DIV-based rendering for precise BPM control and visual feedback
 - 🔄 Phase 13: User authentication and collaborative editing (planned)
 
 ## Core Architecture
@@ -166,6 +167,7 @@ The application's core functionality relies on postMessage communication with Ni
 - `SongDetailTooltip` - Hover-based lightweight song information display with intelligent positioning and interaction management
 - `ShareButtons` - Social sharing with platform-aware URL generation and native share API
 - `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights across platforms
+- `TempoTrack` - Logic Pro-style tempo editing component with DIV-based rendering, drag-and-drop BPM control, and smart visual feedback
 
 #### Timeline Zoom System (Phase 9)
 **CRITICAL**: Complete timeline zoom and navigation system for precision editing and efficient navigation of long medleys.
@@ -436,6 +438,52 @@ const adjustedY = position.y + tooltipHeight + padding > window.innerHeight
 - All state management preserved while eliminating UI duplication
 - Responsive design maintained across all screen sizes
 
+#### TempoTrack System (Latest Implementation)
+**CRITICAL**: Logic Pro-style tempo editing functionality with professional DAW-like interface and interaction patterns.
+
+**TempoTrack Architecture:**
+- **DIV-Based Rendering**: Replaced SVG implementation to eliminate visual distortion caused by `preserveAspectRatio="none"`
+- **Dynamic BPM Range**: Automatically calculates display range based on existing tempo points (min BPM - 10 to max BPM + 10)
+- **Interactive Grid System**: Horizontal grid lines and numeric labels for precise BPM visualization
+- **Real-Time Current Position**: Red vertical indicator shows playback position within tempo track
+
+**Interaction Features:**
+```typescript
+// Core interaction patterns
+- Click: Add tempo change point at cursor position
+- Double-click: Edit BPM value via prompt dialog
+- Right-click: Delete tempo change point (with confirmation)
+- Drag: Move tempo points in both time and BPM dimensions
+- Hover: Display tooltip with precise time/BPM values
+```
+
+**Visual Design Patterns:**
+- **Light Background**: `bg-gray-50 dark:bg-gray-700` for clear contrast with blue tempo line
+- **Blue Tempo Line**: `bg-blue-500` for horizontal/vertical segments (3px width)
+- **Circular Points**: Blue circles with white borders, hover expansion (3px → 4px radius)
+- **BPM Labels**: Left-side numeric labels with dynamic step calculation for optimal density
+- **Grid Lines**: Subtle horizontal guidelines at major BPM intervals
+
+**State Management:**
+```typescript
+interface TempoTrackProps {
+  duration: number;
+  currentTime: number;
+  initialBpm: number;
+  tempoChanges: TempoChange[];
+  visibleStartTime: number;    // Zoom integration
+  visibleDuration: number;     // Zoom integration
+  onUpdateTempo: (initialBpm: number, tempoChanges: TempoChange[]) => void;
+  isEditMode: boolean;
+}
+```
+
+**Integration with Timeline System:**
+- **Zoom Compatibility**: Tempo track respects timeline zoom settings and visible range
+- **Edit Mode Toggle**: Only interactive when edit mode is active
+- **Real-Time Updates**: Changes immediately reflected in UI with proper state callbacks
+- **Undo/Redo Support**: All tempo modifications integrate with existing history system
+
 #### Component Integration Pattern
 - Platform-specific player components (`NicoPlayer`, `YouTubePlayer`) handle iframe embedding
 - `useNicoPlayer` hook manages Niconico player communication and state
@@ -527,6 +575,22 @@ const effectiveDuration = medleyDuration || duration;
 - **Current Time Integration**: Edit modal shows "現在時刻" buttons for time setting
 - **History Management**: Make multiple edits to test 50-action history limit
 - **Zoom + Edit Integration**: Test all editing features work correctly at different zoom levels
+
+**TempoTrack System Testing:**
+- **Tempo Track Display**: Verify tempo track appears below zoom controls when edit mode is active
+- **Click to Add**: Click anywhere on tempo track to add tempo change points
+- **BPM Grid Display**: Confirm horizontal grid lines and BPM labels (110, 120, 130) are visible
+- **Visual Feedback**: Check blue tempo line renders correctly without distortion (DIV-based implementation)
+- **Point Interaction**: Test hover effects on tempo change points (3px → 4px expansion)
+- **Double-Click Edit**: Double-click tempo points to edit BPM values via prompt
+- **Right-Click Delete**: Right-click tempo points to delete with confirmation dialog
+- **Drag Functionality**: Drag tempo points to move both time position and BPM value
+- **Tooltip Display**: Verify hover tooltips show precise time and BPM information
+- **Current Time Indicator**: Check red vertical line moves with playback position
+- **Zoom Integration**: Ensure tempo track respects timeline zoom settings and visible range
+- **State Persistence**: Verify "未保存の変更があります" message appears after tempo modifications
+- **Undo/Redo Integration**: Test Ctrl+Z/Ctrl+Y works for tempo track changes
+- **Edit Mode Toggle**: Confirm tempo track is only interactive when edit mode is active
 
 **Song List UI Testing:**
 - **Simplified Card-Based Layout**: Each song displays as a clean card with no color indicators, time stamps, or badges
@@ -655,6 +719,20 @@ const effectiveDuration = medleyDuration || duration;
 - **Sizing issues**: Verify responsive sizing classes for different contexts (modal: `aspect-video`, tooltip: `w-20 h-11`, edit: `w-16 h-9`)
 - **Build failures**: Thumbnail URLs are external - ensure Next.js `images.unoptimized: true` for static export compatibility
 
+**TempoTrack System Issues:**
+- **Tempo track not appearing**: Ensure edit mode is active - tempo track only displays during editing
+- **BPM grid not visible**: Check `generateGridLines()` function and CSS for grid line opacity
+- **Click not adding points**: Verify `handleTrackClick` event handler is properly attached to track container
+- **Drag not working**: Ensure mouse event listeners are attached when `dragState.isDragging` is true
+- **Visual distortion**: DIV-based implementation should eliminate SVG `preserveAspectRatio` issues
+- **Tooltip positioning**: Check `isHovered` state and absolute positioning calculations
+- **Zoom integration broken**: Verify `visibleStartTime` and `visibleDuration` props are correctly passed
+- **BPM range calculation**: Ensure `getAllBpms()`, `getMinBpm()`, `getMaxBpm()` return valid numbers
+- **Current time indicator**: Check red line positioning uses correct `timeToX()` conversion
+- **State not persisting**: Verify `onUpdateTempo` callback properly updates parent component state
+- **useCallback dependencies**: Ensure all dependencies are included to prevent stale closures
+- **Event propagation**: Check `e.stopPropagation()` calls to prevent unwanted event bubbling
+
 **Build and Deployment:**
 - **Build deployment failing**: Ensure `public/favicon.ico` exists for Next.js build
 - **Dynamic routes not generating**: Check `generateStaticParams` includes all required video IDs for both platforms
@@ -754,6 +832,11 @@ const effectiveDuration = medleyDuration || duration;
 - Song database utility: `src/lib/utils/songDatabase.ts` (song extraction, search, caching)
 - Database schema: `supabase/schema.sql`, `supabase/seed.sql`
 - Next.js config: `next.config.ts` (static export + image optimization)
+
+**TempoTrack System:**
+- Core component: `src/components/features/medley/TempoTrack.tsx` (DIV-based rendering with Logic Pro-style interactions)
+- Type definitions: `src/types/features/medley.ts` (TempoChange interface, MedleyData.initialBpm, MedleyData.tempoChanges)
+- Integration points: `SongList.tsx` renders TempoTrack in edit mode with proper prop passing
 
 **Platform Integration:**
 - Player constants: `src/lib/constants/player.ts`

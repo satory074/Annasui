@@ -1,7 +1,8 @@
 "use client";
 
-import { SongSection } from "@/types";
+import { SongSection, TempoChange } from "@/types";
 import { useEffect, useState } from "react";
+import { TempoTrack } from './TempoTrack';
 
 interface SongListProps {
   songs: SongSection[];
@@ -31,6 +32,10 @@ interface SongListProps {
   // メドレー情報
   medleyTitle?: string;
   medleyCreator?: string;
+  // テンポトラック情報
+  initialBpm?: number;
+  tempoChanges?: TempoChange[];
+  onUpdateTempo?: (initialBpm: number, tempoChanges: TempoChange[]) => void;
 }
 
 export default function SongList({ 
@@ -58,7 +63,10 @@ export default function SongList({
   onRedo,
   currentSong, // eslint-disable-line @typescript-eslint/no-unused-vars
   medleyTitle,
-  medleyCreator
+  medleyCreator,
+  initialBpm = 120,
+  tempoChanges = [],
+  onUpdateTempo
 }: SongListProps) {
   // 編集機能の状態管理
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
@@ -348,6 +356,31 @@ export default function SongList({
     });
   };
 
+  // 指定した時間のBPM値を計算
+  const getBpmAtTime = (time: number): number => {
+    if (!tempoChanges.length) return initialBpm;
+    
+    const sortedChanges = [...tempoChanges].sort((a, b) => a.time - b.time);
+    const lastChange = sortedChanges.findLast(change => change.time <= time);
+    return lastChange ? lastChange.bpm : initialBpm;
+  };
+
+  // 現在時刻にテンポ変更点を追加
+  const handleAddTempoAtCurrentTime = () => {
+    if (!isEditMode || !onUpdateTempo) return;
+    
+    // BPM入力を求める
+    const newBpm = prompt('新しいBPM値を入力してください:', getBpmAtTime(currentTime).toString());
+    if (!newBpm || isNaN(parseFloat(newBpm))) return;
+    
+    const bpm = Math.max(30, Math.min(300, parseFloat(newBpm)));
+    const newTempoChange: TempoChange = { time: currentTime, bpm };
+    
+    const updatedChanges = [...tempoChanges, newTempoChange];
+    onUpdateTempo(initialBpm, updatedChanges);
+  };
+
+
   const currentSongs = getCurrentSongs();
   const visibleSongs = getVisibleSongs();
 
@@ -541,12 +574,55 @@ export default function SongList({
                 5x
               </button>
             </div>
+            {/* テンポコントロール */}
+            {isEditMode && (
+              <div className="flex items-center gap-2 border-l border-gray-300 dark:border-gray-600 pl-3">
+                <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                  BPM:
+                </label>
+                <input
+                  type="number"
+                  min="30"
+                  max="300"
+                  value={initialBpm}
+                  onChange={(e) => {
+                    const value = Math.max(30, Math.min(300, parseInt(e.target.value) || 120));
+                    onUpdateTempo?.(value, tempoChanges);
+                  }}
+                  className="w-12 px-1 py-0.5 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
+                />
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  現在: {getBpmAtTime(currentTime)}
+                </span>
+                <button
+                  onClick={handleAddTempoAtCurrentTime}
+                  className="px-2 py-0.5 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                  title="現在時刻にテンポ変更点を追加"
+                >
+                  追加
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* メインコンテンツエリア */}
       <div className="p-2">
+        {/* テンポトラック */}
+        {isEditMode && (
+          <TempoTrack
+            duration={duration}
+            currentTime={currentTime}
+            initialBpm={initialBpm || 120}
+            tempoChanges={tempoChanges || []}
+            visibleStartTime={visibleStartTime}
+            visibleDuration={visibleDuration}
+            timelineZoom={timelineZoom}
+            onUpdateTempo={onUpdateTempo}
+            isEditMode={isEditMode}
+          />
+        )}
 
       <div>
         <div className="space-y-0.5">

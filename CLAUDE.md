@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Table of Contents
+- [Common Development Commands](#common-development-commands)
+- [Project Overview](#project-overview)
+- [Core Architecture](#core-architecture)
+- [Critical Implementation Details](#critical-implementation-details)
+- [Manual Testing](#manual-testing)
+- [Common Issues and Solutions](#common-issues-and-solutions)
+- [Data Management Architecture](#data-management-architecture)
+
 ## Common Development Commands
 
 - `npm run dev` - Start development server on http://localhost:3000
@@ -47,26 +56,17 @@ This verification step is essential because the production environment uses stat
 Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. It provides an interactive interface for navigating video medleys with synchronized song timelines, annotation editing capabilities, and a searchable medley database. The application serves as both a player and a collaborative annotation database for the medley community, supporting both Niconico and YouTube platforms.
 
 ### Current Implementation Status
-**Phase 12 Complete**: Timeline Synchronization & Visual Unification
-- ✅ Phase 1: Supabase database integration with fallback to static data
-- ✅ Phase 2: Drag-and-drop timeline editor with modal-based song editing  
-- ✅ Phase 3: Dynamic routing with individual medley pages and OGP metadata
-- ✅ Phase 4: Advanced search (cross-medley song search), pagination, and statistics dashboard
-- ✅ Phase 5: Multi-platform support (Niconico + YouTube) with unified homepage
-- ✅ Phase 6: Modern UI/UX with responsive grid, enhanced cards, and unified search interface
-- ✅ Phase 7: Enhanced sorting system with metadata-based ordering (new content discovery)
-- ✅ Phase 8: Advanced annotation editing with snap functionality, keyboard shortcuts, and undo/redo
-- ✅ **Timeline Unification**: Integrated SongTimeline functionality into SongList component for streamlined UX
-- ✅ **Song List UI Redesign**: Simplified layout with clean card design, full song title display, and enhanced visual feedback
-- ✅ **Phase 9: Timeline Zoom System**: Complete zoom/pan functionality with dynamic grids, auto-follow, and precision editing
-- ✅ **Phase 10: Advanced Tooltip System**: Hover-based song details with intelligent positioning and click-to-dismiss functionality
-- ✅ **UI Simplification Phase**: Removed unnecessary visual elements (colors, genres, position controls) for cleaner interface
-- ✅ **Player Controls Integration**: Fully functional seek bar with volume control, addressing critical time synchronization issues
-- ✅ **Phase 11: Unified Sticky Container**: Integrated all controls into single sticky header, reducing screen usage from 26.8% to ~15%
-- ✅ **Song Database Integration**: Complete song database system with search modal for selecting songs from existing medley data when adding new songs in edit mode
-- ✅ **TempoTrack System**: Logic Pro-style tempo editing with DIV-based rendering for precise BPM control and visual feedback
-- ✅ **Phase 12: Timeline Synchronization**: Perfect alignment of PlayerControls, SongList, and TempoTrack position indicators with unified visual design and zoom integration
-- 🔄 Phase 13: User authentication and collaborative editing (planned)
+
+**Core Features Complete:**
+- Multi-platform support (Niconico + YouTube) with unified interface
+- Interactive timeline with zoom, editing, and synchronization
+- Song database with search and selection system
+- TempoTrack system with manual BPM input
+- Advanced annotation editing with snap, undo/redo, keyboard shortcuts
+- Responsive UI with unified sticky header design
+- Production deployment with static export
+
+**Next Planned:** User authentication and collaborative editing
 
 ## Core Architecture
 
@@ -157,18 +157,11 @@ The application's core functionality relies on postMessage communication with Ni
 
 **Component Architecture:**
 - `MedleyPlayer` - Core reusable player component with platform detection and edit mode support
-- `MedleyPageClient` - Client-side wrapper handling search params for deep linking and platform props
-- `NicoPlayer` - Niconico-specific iframe player with postMessage integration
-- `YouTubePlayer` - YouTube-specific iframe player (basic embed functionality)
-- `PlayerControls` - Complete player control interface with seek bar, play/pause, volume, and fullscreen controls
-- `SongList` - Unified card-based song display with integrated Gantt chart timeline bars, complete editing functionality including drag-and-drop, snap, selection, and keyboard shortcuts
-- `SongEditModal` - Modal for detailed song editing with time validation and database song selection support
-- `SongSearchModal` - Database-driven song selection modal with search functionality and card-based display
-- `SongDetailModal` - Read-only modal for displaying song information with play-from-here functionality
-- `SongDetailTooltip` - Hover-based lightweight song information display with intelligent positioning and interaction management
-- `ShareButtons` - Social sharing with platform-aware URL generation and native share API
-- `MedleyStatistics` - Analytics dashboard for genre/artist/creator insights across platforms
-- `TempoTrack` - Logic Pro-style tempo editing component with DIV-based rendering, drag-and-drop BPM control, and smart visual feedback
+- `NicoPlayer`/`YouTubePlayer` - Platform-specific iframe players with postMessage integration
+- `SongList` - Unified timeline with editing, zoom, and interaction functionality
+- `SongEditModal`/`SongSearchModal`/`SongDetailModal` - Song management interfaces
+- `TempoTrack` - Manual tempo editing with precise BPM input
+- `PlayerControls` - Seek bar, volume, and playback controls
 
 #### Timeline Zoom System (Phase 9)
 **CRITICAL**: Complete timeline zoom and navigation system for precision editing and efficient navigation of long medleys.
@@ -449,51 +442,26 @@ const adjustedY = position.y + tooltipHeight + padding > window.innerHeight
 - All state management preserved while eliminating UI duplication
 - Responsive design maintained across all screen sizes
 
-#### TempoTrack System (Latest Implementation)
-**CRITICAL**: Logic Pro-style tempo editing functionality with professional DAW-like interface and interaction patterns.
+#### TempoTrack System
+**CRITICAL**: Manual tempo editing with precise time and BPM input.
 
 **TempoTrack Architecture:**
-- **DIV-Based Rendering**: Replaced SVG implementation to eliminate visual distortion caused by `preserveAspectRatio="none"`
-- **Dynamic BPM Range**: Automatically calculates display range based on existing tempo points (min BPM - 10 to max BPM + 10)
-- **Interactive Grid System**: Horizontal grid lines and numeric labels for precise BPM visualization
-- **Real-Time Current Position**: Red vertical indicator shows playback position within tempo track
+- **Manual Input Only**: Click "テンポ変更を追加" button to input time and BPM values via prompts
+- **No Drag Functionality**: Graph area is display-only to prevent accidental modifications
+- **Dynamic BPM Range**: Automatically calculates display range based on existing tempo points
+- **DIV-Based Rendering**: Clean visual display without SVG distortion issues
 
-**Interaction Features:**
-```typescript
-// Core interaction patterns
-- Click: Add tempo change point at cursor position
-- Double-click: Edit BPM value via prompt dialog
-- Right-click: Delete tempo change point (with confirmation)
-- Drag: Move tempo points in both time and BPM dimensions
-- Hover: Display tooltip with precise time/BPM values
-```
+**Interaction Patterns:**
+- **Add Point**: "テンポ変更を追加" button → time input → BPM input
+- **Edit Point**: Double-click existing points → edit time and BPM values
+- **Delete Point**: Right-click existing points → confirmation dialog
+- **Visual Feedback**: Hover tooltips show precise time/BPM information
 
-**Visual Design Patterns:**
-- **Light Background**: `bg-gray-50 dark:bg-gray-700` for clear contrast with blue tempo line
-- **Blue Tempo Line**: `bg-blue-500` for horizontal/vertical segments (3px width)
-- **Circular Points**: Blue circles with white borders, hover expansion (3px → 4px radius)
-- **BPM Labels**: Left-side numeric labels with dynamic step calculation for optimal density
-- **Grid Lines**: Subtle horizontal guidelines at major BPM intervals
-
-**State Management:**
-```typescript
-interface TempoTrackProps {
-  duration: number;
-  currentTime: number;
-  initialBpm: number;
-  tempoChanges: TempoChange[];
-  visibleStartTime: number;    // Zoom integration
-  visibleDuration: number;     // Zoom integration
-  onUpdateTempo: (initialBpm: number, tempoChanges: TempoChange[]) => void;
-  isEditMode: boolean;
-}
-```
-
-**Integration with Timeline System:**
-- **Zoom Compatibility**: Tempo track respects timeline zoom settings and visible range
-- **Edit Mode Toggle**: Only interactive when edit mode is active
-- **Real-Time Updates**: Changes immediately reflected in UI with proper state callbacks
-- **Undo/Redo Support**: All tempo modifications integrate with existing history system
+**Integration:**
+- Only interactive when edit mode is active
+- Respects timeline zoom settings and visible range
+- All modifications integrate with undo/redo system
+- Real-time visual updates with state callbacks
 
 #### Component Integration Pattern
 - Platform-specific player components (`NicoPlayer`, `YouTubePlayer`) handle iframe embedding
@@ -575,114 +543,21 @@ const getSeekBarPosition = (time: number): number => {
 - Player events may have delays, requiring defensive timeout handling
 - Some player internal errors are expected and don't affect functionality
 
-### Development Testing
-- Default Niconico video ID "sm500873" (組曲『ニコニコ動画』) for consistent testing
-- Default YouTube video ID "dQw4w9WgXcQ" for multi-platform testing
-- Console logging enabled for postMessage debugging (Niconico)
-- UI debug indicators show player ready state and communication status
-- Platform detection and player switching testable via URL structure
-- Seek functionality testable through:
-  - Song detail modal "この曲から再生" button (seeks to song start time)
-  - Inline timeline bar click opens detail modal in view mode
-  - **Timeline empty area clicks**: Click empty spaces between songs to seek to that position and start playback
-  - Platform-specific behavior differences visible in console
-  - **Recent Enhancement**: Timeline clicks during paused state now properly seek and resume playback
+### Manual Testing
 
-**Timeline Zoom System Testing:**
-- **Zoom Controls**: Use zoom slider (0.5x-5.0x) to test magnification levels
-- **Preset Buttons**: Click 1x, 2x, 5x buttons for quick zoom levels
-- **Position Navigation**: Use position slider when zoomed to navigate timeline
-- **Auto-Follow Mode**: Toggle "自動追従: ON/OFF" to test automatic centering on playback
-- **Mouse Wheel Zoom**: Hold Ctrl/Cmd and scroll to zoom centered on mouse position
-- **Dynamic Grids**: Observe time grid density changes at different zoom levels
-- **Time Labels**: Verify detailed time markers appear at 1.5x+ zoom
-- **Range Display**: Check "表示範囲" information updates correctly
-- **Song Clipping**: Confirm only visible-range songs appear in timeline
+**Production Testing (Required):**
+- Test all features on production URL: https://illustrious-figolla-20f57e.netlify.app
+- Default test videos: "sm500873" (Niconico), "dQw4w9WgXcQ" (YouTube)
+- Monitor browser console for postMessage communication debugging
 
-**Annotation Editing Testing:**
-- **Edit Mode Features**: Click "編集モード" button to activate advanced editing
-- **Database Song Addition**: Click "楽曲追加" button to test song database search modal
-- **Song Search Modal**: Search for songs by title/artist, verify card-based display with usage counts
-- **Two-Step Addition Flow**: Select song from database → verify card format in edit modal
-- **Manual Addition**: Use "手動で新しい楽曲を追加" for traditional input-based song creation
-- **Snap Functionality**: Toggle "スナップ: ON/OFF" button to test auto-snap behavior
-- **Song Selection**: Click inline timeline bars in song list to see blue ring selection indicator
-- **Keyboard Shortcuts**: Select song then use arrow keys (with Shift/Ctrl modifiers)
-- **Undo/Redo**: Use Ctrl+Z/Ctrl+Y or click ↶/↷ buttons after making changes
-- **Inline Actions**: Edit/delete buttons appear in song list during edit mode
-- **Current Time Integration**: Edit modal shows "現在時刻" buttons for time setting
-- **History Management**: Make multiple edits to test 50-action history limit
-- **Zoom + Edit Integration**: Test all editing features work correctly at different zoom levels
+**Key Test Scenarios:**
+- **Timeline Interaction**: Click empty areas to seek, timeline bars to open modals
+- **Edit Mode**: Toggle edit mode, add/edit/delete songs, test undo/redo
+- **TempoTrack**: Click "テンポ変更を追加" button, input time and BPM values manually
+- **Zoom System**: Test zoom slider (0.5x-5.0x), auto-follow, mouse wheel zoom
+- **Platform Switching**: Test both Niconico and YouTube video playback
+- **Mobile/Desktop**: Verify responsive behavior on different screen sizes
 
-**TempoTrack System Testing:**
-- **Tempo Track Display**: Verify tempo track appears below zoom controls when edit mode is active
-- **Click to Add**: Click anywhere on tempo track to add tempo change points
-- **BPM Grid Display**: Confirm horizontal grid lines and BPM labels (110, 120, 130) are visible
-- **Visual Feedback**: Check blue tempo line renders correctly without distortion (DIV-based implementation)
-- **Point Interaction**: Test hover effects on tempo change points (3px → 4px expansion)
-- **Double-Click Edit**: Double-click tempo points to edit BPM values via prompt
-- **Right-Click Delete**: Right-click tempo points to delete with confirmation dialog
-- **Drag Functionality**: Drag tempo points to move both time position and BPM value
-- **Tooltip Display**: Verify hover tooltips show precise time and BPM information
-- **Current Time Indicator**: Check red vertical line moves with playback position
-- **Zoom Integration**: Ensure tempo track respects timeline zoom settings and visible range
-- **State Persistence**: Verify "未保存の変更があります" message appears after tempo modifications
-- **Undo/Redo Integration**: Test Ctrl+Z/Ctrl+Y works for tempo track changes
-- **Edit Mode Toggle**: Confirm tempo track is only interactive when edit mode is active
-
-**Song List UI Testing:**
-- **Simplified Card-Based Layout**: Each song displays as a clean card with no color indicators, time stamps, or badges
-- **Full-Width Timeline Bars**: Visual timeline bar in Gantt chart format with complete song titles displayed (no truncation)
-- **Unified Color Scheme**: All timeline bars use consistent blue color (bg-blue-500 dark:bg-blue-600) for visual harmony
-- **Song Detail Modal**: Click timeline bars in view mode to open detailed song information
-- **Song Edit Modal Consistency**: Click edit button to open modal with consistent card-based song information display
-- **Overlap Detection**: Songs with time overlaps show striped patterns (no badges in header)
-- **Mashup Support**: When multiple songs play simultaneously, header shows "マッシュアップ: X曲同時再生中"
-- **Current Time Indicator**: Red vertical line shows real-time playback position across all timeline bars
-- **Enhanced Visual Feedback**: Current playing songs highlighted with blue rings, pulse animation, and shadow effects
-
-**Timeline Click-to-Seek Testing:**
-- **View Mode Click**: Click empty areas between songs to seek and start playback from that position
-- **Edit Mode Disabled**: Verify timeline clicks are ignored when in edit mode to prevent accidental seeks
-- **Zoom Integration**: Test click-to-seek accuracy at different zoom levels (0.5x-5.0x)
-- **Boundary Validation**: Confirm clicks outside valid time range (0 to duration) are ignored
-- **Automatic Playback**: Verify seeking triggers automatic play command for stopped videos
-- **Position Accuracy**: Check that clicked position matches actual seek time using browser console logs
-- **Song Bar vs Empty Area**: Ensure song bars still open detail modal while empty areas trigger seeks
-
-**Tooltip System Testing:**
-- **Hover Display**: Move mouse over timeline bars in view mode to trigger tooltip appearance
-- **Position Adjustment**: Test tooltip positioning near screen edges (top, bottom, left, right)
-- **Mouse Movement**: Move mouse from timeline bar to tooltip - tooltip should remain visible
-- **Click to Seek**: Click "この曲から再生" button in tooltip to test seek functionality
-- **Click Dismissal**: Click anywhere outside tooltip to test dismissal behavior
-- **Timeout Behavior**: Move mouse away from both timeline and tooltip - should dismiss after 200ms delay
-- **Edit Mode**: Verify tooltip is disabled when edit mode is active
-- **Mobile Testing**: Test tap-based interaction on touch devices
-- **Thumbnail Display**: Verify thumbnails appear in tooltips for songs with originalLinks
-
-**Thumbnail System Testing:**
-- **YouTube Thumbnails**: Test thumbnail display for YouTube originalLinks (e.g., `https://www.youtube.com/watch?v=VIDEO_ID`)
-- **Niconico Thumbnails**: Test thumbnail display for Niconico originalLinks (e.g., `https://www.nicovideo.jp/watch/smXXXXXX`)
-- **Fallback Behavior**: Test error handling by accessing songs with invalid/broken originalLinks
-- **Modal Integration**: Verify full-size thumbnails in SongDetailModal with click-through to original videos
-- **Tooltip Integration**: Verify compact thumbnails in SongDetailTooltip with proper sizing
-- **Edit Modal Integration**: Verify card-layout thumbnails in SongEditModal for database/existing songs
-- **Cross-Platform Testing**: Test both platforms in production environment to ensure CDN access
-
-**Unified Sticky Container Testing:**
-- **Screen Usage Optimization**: Verify total sticky area uses approximately 15% of viewport height (reduced from 26.8%)
-- **Three-Section Layout**: Confirm all three sections (playback status, edit controls, zoom controls) are properly integrated
-- **Play/Pause Control**: Test small-sized play/pause button in Section 1 for direct playback control
-- **Time Display**: Verify time shows as "current / total" format (e.g., "03:54 / 10:48")
-- **Share Functionality**: Test share button and original video link work correctly from integrated header
-- **Edit Control Integration**: Verify edit mode toggle, add song, undo/redo, snap, save/reset buttons function properly
-- **Zoom Control Integration**: Test zoom slider, auto-follow toggle, and preset buttons work from unified header
-- **Responsive Behavior**: Confirm layout adapts properly on mobile devices with compact button sizes
-- **Visual Consistency**: Check unified styling and spacing across all three sections
-- **Scroll Behavior**: Verify sticky container remains fixed at top during song list scrolling
-- **State Synchronization**: Confirm all control states properly reflect current application state
-- **Prop Passing**: Ensure all functionality works correctly through component prop hierarchy
 
 ### Common Issues and Solutions
 **Player Integration:**
@@ -781,17 +656,11 @@ const getSeekBarPosition = (time: number): number => {
 
 **TempoTrack System Issues:**
 - **Tempo track not appearing**: Ensure edit mode is active - tempo track only displays during editing
-- **BPM grid not visible**: Check `generateGridLines()` function and CSS for grid line opacity
-- **Click not adding points**: Verify `handleTrackClick` event handler is properly attached to track container
-- **Drag not working**: Ensure mouse event listeners are attached when `dragState.isDragging` is true
-- **Visual distortion**: DIV-based implementation should eliminate SVG `preserveAspectRatio` issues
-- **Tooltip positioning**: Check `isHovered` state and absolute positioning calculations
-- **Zoom integration broken**: Verify `visibleStartTime` and `visibleDuration` props are correctly passed
-- **BPM range calculation**: Ensure `getAllBpms()`, `getMinBpm()`, `getMaxBpm()` return valid numbers
-- **Current time indicator**: Check red line positioning uses correct `timeToX()` conversion
-- **State not persisting**: Verify `onUpdateTempo` callback properly updates parent component state
-- **useCallback dependencies**: Ensure all dependencies are included to prevent stale closures
-- **Event propagation**: Check `e.stopPropagation()` calls to prevent unwanted event bubbling
+- **Add button not working**: Check "テンポ変更を追加" button click handler and prompt dialogs
+- **Duplicate time rejection**: System prevents adding points at existing time positions (0.1s threshold)
+- **Input validation**: Time and BPM inputs are validated (time ≥ 0.1s, BPM 30-300)
+- **Visual updates**: Changes should immediately reflect in tempo line and grid display
+- **State persistence**: Check "未保存の変更があります" message appears after modifications
 
 **Build and Deployment:**
 - **Build deployment failing**: Ensure `public/favicon.ico` exists for Next.js build
@@ -842,19 +711,12 @@ const getSeekBarPosition = (time: number): number => {
 - **Snap System**: Configurable snap-to-boundary with 1-second threshold
 - **Real-time Feedback**: Visual indicators for selected songs and editing modes
 
-### Component Architecture Patterns
-**Feature-Based Organization:**
-- `src/components/features/medley/` - Unified song list (with integrated timeline), edit modal, detail modal, and tooltip components
-- `src/components/features/player/` - Niconico iframe integration
-- `src/components/features/share/` - Social sharing and URL generation
-- `src/components/features/statistics/` - Analytics and data visualization
-- `src/components/pages/` - Page-level reusable components
-- `src/components/layout/` - Navigation and header components
-
-**Page Structure Patterns:**
-- Server components for metadata generation (`layout.tsx`, `page.tsx`)
-- Client components for interactive features (`*Client.tsx`)
-- Dynamic routing with `generateStaticParams` for static export compatibility
+### File Organization
+**Feature-Based Structure:**
+- `src/components/features/` - Feature-specific components (medley, player, share, statistics)
+- `src/components/pages/` - Page-level components
+- `src/app/` - Next.js App Router with platform-specific routes
+- `src/data/` - Static data files for each platform
 
 ### Type System Architecture
 **Centralized Type Definitions:**

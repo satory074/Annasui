@@ -22,19 +22,6 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
   onUpdateTempo,
   isEditMode
 }) => {
-  const [dragState, setDragState] = useState<{
-    isDragging: boolean;
-    dragIndex: number | null;
-    dragType: 'time' | 'bpm' | null;
-    startX: number;
-    startY: number;
-  }>({
-    isDragging: false,
-    dragIndex: null,
-    dragType: null,
-    startX: 0,
-    startY: 0
-  });
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -47,25 +34,7 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
   const getBpmRange = () => getMaxBpm() - getMinBpm();
 
 
-  // 座標をBPM値に変換
-  const yToBpm = useCallback((y: number): number => {
-    if (!trackRef.current) return initialBpm;
-    const rect = trackRef.current.getBoundingClientRect();
-    const relativeY = y - rect.top;
-    const percentage = 1 - (relativeY / rect.height);
-    const minBpm = getMinBpm();
-    const bpmRange = getBpmRange();
-    return minBpm + (percentage * bpmRange);
-  }, [initialBpm, tempoChanges, getMinBpm, getBpmRange]);
 
-  // 座標を時間に変換
-  const xToTime = useCallback((x: number): number => {
-    if (!trackRef.current) return 0;
-    const rect = trackRef.current.getBoundingClientRect();
-    const relativeX = x - rect.left;
-    const percentage = relativeX / rect.width;
-    return visibleStartTime + (percentage * visibleDuration);
-  }, [visibleStartTime, visibleDuration]);
 
   // BPM値をY座標に変換（SVG座標系）
   const bpmToY = (bpm: number): number => {
@@ -77,21 +46,32 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
     return ((time - visibleStartTime) / visibleDuration) * 100;
   };
 
-  // テンポ変更点を追加
-  const handleTrackClick = useCallback((e: React.MouseEvent) => {
-    if (!isEditMode || !onUpdateTempo || dragState.isDragging) return;
 
-    const time = Math.max(0.1, Math.round(xToTime(e.clientX) * 10) / 10);
-    const bpm = Math.max(30, Math.min(300, Math.round(yToBpm(e.clientY))));
-
+  // テンポ変更点を手動で追加
+  const handleAddTempoChange = useCallback(() => {
+    if (!isEditMode || !onUpdateTempo) return;
+    
+    // 時刻を入力
+    const timeInput = prompt('テンポ変更の時刻を入力してください（秒）:', '0');
+    if (!timeInput || isNaN(parseFloat(timeInput))) return;
+    const time = Math.max(0.1, parseFloat(timeInput));
+    
     // 既存の変更点と重複しないかチェック
     const existingChange = tempoChanges.find(tc => Math.abs(tc.time - time) < 0.1);
-    if (existingChange) return;
-
+    if (existingChange) {
+      alert('この時刻には既にテンポ変更点が存在します。');
+      return;
+    }
+    
+    // BPM値を入力
+    const bpmInput = prompt('BPM値を入力してください:', '120');
+    if (!bpmInput || isNaN(parseFloat(bpmInput))) return;
+    const bpm = Math.max(30, Math.min(300, parseFloat(bpmInput)));
+    
     const newTempoChange: TempoChange = { time, bpm };
     const updatedChanges = [...tempoChanges, newTempoChange];
     onUpdateTempo(initialBpm, updatedChanges);
-  }, [isEditMode, onUpdateTempo, dragState.isDragging, tempoChanges, initialBpm, xToTime, yToBpm]);
+  }, [isEditMode, onUpdateTempo, tempoChanges, initialBpm]);
 
   // テンポ変更点のダブルクリック編集
   const handleTempoPointDoubleClick = useCallback((e: React.MouseEvent, index: number) => {
@@ -99,12 +79,26 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
     e.stopPropagation();
 
     const currentChange = tempoChanges[index];
-    const newBpm = prompt('新しいBPM値を入力してください:', currentChange.bpm.toString());
-    if (!newBpm || isNaN(parseFloat(newBpm))) return;
+    
+    // 時刻を編集
+    const newTimeInput = prompt('新しい時刻を入力してください（秒）:', currentChange.time.toString());
+    if (!newTimeInput || isNaN(parseFloat(newTimeInput))) return;
+    const newTime = Math.max(0.1, parseFloat(newTimeInput));
+    
+    // 他の変更点と重複しないかチェック
+    const existingChange = tempoChanges.find((tc, i) => i !== index && Math.abs(tc.time - newTime) < 0.1);
+    if (existingChange) {
+      alert('この時刻には既に他のテンポ変更点が存在します。');
+      return;
+    }
+    
+    // BPM値を編集
+    const newBpmInput = prompt('新しいBPM値を入力してください:', currentChange.bpm.toString());
+    if (!newBpmInput || isNaN(parseFloat(newBpmInput))) return;
+    const newBpm = Math.max(30, Math.min(300, parseFloat(newBpmInput)));
 
-    const bpm = Math.max(30, Math.min(300, parseFloat(newBpm)));
     const updatedChanges = tempoChanges.map((tc, i) => 
-      i === index ? { ...tc, bpm } : tc
+      i === index ? { time: newTime, bpm: newBpm } : tc
     );
     
     onUpdateTempo(initialBpm, updatedChanges);
@@ -122,57 +116,9 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
     }
   }, [isEditMode, onUpdateTempo, tempoChanges, initialBpm]);
 
-  // ドラッグ開始
-  const handleMouseDown = useCallback((e: React.MouseEvent, index: number) => {
-    if (!isEditMode) return;
-    e.preventDefault();
-    e.stopPropagation();
 
-    setDragState({
-      isDragging: true,
-      dragIndex: index,
-      dragType: 'time',
-      startX: e.clientX,
-      startY: e.clientY
-    });
-  }, [isEditMode]);
 
-  // ドラッグ中
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    if (!dragState.isDragging || dragState.dragIndex === null || !onUpdateTempo) return;
 
-    const newTime = Math.max(0.1, Math.round(xToTime(e.clientX) * 10) / 10);
-    const newBpm = Math.max(30, Math.min(300, Math.round(yToBpm(e.clientY))));
-
-    const updatedChanges = tempoChanges.map((tc, i) => 
-      i === dragState.dragIndex ? { time: newTime, bpm: newBpm } : tc
-    );
-
-    onUpdateTempo(initialBpm, updatedChanges);
-  }, [dragState, onUpdateTempo, tempoChanges, initialBpm, xToTime, yToBpm]);
-
-  // ドラッグ終了
-  const handleMouseUp = useCallback(() => {
-    setDragState({
-      isDragging: false,
-      dragIndex: null,
-      dragType: null,
-      startX: 0,
-      startY: 0
-    });
-  }, []);
-
-  // マウスイベントリスナーの登録/削除
-  React.useEffect(() => {
-    if (dragState.isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [dragState.isDragging, handleMouseMove, handleMouseUp]);
 
   // BPMグリッド線を生成
   const generateGridLines = () => {
@@ -324,9 +270,8 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
                 left: `${x}%`,
                 top: `${y}%`,
                 transform: 'translate(-50%, -50%)',
-                cursor: isEditMode ? 'pointer' : 'default'
+                cursor: 'default'
               }}
-              onMouseDown={(e) => handleMouseDown(e, index)}
               onDoubleClick={(e) => handleTempoPointDoubleClick(e, index)}
               onContextMenu={(e) => handleTempoPointRightClick(e, index)}
               onMouseEnter={() => setHoveredPoint(index)}
@@ -378,9 +323,17 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
       <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center justify-between">
         <span>テンポトラック</span>
         {isEditMode && (
-          <span className="text-xs text-gray-500 dark:text-gray-400">
-            クリック: 追加 | ダブルクリック: 編集 | 右クリック: 削除
-          </span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleAddTempoChange}
+              className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+            >
+              テンポ変更を追加
+            </button>
+            <span className="text-xs text-gray-500 dark:text-gray-400">
+              ダブルクリック: 編集 | 右クリック: 削除
+            </span>
+          </div>
         )}
       </div>
       
@@ -391,10 +344,7 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
         {/* トラック本体 */}
         <div
           ref={trackRef}
-          className={`relative w-full h-24 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded ml-8 ${
-            isEditMode ? 'cursor-crosshair' : ''
-          }`}
-          onClick={handleTrackClick}
+          className="relative w-full h-24 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded ml-8"
           style={{ minHeight: '96px' }}
         >
           {/* BPMグリッド線 */}

@@ -253,6 +253,13 @@ newStartTime = snapToNearestPoint(rawStartTime, snapPoints);
 - Snap toggle button in song list header allows disabling auto-snap when needed
 - Timeline container uses `.timeline-container` class for drag operation targeting
 
+**Timeline Click-to-Seek Functionality:**
+- **View Mode**: Click empty timeline areas (spaces between songs) to seek to that position and start playback
+- **Edit Mode**: Timeline clicks are disabled to prevent accidental seeks during editing
+- **Zoom Integration**: Click position calculations respect current zoom state (`visibleStartTime` + `visibleDuration`)
+- **Automatic Playback**: After seeking, playback starts automatically for seamless user experience
+- **Position Calculation**: `seekTime = visibleStartTime + (clickPosition * visibleDuration)` with bounds validation
+
 #### Song Database Integration System
 **CRITICAL**: Complete database-driven song addition system for edit mode functionality.
 
@@ -573,6 +580,7 @@ const getSeekBarPosition = (time: number): number => {
 - Seek functionality testable through:
   - Song detail modal "この曲から再生" button (seeks to song start time)
   - Inline timeline bar click opens detail modal in view mode
+  - **Timeline empty area clicks**: Click empty spaces between songs to seek to that position
   - Platform-specific behavior differences visible in console
 
 **Timeline Zoom System Testing:**
@@ -627,6 +635,15 @@ const getSeekBarPosition = (time: number): number => {
 - **Mashup Support**: When multiple songs play simultaneously, header shows "マッシュアップ: X曲同時再生中"
 - **Current Time Indicator**: Red vertical line shows real-time playback position across all timeline bars
 - **Enhanced Visual Feedback**: Current playing songs highlighted with blue rings, pulse animation, and shadow effects
+
+**Timeline Click-to-Seek Testing:**
+- **View Mode Click**: Click empty areas between songs to seek and start playback from that position
+- **Edit Mode Disabled**: Verify timeline clicks are ignored when in edit mode to prevent accidental seeks
+- **Zoom Integration**: Test click-to-seek accuracy at different zoom levels (0.5x-5.0x)
+- **Boundary Validation**: Confirm clicks outside valid time range (0 to duration) are ignored
+- **Automatic Playback**: Verify seeking triggers automatic play command for stopped videos
+- **Position Accuracy**: Check that clicked position matches actual seek time using browser console logs
+- **Song Bar vs Empty Area**: Ensure song bars still open detail modal while empty areas trigger seeks
 
 **Tooltip System Testing:**
 - **Hover Display**: Move mouse over timeline bars in view mode to trigger tooltip appearance

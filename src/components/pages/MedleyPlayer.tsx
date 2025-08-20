@@ -441,6 +441,7 @@ export default function MedleyPlayer({
                         onUpdateSong={updateSong}
                         onShowSongDetail={handleShowSongDetail}
                         onHoverSong={handleHoverSong}
+                        onSeek={seek}
                         // 統合されたコントロール用の props
                         shareUrl={generateShareUrl()}
                         shareTitle={`${medleyTitle} | ニコニコメドレーアノテーションプレイヤー`}

@@ -14,6 +14,7 @@ interface SongListProps {
   onUpdateSong?: (song: SongSection) => void;
   onShowSongDetail?: (song: SongSection) => void;
   onHoverSong?: (song: SongSection | null, position: { x: number; y: number }) => void;
+  onSeek?: (time: number) => void;
   // 統合されたコントロール用の props
   shareUrl?: string;
   shareTitle?: string;
@@ -50,6 +51,7 @@ export default function SongList({
   onUpdateSong,
   onShowSongDetail,
   onHoverSong,
+  onSeek,
   shareUrl,
   shareTitle,
   originalVideoUrl,
@@ -220,6 +222,24 @@ export default function SongList({
       e.preventDefault();
       e.stopPropagation();
       onEditSong(song);
+    }
+  };
+
+  // タイムラインの空白部分クリック処理
+  const handleTimelineClick = (e: React.MouseEvent) => {
+    // 編集モード時はタイムラインクリックを無効化
+    if (isEditMode || !onSeek || duration <= 0) return;
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickPosition = clickX / rect.width;
+    
+    // ズーム状態を考慮した時間計算
+    const seekTime = visibleStartTime + (clickPosition * visibleDuration);
+    
+    // 有効な時間範囲内かチェック
+    if (seekTime >= 0 && seekTime <= duration) {
+      onSeek(seekTime);
     }
   };
 
@@ -652,6 +672,7 @@ export default function SongList({
                   <div 
                     className="timeline-container relative w-full h-8 bg-blue-50 dark:bg-blue-900/10 ml-0"
                     onWheel={handleWheel}
+                    onClick={handleTimelineClick}
                   >
                     {/* 時間グリッド（背景） - ズームレベルに応じて調整 */}
                     <div className="absolute inset-0 flex">

@@ -3,6 +3,7 @@
 import { SongSection, TempoChange } from "@/types";
 import { useEffect, useState } from "react";
 import { TempoTrack } from './TempoTrack';
+import PlayPauseButton from "@/components/ui/PlayPauseButton";
 
 interface SongListProps {
   songs: SongSection[];
@@ -15,6 +16,9 @@ interface SongListProps {
   onShowSongDetail?: (song: SongSection) => void;
   onHoverSong?: (song: SongSection | null, position: { x: number; y: number }) => void;
   onSeek?: (time: number) => void;
+  // プレイヤーコントロール用の props
+  isPlaying?: boolean;
+  onTogglePlayPause?: () => void;
   // 統合されたコントロール用の props
   shareUrl?: string;
   shareTitle?: string;
@@ -52,6 +56,8 @@ export default function SongList({
   onShowSongDetail,
   onHoverSong,
   onSeek,
+  isPlaying = false,
+  onTogglePlayPause,
   shareUrl,
   shareTitle,
   originalVideoUrl,
@@ -438,10 +444,18 @@ export default function SongList({
           )}
           
           <div className="flex justify-between items-center">
-            {/* 左側: 再生ステータス */}
+            {/* 左側: 再生コントロール + ステータス */}
             <div className="flex items-center gap-4">
+              {/* 再生/一時停止ボタン */}
+              {onTogglePlayPause && (
+                <PlayPauseButton 
+                  isPlaying={isPlaying} 
+                  onClick={onTogglePlayPause}
+                  size="sm"
+                />
+              )}
               <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                現在: {formatTime(currentTime)}
+                {formatTime(currentTime)} / {formatTime(duration)}
                 {isEditMode && selectedSong && (
                   <span className="ml-2 text-xs text-green-600 dark:text-green-400">「{selectedSong.title}」選択中</span>
                 )}

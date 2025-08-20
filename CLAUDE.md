@@ -405,6 +405,7 @@ const adjustedY = position.y + tooltipHeight + padding > window.innerHeight
 - Reduced screen usage from 26.8% to approximately 15% through efficient layout
 - Three-section horizontal layout for maximum information density
 - Eliminated duplicate sticky containers in favor of unified approach
+- **Play/Pause Control Integration**: Direct playback control added to Section 1 for enhanced user accessibility
 
 **Container Structure:**
 ```typescript
@@ -412,7 +413,7 @@ const adjustedY = position.y + tooltipHeight + padding > window.innerHeight
 <div className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
   {/* Section 1: Playback Status + Share Area */}
   <div className="px-3 py-2 bg-gray-50 dark:bg-gray-900">
-    // Current time, playing song, share buttons, original video link
+    // PlayPauseButton component with small size, current time display, share buttons
   </div>
   
   {/* Section 2: Edit Controls */}
@@ -440,6 +441,8 @@ const adjustedY = position.y + tooltipHeight + padding > window.innerHeight
 - **Better Mobile Experience**: Optimized for smaller screens with compact button sizes
 
 **Critical Implementation Details:**
+- **PlayPauseButton Integration**: Small-sized (`size="sm"`) play/pause control in Section 1 for direct playback control
+- **Time Display Enhancement**: Time format changed to "current / total" (e.g., "03:54 / 10:48") for better user experience
 - Share functionality integrated directly with simplified share/original video buttons
 - Edit controls compacted with smaller button sizes (`px-3 py-1` vs `px-4 py-2`)
 - Zoom controls moved from separate container to integrated sticky header
@@ -670,6 +673,8 @@ const getSeekBarPosition = (time: number): number => {
 **Unified Sticky Container Testing:**
 - **Screen Usage Optimization**: Verify total sticky area uses approximately 15% of viewport height (reduced from 26.8%)
 - **Three-Section Layout**: Confirm all three sections (playback status, edit controls, zoom controls) are properly integrated
+- **Play/Pause Control**: Test small-sized play/pause button in Section 1 for direct playback control
+- **Time Display**: Verify time shows as "current / total" format (e.g., "03:54 / 10:48")
 - **Share Functionality**: Test share button and original video link work correctly from integrated header
 - **Edit Control Integration**: Verify edit mode toggle, add song, undo/redo, snap, save/reset buttons function properly
 - **Zoom Control Integration**: Test zoom slider, auto-follow toggle, and preset buttons work from unified header
@@ -751,6 +756,8 @@ const getSeekBarPosition = (time: number): number => {
 
 **Unified Sticky Container Issues:**
 - **Controls not appearing in sticky header**: Verify all props are properly passed from MedleyPlayer to SongList component
+- **Play/pause button not working**: Check `isPlaying` and `onTogglePlayPause` props are correctly passed from MedleyPlayer
+- **Time display not showing correctly**: Ensure time format displays as "current / total" (e.g., "03:54 / 10:48")
 - **Share buttons not working**: Check `shareUrl`, `shareTitle`, and `originalVideoUrl` props are correctly passed and handlers are connected
 - **Edit controls not functioning**: Ensure `onToggleEditMode`, `onAddSong`, `onUndo`, `onRedo`, `onSaveChanges`, `onResetChanges` callbacks are properly connected
 - **Zoom controls not responding**: Verify zoom state and handlers are correctly managed within SongList component

@@ -417,15 +417,17 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
             }
         });
 
-        // 停止中なら再生開始
+        // 停止中なら再生開始（シーク完了を待って実行）
         if (!isPlaying) {
-            requestAnimationFrame(() => {
+            console.log('🎯 Player was paused, starting playback after seek');
+            setTimeout(() => {
+                console.log('🎯 Sending play command after seek');
                 sendMessageToPlayer({
                     sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
                     playerId: PLAYER_CONFIG.PLAYER_ID,
                     eventName: "play"
                 });
-            });
+            }, 200); // シークの完了を待つための遅延
         }
     }, [playerReady, duration, isPlaying, sendMessageToPlayer]);
 

@@ -510,9 +510,10 @@ const effectiveDuration = medleyDuration || duration;
 #### Seek Operation Implementation
 **Niconico Player - Critical Sequence for Stopped Player:**
 1. Send seek command with time in milliseconds
-2. Wait 200ms for seek to complete
+2. Wait 200ms for seek to complete (using `setTimeout`, not `requestAnimationFrame`)
 3. Send play command to start playback automatically
 4. This ensures seamless "click song → play from position" experience
+5. **Recent Fix**: Improved pause-to-play behavior when clicking timeline during paused state
 
 **YouTube Player:**
 - Currently uses basic iframe embed without seek API integration
@@ -580,8 +581,9 @@ const getSeekBarPosition = (time: number): number => {
 - Seek functionality testable through:
   - Song detail modal "この曲から再生" button (seeks to song start time)
   - Inline timeline bar click opens detail modal in view mode
-  - **Timeline empty area clicks**: Click empty spaces between songs to seek to that position
+  - **Timeline empty area clicks**: Click empty spaces between songs to seek to that position and start playback
   - Platform-specific behavior differences visible in console
+  - **Recent Enhancement**: Timeline clicks during paused state now properly seek and resume playback
 
 **Timeline Zoom System Testing:**
 - **Zoom Controls**: Use zoom slider (0.5x-5.0x) to test magnification levels

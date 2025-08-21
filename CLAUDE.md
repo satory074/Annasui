@@ -72,8 +72,9 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 #### Component Architecture
 - `MedleyPlayer` - Core reusable player with platform detection
 - `SongList` - Unified timeline with editing, 20x zoom, interaction
+- `TempoTrack` - BPM timeline visualization and editing with advanced modal
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
-- Modals: `SongEditModal`, `SongSearchModal`, `SongDetailModal`
+- Modals: `SongEditModal`, `SongSearchModal`, `SongDetailModal`, `BpmEditModal`
 
 #### Timeline System
 **Zoom System**: 0.5x-20.0x magnification with auto-follow mode, adaptive mouse wheel zoom
@@ -91,6 +92,26 @@ const visibleDuration = duration / timelineZoom;
 - Real-time search across titles/artists
 - Database built from all medley data with deduplication
 - Manual addition fallback when no results found
+
+#### Tempo Track System
+**Advanced BPM Editing**: Replaces browser prompt() with comprehensive modal
+- **Multiple Input Methods**: Number input, slider, ±1/±10 buttons, tap tempo, presets
+- **Tap Tempo**: `useTapTempo` hook with 8-tap averaging and 3-second timeout
+- **Keyboard Shortcuts**: ↑↓ (±1 BPM), Shift+↑↓ (±10 BPM), Enter/Escape
+- **Grid Snapping**: Optional 5-BPM increment snapping
+- **Data Structure**: `initialBpm` + `TempoChange[]` with time/BPM pairs
+
+**Usage Pattern:**
+```typescript
+// Data type for tempo changes
+type TempoChange = { time: number, bpm: number }
+
+// Tempo data in MedleyData
+interface MedleyData {
+  initialBpm?: number;        // Starting BPM (default: 120)
+  tempoChanges?: TempoChange[]; // Array of tempo changes
+}
+```
 
 #### Critical Duration Pattern
 ```typescript
@@ -117,6 +138,12 @@ const effectiveDuration = medleyDuration || duration; // Static data priority
 - **Zoom issues**: Check `timelineZoom` state updates and position calculations
 - **High zoom performance**: 20x zoom may require visible song filtering
 - **Tooltip problems**: Verify hover state management and timeout cleanup
+
+### Tempo Track Issues
+- **BPM Modal not opening**: Check `isEditMode` state and `onUpdateTempo` callback
+- **Tap tempo not working**: Verify `useTapTempo` hook and 3-second timeout behavior
+- **Tempo changes not saving**: Implement tempo data persistence in `handleTempoUpdate`
+- **Grid snapping issues**: Check 5-BPM rounding logic in `BpmEditModal`
 
 ### Build & Deployment
 - **Build fails**: Ensure `public/favicon.ico` exists
@@ -150,6 +177,11 @@ src/
 - `src/data/youtubeMedleys.ts` - YouTube medley definitions
 - `src/lib/utils/songDatabase.ts` - Song search and caching
 
+**Tempo System:**
+- `src/components/features/medley/TempoTrack.tsx` - BPM timeline visualization
+- `src/components/features/medley/BpmEditModal.tsx` - Advanced BPM editing interface
+- `src/hooks/useTapTempo.ts` - Tap tempo measurement hook
+
 
 ### Adding New Platforms
 
@@ -170,3 +202,20 @@ src/
 4. Production verification: Test on https://illustrious-figolla-20f57e.netlify.app
 
 Always verify features work in production environment - static export and cross-origin iframe behavior differs from local development.
+
+## Tempo Track Usage
+
+**Enable Tempo Editing:**
+1. Navigate to any medley page (e.g., `/niconico/sm38343669`)
+2. Click "編集モード" to enable edit mode
+3. Tempo track appears below song timeline
+4. Click "初期BPM" button or double-click tempo change points to edit
+
+**BPM Modal Features:**
+- **Number Input**: Direct BPM entry with validation (30-300 range)
+- **Slider**: Visual BPM adjustment with real-time feedback
+- **±1/±10 Buttons**: Precise increment/decrement controls
+- **Tap Tempo**: Click "TAP" button rhythmically to measure BPM
+- **Presets**: Quick selection of common BPM values (60, 80, 90, 100, 120, 140, 160, 180, 200)
+- **Grid Snap**: Toggle 5-BPM increment snapping
+- **Keyboard**: Arrow keys for fine adjustment, Enter/Escape for save/cancel

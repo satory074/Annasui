@@ -10,6 +10,12 @@ export const sampleMedley1: MedleyData = {
   createdAt: "2025-01-15T09:30:00Z",
   updatedAt: "2025-01-16T14:20:00Z",
   viewCount: 245000,
+  initialBpm: 120,
+  tempoChanges: [
+    { time: 90, bpm: 140 },
+    { time: 180, bpm: 160 },
+    { time: 300, bpm: 130 }
+  ],
   songs: [
     {
       id: 1,

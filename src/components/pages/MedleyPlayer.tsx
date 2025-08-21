@@ -13,7 +13,9 @@ import SongEditModal from "@/components/features/medley/SongEditModal";
 import SongDetailModal from "@/components/features/medley/SongDetailModal";
 import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
 import SongSearchModal from "@/components/features/medley/SongSearchModal";
+import { TempoTrack } from "@/components/features/medley/TempoTrack";
 import { SongSection } from "@/types";
+import { TempoChange } from "@/types/features/medley";
 import { SongDatabaseEntry, createSongFromDatabase } from "@/lib/utils/songDatabase";
 
 interface MedleyPlayerProps {
@@ -57,7 +59,7 @@ export default function MedleyPlayer({
     const [hideTooltipTimeout, setHideTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
 
     // メドレーデータの取得
-    const { medleySongs, medleyTitle, medleyCreator, medleyDuration, loading, error } = useMedleyData(videoId);
+    const { medleySongs, medleyTitle, medleyCreator, medleyDuration, initialBpm, tempoChanges, loading, error } = useMedleyData(videoId);
     
     // 編集機能
     const {
@@ -325,6 +327,13 @@ export default function MedleyPlayer({
         setVisibleDuration(newVisibleDuration);
     };
 
+    // テンポ更新のハンドラー
+    const handleTempoUpdate = (newInitialBpm: number, newTempoChanges: TempoChange[]) => {
+        // 実際の実装では、これをメドレーデータとして保存する
+        console.log('Tempo updated:', { initialBpm: newInitialBpm, tempoChanges: newTempoChanges });
+        // TODO: テンポデータの永続化実装
+    };
+
     // 動画IDが変更されたときの処理
     const handleVideoIdSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -463,6 +472,23 @@ export default function MedleyPlayer({
                         // ズーム状態通知
                         onZoomChange={handleZoomChange}
                     />
+                )}
+
+                {/* テンポトラック */}
+                {!loading && displaySongs.length > 0 && (
+                    <div className="px-4">
+                        <TempoTrack
+                            duration={effectiveDuration}
+                            currentTime={currentTime}
+                            initialBpm={initialBpm}
+                            tempoChanges={tempoChanges}
+                            visibleStartTime={visibleStartTime || 0}
+                            visibleDuration={visibleDuration || effectiveDuration}
+                            timelineZoom={1} // SongListから取得する必要がある
+                            onUpdateTempo={handleTempoUpdate}
+                            isEditMode={isEditMode}
+                        />
+                    </div>
                 )}
 
                 {/* メドレーデータがない場合の表示 */}

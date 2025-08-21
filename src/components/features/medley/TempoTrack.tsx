@@ -1,5 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { TempoChange } from '../../../types/features/medley';
+import { BpmEditModal } from './BpmEditModal';
 
 interface TempoTrackProps {
   duration: number;
@@ -23,6 +24,8 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
   isEditMode
 }) => {
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
+  const [showBpmModal, setShowBpmModal] = useState(false);
+  const [editingBpm, setEditingBpm] = useState<{ type: 'initial' | 'change', index?: number, currentBpm: number } | null>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
   const visibleEndTime = visibleStartTime + visibleDuration;
@@ -63,15 +66,10 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
       return;
     }
     
-    // BPM値を入力
-    const bpmInput = prompt('BPM値を入力してください:', '120');
-    if (!bpmInput || isNaN(parseFloat(bpmInput))) return;
-    const bpm = Math.max(30, Math.min(300, parseFloat(bpmInput)));
-    
-    const newTempoChange: TempoChange = { time, bpm };
-    const updatedChanges = [...tempoChanges, newTempoChange];
-    onUpdateTempo(initialBpm, updatedChanges);
-  }, [isEditMode, onUpdateTempo, tempoChanges, initialBpm]);
+    // BPM編集モーダルを開く
+    setEditingBpm({ type: 'change', currentBpm: 120 });
+    setShowBpmModal(true);
+  }, [isEditMode, onUpdateTempo, tempoChanges]);
 
   // テンポ変更点のダブルクリック編集
   const handleTempoPointDoubleClick = useCallback((e: React.MouseEvent, index: number) => {
@@ -80,29 +78,10 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
 
     const currentChange = tempoChanges[index];
     
-    // 時刻を編集
-    const newTimeInput = prompt('新しい時刻を入力してください（秒）:', currentChange.time.toString());
-    if (!newTimeInput || isNaN(parseFloat(newTimeInput))) return;
-    const newTime = Math.max(0.1, parseFloat(newTimeInput));
-    
-    // 他の変更点と重複しないかチェック
-    const existingChange = tempoChanges.find((tc, i) => i !== index && Math.abs(tc.time - newTime) < 0.1);
-    if (existingChange) {
-      alert('この時刻には既に他のテンポ変更点が存在します。');
-      return;
-    }
-    
-    // BPM値を編集
-    const newBpmInput = prompt('新しいBPM値を入力してください:', currentChange.bpm.toString());
-    if (!newBpmInput || isNaN(parseFloat(newBpmInput))) return;
-    const newBpm = Math.max(30, Math.min(300, parseFloat(newBpmInput)));
-
-    const updatedChanges = tempoChanges.map((tc, i) => 
-      i === index ? { time: newTime, bpm: newBpm } : tc
-    );
-    
-    onUpdateTempo(initialBpm, updatedChanges);
-  }, [isEditMode, onUpdateTempo, tempoChanges, initialBpm]);
+    // BPM編集モーダルを開く
+    setEditingBpm({ type: 'change', index, currentBpm: currentChange.bpm });
+    setShowBpmModal(true);
+  }, [isEditMode, onUpdateTempo, tempoChanges]);
 
   // テンポ変更点の削除
   const handleTempoPointRightClick = useCallback((e: React.MouseEvent, index: number) => {
@@ -115,6 +94,75 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
       onUpdateTempo(initialBpm, updatedChanges);
     }
   }, [isEditMode, onUpdateTempo, tempoChanges, initialBpm]);
+
+  // BPM編集モーダルの保存処理
+  const handleBpmSave = useCallback((newBpm: number) => {
+    if (!editingBpm || !onUpdateTempo) return;
+
+    if (editingBpm.type === 'initial') {
+      // 初期BPMの更新
+      onUpdateTempo(newBpm, tempoChanges);
+    } else if (editingBpm.type === 'change') {
+      if (editingBpm.index !== undefined) {
+        // 既存のテンポ変更点を編集
+        const currentChange = tempoChanges[editingBpm.index];
+        
+        // 時刻を編集（簡易版 - 実際の実装では時刻も編集可能にする）
+        const newTimeInput = prompt('新しい時刻を入力してください（秒）:', currentChange.time.toString());
+        if (!newTimeInput || isNaN(parseFloat(newTimeInput))) {
+          setShowBpmModal(false);
+          setEditingBpm(null);
+          return;
+        }
+        const newTime = Math.max(0.1, parseFloat(newTimeInput));
+        
+        // 他の変更点と重複しないかチェック
+        const existingChange = tempoChanges.find((tc, i) => i !== editingBpm.index && Math.abs(tc.time - newTime) < 0.1);
+        if (existingChange) {
+          alert('この時刻には既に他のテンポ変更点が存在します。');
+          setShowBpmModal(false);
+          setEditingBpm(null);
+          return;
+        }
+
+        const updatedChanges = tempoChanges.map((tc, i) => 
+          i === editingBpm.index ? { time: newTime, bpm: newBpm } : tc
+        );
+        onUpdateTempo(initialBpm, updatedChanges);
+      } else {
+        // 新しいテンポ変更点を追加
+        const timeInput = prompt('テンポ変更の時刻を入力してください（秒）:', '0');
+        if (!timeInput || isNaN(parseFloat(timeInput))) {
+          setShowBpmModal(false);
+          setEditingBpm(null);
+          return;
+        }
+        const time = Math.max(0.1, parseFloat(timeInput));
+        
+        // 既存の変更点と重複しないかチェック
+        const existingChange = tempoChanges.find(tc => Math.abs(tc.time - time) < 0.1);
+        if (existingChange) {
+          alert('この時刻には既にテンポ変更点が存在します。');
+          setShowBpmModal(false);
+          setEditingBpm(null);
+          return;
+        }
+        
+        const newTempoChange: TempoChange = { time, bpm: newBpm };
+        const updatedChanges = [...tempoChanges, newTempoChange];
+        onUpdateTempo(initialBpm, updatedChanges);
+      }
+    }
+
+    setShowBpmModal(false);
+    setEditingBpm(null);
+  }, [editingBpm, onUpdateTempo, tempoChanges, initialBpm]);
+
+  // BPM編集モーダルのキャンセル処理
+  const handleBpmCancel = useCallback(() => {
+    setShowBpmModal(false);
+    setEditingBpm(null);
+  }, []);
 
 
 
@@ -318,10 +366,28 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
     ));
   };
 
+  // 初期BPMの編集処理
+  const handleInitialBpmEdit = useCallback(() => {
+    if (!isEditMode || !onUpdateTempo) return;
+    setEditingBpm({ type: 'initial', currentBpm: initialBpm });
+    setShowBpmModal(true);
+  }, [isEditMode, onUpdateTempo, initialBpm]);
+
   return (
     <div className="mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
       <div className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center justify-between">
-        <span>テンポトラック</span>
+        <div className="flex items-center gap-2">
+          <span>テンポトラック</span>
+          {isEditMode && (
+            <button
+              onClick={handleInitialBpmEdit}
+              className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+              title="初期BPMを編集"
+            >
+              初期BPM: {initialBpm}
+            </button>
+          )}
+        </div>
         {isEditMode && (
           <div className="flex items-center gap-3">
             <button
@@ -371,6 +437,15 @@ export const TempoTrack: React.FC<TempoTrackProps> = ({
           )}
         </div>
       </div>
+
+      {/* BPM編集モーダル */}
+      <BpmEditModal
+        isOpen={showBpmModal}
+        initialBpm={editingBpm?.currentBpm || 120}
+        title={editingBpm?.type === 'initial' ? '初期BPMを編集' : 'テンポ変更点のBPMを編集'}
+        onSave={handleBpmSave}
+        onCancel={handleBpmCancel}
+      />
     </div>
   );
 };

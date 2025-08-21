@@ -244,14 +244,32 @@ export default function SongEditModal({
                 }`}
                 placeholder="mm:ss または秒数"
               />
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, startTime: Math.floor(currentTime) })}
-                className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
-                title="現在の再生位置を設定"
-              >
-                現在時刻
-              </button>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, startTime: Math.max(0, formData.startTime - 0.1) })}
+                  className="px-2 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
+                  title="0.1秒戻る"
+                >
+                  -0.1s
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, startTime: Math.floor(currentTime) })}
+                  className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
+                  title="現在の再生位置を設定"
+                >
+                  現在時刻
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, startTime: formData.startTime + 0.1 })}
+                  className="px-2 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
+                  title="0.1秒進む"
+                >
+                  +0.1s
+                </button>
+              </div>
             </div>
             {errors.startTime && (
               <p className="text-red-500 text-sm mt-1">{errors.startTime}</p>
@@ -273,14 +291,32 @@ export default function SongEditModal({
                 }`}
                 placeholder="mm:ss または秒数"
               />
-              <button
-                type="button"
-                onClick={() => setFormData({ ...formData, endTime: Math.floor(currentTime) })}
-                className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
-                title="現在の再生位置を設定"
-              >
-                現在時刻
-              </button>
+              <div className="flex gap-1">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, endTime: Math.max(formData.startTime + 0.1, formData.endTime - 0.1) })}
+                  className="px-2 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
+                  title="0.1秒戻る"
+                >
+                  -0.1s
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, endTime: Math.floor(currentTime) })}
+                  className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
+                  title="現在の再生位置を設定"
+                >
+                  現在時刻
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, endTime: formData.endTime + 0.1 })}
+                  className="px-2 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500 text-sm"
+                  title="0.1秒進む"
+                >
+                  +0.1s
+                </button>
+              </div>
             </div>
             {errors.endTime && (
               <p className="text-red-500 text-sm mt-1">{errors.endTime}</p>

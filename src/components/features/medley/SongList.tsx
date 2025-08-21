@@ -4,6 +4,15 @@ import { SongSection, TempoChange } from "@/types";
 import { useEffect, useState } from "react";
 import { TempoTrack } from './TempoTrack';
 import PlayPauseButton from "@/components/ui/PlayPauseButton";
+import { 
+  BeatGridOptions, 
+  BeatGridUnit, 
+  BeatGridLine,
+  snapToGrid, 
+  generateBeatGridLines, 
+  getRecommendedBeatUnit, 
+  getBpmAtTime 
+} from '@/lib/utils/bpmGrid';
 
 interface SongListProps {
   songs: SongSection[];
@@ -89,6 +98,22 @@ export default function SongList({
   const [timelineZoom, setTimelineZoom] = useState<number>(1.0); // ズーム倍率 (0.5-5.0)
   const [timelineOffset, setTimelineOffset] = useState<number>(0); // 表示開始時刻
 
+  // BPMグリッドスナップ機能の状態管理
+  const [beatGridOptions, setBeatGridOptions] = useState<BeatGridOptions>({
+    unit: '4',
+    snapThreshold: 0.1,
+    enabled: false
+  });
+  const [isShiftPressed, setIsShiftPressed] = useState<boolean>(false);
+  const [isAltPressed, setIsAltPressed] = useState<boolean>(false);
+
+  // ドラッグ時のスナップ先プレビュー
+  const [snapPreview, setSnapPreview] = useState<{
+    startTime?: number;
+    endTime?: number;
+    isVisible: boolean;
+  }>({ isVisible: false });
+
   // タイムラインズーム関連の計算
   const visibleDuration = duration / timelineZoom; // 表示される時間範囲
   const visibleStartTime = timelineOffset; // 表示開始時刻
@@ -98,6 +123,45 @@ export default function SongList({
   useEffect(() => {
     onZoomChange?.(visibleStartTime, visibleDuration);
   }, [visibleStartTime, visibleDuration, onZoomChange]);
+
+  // キー入力の監視（Shift・Altキーの状態管理）
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setIsShiftPressed(true);
+      }
+      if (e.key === 'Alt') {
+        setIsAltPressed(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') {
+        setIsShiftPressed(false);
+      }
+      if (e.key === 'Alt') {
+        setIsAltPressed(false);
+      }
+    };
+
+    const handleWindowFocus = () => {
+      // ウィンドウがフォーカスを取り戻したときにキー状態をリセット
+      setIsShiftPressed(false);
+      setIsAltPressed(false);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    window.addEventListener('focus', handleWindowFocus);
+    window.addEventListener('blur', handleWindowFocus);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+      window.removeEventListener('focus', handleWindowFocus);
+      window.removeEventListener('blur', handleWindowFocus);
+    };
+  }, []);
 
   // 現在の時刻に再生中の全ての楽曲を取得（マッシュアップ対応）
   const getCurrentSongs = (): SongSection[] => {
@@ -194,11 +258,27 @@ export default function SongList({
       newEndTime = Math.min(duration, Math.max(dragStart.originalStartTime + 1, dragStart.originalEndTime + deltaTime));
     }
     
+    // BPMグリッドスナップを適用（Altキーで無効化）
+    let snappedStartTime = newStartTime;
+    let snappedEndTime = newEndTime;
+    
+    if (!e.altKey && beatGridOptions.enabled) {
+      snappedStartTime = snapToGrid(newStartTime, initialBpm, tempoChanges, getEffectiveGridOptions());
+      snappedEndTime = snapToGrid(newEndTime, initialBpm, tempoChanges, getEffectiveGridOptions());
+    }
+    
+    // スナップ先プレビューを更新
+    setSnapPreview({
+      startTime: snappedStartTime,
+      endTime: snappedEndTime,
+      isVisible: beatGridOptions.enabled && !e.altKey
+    });
+    
     // 更新されたsongを作成
     const updatedSong: SongSection = {
       ...draggingSong,
-      startTime: Math.round(newStartTime * 10) / 10, // 0.1秒単位に丸める
-      endTime: Math.round(newEndTime * 10) / 10
+      startTime: Math.round(snappedStartTime * 10) / 10, // 0.1秒単位に丸める
+      endTime: Math.round(snappedEndTime * 10) / 10
     };
     
     onUpdateSong(updatedSong);
@@ -208,6 +288,7 @@ export default function SongList({
     setDraggingSong(null);
     setDragMode(null);
     setDragStart({ x: 0, originalStartTime: 0, originalEndTime: 0 });
+    setSnapPreview({ isVisible: false }); // プレビューを非表示
   };
 
   // 楽曲セクションのクリック処理
@@ -345,6 +426,12 @@ export default function SongList({
         return;
     }
 
+    // BPMグリッドスナップを適用（Shiftキーで無効化）
+    if (!e.shiftKey) {
+      newStartTime = snapToGrid(newStartTime, initialBpm, tempoChanges, getEffectiveGridOptions());
+      newEndTime = snapToGrid(newEndTime, initialBpm, tempoChanges, getEffectiveGridOptions());
+    }
+    
     const updatedSong: SongSection = {
       ...selectedSong,
       startTime: Math.round(newStartTime * 10) / 10,
@@ -390,13 +477,25 @@ export default function SongList({
     });
   };
 
-  // 指定した時間のBPM値を計算
-  const getBpmAtTime = (time: number): number => {
-    if (!tempoChanges.length) return initialBpm;
-    
-    const sortedChanges = [...tempoChanges].sort((a, b) => a.time - b.time);
-    const lastChange = sortedChanges.findLast(change => change.time <= time);
-    return lastChange ? lastChange.bpm : initialBpm;
+  // 指定した時間のBPM値を計算（ユーティリティ関数を使用）
+  const getCurrentBpm = (time: number): number => {
+    return getBpmAtTime(time, initialBpm, tempoChanges);
+  };
+
+  // 動的グリッド単位の計算（Shiftキー押下で細かい単位に切り替え）
+  const getEffectiveGridUnit = (): BeatGridUnit => {
+    if (!beatGridOptions.enabled) return beatGridOptions.unit;
+    if (isShiftPressed) return '1/8'; // Shiftで8分音符単位
+    return beatGridOptions.unit;
+  };
+
+  // 動的グリッドオプションの計算
+  const getEffectiveGridOptions = (): BeatGridOptions => {
+    return {
+      ...beatGridOptions,
+      unit: getEffectiveGridUnit(),
+      enabled: beatGridOptions.enabled && !isAltPressed // Altで無効化
+    };
   };
 
   // 現在時刻にテンポ変更点を追加
@@ -404,7 +503,7 @@ export default function SongList({
     if (!isEditMode || !onUpdateTempo) return;
     
     // BPM入力を求める
-    const newBpm = prompt('新しいBPM値を入力してください:', getBpmAtTime(currentTime).toString());
+    const newBpm = prompt('新しいBPM値を入力してください:', getCurrentBpm(currentTime).toString());
     if (!newBpm || isNaN(parseFloat(newBpm))) return;
     
     const bpm = Math.max(30, Math.min(300, parseFloat(newBpm)));
@@ -634,7 +733,7 @@ export default function SongList({
                   className="w-12 px-1 py-0.5 text-xs bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded"
                 />
                 <span className="text-xs text-gray-500 dark:text-gray-400">
-                  現在: {getBpmAtTime(currentTime)}
+                  現在: {getCurrentBpm(currentTime)}
                 </span>
                 <button
                   onClick={handleAddTempoAtCurrentTime}
@@ -645,12 +744,127 @@ export default function SongList({
                 </button>
               </div>
             )}
+            
+            {/* グリッドスナップコントロール */}
+            {isEditMode && (
+              <div className="flex items-center gap-2 border-l border-gray-300 dark:border-gray-600 pl-3">
+                <div className="flex items-center gap-1">
+                  {/* グリッドアイコン */}
+                  <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2" strokeWidth="1"/>
+                    <path d="M9 3v18M15 3v18M3 9h18M3 15h18" strokeWidth="1" opacity="0.7"/>
+                  </svg>
+                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                    グリッド
+                  </label>
+                </div>
+                
+                {/* トグルスイッチ */}
+                <button
+                  onClick={() => setBeatGridOptions(prev => ({ ...prev, enabled: !prev.enabled }))}
+                  className={`relative inline-flex items-center h-5 rounded-full w-9 transition-colors focus:outline-none ${
+                    beatGridOptions.enabled
+                      ? 'bg-blue-500 hover:bg-blue-600'
+                      : 'bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
+                  }`}
+                  title={`ビートグリッドスナップ: ${beatGridOptions.enabled ? 'ON' : 'OFF'}`}
+                >
+                  <span
+                    className={`inline-block w-3 h-3 transform transition-transform bg-white rounded-full ${
+                      beatGridOptions.enabled ? 'translate-x-5' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                
+                {/* グリッド設定（有効時のみ表示） */}
+                {beatGridOptions.enabled && (
+                  <>
+                    {/* プリセットボタン群 */}
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        単位:
+                      </span>
+                      <div className="flex gap-0.5">
+                        {(['8', '4', '2', '1', '1/2', '1/4'] as BeatGridUnit[]).map((unit) => (
+                          <button
+                            key={unit}
+                            onClick={() => setBeatGridOptions(prev => ({ ...prev, unit }))}
+                            className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                              beatGridOptions.unit === unit
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                            }`}
+                            title={`${unit}拍グリッドに設定`}
+                          >
+                            {unit === '1' ? '1' : unit}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <button
+                      onClick={() => {
+                        const recommendedUnit = getRecommendedBeatUnit(getCurrentBpm(currentTime), visibleDuration);
+                        setBeatGridOptions(prev => ({ ...prev, unit: recommendedUnit }));
+                      }}
+                      className="flex items-center gap-1 px-2 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                      title={`現在のBPM (${getCurrentBpm(currentTime)}) に基づいて推奨グリッドを設定`}
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      推奨
+                    </button>
+                    
+                    {/* スナップ状態表示 */}
+                    <div className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded transition-colors ${
+                      isShiftPressed 
+                        ? 'text-red-700 dark:text-red-300 bg-red-50 dark:bg-red-900/20' 
+                        : isAltPressed 
+                          ? 'text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900/20'
+                          : 'text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20'
+                    }`}>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4" />
+                      </svg>
+                      {isShiftPressed 
+                        ? `細かい調整 (${getEffectiveGridUnit()}拍)` 
+                        : isAltPressed 
+                          ? 'スナップ無効'
+                          : `${beatGridOptions.unit}拍単位`
+                      }
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* メインコンテンツエリア */}
       <div className="p-2">
+        {/* グリッド有効時のヒント表示 */}
+        {isEditMode && beatGridOptions.enabled && (
+          <div className="mb-3 p-3 bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <div className="flex items-start gap-2">
+              <svg className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div>
+                <h4 className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+                  BPMグリッドスナップが有効です ({beatGridOptions.unit}拍単位)
+                </h4>
+                <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                  <div>• 楽曲をドラッグすると自動的にビート位置にスナップします</div>
+                  <div>• <kbd className="px-1 py-0.5 bg-blue-200 dark:bg-blue-800 rounded text-xs">Shift</kbd> キーを押すと1/8拍の細かいグリッドに切り替わります</div>
+                  <div>• <kbd className="px-1 py-0.5 bg-blue-200 dark:bg-blue-800 rounded text-xs">Alt</kbd> キーを押しながらドラッグでスナップを一時無効化</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* テンポトラック */}
         {isEditMode && (
           <TempoTrack
@@ -684,7 +898,11 @@ export default function SongList({
 
                   {/* タイムライン */}
                   <div 
-                    className="timeline-container relative w-full h-8 bg-blue-50 dark:bg-blue-900/10 ml-0"
+                    className={`timeline-container relative w-full h-8 ml-0 transition-colors ${
+                      isEditMode && beatGridOptions.enabled
+                        ? 'bg-blue-100 dark:bg-blue-900/20 shadow-inner'
+                        : 'bg-blue-50 dark:bg-blue-900/10'
+                    }`}
                     onWheel={handleWheel}
                     onClick={handleTimelineClick}
                   >
@@ -701,6 +919,36 @@ export default function SongList({
                         );
                       })}
                     </div>
+                    
+                    {/* BPMベースグリッド線 */}
+                    {isEditMode && beatGridOptions.enabled && (
+                      <div className="absolute inset-0">
+                        {generateBeatGridLines(
+                          visibleStartTime,
+                          visibleDuration,
+                          initialBpm,
+                          tempoChanges,
+                          getEffectiveGridUnit()
+                        ).map((gridLine: BeatGridLine, index) => {
+                          const position = ((gridLine.time - visibleStartTime) / visibleDuration) * 100;
+                          return (
+                            <div
+                              key={`beat-grid-${index}`}
+                              className={`absolute top-0 bottom-0 pointer-events-none ${
+                                isShiftPressed
+                                  ? gridLine.isMajor 
+                                    ? 'w-1 bg-red-500 dark:bg-red-400 opacity-90' 
+                                    : 'w-0.5 bg-red-300 dark:bg-red-500 opacity-70'
+                                  : gridLine.isMajor 
+                                    ? 'w-1 bg-blue-500 dark:bg-blue-400 opacity-80' 
+                                    : 'w-0.5 bg-blue-300 dark:bg-blue-500 opacity-60'
+                              }`}
+                              style={{ left: `${position}%` }}
+                            />
+                          );
+                        })}
+                      </div>
+                    )}
                     
                     {/* 時間ラベル（ズーム時に表示） */}
                     {timelineZoom > 1.5 && (
@@ -804,6 +1052,18 @@ export default function SongList({
                           </svg>
                         </button>
                       </div>
+                    )}
+                    
+                    {/* ドラッグ時のスナップ先プレビュー */}
+                    {snapPreview.isVisible && snapPreview.startTime !== undefined && snapPreview.endTime !== undefined && (
+                      <div
+                        className="absolute h-6 top-1 border-2 border-yellow-400 bg-yellow-200/30 rounded pointer-events-none z-20 animate-pulse"
+                        style={visibleDuration > 0 ? {
+                          left: `${Math.max(0, ((snapPreview.startTime - visibleStartTime) / visibleDuration) * 100)}%`,
+                          width: `${Math.min(100, ((snapPreview.endTime - snapPreview.startTime) / visibleDuration) * 100)}%`,
+                        } : {}}
+                        title={`スナップ先プレビュー: ${formatTime(snapPreview.startTime)} - ${formatTime(snapPreview.endTime)}`}
+                      />
                     )}
                     
                     {/* 現在再生位置インジケーター */}

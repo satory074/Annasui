@@ -76,6 +76,29 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
 - Modals: `SongEditModal`, `SongSearchModal`, `SongDetailModal`, `BpmEditModal`
 
+#### Unified Modal/Tooltip System
+**Base Components:**
+- `BaseModal` - Reusable modal wrapper with backdrop, ESC key handling, and accessibility
+- `BaseTooltip` - Smart-positioning tooltip with edge detection and overflow prevention
+
+**Song Display Components:**
+- `SongInfoDisplay` - Unified song information with variants (compact/detailed/card)
+- `SongTimeControls` - Standardized time input with ±0.1s buttons and current time setting
+- `SongThumbnail` - Consistent thumbnail display with error handling and click behavior
+
+**Integration Pattern:**
+```typescript
+// Modal usage
+<BaseModal isOpen={isOpen} onClose={onClose} maxWidth="md">
+  <SongInfoDisplay song={song} variant="detailed" onSeek={onSeek} />
+</BaseModal>
+
+// Tooltip usage  
+<BaseTooltip isVisible={isVisible} position={position}>
+  <SongInfoDisplay song={song} variant="compact" />
+</BaseTooltip>
+```
+
 #### Timeline System
 **Zoom System**: 0.5x-20.0x magnification with auto-follow mode, adaptive mouse wheel zoom
 **Edit Mode Features**: Drag-and-drop editing (0.1s precision), undo/redo (50-action history), keyboard shortcuts
@@ -145,6 +168,13 @@ const effectiveDuration = medleyDuration || duration; // Static data priority
 - **Tempo changes not saving**: Implement tempo data persistence in `handleTempoUpdate`
 - **Grid snapping issues**: Check 5-BPM rounding logic in `BpmEditModal`
 
+### Modal/Tooltip System Issues
+- **Modal not closing on ESC**: Check BaseModal implementation and focus management
+- **Tooltip positioning off-screen**: Verify BaseTooltip edge detection logic
+- **Time controls not updating**: Check SongTimeControls onChange callback and state binding
+- **Thumbnail not loading**: Check SongThumbnail error handling and URL validation
+- **Inconsistent styling**: Use SongInfoDisplay variants instead of custom implementations
+
 ### Build & Deployment
 - **Build fails**: Ensure `public/favicon.ico` exists
 - **404 on deployed site**: Add video IDs to `generateStaticParams`
@@ -158,7 +188,8 @@ src/
 ├── app/ - Next.js App Router (platform-specific routes)
 ├── components/
 │   ├── features/ - Feature components (medley, player, share)
-│   └── pages/ - Page-level components
+│   ├── pages/ - Page-level components
+│   └── ui/ - Reusable UI components (modal, song display)
 ├── data/ - Static data files (medleys.ts, youtubeMedleys.ts)
 ├── hooks/ - Data management hooks
 ├── lib/ - Utilities, API clients
@@ -176,11 +207,19 @@ src/
 - `src/data/medleys.ts` - Niconico medley definitions
 - `src/data/youtubeMedleys.ts` - YouTube medley definitions
 - `src/lib/utils/songDatabase.ts` - Song search and caching
+- `src/lib/utils/time.ts` - Time formatting and parsing utilities
 
 **Tempo System:**
 - `src/components/features/medley/TempoTrack.tsx` - BPM timeline visualization
 - `src/components/features/medley/BpmEditModal.tsx` - Advanced BPM editing interface
 - `src/hooks/useTapTempo.ts` - Tap tempo measurement hook
+
+**UI System:**
+- `src/components/ui/modal/BaseModal.tsx` - Base modal component
+- `src/components/ui/modal/BaseTooltip.tsx` - Base tooltip component
+- `src/components/ui/song/SongInfoDisplay.tsx` - Unified song information display
+- `src/components/ui/song/SongTimeControls.tsx` - Time input controls with precision adjustment
+- `src/components/ui/song/SongThumbnail.tsx` - Standardized thumbnail component
 
 
 ### Adding New Platforms

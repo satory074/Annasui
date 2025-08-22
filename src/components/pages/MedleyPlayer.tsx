@@ -441,6 +441,7 @@ export default function MedleyPlayer({
                         songs={displaySongs}
                         currentTime={currentTime}
                         duration={effectiveDuration}
+                        actualPlayerDuration={duration}
                         isEditMode={isEditMode}
                         onEditSong={handleEditSong}
                         onDeleteSong={deleteSong}

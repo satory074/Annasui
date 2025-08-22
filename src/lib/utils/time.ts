@@ -4,6 +4,27 @@ export function formatTime(time: number): string {
     return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
+export function formatTimeSimple(time: number): string {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
+export function formatDuration(startTime: number, endTime: number): string {
+    const duration = endTime - startTime;
+    return formatTime(duration);
+}
+
+export function parseTimeInput(timeString: string): number {
+    const parts = timeString.split(':');
+    if (parts.length === 2) {
+        const minutes = parseInt(parts[0]) || 0;
+        const seconds = parseInt(parts[1]) || 0;
+        return minutes * 60 + seconds;
+    }
+    return parseInt(timeString) || 0;
+}
+
 export function normalizeTimeValue(timeValue: number): number {
     // NaNや無効な値のチェック
     if (!isFinite(timeValue) || timeValue < 0) {

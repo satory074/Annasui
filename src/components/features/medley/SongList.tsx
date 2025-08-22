@@ -8,6 +8,7 @@ interface SongListProps {
   songs: SongSection[];
   currentTime: number;
   duration: number;
+  actualPlayerDuration?: number; // 実際のプレイヤーの動画の長さ
   isEditMode?: boolean;
   onEditSong?: (song: SongSection) => void;
   onDeleteSong?: (songId: number) => void;
@@ -44,6 +45,7 @@ export default function SongList({
   songs, 
   currentTime, 
   duration,
+  actualPlayerDuration,
   isEditMode = false, 
   onEditSong, 
   onDeleteSong,
@@ -229,7 +231,7 @@ export default function SongList({
   // タイムラインの空白部分クリック処理
   const handleTimelineClick = (e: React.MouseEvent) => {
     // 編集モード時はタイムラインクリックを無効化
-    if (isEditMode || !onSeek || duration <= 0) return;
+    if (isEditMode || !onSeek) return;
 
     const rect = e.currentTarget.getBoundingClientRect();
     const clickX = e.clientX - rect.left;
@@ -238,8 +240,9 @@ export default function SongList({
     // ズーム状態を考慮した時間計算
     const seekTime = visibleStartTime + (clickPosition * visibleDuration);
     
-    // 有効な時間範囲内かチェック
-    if (seekTime >= 0 && seekTime <= duration) {
+    // 有効な時間範囲内かチェック（実際のプレイヤーの長さを優先）
+    const maxSeekTime = actualPlayerDuration || duration;
+    if (seekTime >= 0 && seekTime <= maxSeekTime) {
       onSeek(seekTime);
     }
   };

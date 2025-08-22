@@ -137,9 +137,20 @@ interface MedleyData {
 ```
 
 #### Critical Duration Pattern
+**IMPORTANT**: Duration mismatch handling was recently updated (2025-01-22)
 ```typescript
-const effectiveDuration = medleyDuration || duration; // Static data priority
+// MedleyPlayer uses static data priority for timeline calculations
+const effectiveDuration = medleyDuration || duration; 
+
+// SongList now uses actual player duration for display consistency
+const effectiveTimelineDuration = actualPlayerDuration || duration;
 ```
+
+**Duration Synchronization Issues:**
+- Static medley data may specify longer durations than actual video
+- Timeline now adapts to actual player duration to prevent mismatch
+- Songs beyond actual video duration are visually indicated with red styling
+- Warning badge appears when medley duration ≠ actual duration
 
 ### Key Technical Constraints
 - Niconico API is undocumented and may change without notice
@@ -161,6 +172,8 @@ const effectiveDuration = medleyDuration || duration; // Static data priority
 - **Zoom issues**: Check `timelineZoom` state updates and position calculations
 - **High zoom performance**: 20x zoom may require visible song filtering
 - **Tooltip problems**: Verify hover state management and timeout cleanup
+- **Timeline duration mismatch**: Use `actualPlayerDuration` for timeline calculations, not static `duration`
+- **Songs beyond video length**: Check for `isBeyondActualDuration` flag and red styling
 
 ### Tempo Track Issues
 - **BPM Modal not opening**: Check `isEditMode` state and `onUpdateTempo` callback
@@ -258,3 +271,24 @@ Always verify features work in production environment - static export and cross-
 - **Presets**: Quick selection of common BPM values (60, 80, 90, 100, 120, 140, 160, 180, 200)
 - **Grid Snap**: Toggle 5-BPM increment snapping
 - **Keyboard**: Arrow keys for fine adjustment, Enter/Escape for save/cancel
+
+## Recent Updates (2025-01-22)
+
+### Duration Synchronization Fix
+Fixed critical issue where timeline display and actual player duration were mismatched:
+- **Problem**: Static medley data specified 600s duration, actual video was 246s
+- **Solution**: SongList now uses `actualPlayerDuration` for timeline calculations
+- **Visual Indicators**: Songs beyond actual video length show red styling and warning tooltips
+- **User Notification**: Duration mismatch warning badge with tooltip showing configured vs actual duration
+
+**Key Implementation Details:**
+- `SongList.tsx` now calculates timeline based on `effectiveTimelineDuration = actualPlayerDuration || duration`
+- Songs with `startTime >= actualPlayerDuration` are flagged with `isBeyondActualDuration`
+- Visual styling: `bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-60`
+- Timeline bars beyond duration use red colors: `bg-red-400 dark:bg-red-500 opacity-50`
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.

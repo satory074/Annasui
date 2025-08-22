@@ -86,6 +86,7 @@ export default function MedleyPlayer({
         volume,
         playerError,
         playerReady,
+        play,
         togglePlayPause,
         seek: nicoSeek,
         setVolume,
@@ -451,6 +452,7 @@ export default function MedleyPlayer({
                         onSeek={seek}
                         // プレイヤーコントロール用の props
                         isPlaying={isPlaying}
+                        onPlay={play}
                         onTogglePlayPause={togglePlayPause}
                         // 統合されたコントロール用の props
                         shareUrl={generateShareUrl()}

@@ -18,6 +18,7 @@ interface SongListProps {
   onSeek?: (time: number) => void;
   // プレイヤーコントロール用の props
   isPlaying?: boolean;
+  onPlay?: () => void;
   onTogglePlayPause?: () => void;
   // 統合されたコントロール用の props
   shareUrl?: string;
@@ -54,6 +55,7 @@ export default function SongList({
   onHoverSong,
   onSeek,
   isPlaying = false,
+  onPlay,
   onTogglePlayPause,
   shareUrl,
   shareTitle,
@@ -84,10 +86,11 @@ export default function SongList({
   const [timelineOffset, setTimelineOffset] = useState<number>(0); // 表示開始時刻
 
 
-  // タイムラインズーム関連の計算
-  const visibleDuration = duration / timelineZoom; // 表示される時間範囲
+  // タイムラインズーム関連の計算（実際のプレイヤーの長さを使用）
+  const effectiveTimelineDuration = actualPlayerDuration || duration;
+  const visibleDuration = effectiveTimelineDuration / timelineZoom; // 表示される時間範囲
   const visibleStartTime = timelineOffset; // 表示開始時刻
-  const visibleEndTime = Math.min(timelineOffset + visibleDuration, duration); // 表示終了時刻
+  const visibleEndTime = Math.min(timelineOffset + visibleDuration, effectiveTimelineDuration); // 表示終了時刻
 
   // ズーム状態変更時に親コンポーネントに通知
   useEffect(() => {
@@ -176,9 +179,9 @@ export default function SongList({
       newEndTime = newStartTime + songDuration;
       
       // 境界チェック
-      if (newEndTime > duration) {
-        newEndTime = duration;
-        newStartTime = duration - songDuration;
+      if (newEndTime > effectiveTimelineDuration) {
+        newEndTime = effectiveTimelineDuration;
+        newStartTime = effectiveTimelineDuration - songDuration;
       }
       if (newStartTime < 0) {
         newStartTime = 0;
@@ -187,7 +190,7 @@ export default function SongList({
     } else if (dragMode === 'resize-start') {
       newStartTime = Math.max(0, Math.min(dragStart.originalEndTime - 1, dragStart.originalStartTime + deltaTime));
     } else if (dragMode === 'resize-end') {
-      newEndTime = Math.min(duration, Math.max(dragStart.originalStartTime + 1, dragStart.originalEndTime + deltaTime));
+      newEndTime = Math.min(effectiveTimelineDuration, Math.max(dragStart.originalStartTime + 1, dragStart.originalEndTime + deltaTime));
     }
     
     
@@ -244,6 +247,10 @@ export default function SongList({
     const maxSeekTime = actualPlayerDuration || duration;
     if (seekTime >= 0 && seekTime <= maxSeekTime) {
       onSeek(seekTime);
+      // 再生されていない場合は再生を開始
+      if (!isPlaying && onPlay) {
+        onPlay();
+      }
     }
   };
 
@@ -435,7 +442,12 @@ export default function SongList({
                 />
               )}
               <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                {formatTime(currentTime)} / {formatTime(duration)}
+                {formatTime(currentTime)} / {formatTime(actualPlayerDuration || duration)}
+                {actualPlayerDuration && actualPlayerDuration !== duration && (
+                  <span className="ml-2 text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded" title={`設定値: ${formatTime(duration)}`}>
+                    ⚠️ 長さ不一致
+                  </span>
+                )}
                 {isEditMode && selectedSong && (
                   <span className="ml-2 text-xs text-green-600 dark:text-green-400">「{selectedSong.title}」選択中</span>
                 )}
@@ -621,12 +633,15 @@ export default function SongList({
             {visibleSongs.map((song) => {
               const { hasOverlap, overlappingSongs } = detectOverlaps(song);
               const isCurrentlyPlaying = currentSongs.some(s => s.id === song.id);
+              const isBeyondActualDuration = actualPlayerDuration && song.startTime >= actualPlayerDuration;
               
               return (
                 <div
                   key={song.id}
                   className={`relative p-1 rounded-lg border transition-all ${
-                    isCurrentlyPlaying
+                    isBeyondActualDuration
+                      ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-60"
+                      : isCurrentlyPlaying
                       ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
                       : "bg-white dark:bg-slate-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700/50"
                   }`}
@@ -663,7 +678,7 @@ export default function SongList({
                         {Array.from({ length: Math.min(21, Math.ceil(timelineZoom * 8)) }).map((_, i) => {
                           const labelCount = Math.min(20, Math.ceil(timelineZoom * 8));
                           const timeAtPosition = visibleStartTime + (i / labelCount) * visibleDuration;
-                          if (timeAtPosition > duration) return null;
+                          if (timeAtPosition > effectiveTimelineDuration) return null;
                           return (
                             <div
                               key={i}
@@ -683,7 +698,11 @@ export default function SongList({
                     
                     {/* 楽曲タイムラインバー */}
                     <div
-                      className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 bg-blue-500 dark:bg-blue-600 ${
+                      className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 ${
+                        isBeyondActualDuration 
+                          ? 'bg-red-400 dark:bg-red-500 opacity-50' 
+                          : 'bg-blue-500 dark:bg-blue-600'
+                      } ${
                         hasOverlap ? 'opacity-80' : ''
                       } ${
                         isCurrentlyPlaying ? 'ring-2 ring-blue-400 animate-pulse' : ''
@@ -703,7 +722,7 @@ export default function SongList({
                       onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
                       onMouseEnter={(e) => handleSongHover(e, song)}
                       onMouseLeave={handleSongLeave}
-                      title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで再生'}`}
+                      title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ⚠️ 動画の長さを超えています' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで再生'}`}
                     >
                       <div className="text-xs text-gray-900 dark:text-white font-medium px-2 leading-6 pointer-events-none relative z-30">
                         <div 

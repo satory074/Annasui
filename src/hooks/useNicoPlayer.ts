@@ -19,6 +19,7 @@ interface UseNicoPlayerReturn {
     playerError: string | null;
     playerReady: boolean;
     videoInfo: VideoInfo | null;
+    play: () => void;
     togglePlayPause: () => void;
     seek: (seekTime: number) => void;
     setVolume: (volume: number) => void;
@@ -372,6 +373,18 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         }, 1000); // より長い遅延でプレイヤーの完全な読み込みを待つ
     }, [sendMessageToPlayer, playerReady]);
 
+    // 再生のみ（一時停止中でも再生開始）
+    const play = useCallback(() => {
+        if (playerRef.current?.contentWindow && playerReady) {
+            console.log(`▶️ PLAY: Starting playback`);
+            sendMessageToPlayer({
+                sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
+                playerId: PLAYER_CONFIG.PLAYER_ID,
+                eventName: "play",
+            });
+        }
+    }, [playerReady, sendMessageToPlayer]);
+
     // 再生/一時停止の切り替え（簡略化）
     const togglePlayPause = useCallback(() => {
         if (playerRef.current?.contentWindow && playerReady) {
@@ -473,6 +486,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         playerError,
         playerReady,
         videoInfo,
+        play,
         togglePlayPause,
         seek,
         setVolume,

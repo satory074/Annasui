@@ -16,6 +16,10 @@ interface SongListProps {
   onShowSongDetail?: (song: SongSection) => void;
   onHoverSong?: (song: SongSection | null, position: { x: number; y: number }) => void;
   onSeek?: (time: number) => void;
+  // ホットキー機能用
+  onQuickSetStartTime?: (time: number) => void;
+  onQuickSetEndTime?: (time: number) => void;
+  onQuickAddMarker?: (time: number) => void;
   // プレイヤーコントロール用の props
   isPlaying?: boolean;
   onPlay?: () => void;
@@ -26,6 +30,7 @@ interface SongListProps {
   originalVideoUrl?: string;
   onToggleEditMode?: () => void;
   onAddSong?: () => void;
+  onImportSetlist?: () => void;
   onSaveChanges?: () => void;
   onResetChanges?: () => void;
   hasChanges?: boolean;
@@ -54,6 +59,9 @@ export default function SongList({
   onShowSongDetail,
   onHoverSong,
   onSeek,
+  onQuickSetStartTime,
+  onQuickSetEndTime,
+  onQuickAddMarker,
   isPlaying = false,
   onPlay,
   onTogglePlayPause,
@@ -62,6 +70,7 @@ export default function SongList({
   originalVideoUrl,
   onToggleEditMode,
   onAddSong,
+  onImportSetlist,
   onSaveChanges,
   onResetChanges,
   hasChanges = false,
@@ -302,7 +311,41 @@ export default function SongList({
 
   // キーボードショートカット処理
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (!isEditMode || !selectedSong || !onUpdateSong) return;
+    if (!isEditMode) return;
+
+    // ホットキー機能（S/E/M）- selectedSongがなくても動作
+    switch (e.key.toLowerCase()) {
+      case 's':
+        if (!e.ctrlKey && !e.metaKey) { // Ctrl+S (保存) と区別
+          e.preventDefault();
+          if (onQuickSetStartTime) {
+            onQuickSetStartTime(currentTime);
+          }
+          return;
+        }
+        break;
+      case 'e':
+        if (!e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          if (onQuickSetEndTime) {
+            onQuickSetEndTime(currentTime);
+          }
+          return;
+        }
+        break;
+      case 'm':
+        if (!e.ctrlKey && !e.metaKey) {
+          e.preventDefault();
+          if (onQuickAddMarker) {
+            onQuickAddMarker(currentTime);
+          }
+          return;
+        }
+        break;
+    }
+
+    // 既存の楽曲編集機能（selectedSongが必要）
+    if (!selectedSong || !onUpdateSong) return;
 
     const step = e.shiftKey ? 0.1 : e.ctrlKey || e.metaKey ? 1.0 : 0.5; // Shift: 0.1秒, Ctrl/Cmd: 1秒, デフォルト: 0.5秒
 
@@ -386,7 +429,7 @@ export default function SongList({
       };
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEditMode, selectedSong, duration]);
+  }, [isEditMode, selectedSong, duration, currentTime, onQuickSetStartTime, onQuickSetEndTime, onQuickAddMarker]);
 
 
 
@@ -521,6 +564,15 @@ export default function SongList({
                   >
                     楽曲追加
                   </button>
+                  {onImportSetlist && (
+                    <button
+                      onClick={onImportSetlist}
+                      className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
+                      title="セットリストから一括インポート"
+                    >
+                      インポート
+                    </button>
+                  )}
                   <div className="flex items-center gap-1">
                     <button
                       onClick={onUndo}
@@ -544,6 +596,11 @@ export default function SongList({
                       未保存の変更があります
                     </span>
                   )}
+                  <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                    キーボード: <kbd className="px-1 bg-gray-200 dark:bg-gray-600 rounded">S</kbd>開始時刻 
+                    <kbd className="px-1 bg-gray-200 dark:bg-gray-600 rounded">E</kbd>終了時刻 
+                    <kbd className="px-1 bg-gray-200 dark:bg-gray-600 rounded">M</kbd>マーカー追加
+                  </div>
                 </>
               )}
             </div>

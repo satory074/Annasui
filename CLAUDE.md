@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Anasui is a multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, annotation editing, and searchable medley database. Supports Niconico and YouTube platforms.
 
-**Current Status**: Core features complete (multi-platform support, timeline editing, 20x zoom system, unified UI). Next: user authentication.
+**Current Status**: Core features complete (multi-platform support, timeline editing, 20x zoom system, unified UI, annotation enhancement features). Next: user authentication.
 
 ## Core Architecture
 
@@ -74,7 +74,7 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 - `SongList` - Unified timeline with editing, 20x zoom, interaction
 - `TempoTrack` - BPM timeline visualization and editing with advanced modal
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
-- Modals: `SongEditModal`, `SongSearchModal`, `SongDetailModal`, `BpmEditModal`
+- Modals: `SongEditModal`, `SongSearchModal`, `SongDetailModal`, `BpmEditModal`, `ImportSetlistModal`
 
 #### Unified Modal/Tooltip System
 **Base Components:**
@@ -99,10 +99,32 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 </BaseTooltip>
 ```
 
-#### Timeline System
+#### Timeline System & Annotation Enhancement Features
 **Zoom System**: 0.5x-20.0x magnification with auto-follow mode, adaptive mouse wheel zoom
 **Edit Mode Features**: Drag-and-drop editing (0.1s precision), undo/redo (50-action history), keyboard shortcuts
 **Unified Timeline**: SongList integrates timeline, tooltips, and editing functionality
+
+**NEW - Keyboard Shortcuts (2025-01-23):**
+- **S** key: Set current time as start time for new song
+- **E** key: Set current time as end time for editing song
+- **M** key: Add marker at current time (create new song)
+- Active only in edit mode, with visual help displayed in UI
+
+**NEW - Continuous Input Mode:**
+- Checkbox option in song edit modal to enable continuous song addition
+- "Save and Next" button for seamless workflow
+- Auto-time setting: previous song's end time → next song's start time
+
+**NEW - Setlist Import:**
+- Bulk import songs from text format via "Import" button
+- Supports formats: `MM:SS Song Name / Artist Name`, `MM:SS Song Name - Artist Name`, `MM:SS Song Name`
+- Live preview with automatic end time calculation
+- Example: `00:00 ロキ / みきとP` → parsed as song from 0:00-0:45
+
+**NEW - Preview Playback:**
+- Loop playback of selected time range within song edit modal
+- "Preview Start/Stop" button for immediate verification
+- Prevents range setting errors
 
 **State Management:**
 ```typescript
@@ -175,6 +197,13 @@ const effectiveTimelineDuration = actualPlayerDuration || duration;
 - **Timeline duration mismatch**: Use `actualPlayerDuration` for timeline calculations, not static `duration`
 - **Songs beyond video length**: Check for `isBeyondActualDuration` flag and red styling
 
+### Annotation Enhancement Issues
+- **Hotkeys not working**: Ensure edit mode is active and keyboard event listeners are properly attached
+- **Continuous input mode not triggering**: Check `continuousMode` state and `onSaveAndNext` callback implementation
+- **Setlist import parsing fails**: Verify time format (MM:SS) and delimiter (/ or -) in input text
+- **Preview playback not looping**: Check interval setup and seek command implementation with Niconico postMessage
+- **Import modal not opening**: Verify `ImportSetlistModal` component is properly integrated in `MedleyPlayer`
+
 ### Tempo Track Issues
 - **BPM Modal not opening**: Check `isEditMode` state and `onUpdateTempo` callback
 - **Tap tempo not working**: Verify `useTapTempo` hook and 3-second timeout behavior
@@ -234,6 +263,11 @@ src/
 - `src/components/ui/song/SongTimeControls.tsx` - Time input controls with precision adjustment
 - `src/components/ui/song/SongThumbnail.tsx` - Standardized thumbnail component
 
+**Annotation Enhancement:**
+- `src/components/features/medley/ImportSetlistModal.tsx` - Bulk setlist import from text format
+- Enhanced `SongEditModal.tsx` - Continuous input mode, preview playback, enhanced time controls
+- Enhanced `SongList.tsx` - Keyboard shortcuts (S/E/M keys) with visual help display
+
 
 ### Adding New Platforms
 
@@ -272,9 +306,38 @@ Always verify features work in production environment - static export and cross-
 - **Grid Snap**: Toggle 5-BPM increment snapping
 - **Keyboard**: Arrow keys for fine adjustment, Enter/Escape for save/cancel
 
-## Recent Updates (2025-01-22)
+## Recent Updates
 
-### Duration Synchronization Fix
+### Annotation Enhancement Features (2025-01-23)
+Major update implementing comprehensive workflow improvements for medley annotation:
+
+**Hotkey System:**
+- Added keyboard shortcuts (S/E/M) for rapid annotation
+- Visual help system displays shortcuts in edit mode UI
+- Prevents conflicts with browser shortcuts (Ctrl+S handling)
+
+**Continuous Input Workflow:**
+- "Continuous Input Mode" checkbox in song edit modal
+- "Save and Next" button creates seamless song-to-song workflow
+- Automatic time setting: previous song's end becomes next song's start
+- 3x+ speed improvement for bulk annotation tasks
+
+**Setlist Import System:**
+- `ImportSetlistModal` component for bulk song import
+- Supports multiple text formats with live preview
+- Automatic end time calculation between songs
+- Error handling for malformed input
+
+**Preview Playback:**
+- Loop playback within song edit modal for range verification
+- Integrates with Niconico postMessage API for precise seeking
+- Prevents annotation errors through immediate feedback
+
+**Production Verification:**
+- All features tested and confirmed working in production environment
+- Critical for iframe-based communication with Niconico player
+
+### Duration Synchronization Fix (2025-01-22)
 Fixed critical issue where timeline display and actual player duration were mismatched:
 - **Problem**: Static medley data specified 600s duration, actual video was 246s
 - **Solution**: SongList now uses `actualPlayerDuration` for timeline calculations

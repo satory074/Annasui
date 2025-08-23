@@ -16,6 +16,14 @@ interface SongEditModalProps {
   maxDuration?: number;
   currentTime?: number;
   isFromDatabase?: boolean; // 楽曲DBから選択されたかどうか
+  // 連続入力モード用
+  continuousMode?: boolean;
+  onSaveAndNext?: (song: SongSection) => void;
+  onToggleContinuousMode?: () => void;
+  // プレビュー再生用
+  onSeek?: (time: number) => void;
+  isPlaying?: boolean;
+  onTogglePlayPause?: () => void;
 }
 
 export default function SongEditModal({
@@ -27,7 +35,13 @@ export default function SongEditModal({
   isNew = false,
   maxDuration = 0,
   currentTime = 0,
-  isFromDatabase = false
+  isFromDatabase = false,
+  continuousMode = false,
+  onSaveAndNext,
+  onToggleContinuousMode,
+  onSeek,
+  isPlaying = false,
+  onTogglePlayPause
 }: SongEditModalProps) {
   const [formData, setFormData] = useState<SongSection>({
     id: 0,
@@ -41,6 +55,8 @@ export default function SongEditModal({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
+  const [previewInterval, setPreviewInterval] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (song) {
@@ -86,9 +102,79 @@ export default function SongEditModal({
   const handleSave = () => {
     if (validateForm()) {
       onSave(formData);
-      onClose();
+      if (!continuousMode) {
+        onClose();
+      }
     }
   };
+
+  const handleSaveAndNext = () => {
+    if (validateForm()) {
+      if (onSaveAndNext) {
+        onSaveAndNext(formData);
+      } else {
+        onSave(formData);
+      }
+      // 連続モードではモーダルを閉じない
+    }
+  };
+
+  // プレビュー再生機能
+  const handlePreviewToggle = () => {
+    if (!onSeek || !onTogglePlayPause) return;
+
+    if (isPreviewMode) {
+      // プレビュー停止
+      setIsPreviewMode(false);
+      if (previewInterval) {
+        clearInterval(previewInterval);
+        setPreviewInterval(null);
+      }
+      if (isPlaying) {
+        onTogglePlayPause(); // 一時停止
+      }
+    } else {
+      // プレビュー開始
+      if (formData.startTime >= formData.endTime) {
+        alert("終了時刻が開始時刻よりも後である必要があります。");
+        return;
+      }
+
+      setIsPreviewMode(true);
+      onSeek(formData.startTime); // 開始位置にシーク
+      
+      if (!isPlaying) {
+        onTogglePlayPause(); // 再生開始
+      }
+
+      // ループ再生用のインターバルを設定
+      const interval = setInterval(() => {
+        onSeek(formData.startTime); // 開始位置に戻る
+      }, (formData.endTime - formData.startTime) * 1000); // 再生範囲の長さでループ
+
+      setPreviewInterval(interval);
+    }
+  };
+
+  // コンポーネントがアンマウントされる時のクリーンアップ
+  useEffect(() => {
+    return () => {
+      if (previewInterval) {
+        clearInterval(previewInterval);
+      }
+    };
+  }, [previewInterval]);
+
+  // モーダルが閉じられる時にプレビューを停止
+  useEffect(() => {
+    if (!isOpen && isPreviewMode) {
+      setIsPreviewMode(false);
+      if (previewInterval) {
+        clearInterval(previewInterval);
+        setPreviewInterval(null);
+      }
+    }
+  }, [isOpen, isPreviewMode, previewInterval]);
 
   const handleDelete = () => {
     if (onDelete && song && !isNew) {
@@ -184,6 +270,38 @@ export default function SongEditModal({
             maxValue={maxDuration}
           />
 
+          {/* プレビュー再生ボタン */}
+          {onSeek && onTogglePlayPause && (
+            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    プレビュー再生
+                  </h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    設定した範囲をループ再生で確認できます
+                  </p>
+                </div>
+                <button
+                  onClick={handlePreviewToggle}
+                  disabled={formData.startTime >= formData.endTime}
+                  className={`px-4 py-2 text-sm rounded-md font-medium transition-colors ${
+                    isPreviewMode
+                      ? 'bg-red-500 text-white hover:bg-red-600'
+                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {isPreviewMode ? 'プレビュー停止' : 'プレビュー開始'}
+                </button>
+              </div>
+              {isPreviewMode && (
+                <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+                  🔄 {formData.startTime.toFixed(1)}s ~ {formData.endTime.toFixed(1)}s をループ再生中...
+                </div>
+              )}
+            </div>
+          )}
+
 
 
           {/* 元動画リンク（新規楽曲の手動追加時のみ表示） */}
@@ -202,6 +320,21 @@ export default function SongEditModal({
             </div>
           )}
         </div>
+
+        {/* 連続入力モードトグル（新規追加時のみ） */}
+        {isNew && onToggleContinuousMode && (
+          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+              <input
+                type="checkbox"
+                checked={continuousMode}
+                onChange={onToggleContinuousMode}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              連続入力モード（保存後に次の楽曲を追加）
+            </label>
+          </div>
+        )}
 
         {/* ボタン */}
         <div className="flex justify-between mt-6">
@@ -222,11 +355,19 @@ export default function SongEditModal({
             >
               キャンセル
             </button>
+            {isNew && continuousMode && onSaveAndNext && (
+              <button
+                onClick={handleSaveAndNext}
+                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+              >
+                保存して次へ
+              </button>
+            )}
             <button
               onClick={handleSave}
               className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              {isNew ? "追加" : "保存"}
+              {isNew ? (continuousMode ? "保存して終了" : "追加") : "保存"}
             </button>
           </div>
         </div>

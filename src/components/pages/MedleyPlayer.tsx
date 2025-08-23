@@ -13,6 +13,7 @@ import SongEditModal from "@/components/features/medley/SongEditModal";
 import SongDetailModal from "@/components/features/medley/SongDetailModal";
 import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
 import SongSearchModal from "@/components/features/medley/SongSearchModal";
+import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
 import { TempoTrack } from "@/components/features/medley/TempoTrack";
 import { SongSection } from "@/types";
 import { TempoChange } from "@/types/features/medley";
@@ -37,10 +38,14 @@ export default function MedleyPlayer({
     const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
     const [editingSong, setEditingSong] = useState<SongSection | null>(null);
     const [isNewSong, setIsNewSong] = useState<boolean>(false);
+    const [continuousInputMode, setContinuousInputMode] = useState<boolean>(false);
     
     // 楽曲検索モーダル関連の状態
     const [songSearchModalOpen, setSongSearchModalOpen] = useState<boolean>(false);
     const [selectedDatabaseSong, setSelectedDatabaseSong] = useState<SongDatabaseEntry | null>(null);
+    
+    // セットリストインポートモーダル関連の状態
+    const [importModalOpen, setImportModalOpen] = useState<boolean>(false);
     
     // 楽曲詳細モーダル関連の状態
     const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
@@ -246,6 +251,54 @@ export default function MedleyPlayer({
         } else {
             updateSong(song);
         }
+        
+        // 連続入力モードでない場合はモーダルを閉じる
+        if (!continuousInputMode) {
+            setEditModalOpen(false);
+        }
+    };
+
+    const handleSaveAndNext = (song: SongSection) => {
+        if (isNewSong) {
+            addSong(song);
+        } else {
+            updateSong(song);
+        }
+        
+        // 次の楽曲を準備（自動時間設定を適用）
+        const nextStartTime = song.endTime;
+        const nextSong: SongSection = {
+            id: Date.now() + 1, // 一意なIDを作成
+            title: "",
+            artist: "",
+            startTime: Math.round(nextStartTime * 10) / 10,
+            endTime: Math.round((nextStartTime + 30) * 10) / 10, // デフォルト30秒
+            color: "bg-blue-400",
+            genre: "",
+            originalLink: ""
+        };
+        
+        setEditingSong(nextSong);
+        setIsNewSong(true);
+        // モーダルは閉じない
+    };
+
+    const handleToggleContinuousMode = () => {
+        setContinuousInputMode(!continuousInputMode);
+    };
+
+    // セットリストインポートのハンドラー
+    const handleImportSetlist = (songs: SongSection[]) => {
+        // インポートした楽曲を一括で追加
+        songs.forEach(song => {
+            addSong(song);
+        });
+        
+        console.log(`セットリストから${songs.length}曲をインポートしました`);
+    };
+
+    const handleOpenImportModal = () => {
+        setImportModalOpen(true);
     };
 
     const handleShowSongDetail = (song: SongSection) => {
@@ -333,6 +386,81 @@ export default function MedleyPlayer({
         // 実際の実装では、これをメドレーデータとして保存する
         console.log('Tempo updated:', { initialBpm: newInitialBpm, tempoChanges: newTempoChanges });
         // TODO: テンポデータの永続化実装
+    };
+
+    // ホットキー機能のハンドラー
+    const handleQuickSetStartTime = (time: number) => {
+        if (editingSong) {
+            // 編集中の楽曲がある場合は、開始時刻を更新
+            const updatedSong = {
+                ...editingSong,
+                startTime: Math.round(time * 10) / 10 // 0.1秒精度に丸める
+            };
+            updateSong(updatedSong);
+            setEditingSong(updatedSong);
+        } else {
+            // 編集中の楽曲がない場合は、新しい楽曲を作成
+            const newSong: SongSection = {
+                id: Date.now(),
+                title: "新しい楽曲",
+                artist: "",
+                startTime: Math.round(time * 10) / 10,
+                endTime: Math.round(time * 10) / 10 + 30, // デフォルト30秒
+                color: "bg-blue-400",
+                genre: "",
+                originalLink: ""
+            };
+            setEditingSong(newSong);
+            setIsNewSong(true);
+            setEditModalOpen(true);
+        }
+    };
+
+    const handleQuickSetEndTime = (time: number) => {
+        if (editingSong) {
+            // 編集中の楽曲がある場合は、終了時刻を更新
+            const updatedSong = {
+                ...editingSong,
+                endTime: Math.max(editingSong.startTime + 0.1, Math.round(time * 10) / 10)
+            };
+            updateSong(updatedSong);
+            setEditingSong(updatedSong);
+        } else {
+            // 編集中の楽曲がない場合は、前の楽曲の終了時刻から0から開始
+            const previousSongEndTime = displaySongs.length > 0 
+                ? Math.max(...displaySongs.map(s => s.endTime))
+                : 0;
+            const newSong: SongSection = {
+                id: Date.now(),
+                title: "新しい楽曲",
+                artist: "",
+                startTime: Math.round(previousSongEndTime * 10) / 10,
+                endTime: Math.round(time * 10) / 10,
+                color: "bg-blue-400",
+                genre: "",
+                originalLink: ""
+            };
+            setEditingSong(newSong);
+            setIsNewSong(true);
+            setEditModalOpen(true);
+        }
+    };
+
+    const handleQuickAddMarker = (time: number) => {
+        // 現在時刻にマーカーを追加（新しい楽曲を作成）
+        const newSong: SongSection = {
+            id: Date.now(),
+            title: "新しい楽曲",
+            artist: "",
+            startTime: Math.round(time * 10) / 10,
+            endTime: Math.round(time * 10) / 10 + 30, // デフォルト30秒
+            color: "bg-blue-400",
+            genre: "",
+            originalLink: ""
+        };
+        setEditingSong(newSong);
+        setIsNewSong(true);
+        setEditModalOpen(true);
     };
 
     // 動画IDが変更されたときの処理
@@ -450,6 +578,10 @@ export default function MedleyPlayer({
                         onShowSongDetail={handleShowSongDetail}
                         onHoverSong={handleHoverSong}
                         onSeek={seek}
+                        // ホットキー機能用
+                        onQuickSetStartTime={handleQuickSetStartTime}
+                        onQuickSetEndTime={handleQuickSetEndTime}
+                        onQuickAddMarker={handleQuickAddMarker}
                         // プレイヤーコントロール用の props
                         isPlaying={isPlaying}
                         onPlay={play}
@@ -460,6 +592,7 @@ export default function MedleyPlayer({
                         originalVideoUrl={generateOriginalVideoUrl()}
                         onToggleEditMode={handleToggleEditMode}
                         onAddSong={handleAddSong}
+                        onImportSetlist={handleOpenImportModal}
                         onSaveChanges={handleSaveChanges}
                         onResetChanges={() => resetChanges(medleySongs)}
                         hasChanges={hasChanges}
@@ -530,6 +663,7 @@ export default function MedleyPlayer({
                 onClose={() => {
                     setEditModalOpen(false);
                     setSelectedDatabaseSong(null);
+                    setContinuousInputMode(false); // モーダルを閉じる時は連続モードもリセット
                 }}
                 song={editingSong}
                 onSave={handleSaveSong}
@@ -538,6 +672,14 @@ export default function MedleyPlayer({
                 maxDuration={effectiveDuration}
                 currentTime={currentTime}
                 isFromDatabase={selectedDatabaseSong !== null}
+                // 連続入力モード用
+                continuousMode={continuousInputMode}
+                onSaveAndNext={handleSaveAndNext}
+                onToggleContinuousMode={handleToggleContinuousMode}
+                // プレビュー再生用
+                onSeek={seek}
+                isPlaying={isPlaying}
+                onTogglePlayPause={togglePlayPause}
             />
 
             {/* 楽曲検索モーダル */}
@@ -546,6 +688,13 @@ export default function MedleyPlayer({
                 onClose={() => setSongSearchModalOpen(false)}
                 onSelectSong={handleSelectSongFromDatabase}
                 onManualAdd={handleManualAddSong}
+            />
+
+            {/* セットリストインポートモーダル */}
+            <ImportSetlistModal
+                isOpen={importModalOpen}
+                onClose={() => setImportModalOpen(false)}
+                onImport={handleImportSetlist}
             />
 
             {/* 楽曲詳細モーダル */}

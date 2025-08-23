@@ -210,6 +210,17 @@ export default function MedleyPlayer({
     const displaySongs = isEditMode ? editingSongs : medleySongs;
     const { currentSong } = useCurrentTrack(currentTime, displaySongs);
 
+    // 隣接する楽曲を検索するヘルパー関数
+    const findAdjacentSongs = (currentSong: SongSection) => {
+        const sortedSongs = displaySongs.sort((a, b) => a.startTime - b.startTime);
+        const currentIndex = sortedSongs.findIndex(song => song.id === currentSong.id);
+        
+        const previousSong = currentIndex > 0 ? sortedSongs[currentIndex - 1] : undefined;
+        const nextSong = currentIndex < sortedSongs.length - 1 ? sortedSongs[currentIndex + 1] : undefined;
+        
+        return { previousSong, nextSong };
+    };
+
     // 編集機能のハンドラ
     const handleEditSong = (song: SongSection) => {
         setEditingSong(song);
@@ -680,6 +691,8 @@ export default function MedleyPlayer({
                 onSeek={seek}
                 isPlaying={isPlaying}
                 onTogglePlayPause={togglePlayPause}
+                // 隣接する楽曲との時刻合わせ用
+                {...(editingSong && !isNewSong ? findAdjacentSongs(editingSong) : {})}
             />
 
             {/* 楽曲検索モーダル */}

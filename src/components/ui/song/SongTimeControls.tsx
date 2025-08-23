@@ -11,6 +11,9 @@ interface SongTimeControlsProps {
   placeholder?: string;
   minValue?: number;
   maxValue?: number;
+  // 隣接する楽曲との時刻合わせ用
+  adjacentTime?: number;
+  adjacentLabel?: string;
 }
 
 export default function SongTimeControls({
@@ -21,7 +24,9 @@ export default function SongTimeControls({
   error,
   placeholder = "mm:ss または秒数",
   minValue,
-  maxValue
+  maxValue,
+  adjacentTime,
+  adjacentLabel
 }: SongTimeControlsProps) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = parseTimeInput(e.target.value);
@@ -43,6 +48,12 @@ export default function SongTimeControls({
     }
     
     onChange(newValue);
+  };
+
+  const handleAdjacentTimeClick = () => {
+    if (adjacentTime !== undefined) {
+      onChange(adjacentTime);
+    }
   };
 
   return (
@@ -87,6 +98,19 @@ export default function SongTimeControls({
           </button>
         </div>
       </div>
+      {/* 隣接楽曲との時刻合わせボタン */}
+      {adjacentTime !== undefined && adjacentLabel && (
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={handleAdjacentTimeClick}
+            className="px-3 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium transition-colors"
+            title={`${adjacentLabel}（${formatTimeSimple(adjacentTime)}）`}
+          >
+            {adjacentLabel}
+          </button>
+        </div>
+      )}
       {error && (
         <p className="text-red-500 text-sm mt-1">{error}</p>
       )}

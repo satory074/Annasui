@@ -24,6 +24,9 @@ interface SongEditModalProps {
   onSeek?: (time: number) => void;
   isPlaying?: boolean;
   onTogglePlayPause?: () => void;
+  // 隣接する楽曲との時刻合わせ用
+  previousSong?: SongSection;
+  nextSong?: SongSection;
 }
 
 export default function SongEditModal({
@@ -41,7 +44,9 @@ export default function SongEditModal({
   onToggleContinuousMode,
   onSeek,
   isPlaying = false,
-  onTogglePlayPause
+  onTogglePlayPause,
+  previousSong,
+  nextSong
 }: SongEditModalProps) {
   const [formData, setFormData] = useState<SongSection>({
     id: 0,
@@ -257,6 +262,8 @@ export default function SongEditModal({
             currentTime={currentTime}
             error={errors.startTime}
             minValue={0}
+            adjacentTime={previousSong?.endTime}
+            adjacentLabel={previousSong ? "前の楽曲の終了時刻に合わせる" : undefined}
           />
 
           {/* 終了時間 */}
@@ -268,6 +275,8 @@ export default function SongEditModal({
             error={errors.endTime}
             minValue={formData.startTime + 0.1}
             maxValue={maxDuration}
+            adjacentTime={nextSong?.startTime}
+            adjacentLabel={nextSong ? "次の楽曲の開始時刻に合わせる" : undefined}
           />
 
           {/* プレビュー再生ボタン */}

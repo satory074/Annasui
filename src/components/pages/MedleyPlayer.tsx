@@ -523,13 +523,6 @@ export default function MedleyPlayer({
         // ニコニコプレイヤーが状態をリセット
     };
 
-    // 曲の開始時間へジャンプボタンの処理
-    const jumpToSong = (songId: number) => {
-        const song = displaySongs.find((s) => s.id === songId);
-        if (song) {
-            seek(song.startTime);
-        }
-    };
 
     // 共有URL生成
     const generateShareUrl = () => {
@@ -662,26 +655,6 @@ export default function MedleyPlayer({
                     </div>
                 )}
 
-                {/* フッター */}
-                <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800 text-xs flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                        {currentSong && (
-                            <button 
-                                className="px-2 py-1 bg-pink-500 text-white rounded"
-                                onClick={() => jumpToSong(currentSong.id)}
-                            >
-                                現在の曲から再生
-                            </button>
-                        )}
-                        <span className="text-gray-500">© 2025 ニコニコメドレーアノテーションプレイヤー</span>
-                    </div>
-                    <div>
-                        <select className="px-2 py-1 bg-gray-200 dark:bg-gray-700 rounded text-gray-700 dark:text-gray-300">
-                            <option>日本語</option>
-                            <option>English</option>
-                        </select>
-                    </div>
-                </div>
             </div>
 
             {/* 楽曲編集モーダル */}

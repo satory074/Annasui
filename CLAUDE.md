@@ -296,6 +296,26 @@ Always verify features work in production environment - static export and cross-
 
 ## Recent Updates
 
+### UI Element Cleanup (2025-08-24)
+Removed unnecessary UI elements for cleaner interface:
+
+**Removed Elements:**
+- **"再生中: nowhere" display**: Removed current song display text from header area
+- **Footer section**: Complete removal of footer containing:
+  - "現在の曲から再生" (Play from current song) button
+  - Language selector dropdown ("日本語"/"English")
+  - Copyright notice
+
+**Implementation Details:**
+- `SongList.tsx:530-534`: Removed "再生中: {songs}" text display
+- `MedleyPlayer.tsx:665-684`: Removed entire footer section
+- Cleaned up unused `jumpToSong` function that was tied to removed button
+
+**Benefits:**
+- Cleaner, less cluttered interface
+- Focus on core functionality without distracting elements
+- Simplified user experience
+
 ### Zoom Functionality Removal (2025-08-24)
 Complete removal of timeline zoom functionality for simplified user interface:
 

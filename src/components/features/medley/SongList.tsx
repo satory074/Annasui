@@ -527,11 +527,6 @@ export default function SongList({
                   </span>
                 )}
               </h3>
-              {currentSongs.length > 0 && (
-                <div className="text-xs text-gray-500 dark:text-gray-400">
-                  再生中: {currentSongs.map(s => s.title).join(', ')}
-                </div>
-              )}
             </div>
             {/* 右側: 共有ボタン */}
             {shareUrl && (

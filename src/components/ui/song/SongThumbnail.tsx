@@ -23,8 +23,8 @@ export default function SongThumbnail({
   if (!thumbnailUrl) return null;
 
   const sizeClasses = {
-    sm: "w-16 h-9",
-    md: "w-20 h-11", 
+    sm: "w-32 h-18",
+    md: "w-40 h-22", 
     lg: "w-full aspect-video"
   };
 

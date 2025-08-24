@@ -30,12 +30,12 @@ export default function SongInfoDisplay({
   if (variant === "compact") {
     return (
       <div className="space-y-3">
-        <div className="flex items-start gap-3">
+        <div className="flex flex-col items-center gap-3">
           {showThumbnail && (
             <SongThumbnail
               originalLink={song.originalLink}
               title={song.title}
-              size="sm"
+              size="md"
             />
           )}
           <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">楽曲詳細</div>

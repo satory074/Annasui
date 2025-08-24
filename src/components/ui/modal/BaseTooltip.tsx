@@ -23,8 +23,8 @@ export default function BaseTooltip({
 
   useEffect(() => {
     if (isVisible && typeof window !== 'undefined') {
-      const tooltipWidth = 320;
-      const tooltipHeight = 300;
+      const tooltipWidth = 400;
+      const tooltipHeight = 350;
       const padding = 16;
 
       let adjustedX = position.x;
@@ -54,7 +54,7 @@ export default function BaseTooltip({
 
   return (
     <div
-      className={`fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 p-4 max-w-sm transition-all duration-200 opacity-100 scale-100 ${className}`}
+      className={`fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 p-4 max-w-md transition-all duration-200 opacity-100 scale-100 ${className}`}
       style={{
         left: `${adjustedPosition.x}px`,
         top: `${adjustedPosition.y}px`,

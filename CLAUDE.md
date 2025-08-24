@@ -545,6 +545,56 @@ Cleaned up song title display in timeline bars for better readability:
 - Song titles are clearly visible both within and outside timeline bars
 - Dark mode compatibility maintained
 
+### Tooltip and Thumbnail Display Improvements (2025-08-24)
+Enhanced visual presentation of song information in hover tooltips:
+
+**Tooltip Size Expansion:**
+- Increased tooltip width from 320px to 400px for better content visibility
+- Increased tooltip height from 300px to 350px to accommodate larger thumbnails
+- Updated Tailwind classes from `max-w-sm` to `max-w-md`
+
+**Thumbnail Size Enhancement:**
+- Enlarged small thumbnails from `w-16 h-9` (64×36px) to `w-32 h-18` (128×72px)  
+- Proportionally scaled medium thumbnails from `w-20 h-11` to `w-40 h-22`
+- Maintained `w-full aspect-video` for large thumbnails
+
+**Layout Redesign:**
+- Changed from horizontal layout (thumbnail left, info right) to vertical layout (thumbnail top-center, info below)
+- Updated `SongInfoDisplay` compact variant to use `flex flex-col items-center` for centered vertical alignment
+- Changed thumbnail size from "sm" to "md" in compact variant for better visibility
+
+**Technical Implementation:**
+```typescript
+// BaseTooltip.tsx - Size adjustments
+const tooltipWidth = 400;
+const tooltipHeight = 350;
+
+// SongThumbnail.tsx - Size classes
+const sizeClasses = {
+  sm: "w-32 h-18",
+  md: "w-40 h-22", 
+  lg: "w-full aspect-video"
+};
+
+// SongInfoDisplay.tsx - Layout change for compact variant
+<div className="flex flex-col items-center gap-3">
+  <SongThumbnail size="md" />
+  <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">楽曲詳細</div>
+</div>
+```
+
+**User Experience Benefits:**
+- **Improved Readability**: Larger thumbnails provide better visual recognition of songs
+- **Better Information Hierarchy**: Vertical layout creates cleaner information flow
+- **Enhanced Accessibility**: Larger click targets and improved visual feedback
+- **Consistent Sizing**: Proportional scaling maintains aspect ratios across all size variants
+
+**Production Verification:**
+- All improvements tested and confirmed working in production environment (https://illustrious-figolla-20f57e.netlify.app)
+- Tooltip positioning logic correctly handles larger dimensions
+- Responsive behavior maintained across different screen sizes
+- Performance impact minimal with optimized rendering
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.

@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { SongSection, MedleyData, TempoChange } from '@/types';
+import { SongSection, MedleyData } from '@/types';
 import { updateMedley, createMedley } from '@/lib/api/medleys';
 import { getMedleyByVideoId as getStaticMedleyByVideoId } from '@/data/medleys';
 
@@ -12,29 +12,20 @@ interface UseMedleyEditReturn {
   updateSong: (updatedSong: SongSection) => void;
   addSong: (newSong: Omit<SongSection, 'id'>) => void;
   deleteSong: (songId: number) => void;
-  saveMedley: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number, initialBpm?: number, tempoChanges?: TempoChange[]) => Promise<boolean>;
+  saveMedley: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number) => Promise<boolean>;
   resetChanges: (originalSongs: SongSection[]) => void;
   reorderSongs: (fromIndex: number, toIndex: number) => void;
   undo: () => void;
   redo: () => void;
-  // テンポトラック関連
-  initialBpm: number;
-  tempoChanges: TempoChange[];
-  updateTempo: (initialBpm: number, tempoChanges: TempoChange[]) => void;
 }
 
 export function useMedleyEdit(
-  originalSongs: SongSection[], 
-  originalInitialBpm: number = 120, 
-  originalTempoChanges: TempoChange[] = []
+  originalSongs: SongSection[]
 ): UseMedleyEditReturn {
   const [editingSongs, setEditingSongs] = useState<SongSection[]>(originalSongs);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // テンポトラック関連の状態
-  const [initialBpm, setInitialBpm] = useState<number>(originalInitialBpm);
-  const [tempoChanges, setTempoChanges] = useState<TempoChange[]>(originalTempoChanges);
   
   // Undo/Redo履歴管理
   const [history, setHistory] = useState<SongSection[][]>([originalSongs]);
@@ -42,12 +33,10 @@ export function useMedleyEdit(
   const MAX_HISTORY = 50; // 最大履歴数
 
   // 変更を検知するためのヘルパー関数
-  const detectChanges = useCallback((newSongs: SongSection[], newInitialBpm?: number, newTempoChanges?: TempoChange[]) => {
+  const detectChanges = useCallback((newSongs: SongSection[]) => {
     const songsChanged = JSON.stringify(newSongs) !== JSON.stringify(originalSongs);
-    const bpmChanged = (newInitialBpm ?? initialBpm) !== originalInitialBpm;
-    const tempoChanged = JSON.stringify(newTempoChanges ?? tempoChanges) !== JSON.stringify(originalTempoChanges);
-    setHasChanges(songsChanged || bpmChanged || tempoChanged);
-  }, [originalSongs, originalInitialBpm, originalTempoChanges, initialBpm, tempoChanges]);
+    setHasChanges(songsChanged);
+  }, [originalSongs]);
 
   // 履歴に新しい状態を追加
   const addToHistory = useCallback((newSongs: SongSection[]) => {
@@ -123,21 +112,13 @@ export function useMedleyEdit(
     });
   }, [detectChanges, addToHistory]);
 
-  // テンポ情報を更新
-  const updateTempo = useCallback((newInitialBpm: number, newTempoChanges: TempoChange[]) => {
-    setInitialBpm(newInitialBpm);
-    setTempoChanges(newTempoChanges);
-    detectChanges(editingSongs, newInitialBpm, newTempoChanges);
-  }, [editingSongs, detectChanges]);
 
   // メドレーを保存
   const saveMedley = useCallback(async (
     videoId: string, 
     medleyTitle: string, 
     medleyCreator: string, 
-    duration: number,
-    saveInitialBpm?: number,
-    saveTempoChanges?: TempoChange[]
+    duration: number
   ): Promise<boolean> => {
     setIsSaving(true);
 
@@ -174,39 +155,19 @@ export function useMedleyEdit(
       let result;
       if (existingMedley) {
         // 既存のメドレーを更新
-        // 開始位置のテンポ変更点を自動追加（時刻0のエントリが存在しない場合）
-        const finalInitialBpm = saveInitialBpm ?? initialBpm;
-        const finalTempoChanges = saveTempoChanges ?? tempoChanges;
-        const hasStartTempo = finalTempoChanges.some(change => change.time === 0);
-        const tempoChangesToSave = hasStartTempo 
-          ? finalTempoChanges 
-          : [{ time: 0, bpm: finalInitialBpm }, ...finalTempoChanges.filter(change => change.time > 0)];
-        
         result = await updateMedley(videoId, {
           title: medleyTitle,
           creator: medleyCreator,
-          duration: duration,
-          initialBpm: finalInitialBpm,
-          tempoChanges: tempoChangesToSave
+          duration: duration
         });
       } else {
         // 新規メドレーを作成
-        // 開始位置のテンポ変更点を自動追加（時刻0のエントリが存在しない場合）
-        const finalInitialBpm = saveInitialBpm ?? initialBpm;
-        const finalTempoChanges = saveTempoChanges ?? tempoChanges;
-        const hasStartTempo = finalTempoChanges.some(change => change.time === 0);
-        const tempoChangesToSave = hasStartTempo 
-          ? finalTempoChanges 
-          : [{ time: 0, bpm: finalInitialBpm }, ...finalTempoChanges.filter(change => change.time > 0)];
-
         const medleyData: Omit<MedleyData, 'songs'> & { songs: Omit<SongSection, 'id'>[] } = {
           videoId,
           title: medleyTitle,
           creator: medleyCreator,
           duration,
-          songs: songsToSave,
-          initialBpm: finalInitialBpm,
-          tempoChanges: tempoChangesToSave
+          songs: songsToSave
         };
         result = await createMedley(medleyData);
       }
@@ -227,7 +188,7 @@ export function useMedleyEdit(
     } finally {
       setIsSaving(false);
     }
-  }, [editingSongs, initialBpm, tempoChanges]);
+  }, [editingSongs]);
 
   // 変更をリセット
   const resetChanges = useCallback((originalSongs: SongSection[]) => {
@@ -280,8 +241,5 @@ export function useMedleyEdit(
     reorderSongs,
     undo,
     redo,
-    initialBpm,
-    tempoChanges,
-    updateTempo
   };
 }

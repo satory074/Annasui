@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { SongSection } from '@/types';
-import { TempoChange } from '@/types/features/medley';
 import { getMedleyByVideoId as getStaticMedleyByVideoId } from '@/data/medleys';
 import { useMedleyDataApi } from './useMedleyDataApi';
 
@@ -9,8 +8,6 @@ interface UseMedleyDataReturn {
     medleyTitle: string
     medleyCreator: string
     medleyDuration: number
-    initialBpm: number
-    tempoChanges: TempoChange[]
     loading?: boolean
     error?: string | null
 }
@@ -20,8 +17,6 @@ export function useMedleyData(videoId: string): UseMedleyDataReturn {
     const [medleyTitle, setMedleyTitle] = useState<string>("");
     const [medleyCreator, setMedleyCreator] = useState<string>("");
     const [medleyDuration, setMedleyDuration] = useState<number>(0);
-    const [initialBpm, setInitialBpm] = useState<number>(120);
-    const [tempoChanges, setTempoChanges] = useState<TempoChange[]>([]);
 
     // Check if Supabase is configured
     const isSupabaseConfigured = Boolean(
@@ -49,16 +44,12 @@ export function useMedleyData(videoId: string): UseMedleyDataReturn {
                 setMedleyDuration(medleyData.duration);
                 setMedleyTitle(medleyData.title);
                 setMedleyCreator(medleyData.creator || "");
-                setInitialBpm(medleyData.initialBpm || 120);
-                setTempoChanges(medleyData.tempoChanges || []);
             } else {
                 // メドレーデータがない場合は空の配列にする
                 setMedleySongs([]);
                 setMedleyTitle("");
                 setMedleyCreator("");
                 setMedleyDuration(0);
-                setInitialBpm(120);
-                setTempoChanges([]);
             }
         }
     }, [videoId, isSupabaseConfigured, apiResult]);
@@ -68,8 +59,6 @@ export function useMedleyData(videoId: string): UseMedleyDataReturn {
         medleyTitle,
         medleyCreator,
         medleyDuration,
-        initialBpm,
-        tempoChanges,
         loading: isSupabaseConfigured ? apiResult.loading : undefined,
         error: isSupabaseConfigured ? apiResult.error : undefined,
     };

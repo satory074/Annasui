@@ -595,6 +595,29 @@ const sizeClasses = {
 - Responsive behavior maintained across different screen sizes
 - Performance impact minimal with optimized rendering
 
+### Song Detail Modal Removal (2025-08-24)
+楽曲詳細モーダルの削除が完了しました：
+
+**変更内容:**
+- ビューモードで楽曲をクリックした時の詳細モーダル表示を削除
+- 編集モードでの楽曲選択機能は引き続き動作
+- TypeScriptエラーを修正
+
+**実装詳細:**
+- `SongList.tsx`: `handleSongClick`関数でビューモード時の`onShowSongDetail`呼び出しを削除
+- `MedleyPlayer.tsx`: `SongDetailModal`関連のコード（import、state、レンダリング）を削除
+- `onShowSongDetail` propの削除とTypeScript型定義の修正
+
+**Current User Interaction Flow:**
+- **Mouse hover**: Shows tooltip with song details via `SongDetailTooltip`
+- **Song click**: Seeks to song start time and begins playback via `handleTimelineClick`
+- **Edit button**: Opens song edit modal for modifications
+
+**Production Verification:**
+- プロダクション環境 (https://illustrious-figolla-20f57e.netlify.app) で動作確認済み
+- 楽曲クリック時にモーダルが表示されないことを確認
+- ツールチップ機能とシーク機能は正常動作
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.

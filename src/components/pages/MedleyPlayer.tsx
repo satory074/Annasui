@@ -10,7 +10,6 @@ import YouTubePlayer from "@/components/features/player/YouTubePlayer";
 import { useNicoPlayer } from "@/hooks/useNicoPlayer";
 import SongList from "@/components/features/medley/SongList";
 import SongEditModal from "@/components/features/medley/SongEditModal";
-import SongDetailModal from "@/components/features/medley/SongDetailModal";
 import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
 import SongSearchModal from "@/components/features/medley/SongSearchModal";
 import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
@@ -49,9 +48,6 @@ export default function MedleyPlayer({
     // 手動楽曲追加モーダル関連の状態
     const [manualAddModalOpen, setManualAddModalOpen] = useState<boolean>(false);
     
-    // 楽曲詳細モーダル関連の状態
-    const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
-    const [detailSong, setDetailSong] = useState<SongSection | null>(null);
     
     // ツールチップ関連の状態
     const [tooltipSong, setTooltipSong] = useState<SongSection | null>(null);
@@ -343,10 +339,6 @@ export default function MedleyPlayer({
         setImportModalOpen(true);
     };
 
-    const handleShowSongDetail = (song: SongSection) => {
-        setDetailSong(song);
-        setDetailModalOpen(true);
-    };
     
     const handleHoverSong = (song: SongSection | null, position: { x: number; y: number }) => {
         if (song) {
@@ -611,7 +603,6 @@ export default function MedleyPlayer({
                         onEditSong={handleEditSong}
                         onDeleteSong={deleteSong}
                         onUpdateSong={updateSong}
-                        onShowSongDetail={handleShowSongDetail}
                         onHoverSong={handleHoverSong}
                         onSeek={seek}
                         // ホットキー機能用
@@ -708,13 +699,6 @@ export default function MedleyPlayer({
                 onSave={handleManualSongSave}
             />
 
-            {/* 楽曲詳細モーダル */}
-            <SongDetailModal
-                isOpen={detailModalOpen}
-                onClose={() => setDetailModalOpen(false)}
-                song={detailSong}
-                onSeek={seek}
-            />
             
             {/* 楽曲詳細ツールチップ */}
             <SongDetailTooltip

@@ -13,7 +13,6 @@ interface SongListProps {
   onEditSong?: (song: SongSection) => void;
   onDeleteSong?: (songId: number) => void;
   onUpdateSong?: (song: SongSection) => void;
-  onShowSongDetail?: (song: SongSection) => void;
   onHoverSong?: (song: SongSection | null, position: { x: number; y: number }) => void;
   onSeek?: (time: number) => void;
   // ホットキー機能用
@@ -55,7 +54,6 @@ export default function SongList({
   onEditSong, 
   onDeleteSong,
   onUpdateSong,
-  onShowSongDetail,
   onHoverSong,
   onSeek,
   onQuickSetStartTime,
@@ -215,11 +213,8 @@ export default function SongList({
     if (isEditMode) {
       e.stopPropagation();
       setSelectedSong(selectedSong?.id === song.id ? null : song);
-    } else {
-      e.stopPropagation();
-      // ビューモードでは楽曲詳細モーダルを開く
-      onShowSongDetail?.(song);
     }
+    // ビューモードではクリック時に何もしない
   };
 
   // 楽曲セクションのダブルクリック処理

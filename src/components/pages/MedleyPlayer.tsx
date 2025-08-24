@@ -58,9 +58,6 @@ export default function MedleyPlayer({
     const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const [isTooltipVisible, setIsTooltipVisible] = useState<boolean>(false);
     
-    // ズーム状態の管理
-    const [visibleStartTime, setVisibleStartTime] = useState<number>(0);
-    const [visibleDuration, setVisibleDuration] = useState<number | undefined>(undefined);
     const [isHoveringTooltip, setIsHoveringTooltip] = useState<boolean>(false);
     const [isHoveringSong, setIsHoveringSong] = useState<boolean>(false);
     const [hideTooltipTimeout, setHideTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -420,11 +417,6 @@ export default function MedleyPlayer({
         }
     };
 
-    // ズーム状態変更のハンドラー
-    const handleZoomChange = (newVisibleStartTime: number, newVisibleDuration: number) => {
-        setVisibleStartTime(newVisibleStartTime);
-        setVisibleDuration(newVisibleDuration);
-    };
 
 
     // ホットキー機能のハンドラー
@@ -581,8 +573,6 @@ export default function MedleyPlayer({
                             onSeek={seek}
                             onVolumeChange={handleVolumeChange}
                             onToggleFullscreen={toggleFullscreen}
-                            visibleStartTime={visibleStartTime}
-                            visibleDuration={visibleDuration}
                         />
                     ) : (
                         <NicoPlayer
@@ -599,8 +589,6 @@ export default function MedleyPlayer({
                             onVolumeChange={handleVolumeChange}
                             onToggleFullscreen={toggleFullscreen}
                             onErrorDismiss={clearError}
-                            visibleStartTime={visibleStartTime}
-                            visibleDuration={visibleDuration}
                         />
                     )}
                 </div>
@@ -662,7 +650,6 @@ export default function MedleyPlayer({
                         medleyTitle={medleyTitle}
                         medleyCreator={medleyCreator}
                         // ズーム状態通知
-                        onZoomChange={handleZoomChange}
                     />
                 )}
 

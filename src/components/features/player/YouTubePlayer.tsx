@@ -21,9 +21,6 @@ interface YouTubePlayerProps {
     onSeek?: (seekTime: number) => void;
     onVolumeChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onToggleFullscreen?: () => void;
-    // ズーム対応プロパティ
-    visibleStartTime?: number;
-    visibleDuration?: number;
 }
 
 export default function YouTubePlayer({
@@ -40,8 +37,6 @@ export default function YouTubePlayer({
     onSeek,
     onVolumeChange,
     onToggleFullscreen,
-    visibleStartTime,
-    visibleDuration,
 }: YouTubePlayerProps) {
     const iframeRef = useRef<HTMLIFrameElement>(null);
 
@@ -95,8 +90,6 @@ export default function YouTubePlayer({
                     onSeek={onSeek || (() => {})}
                     onVolumeChange={onVolumeChange || (() => {})}
                     onToggleFullscreen={onToggleFullscreen || (() => {})}
-                    visibleStartTime={visibleStartTime}
-                    visibleDuration={visibleDuration}
                 />
             )}
         </div>

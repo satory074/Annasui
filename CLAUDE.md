@@ -24,7 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Anasui is a multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, annotation editing, and searchable medley database. Supports Niconico and YouTube platforms.
 
-**Current Status**: Core features complete (multi-platform support, timeline editing, 20x zoom system, unified UI, annotation enhancement features). Next: user authentication.
+**Current Status**: Core features complete (multi-platform support, timeline editing, unified UI, annotation enhancement features). Next: user authentication.
 
 ## Core Architecture
 
@@ -71,7 +71,7 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 
 #### Component Architecture
 - `MedleyPlayer` - Core reusable player with platform detection
-- `SongList` - Unified timeline with editing, 20x zoom, interaction
+- `SongList` - Unified timeline with editing and interaction
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
 - Modals: `SongEditModal`, `SongSearchModal`, `SongDetailModal`, `ImportSetlistModal`
 
@@ -99,7 +99,7 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 ```
 
 #### Timeline System & Annotation Enhancement Features
-**Zoom System**: 0.5x-20.0x magnification with auto-follow mode, adaptive mouse wheel zoom
+**Timeline Display**: Always shows full video duration with simplified position calculations
 **Edit Mode Features**: Drag-and-drop editing (0.1s precision), undo/redo (50-action history), keyboard shortcuts
 **Unified Timeline**: SongList integrates timeline, tooltips, and editing functionality
 
@@ -140,8 +140,8 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 
 **State Management:**
 ```typescript
-const [timelineZoom, setTimelineZoom] = useState<number>(1.0);
-const visibleDuration = duration / timelineZoom;
+// Timeline always displays full duration
+const effectiveTimelineDuration = actualPlayerDuration || duration;
 ```
 
 #### Song Database Integration
@@ -184,8 +184,6 @@ const effectiveTimelineDuration = actualPlayerDuration || duration;
 ### Timeline & Editing
 - **Undo/Redo not working**: Check keyboard listeners in edit mode
 - **Song selection invisible**: Ensure `ring-2 ring-blue-500` classes applied
-- **Zoom issues**: Check `timelineZoom` state updates and position calculations
-- **High zoom performance**: 20x zoom may require visible song filtering
 - **Tooltip problems**: Verify hover state management and timeout cleanup
 - **Timeline duration mismatch**: Use `actualPlayerDuration` for timeline calculations, not static `duration`
 - **Songs beyond video length**: Check for `isBeyondActualDuration` flag and red styling
@@ -213,15 +211,15 @@ const effectiveTimelineDuration = actualPlayerDuration || duration;
 
 ### Visual Keyboard Shortcut Feedback Issues
 - **Key badges not highlighting**: Ensure `isPressingS/E/M` states are properly updated in keydown/keyup handlers
-- **Timeline indicators not showing**: Check conditional rendering logic and ensure current time is within visible range
+- **Timeline indicators not showing**: Check conditional rendering logic
 - **Status messages not appearing**: Verify edit mode is active and key press states are correctly set
 - **Visual feedback flickering**: Confirm `e.repeat` check prevents key repeat events from causing state changes
-- **Indicators not positioned correctly**: Verify timeline zoom calculations and visible duration math
+- **Indicators not positioned correctly**: Verify timeline position calculations
 
 ### Real-time Song Bar Issues
 - **Bar not appearing after S key**: Verify `tempStartTime` prop is passed from `MedleyPlayer` to `SongList`
 - **Bar not updating**: Check that `tempStartTime !== null && tempStartTime !== undefined` condition is working
-- **Bar positioning incorrect**: Verify timeline zoom calculations and visible duration math for bar positioning
+- **Bar positioning incorrect**: Verify timeline position calculations for bar positioning
 - **Label not showing elapsed time**: Confirm `Math.round((currentTime - tempStartTime) * 10) / 10` calculation
 - **Bar appearing on wrong tracks**: Check conditional rendering logic in timeline rendering loop
 
@@ -295,6 +293,27 @@ Always verify features work in production environment - static export and cross-
 
 
 ## Recent Updates
+
+### Zoom Functionality Removal (2025-08-24)
+Complete removal of timeline zoom functionality for simplified user interface:
+
+**Removed Features:**
+- Timeline zoom slider (0.5x-20.0x magnification)
+- Zoom preset buttons (1x/2x/5x/10x/20x)
+- Mouse wheel zoom functionality
+- Complex visible range calculations
+
+**Simplified Implementation:**
+- Timeline always displays full video duration
+- Position calculations use simple `(time / duration) * 100%` formula
+- Fixed 10-line grid system instead of dynamic zoom-based grid
+- Maintained all existing functionality (drag-and-drop editing, hotkeys, etc.)
+
+**Benefits:**
+- Cleaner, less cluttered interface
+- Simplified codebase maintenance
+- Better performance with reduced complexity
+- Focus on core annotation features
 
 ### Always-Visible Edit Buttons & Clickable Song Info (2025-08-25)
 Major UX improvements for song editing accessibility:
@@ -448,7 +467,7 @@ tempStartTime={tempStartTime}
 **Production Verification:**
 - Feature tested and confirmed working in production environment (https://illustrious-figolla-20f57e.netlify.app)
 - Real-time bar updates correctly as video plays
-- Visual styling renders properly across different zoom levels
+- Visual styling renders properly at all timeline sizes
 - Performance impact minimal with smooth animation
 
 # important-instruction-reminders

@@ -19,9 +19,6 @@ interface NicoPlayerProps {
   onVolumeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onToggleFullscreen: () => void;
   onErrorDismiss?: () => void;
-  // ズーム対応プロパティ
-  visibleStartTime?: number;
-  visibleDuration?: number;
 }
 
 export default function NicoPlayer({
@@ -38,8 +35,6 @@ export default function NicoPlayer({
   onVolumeChange,
   onToggleFullscreen,
   onErrorDismiss,
-  visibleStartTime,
-  visibleDuration,
 }: NicoPlayerProps) {
   const [browserReady] = useState(true);
 
@@ -148,8 +143,6 @@ export default function NicoPlayer({
         onSeek={onSeek}
         onVolumeChange={onVolumeChange}
         onToggleFullscreen={onToggleFullscreen}
-        visibleStartTime={visibleStartTime}
-        visibleDuration={visibleDuration}
       />
     </div>
   );

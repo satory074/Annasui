@@ -44,8 +44,6 @@ interface SongListProps {
   // メドレー情報
   medleyTitle?: string;
   medleyCreator?: string;
-  // ズーム状態通知
-  onZoomChange?: (visibleStartTime: number, visibleDuration: number) => void;
 }
 
 export default function SongList({ 
@@ -83,8 +81,7 @@ export default function SongList({
   onRedo,
   currentSong, // eslint-disable-line @typescript-eslint/no-unused-vars
   medleyTitle,
-  medleyCreator,
-  onZoomChange
+  medleyCreator
 }: SongListProps) {
   // 編集機能の状態管理
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
@@ -97,21 +94,8 @@ export default function SongList({
   const [isPressingE, setIsPressingE] = useState<boolean>(false);
   const [isPressingM, setIsPressingM] = useState<boolean>(false);
 
-  // タイムラインズーム機能の状態管理
-  const [timelineZoom, setTimelineZoom] = useState<number>(1.0); // ズーム倍率 (0.5-5.0)
-  const [timelineOffset, setTimelineOffset] = useState<number>(0); // 表示開始時刻
-
-
-  // タイムラインズーム関連の計算（実際のプレイヤーの長さを使用）
+  // タイムライン関連の計算（実際のプレイヤーの長さを使用）
   const effectiveTimelineDuration = actualPlayerDuration || duration;
-  const visibleDuration = effectiveTimelineDuration / timelineZoom; // 表示される時間範囲
-  const visibleStartTime = timelineOffset; // 表示開始時刻
-  const visibleEndTime = Math.min(timelineOffset + visibleDuration, effectiveTimelineDuration); // 表示終了時刻
-
-  // ズーム状態変更時に親コンポーネントに通知
-  useEffect(() => {
-    onZoomChange?.(visibleStartTime, visibleDuration);
-  }, [visibleStartTime, visibleDuration, onZoomChange]);
 
 
   // 現在の時刻に再生中の全ての楽曲を取得（マッシュアップ対応）
@@ -150,8 +134,8 @@ export default function SongList({
     if (!rect) return;
     
     const relativeX = e.clientX - rect.left;
-    const clickPositionInSong = relativeX - ((song.startTime - visibleStartTime) / visibleDuration) * rect.width;
-    const songWidth = ((song.endTime - song.startTime) / visibleDuration) * rect.width;
+    const clickPositionInSong = relativeX - ((song.startTime / effectiveTimelineDuration) * rect.width);
+    const songWidth = ((song.endTime - song.startTime) / effectiveTimelineDuration) * rect.width;
     
     // どの部分をクリックしたかを判定
     let mode: 'move' | 'resize-start' | 'resize-end' = 'move';
@@ -180,7 +164,7 @@ export default function SongList({
     if (!rect) return;
     
     const deltaX = e.clientX - dragStart.x;
-    const deltaTime = (deltaX / rect.width) * visibleDuration;
+    const deltaTime = (deltaX / rect.width) * effectiveTimelineDuration;
     
     let newStartTime = dragStart.originalStartTime;
     let newEndTime = dragStart.originalEndTime;
@@ -256,8 +240,8 @@ export default function SongList({
     const clickX = e.clientX - rect.left;
     const clickPosition = clickX / rect.width;
     
-    // ズーム状態を考慮した時間計算
-    const seekTime = visibleStartTime + (clickPosition * visibleDuration);
+    // 時間計算
+    const seekTime = clickPosition * effectiveTimelineDuration;
     
     // 有効な時間範囲内かチェック（実際のプレイヤーの長さを優先）
     const maxSeekTime = actualPlayerDuration || duration;
@@ -288,31 +272,6 @@ export default function SongList({
     }
   };
 
-  // マウスホイールズーム処理
-  const handleWheel = (e: React.WheelEvent) => {
-    if (e.ctrlKey || e.metaKey) {
-      e.preventDefault();
-      // ズーム倍率に応じて感度を調整（高ズーム時はより細かい調整）
-      const baseFactor = timelineZoom < 2 ? 0.2 : timelineZoom < 5 ? 0.15 : timelineZoom < 10 ? 0.1 : 0.05;
-      const zoomFactor = e.deltaY > 0 ? 1 - baseFactor : 1 + baseFactor;
-      const newZoom = Math.max(0.5, Math.min(20.0, timelineZoom * zoomFactor));
-      
-      // マウス位置を基準にズーム
-      const rect = e.currentTarget.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseTimePosition = (mouseX / rect.width) * visibleDuration + visibleStartTime;
-      
-      setTimelineZoom(newZoom);
-      
-      // ズーム後にマウス位置が同じ時刻を指すように調整
-      const newVisibleDuration = duration / newZoom;
-      const newOffset = Math.max(0, Math.min(
-        duration - newVisibleDuration,
-        mouseTimePosition - (mouseX / rect.width) * newVisibleDuration
-      ));
-      setTimelineOffset(newOffset);
-    }
-  };
 
 
 
@@ -486,20 +445,12 @@ export default function SongList({
 
 
 
-  // 表示範囲内にある楽曲をフィルタリング
-  const getVisibleSongs = (): SongSection[] => {
-    return songs.filter((song) => {
-      // 楽曲が表示範囲と重なっているかチェック
-      return !(song.endTime <= visibleStartTime || song.startTime >= visibleEndTime);
-    });
-  };
 
 
 
 
 
   const currentSongs = getCurrentSongs();
-  const visibleSongs = getVisibleSongs();
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900">
@@ -689,61 +640,6 @@ export default function SongList({
           </div>
         </div>
 
-        {/* セクション3: ズームコントロール */}
-        <div className="px-3 py-1 bg-gray-50 dark:bg-gray-900">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                ズーム:
-              </label>
-              <input
-                type="range"
-                min="0.5"
-                max="20"
-                step="0.1"
-                value={timelineZoom}
-                onChange={(e) => setTimelineZoom(parseFloat(e.target.value))}
-                className="w-20 h-1 bg-gray-300 dark:bg-gray-600 rounded appearance-none cursor-pointer accent-blue-500"
-              />
-              <span className="text-xs text-gray-600 dark:text-gray-400 min-w-[2rem]">
-                {timelineZoom.toFixed(1)}x
-              </span>
-            </div>
-            <div className="flex gap-1">
-              <button
-                onClick={() => setTimelineZoom(1)}
-                className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-              >
-                1x
-              </button>
-              <button
-                onClick={() => setTimelineZoom(2)}
-                className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-              >
-                2x
-              </button>
-              <button
-                onClick={() => setTimelineZoom(5)}
-                className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-              >
-                5x
-              </button>
-              <button
-                onClick={() => setTimelineZoom(10)}
-                className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-              >
-                10x
-              </button>
-              <button
-                onClick={() => setTimelineZoom(20)}
-                className="px-1.5 py-0.5 text-xs bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600"
-              >
-                20x
-              </button>
-            </div>
-            
-          </div>
-        </div>
       </div>
 
       {/* メインコンテンツエリア */}
@@ -751,7 +647,7 @@ export default function SongList({
 
       <div>
         <div className="space-y-0.5">
-            {visibleSongs.map((song) => {
+            {songs.map((song) => {
               const { hasOverlap, overlappingSongs } = detectOverlaps(song);
               const isCurrentlyPlaying = currentSongs.some(s => s.id === song.id);
               const isBeyondActualDuration = actualPlayerDuration && song.startTime >= actualPlayerDuration;
@@ -775,47 +671,18 @@ export default function SongList({
                         ? 'bg-blue-100 dark:bg-blue-900/20 shadow-inner'
                         : 'bg-blue-50 dark:bg-blue-900/10'
                     }`}
-                    onWheel={handleWheel}
                     onClick={handleTimelineClick}
                   >
-                    {/* 時間グリッド（背景） - ズームレベルに応じて調整 */}
+                    {/* 時間グリッド（背景）- 固定10本 */}
                     <div className="absolute inset-0 flex">
-                      {Array.from({ length: Math.min(41, Math.max(6, Math.ceil(timelineZoom * 15))) }).map((_, i) => {
-                        const gridCount = Math.min(40, Math.max(5, Math.ceil(timelineZoom * 15)));
-                        return (
-                          <div 
-                            key={i} 
-                            className="border-l border-gray-200 dark:border-gray-700 opacity-50" 
-                            style={{ left: `${(i / gridCount) * 100}%` }}
-                          />
-                        );
-                      })}
+                      {Array.from({ length: 11 }).map((_, i) => (
+                        <div 
+                          key={i} 
+                          className="border-l border-gray-200 dark:border-gray-700 opacity-50" 
+                          style={{ left: `${(i / 10) * 100}%` }}
+                        />
+                      ))}
                     </div>
-                    
-                    
-                    {/* 時間ラベル（ズーム時に表示） */}
-                    {timelineZoom > 1.5 && (
-                      <div className="absolute inset-0 pointer-events-none">
-                        {Array.from({ length: Math.min(21, Math.ceil(timelineZoom * 8)) }).map((_, i) => {
-                          const labelCount = Math.min(20, Math.ceil(timelineZoom * 8));
-                          const timeAtPosition = visibleStartTime + (i / labelCount) * visibleDuration;
-                          if (timeAtPosition > effectiveTimelineDuration) return null;
-                          return (
-                            <div
-                              key={i}
-                              className="absolute top-0 text-xs text-gray-500 dark:text-gray-400 bg-white dark:bg-gray-800 px-1 rounded"
-                              style={{ 
-                                left: `${(i / labelCount) * 100}%`,
-                                transform: 'translateX(-50%)',
-                                fontSize: '10px'
-                              }}
-                            >
-                              {formatTime(timeAtPosition)}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )}
                     
                     {/* 楽曲タイムラインバー */}
                     <div
@@ -834,10 +701,10 @@ export default function SongList({
                       } ${
                         draggingSong?.id === song.id ? 'opacity-70 z-30' : ''
                       } select-none`}
-                      style={visibleDuration > 0 ? {
-                        left: `${Math.max(0, ((song.startTime - visibleStartTime) / visibleDuration) * 100)}%`,
-                        width: `${Math.min(100, ((song.endTime - song.startTime) / visibleDuration) * 100)}%`,
-                      } : {}}
+                      style={{
+                        left: `${(song.startTime / effectiveTimelineDuration) * 100}%`,
+                        width: `${((song.endTime - song.startTime) / effectiveTimelineDuration) * 100}%`,
+                      }}
                       onClick={(e) => handleSongClick(e, song)}
                       onDoubleClick={(e) => handleSongDoubleClick(e, song)}
                       onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
@@ -912,8 +779,7 @@ export default function SongList({
                     <div
                       className="absolute w-0.5 h-full bg-red-500 z-10"
                       style={{
-                        left: `${((currentTime - visibleStartTime) / visibleDuration) * 100}%`,
-                        display: currentTime >= visibleStartTime && currentTime <= visibleEndTime ? 'block' : 'none'
+                        left: `${(currentTime / effectiveTimelineDuration) * 100}%`
                       }}
                     />
 
@@ -922,9 +788,8 @@ export default function SongList({
                       <div
                         className="absolute z-20 flex flex-col items-center"
                         style={{
-                          left: `${((currentTime - visibleStartTime) / visibleDuration) * 100}%`,
-                          transform: 'translateX(-50%)',
-                          display: currentTime >= visibleStartTime && currentTime <= visibleEndTime ? 'block' : 'none'
+                          left: `${(currentTime / effectiveTimelineDuration) * 100}%`,
+                          transform: 'translateX(-50%)'
                         }}
                       >
                         <div className={`w-1 h-full ${
@@ -947,9 +812,8 @@ export default function SongList({
                       <div
                         className="absolute z-15 h-full bg-blue-400/50 border-2 border-blue-400 rounded-sm"
                         style={{
-                          left: `${Math.max(0, ((tempStartTime - visibleStartTime) / visibleDuration) * 100)}%`,
-                          width: `${Math.max(0, Math.min(100, ((currentTime - tempStartTime) / visibleDuration) * 100))}%`,
-                          display: tempStartTime <= visibleEndTime && currentTime >= visibleStartTime ? 'block' : 'none'
+                          left: `${Math.max(0, (tempStartTime / effectiveTimelineDuration) * 100)}%`,
+                          width: `${Math.max(0, ((currentTime - tempStartTime) / effectiveTimelineDuration) * 100)}%`
                         }}
                       >
                         <div className="absolute inset-0 flex items-center justify-center">

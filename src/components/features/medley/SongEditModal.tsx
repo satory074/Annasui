@@ -27,6 +27,8 @@ interface SongEditModalProps {
   // 隣接する楽曲との時刻合わせ用
   previousSong?: SongSection;
   nextSong?: SongSection;
+  // 楽曲選択用
+  onSelectSong?: () => void;
 }
 
 export default function SongEditModal({
@@ -46,7 +48,8 @@ export default function SongEditModal({
   isPlaying = false,
   onTogglePlayPause,
   previousSong,
-  nextSong
+  nextSong,
+  onSelectSong
 }: SongEditModalProps) {
   const [formData, setFormData] = useState<SongSection>({
     id: 0,
@@ -201,16 +204,27 @@ export default function SongEditModal({
         {/* 楽曲情報をカード形式で表示（楽曲DBから選択 または 既存楽曲の編集）*/}
         {(isFromDatabase || !isNew) && (
           <div className="mb-6">
-            <SongInfoDisplay
-              song={formData}
-              variant="card"
-              showTimeCodes={false}
-            />
+            <div 
+              onClick={onSelectSong}
+              className={`${onSelectSong ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+              title={onSelectSong ? "クリックして楽曲を変更" : undefined}
+            >
+              <SongInfoDisplay
+                song={formData}
+                variant="card"
+                showTimeCodes={false}
+              />
+            </div>
             <p className="text-sm text-blue-800 dark:text-blue-200 mt-2 text-center">
               {isFromDatabase && isNew 
                 ? "楽曲データベースから選択されました。開始時間と終了時間を設定してください。"
                 : "楽曲情報を確認し、開始時間と終了時間を編集してください。"
               }
+              {onSelectSong && (
+                <span className="block text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  💡 楽曲情報をクリックして楽曲を変更できます
+                </span>
+              )}
             </p>
           </div>
         )}

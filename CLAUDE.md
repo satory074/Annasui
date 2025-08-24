@@ -341,6 +341,46 @@ Always verify features work in production environment - static export and cross-
 
 ## Recent Updates
 
+### Always-Visible Edit Buttons & Clickable Song Info (2025-08-25)
+Major UX improvements for song editing accessibility:
+
+**Always-Visible Edit Buttons:**
+- Edit buttons now appear on all songs in both view and edit modes
+- **View Mode**: Gray styling for subtle presence (`text-gray-600 hover:bg-gray-100`)
+- **Edit Mode**: Blue styling for active editing (`text-blue-600 hover:bg-blue-100`)
+- **Safety Feature**: Delete buttons remain edit-mode only for data protection
+- **Benefits**: Users can edit songs immediately without toggling edit mode first
+
+**Clickable Song Info in Edit Modal:**
+- Song information card in `SongEditModal` is now clickable to change song selection
+- **Visual Feedback**: Hover opacity and cursor pointer with tooltip hint
+- **Integration**: Clicking opens `SongSearchModal` and updates the editing song's metadata
+- **User Guidance**: Added hint text "💡 楽曲情報をクリックして楽曲を変更できます"
+- **Benefits**: Allows song correction/replacement during editing workflow
+
+**Implementation Details:**
+```typescript
+// Always-visible edit buttons in SongList.tsx
+className={`${isEditMode 
+  ? 'text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30' 
+  : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+}`}
+
+// Clickable song info in SongEditModal.tsx
+<div 
+  onClick={onSelectSong}
+  className={`${onSelectSong ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+  title={onSelectSong ? "クリックして楽曲を変更" : undefined}
+>
+  <SongInfoDisplay song={formData} variant="card" showTimeCodes={false} />
+</div>
+```
+
+**Production Verification:**
+- Both features tested and confirmed working in production environment
+- Edit buttons respond correctly in both view and edit modes
+- Song selection from edit modal successfully updates song metadata
+
 ### Annotation Enhancement Features (2025-01-23)
 Major update implementing comprehensive workflow improvements for medley annotation:
 

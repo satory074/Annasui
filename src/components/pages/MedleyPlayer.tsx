@@ -242,14 +242,27 @@ export default function MedleyPlayer({
         setSongSearchModalOpen(false);
         setSelectedDatabaseSong(dbSong);
         
-        // 楽曲DBから基本情報を取得して編集モーダルを開く
+        // 楽曲DBから基本情報を取得
         const songTemplate = createSongFromDatabase(dbSong, 0, 0);
-        setEditingSong({
-            id: Date.now(), // 一時的なID
-            ...songTemplate
-        });
-        setIsNewSong(true);
-        setEditModalOpen(true);
+        
+        if (editModalOpen && editingSong) {
+            // 編集モーダルが既に開いている場合は、現在の楽曲情報を更新
+            setEditingSong({
+                ...editingSong,
+                title: songTemplate.title,
+                artist: songTemplate.artist,
+                genre: songTemplate.genre,
+                originalLink: songTemplate.originalLink
+            });
+        } else {
+            // 新規追加の場合
+            setEditingSong({
+                id: Date.now(), // 一時的なID
+                ...songTemplate
+            });
+            setIsNewSong(true);
+            setEditModalOpen(true);
+        }
     };
     
     const handleManualAddSong = () => {
@@ -258,6 +271,11 @@ export default function MedleyPlayer({
         setEditingSong(null);
         setIsNewSong(true);
         setEditModalOpen(true);
+    };
+
+    // 楽曲編集中に楽曲選択モーダルを開く
+    const handleSelectSongFromEditModal = () => {
+        setSongSearchModalOpen(true);
     };
 
     const handleSaveSong = (song: SongSection) => {
@@ -714,6 +732,8 @@ export default function MedleyPlayer({
                 onTogglePlayPause={togglePlayPause}
                 // 隣接する楽曲との時刻合わせ用
                 {...(editingSong && !isNewSong ? findAdjacentSongs(editingSong) : {})}
+                // 楽曲選択用
+                onSelectSong={handleSelectSongFromEditModal}
             />
 
             {/* 楽曲検索モーダル */}

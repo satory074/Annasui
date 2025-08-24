@@ -118,15 +118,63 @@ export function createSongFromDatabase(
 
 // 楽曲DBを取得（キャッシュ付き）
 let cachedSongDatabase: SongDatabaseEntry[] | null = null;
+let manuallyAddedSongs: SongDatabaseEntry[] = [];
 
 export function getSongDatabase(): SongDatabaseEntry[] {
   if (!cachedSongDatabase) {
     cachedSongDatabase = buildSongDatabase();
   }
-  return cachedSongDatabase;
+  
+  // 手動で追加された楽曲と統合
+  const combinedDatabase = [...cachedSongDatabase, ...manuallyAddedSongs];
+  
+  // 重複排除（同じIDの楽曲がある場合は使用回数を合算）
+  const songMap = new Map<string, SongDatabaseEntry>();
+  combinedDatabase.forEach(song => {
+    if (songMap.has(song.id)) {
+      const existing = songMap.get(song.id)!;
+      existing.usageCount += song.usageCount;
+      existing.medleys = [...existing.medleys, ...song.medleys];
+    } else {
+      songMap.set(song.id, { ...song });
+    }
+  });
+  
+  return Array.from(songMap.values()).sort((a, b) => b.usageCount - a.usageCount);
+}
+
+// 手動で楽曲を追加
+export function addManualSong(songData: { title: string; artist: string; originalLink?: string }): SongDatabaseEntry {
+  const normalizedId = normalizeSongInfo(songData.title, songData.artist);
+  
+  // 既に存在するかチェック
+  const existingManualSong = manuallyAddedSongs.find(song => song.id === normalizedId);
+  if (existingManualSong) {
+    return existingManualSong;
+  }
+  
+  // 既存のデータベースでも重複チェック
+  const existingDbSong = getSongDatabase().find(song => song.id === normalizedId);
+  if (existingDbSong) {
+    return existingDbSong;
+  }
+  
+  const newSong: SongDatabaseEntry = {
+    id: normalizedId,
+    title: songData.title,
+    artist: songData.artist,
+    originalLink: songData.originalLink,
+    genre: "",
+    usageCount: 0,
+    medleys: []
+  };
+  
+  manuallyAddedSongs.push(newSong);
+  return newSong;
 }
 
 // キャッシュをクリア（開発用）
 export function clearSongDatabaseCache(): void {
   cachedSongDatabase = null;
+  manuallyAddedSongs = [];
 }

@@ -14,8 +14,9 @@ import SongDetailModal from "@/components/features/medley/SongDetailModal";
 import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
 import SongSearchModal from "@/components/features/medley/SongSearchModal";
 import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
+import ManualSongAddModal from "@/components/features/medley/ManualSongAddModal";
 import { SongSection } from "@/types";
-import { SongDatabaseEntry, createSongFromDatabase } from "@/lib/utils/songDatabase";
+import { SongDatabaseEntry, createSongFromDatabase, addManualSong } from "@/lib/utils/songDatabase";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -44,6 +45,9 @@ export default function MedleyPlayer({
     
     // セットリストインポートモーダル関連の状態
     const [importModalOpen, setImportModalOpen] = useState<boolean>(false);
+    
+    // 手動楽曲追加モーダル関連の状態
+    const [manualAddModalOpen, setManualAddModalOpen] = useState<boolean>(false);
     
     // 楽曲詳細モーダル関連の状態
     const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
@@ -265,10 +269,20 @@ export default function MedleyPlayer({
     
     const handleManualAddSong = () => {
         setSongSearchModalOpen(false);
-        setSelectedDatabaseSong(null);
-        setEditingSong(null);
-        setIsNewSong(true);
-        setEditModalOpen(true);
+        setManualAddModalOpen(true);
+    };
+
+    // 手動楽曲追加モーダルから楽曲を保存
+    const handleManualSongSave = (songData: { title: string; artist: string; originalLink?: string }) => {
+        // 楽曲をデータベースに追加
+        const addedSong = addManualSong(songData);
+        
+        // 楽曲検索モーダルを開き直して、追加された楽曲を検索可能にする
+        setManualAddModalOpen(false);
+        setSongSearchModalOpen(true);
+        
+        // 成功メッセージ（オプション）
+        console.log(`楽曲「${addedSong.title}」を楽曲データベースに追加しました`);
     };
 
     // 楽曲編集中に楽曲選択モーダルを開く
@@ -725,6 +739,13 @@ export default function MedleyPlayer({
                 isOpen={importModalOpen}
                 onClose={() => setImportModalOpen(false)}
                 onImport={handleImportSetlist}
+            />
+
+            {/* 手動楽曲追加モーダル */}
+            <ManualSongAddModal
+                isOpen={manualAddModalOpen}
+                onClose={() => setManualAddModalOpen(false)}
+                onSave={handleManualSongSave}
             />
 
             {/* 楽曲詳細モーダル */}

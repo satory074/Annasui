@@ -63,6 +63,10 @@ export default function MedleyPlayer({
     const [isHoveringSong, setIsHoveringSong] = useState<boolean>(false);
     const [hideTooltipTimeout, setHideTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
 
+    // 仮アノテーション作成用の状態
+    const [tempStartTime, setTempStartTime] = useState<number | null>(null);
+    const [untitledSongCounter, setUntitledSongCounter] = useState<number>(1);
+
     // メドレーデータの取得
     const { medleySongs, medleyTitle, medleyCreator, medleyDuration, initialBpm, tempoChanges, loading, error } = useMedleyData(videoId);
     
@@ -410,20 +414,10 @@ export default function MedleyPlayer({
             updateSong(updatedSong);
             setEditingSong(updatedSong);
         } else {
-            // 編集中の楽曲がない場合は、新しい楽曲を作成
-            const newSong: SongSection = {
-                id: Date.now(),
-                title: "新しい楽曲",
-                artist: "",
-                startTime: Math.round(time * 10) / 10,
-                endTime: Math.round(time * 10) / 10 + 30, // デフォルト30秒
-                color: "bg-blue-400",
-                genre: "",
-                originalLink: ""
-            };
-            setEditingSong(newSong);
-            setIsNewSong(true);
-            setEditModalOpen(true);
+            // 編集中の楽曲がない場合は、開始時刻を一時保存
+            const roundedTime = Math.round(time * 10) / 10;
+            setTempStartTime(roundedTime);
+            console.log(`開始時刻を設定: ${roundedTime}秒 (Eキーで終了時刻を設定してアノテーションを作成)`);
         }
     };
 
@@ -436,8 +430,34 @@ export default function MedleyPlayer({
             };
             updateSong(updatedSong);
             setEditingSong(updatedSong);
+        } else if (tempStartTime !== null) {
+            // tempStartTimeが設定されている場合は、仮アノテーションを自動作成
+            const roundedEndTime = Math.round(time * 10) / 10;
+            const roundedStartTime = tempStartTime;
+            
+            // 終了時刻が開始時刻より前の場合は調整
+            const finalEndTime = Math.max(roundedStartTime + 0.1, roundedEndTime);
+            
+            const newSong: SongSection = {
+                id: Date.now(),
+                title: `未設定の楽曲 ${untitledSongCounter}`,
+                artist: "アーティスト未設定",
+                startTime: roundedStartTime,
+                endTime: finalEndTime,
+                color: "bg-gray-400",
+                genre: "",
+                originalLink: ""
+            };
+            
+            // 楽曲を追加
+            addSong(newSong);
+            console.log(`仮アノテーションを作成: ${roundedStartTime}秒〜${finalEndTime}秒 "${newSong.title}"`);
+            
+            // 状態をリセット
+            setTempStartTime(null);
+            setUntitledSongCounter(prev => prev + 1);
         } else {
-            // 編集中の楽曲がない場合は、前の楽曲の終了時刻から0から開始
+            // tempStartTimeが設定されていない場合は、前の楽曲の終了時刻から開始
             const previousSongEndTime = displaySongs.length > 0 
                 ? Math.max(...displaySongs.map(s => s.endTime))
                 : 0;

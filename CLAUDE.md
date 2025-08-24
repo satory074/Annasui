@@ -104,11 +104,17 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 **Edit Mode Features**: Drag-and-drop editing (0.1s precision), undo/redo (50-action history), keyboard shortcuts
 **Unified Timeline**: SongList integrates timeline, tooltips, and editing functionality
 
-**NEW - Keyboard Shortcuts (2025-01-23):**
+**NEW - Keyboard Shortcuts with Visual Feedback (2025-01-23, enhanced 2025-08-24):**
 - **S** key: Set current time as start time for new song
+  - **Real-time Song Bar**: After S key press, displays semi-transparent blue bar that grows from start time to current playback position
+  - **"作成中..." Label**: Shows creation progress with elapsed time (e.g., "作成中... (27.4s)")
 - **E** key: Set current time as end time for editing song
 - **M** key: Add marker at current time (create new song)
-- Active only in edit mode, with visual help displayed in UI
+- Active only in edit mode, with comprehensive visual feedback system:
+  - Key badge highlighting with color-coded pulse animation
+  - Timeline position markers at current time
+  - Real-time status messages indicating active operation
+  - Real-time song bar rendering for S key workflow
 
 **NEW - Continuous Input Mode:**
 - Checkbox option in song edit modal to enable continuous song addition
@@ -230,6 +236,20 @@ const effectiveTimelineDuration = actualPlayerDuration || duration;
 - **Incorrect time alignment**: Ensure songs are sorted by `startTime` before finding adjacent songs in `MedleyPlayer.tsx`
 - **Edge cases failing**: Verify first song only shows "next" alignment, last song only shows "previous" alignment
 
+### Visual Keyboard Shortcut Feedback Issues
+- **Key badges not highlighting**: Ensure `isPressingS/E/M` states are properly updated in keydown/keyup handlers
+- **Timeline indicators not showing**: Check conditional rendering logic and ensure current time is within visible range
+- **Status messages not appearing**: Verify edit mode is active and key press states are correctly set
+- **Visual feedback flickering**: Confirm `e.repeat` check prevents key repeat events from causing state changes
+- **Indicators not positioned correctly**: Verify timeline zoom calculations and visible duration math
+
+### Real-time Song Bar Issues
+- **Bar not appearing after S key**: Verify `tempStartTime` prop is passed from `MedleyPlayer` to `SongList`
+- **Bar not updating**: Check that `tempStartTime !== null && tempStartTime !== undefined` condition is working
+- **Bar positioning incorrect**: Verify timeline zoom calculations and visible duration math for bar positioning
+- **Label not showing elapsed time**: Confirm `Math.round((currentTime - tempStartTime) * 10) / 10` calculation
+- **Bar appearing on wrong tracks**: Check conditional rendering logic in timeline rendering loop
+
 ### Build & Deployment
 - **Build fails**: Ensure `public/favicon.ico` exists
 - **404 on deployed site**: Add video IDs to `generateStaticParams`
@@ -279,7 +299,7 @@ src/
 **Annotation Enhancement:**
 - `src/components/features/medley/ImportSetlistModal.tsx` - Bulk setlist import from text format
 - Enhanced `SongEditModal.tsx` - Continuous input mode, preview playback, enhanced time controls
-- Enhanced `SongList.tsx` - Keyboard shortcuts (S/E/M keys) with visual help display
+- Enhanced `SongList.tsx` - Keyboard shortcuts (S/E/M keys) with comprehensive visual feedback system
 
 
 ### Adding New Platforms
@@ -363,7 +383,25 @@ Fixed critical issue where timeline display and actual player duration were mism
 - Visual styling: `bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-60`
 - Timeline bars beyond duration use red colors: `bg-red-400 dark:bg-red-500 opacity-50`
 
-### Adjacent Song Time Alignment Feature (2025-08-23)
+### Visual Keyboard Shortcut Feedback (2025-08-24)
+Implemented comprehensive visual feedback system for keyboard shortcuts in edit mode:
+
+**Multi-Layer Visual Feedback:**
+- **Badge Highlighting**: S/E/M key badges in UI turn blue/green/purple with pulse animation
+- **Timeline Indicators**: Colored markers appear at current time position (S=blue, E=green, M=purple)
+- **Status Messages**: Real-time text feedback ("開始時刻設定中...", "終了時刻設定中...", "マーカー追加中...")
+
+**Implementation Details:**
+- Key press state management with `isPressingS`, `isPressingE`, `isPressingM` boolean states
+- Prevents key repeat flicker with `e.repeat` check
+- Uses `keydown`/`keyup` event handlers for precise state tracking
+- Conditional styling with Tailwind classes and `animate-pulse` for smooth animations
+
+**Production Verification:**
+- Feature tested and confirmed working in production environment
+- All three visual feedback layers function correctly
+
+### Adjacent Song Time Alignment Feature (2025-01-23)
 Major UX improvement for seamless medley annotation workflow:
 
 **Implementation Details:**
@@ -381,6 +419,42 @@ Major UX improvement for seamless medley annotation workflow:
 **Production Verification:**
 - Feature tested and confirmed working in production environment (https://illustrious-figolla-20f57e.netlify.app)
 - Critical verification required due to iframe-based Niconico player communication differences between local/production
+
+### Real-time Song Bar Feature (2025-08-24)
+Major UX enhancement for visual feedback during song annotation creation:
+
+**Implementation Details:**
+- **MedleyPlayer.tsx Enhancement**: Added `tempStartTime` prop passing to `SongList` component
+- **SongList.tsx Enhancement**: Added real-time bar rendering with semi-transparent blue styling
+- **Visual Components**: Semi-transparent blue bar (`bg-blue-400/50`) with border and creation label
+- **Dynamic Updates**: Bar width grows from start time to current playback position in real-time
+
+**User Experience Benefits:**
+- **Visual Feedback**: Users can see the song range being created as they play the video
+- **Range Confirmation**: Real-time visualization prevents range setting errors  
+- **Professional Interface**: Polished visual feedback matches modern annotation tools
+- **Elapsed Time Display**: Shows exact duration of the song being created (e.g., "作成中... (27.4s)")
+
+**Technical Implementation:**
+```typescript
+// Props flow: MedleyPlayer -> SongList
+tempStartTime={tempStartTime}
+
+// Conditional rendering in timeline
+{tempStartTime !== null && tempStartTime !== undefined && (
+  <div className="absolute z-15 h-full bg-blue-400/50 border-2 border-blue-400 rounded-sm">
+    <div className="text-xs font-semibold">
+      作成中... ({Math.round((currentTime - tempStartTime) * 10) / 10}s)
+    </div>
+  </div>
+)}
+```
+
+**Production Verification:**
+- Feature tested and confirmed working in production environment (https://illustrious-figolla-20f57e.netlify.app)
+- Real-time bar updates correctly as video plays
+- Visual styling renders properly across different zoom levels
+- Performance impact minimal with smooth animation
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.

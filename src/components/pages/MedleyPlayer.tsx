@@ -613,6 +613,7 @@ export default function MedleyPlayer({
                         onQuickSetStartTime={handleQuickSetStartTime}
                         onQuickSetEndTime={handleQuickSetEndTime}
                         onQuickAddMarker={handleQuickAddMarker}
+                        tempStartTime={tempStartTime}
                         // プレイヤーコントロール用の props
                         isPlaying={isPlaying}
                         onPlay={play}

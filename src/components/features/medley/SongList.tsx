@@ -20,6 +20,7 @@ interface SongListProps {
   onQuickSetStartTime?: (time: number) => void;
   onQuickSetEndTime?: (time: number) => void;
   onQuickAddMarker?: (time: number) => void;
+  tempStartTime?: number | null;
   // プレイヤーコントロール用の props
   isPlaying?: boolean;
   onPlay?: () => void;
@@ -62,6 +63,7 @@ export default function SongList({
   onQuickSetStartTime,
   onQuickSetEndTime,
   onQuickAddMarker,
+  tempStartTime,
   isPlaying = false,
   onPlay,
   onTogglePlayPause,
@@ -89,6 +91,11 @@ export default function SongList({
   const [dragMode, setDragMode] = useState<'move' | 'resize-start' | 'resize-end' | null>(null);
   const [dragStart, setDragStart] = useState<{ x: number; originalStartTime: number; originalEndTime: number }>({ x: 0, originalStartTime: 0, originalEndTime: 0 });
   const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
+  
+  // キー押下状態の管理
+  const [isPressingS, setIsPressingS] = useState<boolean>(false);
+  const [isPressingE, setIsPressingE] = useState<boolean>(false);
+  const [isPressingM, setIsPressingM] = useState<boolean>(false);
 
   // タイムラインズーム機能の状態管理
   const [timelineZoom, setTimelineZoom] = useState<number>(1.0); // ズーム倍率 (0.5-5.0)
@@ -313,6 +320,27 @@ export default function SongList({
   const handleKeyDown = (e: KeyboardEvent) => {
     if (!isEditMode) return;
 
+    // キー押下状態を更新（リピートを避けるため e.repeat をチェック）
+    if (!e.repeat) {
+      switch (e.key.toLowerCase()) {
+        case 's':
+          if (!e.ctrlKey && !e.metaKey) {
+            setIsPressingS(true);
+          }
+          break;
+        case 'e':
+          if (!e.ctrlKey && !e.metaKey) {
+            setIsPressingE(true);
+          }
+          break;
+        case 'm':
+          if (!e.ctrlKey && !e.metaKey) {
+            setIsPressingM(true);
+          }
+          break;
+      }
+    }
+
     // ホットキー機能（S/E/M）- selectedSongがなくても動作
     switch (e.key.toLowerCase()) {
       case 's':
@@ -406,6 +434,29 @@ export default function SongList({
     setSelectedSong(updatedSong);
   };
 
+  // キー離すイベント処理
+  const handleKeyUp = (e: KeyboardEvent) => {
+    if (!isEditMode) return;
+
+    switch (e.key.toLowerCase()) {
+      case 's':
+        if (!e.ctrlKey && !e.metaKey) {
+          setIsPressingS(false);
+        }
+        break;
+      case 'e':
+        if (!e.ctrlKey && !e.metaKey) {
+          setIsPressingE(false);
+        }
+        break;
+      case 'm':
+        if (!e.ctrlKey && !e.metaKey) {
+          setIsPressingM(false);
+        }
+        break;
+    }
+  };
+
   // ドラッグイベントの登録/削除
   useEffect(() => {
     if (draggingSong && dragMode) {
@@ -424,8 +475,10 @@ export default function SongList({
   useEffect(() => {
     if (isEditMode) {
       document.addEventListener('keydown', handleKeyDown);
+      document.addEventListener('keyup', handleKeyUp);
       return () => {
         document.removeEventListener('keydown', handleKeyDown);
+        document.removeEventListener('keyup', handleKeyUp);
       };
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -493,6 +546,17 @@ export default function SongList({
                 )}
                 {isEditMode && selectedSong && (
                   <span className="ml-2 text-xs text-green-600 dark:text-green-400">「{selectedSong.title}」選択中</span>
+                )}
+                {isEditMode && (isPressingS || isPressingE || isPressingM) && (
+                  <span className={`ml-2 text-xs font-medium animate-pulse ${
+                    isPressingS ? 'text-blue-600 dark:text-blue-400' :
+                    isPressingE ? 'text-green-600 dark:text-green-400' :
+                    'text-purple-600 dark:text-purple-400'
+                  }`}>
+                    {isPressingS ? '開始時刻設定中...' :
+                     isPressingE ? '終了時刻設定中...' :
+                     'マーカー追加中...'}
+                  </span>
                 )}
                 {currentSongs.length > 1 && (
                   <span className="ml-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded">
@@ -597,9 +661,9 @@ export default function SongList({
                     </span>
                   )}
                   <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                    キーボード: <kbd className="px-1 bg-gray-200 dark:bg-gray-600 rounded">S</kbd>開始時刻 
-                    <kbd className="px-1 bg-gray-200 dark:bg-gray-600 rounded">E</kbd>終了時刻 
-                    <kbd className="px-1 bg-gray-200 dark:bg-gray-600 rounded">M</kbd>マーカー追加
+                    キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-blue-500 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
+                    <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-green-500 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
+                    <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-purple-500 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
                   </div>
                 </>
               )}
@@ -846,6 +910,49 @@ export default function SongList({
                         display: currentTime >= visibleStartTime && currentTime <= visibleEndTime ? 'block' : 'none'
                       }}
                     />
+
+                    {/* キー押下時のインジケーター */}
+                    {(isPressingS || isPressingE || isPressingM) && (
+                      <div
+                        className="absolute z-20 flex flex-col items-center"
+                        style={{
+                          left: `${((currentTime - visibleStartTime) / visibleDuration) * 100}%`,
+                          transform: 'translateX(-50%)',
+                          display: currentTime >= visibleStartTime && currentTime <= visibleEndTime ? 'block' : 'none'
+                        }}
+                      >
+                        <div className={`w-1 h-full ${
+                          isPressingS ? 'bg-blue-500' : 
+                          isPressingE ? 'bg-green-500' : 
+                          'bg-purple-500'
+                        } animate-pulse`} />
+                        <div className={`text-xs font-bold px-1 py-0.5 rounded text-white shadow-lg -mt-1 ${
+                          isPressingS ? 'bg-blue-500' : 
+                          isPressingE ? 'bg-green-500' : 
+                          'bg-purple-500'
+                        }`}>
+                          {isPressingS ? 'S' : isPressingE ? 'E' : 'M'}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* リアルタイム楽曲バー（tempStartTime設定時） */}
+                    {tempStartTime !== null && tempStartTime !== undefined && (
+                      <div
+                        className="absolute z-15 h-full bg-blue-400/50 border-2 border-blue-400 rounded-sm"
+                        style={{
+                          left: `${Math.max(0, ((tempStartTime - visibleStartTime) / visibleDuration) * 100)}%`,
+                          width: `${Math.max(0, Math.min(100, ((currentTime - tempStartTime) / visibleDuration) * 100))}%`,
+                          display: tempStartTime <= visibleEndTime && currentTime >= visibleStartTime ? 'block' : 'none'
+                        }}
+                      >
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-xs font-semibold text-blue-800 dark:text-blue-200 bg-white/80 dark:bg-slate-800/80 px-1 rounded shadow-sm">
+                            作成中... ({Math.round((currentTime - tempStartTime) * 10) / 10}s)
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );

@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Common Development Commands
 
+**Prerequisites**: Node.js 18.0.0 or higher, npm or yarn
+
 - `npm run dev` - Start development server on http://localhost:3000
 - `npm run build` - Build the production application
 - `npm run lint` - Run ESLint code quality checks
@@ -315,8 +317,8 @@ Complete removal of timeline zoom functionality for simplified user interface:
 - Better performance with reduced complexity
 - Focus on core annotation features
 
-### Always-Visible Edit Buttons & Clickable Song Info (2025-08-25)
-Major UX improvements for song editing accessibility:
+### UI Improvements (2025-08-25)
+Recent UI/UX improvements for better user experience:
 
 **Always-Visible Edit Buttons:**
 - Edit buttons now appear on all songs in both view and edit modes
@@ -332,6 +334,12 @@ Major UX improvements for song editing accessibility:
 - **User Guidance**: Added hint text "💡 楽曲情報をクリックして楽曲を変更できます"
 - **Benefits**: Allows song correction/replacement during editing workflow
 
+**Creator Name and Video Link Improvements:**
+- Removed unnecessary "制作: " prefix from creator names (now displays creator name directly)
+- Removed standalone "元動画" button and made medley title clickable to open original video
+- **Title Link**: When `originalVideoUrl` exists, medley title becomes clickable link with hover effects
+- **Styling**: Blue hover color and underline for better visual feedback
+
 **Implementation Details:**
 ```typescript
 // Always-visible edit buttons in SongList.tsx
@@ -340,20 +348,29 @@ className={`${isEditMode
   : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
 }`}
 
-// Clickable song info in SongEditModal.tsx
-<div 
-  onClick={onSelectSong}
-  className={`${onSelectSong ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-  title={onSelectSong ? "クリックして楽曲を変更" : undefined}
->
-  <SongInfoDisplay song={formData} variant="card" showTimeCodes={false} />
-</div>
+// Clickable medley title
+originalVideoUrl ? (
+  <a
+    href={originalVideoUrl}
+    target="_blank"
+    rel="noopener noreferrer"
+    className="text-lg font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition-colors"
+    title="元動画を見る"
+  >
+    {medleyTitle}
+  </a>
+) : (
+  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+    {medleyTitle}
+  </h2>
+)
 ```
 
 **Production Verification:**
-- Both features tested and confirmed working in production environment
+- All features tested and confirmed working in production environment
 - Edit buttons respond correctly in both view and edit modes
-- Song selection from edit modal successfully updates song metadata
+- Medley title links work properly and open in new tabs
+- Creator names display without unnecessary prefix
 
 ### Annotation Enhancement Features (2025-01-23)
 Major update implementing comprehensive workflow improvements for medley annotation:

@@ -462,16 +462,28 @@ export default function SongList({
           {(medleyTitle || medleyCreator) && (
             <div className="mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
               {medleyTitle && (
-                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-                  {medleyTitle}
-                </h2>
+                originalVideoUrl ? (
+                  <a
+                    href={originalVideoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-lg font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition-colors"
+                    title="元動画を見る"
+                  >
+                    {medleyTitle}
+                  </a>
+                ) : (
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                    {medleyTitle}
+                  </h2>
+                )
               )}
               {medleyCreator && (
                 <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
-                  制作: {medleyCreator}
+                  {medleyCreator}
                 </p>
               )}
             </div>
@@ -538,20 +550,6 @@ export default function SongList({
                 >
                   共有
                 </button>
-                {originalVideoUrl && (
-                  <a
-                    href={originalVideoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 transition-colors flex items-center gap-1"
-                    title="元動画を見る"
-                  >
-                    元動画
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v7a2 2 0 002 2h4m-6-9v2m0 4h.01m4.09-.5L10 14l4-4.5" />
-                    </svg>
-                  </a>
-                )}
               </div>
             )}
           </div>

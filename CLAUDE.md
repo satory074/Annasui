@@ -507,6 +507,44 @@ tempStartTime={tempStartTime}
 - Visual styling renders properly at all timeline sizes
 - Performance impact minimal with smooth animation
 
+### Song Title Display Simplification (2025-08-24)
+Cleaned up song title display in timeline bars for better readability:
+
+**Background Removal:**
+- Removed unnecessary semi-transparent background layer (`bg-white/90 dark:bg-slate-900/50`) from song titles
+- Simplified from 2-layer display (blue bar + white background + text) to single-layer (blue bar + text)
+
+**Color Optimization:**
+- Changed song title text from white (`text-white`) to dark gray (`text-gray-800 dark:text-gray-200`)
+- Improved readability both inside and outside the blue timeline bars
+- Better contrast for accessibility while maintaining visual hierarchy
+
+**Technical Changes:**
+```typescript
+// Before: Complex 2-layer structure
+<div className="text-white">
+  <div className="bg-white/90 dark:bg-slate-900/50 rounded px-1 shadow-sm">
+    {song.title}
+  </div>
+</div>
+
+// After: Simple single-layer structure  
+<div className="text-gray-800 dark:text-gray-200">
+  {song.title}
+</div>
+```
+
+**Benefits:**
+- Cleaner visual design without unnecessary layering
+- Consistent text readability in all contexts
+- Reduced complexity and better maintainability
+- Eliminated text duplication issues
+
+**Production Verification:**
+- Tested and confirmed working in production environment
+- Song titles are clearly visible both within and outside timeline bars
+- Dark mode compatibility maintained
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.

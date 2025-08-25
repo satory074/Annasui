@@ -8,6 +8,12 @@ export interface SongDatabaseEntry {
   title: string;
   artist: string;
   originalLink?: string;
+  links?: {
+    niconico?: string;
+    youtube?: string;
+    spotify?: string;
+    appleMusic?: string;
+  };
   genre?: string;
   usageCount: number; // この楽曲が使用されている回数
   medleys: Array<{ // 使用されているメドレー情報
@@ -51,9 +57,12 @@ export function buildSongDatabase(): SongDatabaseEntry[] {
           platform: medley.platform || 'niconico'
         });
         
-        // より詳細な情報があれば更新（originalLinkやgenreなど）
+        // より詳細な情報があれば更新（originalLink、links、genreなど）
         if (song.originalLink && !existingEntry.originalLink) {
           existingEntry.originalLink = song.originalLink;
+        }
+        if (song.links && !existingEntry.links) {
+          existingEntry.links = song.links;
         }
         if (song.genre && !existingEntry.genre) {
           existingEntry.genre = song.genre;
@@ -65,6 +74,7 @@ export function buildSongDatabase(): SongDatabaseEntry[] {
           title: song.title,
           artist: song.artist,
           originalLink: song.originalLink,
+          links: song.links,
           genre: song.genre,
           usageCount: 1,
           medleys: [{
@@ -112,7 +122,8 @@ export function createSongFromDatabase(
     endTime,
     color: "bg-blue-500", // 統一カラー
     genre: dbEntry.genre || "",
-    originalLink: dbEntry.originalLink || ""
+    originalLink: dbEntry.originalLink || "",
+    links: dbEntry.links
   };
 }
 

@@ -934,6 +934,33 @@ useEffect(() => {
 - ✅ Thumbnail changes correctly when hovering different songs
 - ✅ Performance remains optimal with proper state management
 
+### Song Search Modal Design Unification (2025-08-25)
+Enhanced SongSearchModal to match SongEditModal design with thumbnail support and platform integration:
+
+**Key Improvements:**
+- **Unified Design**: Uses SongInfoDisplay component for consistent card-style display matching SongEditModal
+- **Thumbnail Integration**: Each search result now displays platform-appropriate thumbnails via SongThumbnail component
+- **Platform Links**: Added "配信" (Distribution) section showing available platforms (🎬📺🎵🍎) with clickable links
+- **Data Enhancement**: Extended SongDatabaseEntry type with `links` field for multi-platform URL support
+- **Simplified Interface**: Removed "使用回数" (usage count) and "使用メドレー" (used in medleys) information for cleaner presentation
+
+**Technical Implementation:**
+- **songDatabase.ts**: Extended `SongDatabaseEntry` with `links` field and updated database building logic
+- **SongSearchModal.tsx**: Complete redesign using BaseModal and SongInfoDisplay components
+- **Coffee & Cream Colors**: Updated button styling to use caramel-600 and olive-600 colors
+
+**User Experience Benefits:**
+- **Visual Consistency**: Search modal now matches edit modal appearance for cohesive workflow
+- **Platform Choice**: Users can see and access songs on their preferred streaming platforms
+- **Improved Recognition**: Thumbnails help users quickly identify correct songs from search results
+- **Streamlined Selection**: Cleaner interface focuses on essential song information
+
+**Production Verification:**
+- ✅ Song search results display thumbnails correctly across all platforms
+- ✅ Platform links work properly and open in new tabs
+- ✅ Card-style layout consistent with edit modal design
+- ✅ Coffee & Cream color scheme applied throughout modal
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.

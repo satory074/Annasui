@@ -205,6 +205,41 @@ const effectiveTimelineDuration = actualPlayerDuration || duration;
 - iframe cross-origin restrictions require postMessage-only communication
 - Player events may have delays - use defensive timeout handling
 
+#### Critical React Patterns
+**Component Key Strategy**: Always use unique keys for dynamic components that depend on external data:
+```typescript
+// Correct: Unique key ensures component re-creation
+<SongThumbnail key={`${song.title}-${song.originalLink}`} />
+
+// Wrong: Missing key causes React to reuse component instance
+<SongThumbnail />
+```
+
+**State Reset Pattern**: Reset component state when props change to prevent stale data:
+```typescript
+useEffect(() => {
+  // Clear previous state first
+  setData(null);
+  loadNewData();
+}, [dependencies]);
+```
+
+**PostMessage Communication**: Handle async iframe communication with defensive programming:
+```typescript
+// Always include timeout and error handling
+const sendCommand = (command) => {
+  setCommandInProgress(true);
+  iframe.postMessage(command);
+  
+  setTimeout(() => {
+    if (commandInProgress) {
+      setCommandInProgress(false);
+      console.warn('Command timeout');
+    }
+  }, 5000);
+};
+```
+
 ## Common Issues and Solutions
 
 ### Player Integration
@@ -264,6 +299,13 @@ const effectiveTimelineDuration = actualPlayerDuration || duration;
 - **Multiple links not displaying**: Check `PlatformLinks` component integration in `SongInfoDisplay`
 - **Thumbnail priority not working**: Ensure `getBestThumbnailFromLinks` function correctly prioritizes sources
 - **URL parsing errors**: Verify regex patterns in `extractVideoId` for all supported platforms
+
+### Tooltip System Issues
+- **Thumbnails stuck on first song**: Add unique `key` props to `SongThumbnail` components and reset state in `useEffect`
+- **Tooltips not closing properly**: Check document click handlers and `data-tooltip` attributes
+- **Platform links closing tooltips**: Verify click target detection in `handleDocumentClick` function
+- **Tooltip positioning problems**: Check `BaseTooltip` edge detection and viewport boundaries
+- **State synchronization issues**: Ensure tooltip visibility state matches hover state across components
 
 ### Build & Deployment
 - **Build fails**: Ensure `public/favicon.ico` exists
@@ -843,6 +885,54 @@ if (tooltipElement || platformLink) {
 - ✅ Tooltips remain visible after clicking platform links in normal mode
 - ✅ Edit mode functionality unaffected by changes
 - ✅ Other click-to-close behavior works as expected
+
+### Tooltip Thumbnail Caching Fix (2025-08-25)
+Critical fix for tooltip thumbnails getting stuck on first-hovered song:
+
+**Problem Solved:**
+- Tooltip thumbnails showed the same image regardless of which song was hovered
+- First hovered song's thumbnail would persist for all subsequent hovers
+- Issue caused by React component reuse without proper key differentiation
+
+**Root Cause:**
+- `SongThumbnail` components in tooltips lacked unique `key` properties
+- React's virtual DOM diffing treated all thumbnails as same component instance
+- `useEffect` dependencies weren't triggering re-renders on song changes
+
+**Solution Implemented:**
+1. **Unique Keys**: Added `key` prop to `SongThumbnail` using song-specific data
+2. **State Reset**: Enhanced `useEffect` to reset thumbnail state on song changes
+3. **Dependency Optimization**: Added `title` to dependency array for reliable change detection
+
+**Files Modified:**
+- **SongInfoDisplay.tsx (line 132)**: Added unique key using `${song.title}-${song.originalLink || JSON.stringify(song.links)}`
+- **SongThumbnail.tsx (lines 33-54)**: Enhanced useEffect with state reset and improved dependencies
+
+**Technical Implementation:**
+```typescript
+// Unique key for React component differentiation
+<SongThumbnail
+  key={`${song.title}-${song.originalLink || JSON.stringify(song.links)}`}
+  // ... other props
+/>
+
+// Enhanced useEffect with state reset
+useEffect(() => {
+  const loadThumbnail = async () => {
+    // Clear previous state first
+    setThumbnailUrl(null);
+    setPrimaryLink(null);
+    
+    // Load new thumbnail...
+  };
+  loadThumbnail();
+}, [links, originalLink, title]); // Added title dependency
+```
+
+**Production Verification:**
+- ✅ Tooltips show correct thumbnails for each song
+- ✅ Thumbnail changes correctly when hovering different songs
+- ✅ Performance remains optimal with proper state management
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.

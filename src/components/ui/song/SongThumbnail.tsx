@@ -30,6 +30,10 @@ export default function SongThumbnail({
 
   useEffect(() => {
     const loadThumbnail = async () => {
+      // 楽曲が変更された際にサムネイルをリセット
+      setThumbnailUrl(null);
+      setPrimaryLink(null);
+
       if (links) {
         // 新しいlinksフィールドを使用
         const thumbnail = await getBestThumbnailFromLinks(links, originalLink);
@@ -47,7 +51,7 @@ export default function SongThumbnail({
     };
 
     loadThumbnail();
-  }, [links, originalLink]);
+  }, [links, originalLink, title]);
 
   if (!thumbnailUrl || !primaryLink) return null;
 

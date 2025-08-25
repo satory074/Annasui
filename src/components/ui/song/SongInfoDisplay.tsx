@@ -129,6 +129,7 @@ export default function SongInfoDisplay({
         <div className="flex flex-col items-center gap-3">
           {showThumbnail && (
             <SongThumbnail
+              key={`${song.title}-${song.originalLink || JSON.stringify(song.links)}`}
               originalLink={song.originalLink}
               title={song.title}
               size="md"

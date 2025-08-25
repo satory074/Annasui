@@ -618,6 +618,58 @@ const sizeClasses = {
 - 楽曲クリック時にモーダルが表示されないことを確認
 - ツールチップ機能とシーク機能は正常動作
 
+### Coffee & Cream Color Scheme Implementation (2025-08-25)
+Major UI color scheme overhaul from blue-based colors to warm brown Coffee & Cream palette:
+
+**Color Palette Details:**
+- **Primary**: `#6f4e37` (Coffee Brown) - main brand color
+- **Secondary**: `#d7ccc8` (Cafe Latte) - secondary elements
+- **Accent**: `#af6f3c` (Caramel) - interactive elements, buttons, highlights
+- **Background**: Light: `#f7f3f0` (Off-white), Dark: `#1c1410` (Dark chocolate)
+- **Surface**: Light: `#efebe9` (Light beige), Dark: `#3e2723` (Medium brown)
+
+**Implementation Details:**
+```css
+/* CSS Variables in globals.css */
+:root {
+  --primary: #6f4e37;
+  --primary-hover: #5d4e37;
+  --accent: #af6f3c;
+  --accent-hover: #9a5f33;
+  --accent-light: #f0e6dc;
+}
+
+/* Tailwind Custom Colors */
+--color-caramel-600: var(--accent);
+--color-caramel-700: var(--accent-hover);
+--color-caramel-50: var(--accent-light);
+```
+
+**Component Updates:**
+- **SongList.tsx**: Timeline bars, edit buttons, keyboard shortcut indicators
+- **SongEditModal.tsx**: Save buttons, focus rings, form elements
+- **ShareButtons.tsx**: Share button styling
+- **SongTimeControls.tsx**: Time input controls and adjustment buttons
+- **ManualSongAddModal.tsx**: Form buttons and information boxes
+
+**Color Class Migration:**
+- `bg-blue-500` → `bg-caramel-600` (buttons, highlights)
+- `text-blue-600` → `text-caramel-600` (links, accent text)
+- `hover:bg-blue-600` → `hover:bg-caramel-700` (hover states)
+- `ring-blue-500` → `ring-caramel-600` (focus rings)
+
+**Benefits:**
+- **Cohesive Branding**: Creates coffee shop atmosphere matching the "Coffee & Cream" theme
+- **Improved Accessibility**: Maintains WCAG contrast ratios while providing warmer feel
+- **Visual Harmony**: Brown tones complement the medley annotation workflow better than cold blues
+- **Distinctive Identity**: Differentiates from typical blue-based music platforms
+
+**Production Verification:**
+- All color changes tested and deployed to production environment
+- Both light and dark modes fully functional with new color scheme
+- TypeScript compilation and ESLint checks pass without errors
+- Visual consistency maintained across all UI components
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.

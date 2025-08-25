@@ -462,7 +462,7 @@ export default function SongList({
                     href={originalVideoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-lg font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 hover:underline cursor-pointer transition-colors"
+                    className="text-lg font-bold text-gray-900 dark:text-white hover:text-caramel-600 dark:hover:text-caramel-600 hover:underline cursor-pointer transition-colors"
                     title="元動画を見る"
                   >
                     {medleyTitle}
@@ -507,7 +507,7 @@ export default function SongList({
                 )}
                 {isEditMode && (isPressingS || isPressingE || isPressingM) && (
                   <span className={`ml-2 text-xs font-medium animate-pulse ${
-                    isPressingS ? 'text-blue-600 dark:text-blue-400' :
+                    isPressingS ? 'text-caramel-600 dark:text-caramel-600' :
                     isPressingE ? 'text-green-600 dark:text-green-400' :
                     'text-purple-600 dark:text-purple-400'
                   }`}>
@@ -535,7 +535,7 @@ export default function SongList({
                       alert('URLをクリップボードにコピーしました');
                     }
                   }}
-                  className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                  className="px-2 py-1 text-xs bg-caramel-600 text-white rounded hover:bg-caramel-700 transition-colors"
                   title="この動画を共有"
                 >
                   共有
@@ -554,7 +554,7 @@ export default function SongList({
                 className={`px-3 py-1 text-xs rounded font-medium transition-colors ${
                   isEditMode
                     ? 'bg-orange-500 text-white hover:bg-orange-600'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                    : 'bg-caramel-600 text-white hover:bg-caramel-700'
                 }`}
               >
                 {isEditMode ? '編集終了' : '編集モード'}
@@ -600,7 +600,7 @@ export default function SongList({
                     </span>
                   )}
                   <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                    キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-blue-500 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
+                    キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-caramel-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
                     <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-green-500 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
                     <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-purple-500 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
                   </div>
@@ -619,7 +619,7 @@ export default function SongList({
                 <button
                   onClick={onSaveChanges}
                   disabled={!hasChanges || isSaving}
-                  className="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+                  className="px-3 py-1 text-xs bg-caramel-600 text-white rounded hover:bg-caramel-700 disabled:opacity-50"
                 >
                   {isSaving ? '保存中...' : '変更を保存'}
                 </button>
@@ -677,7 +677,7 @@ export default function SongList({
                       className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 ${
                         isBeyondActualDuration 
                           ? 'bg-red-400 dark:bg-red-500 opacity-50' 
-                          : 'bg-blue-500 dark:bg-blue-600'
+                          : 'bg-caramel-600 dark:bg-caramel-600'
                       } ${
                         hasOverlap ? 'opacity-80' : ''
                       } ${
@@ -731,7 +731,7 @@ export default function SongList({
                         onClick={() => onEditSong?.(song)}
                         className={`p-0.5 rounded transition-colors bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 ${
                           isEditMode 
-                            ? 'text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30' 
+                            ? 'text-caramel-600 hover:bg-caramel-50 dark:hover:bg-amber-900/30' 
                             : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
                         }`}
                         title="楽曲を編集"
@@ -777,12 +777,12 @@ export default function SongList({
                         }}
                       >
                         <div className={`w-1 h-full ${
-                          isPressingS ? 'bg-blue-500' : 
+                          isPressingS ? 'bg-caramel-600' : 
                           isPressingE ? 'bg-green-500' : 
                           'bg-purple-500'
                         } animate-pulse`} />
                         <div className={`text-xs font-bold px-1 py-0.5 rounded text-white shadow-lg -mt-1 ${
-                          isPressingS ? 'bg-blue-500' : 
+                          isPressingS ? 'bg-caramel-600' : 
                           isPressingE ? 'bg-green-500' : 
                           'bg-purple-500'
                         }`}>

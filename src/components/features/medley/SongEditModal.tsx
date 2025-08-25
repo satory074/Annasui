@@ -242,7 +242,7 @@ export default function SongEditModal({
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white ${
                     errors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   placeholder="楽曲名を入力"
@@ -261,7 +261,7 @@ export default function SongEditModal({
                   type="text"
                   value={formData.artist}
                   onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
                   placeholder="アーティスト名を入力"
                 />
               </div>
@@ -311,14 +311,14 @@ export default function SongEditModal({
                   className={`px-4 py-2 text-sm rounded-md font-medium transition-colors ${
                     isPreviewMode
                       ? 'bg-red-500 text-white hover:bg-red-600'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                      : 'bg-caramel-600 text-white hover:bg-caramel-700'
                   } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   {isPreviewMode ? 'プレビュー停止' : 'プレビュー開始'}
                 </button>
               </div>
               {isPreviewMode && (
-                <div className="mt-2 text-xs text-blue-600 dark:text-blue-400">
+                <div className="mt-2 text-xs text-caramel-600 dark:text-caramel-600">
                   🔄 {formData.startTime.toFixed(1)}s ~ {formData.endTime.toFixed(1)}s をループ再生中...
                 </div>
               )}
@@ -337,7 +337,7 @@ export default function SongEditModal({
                 type="url"
                 value={formData.originalLink || ""}
                 onChange={(e) => setFormData({ ...formData, originalLink: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
                 placeholder="https://..."
               />
             </div>
@@ -352,7 +352,7 @@ export default function SongEditModal({
                 type="checkbox"
                 checked={continuousMode}
                 onChange={onToggleContinuousMode}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                className="rounded border-gray-300 text-caramel-600 focus:ring-caramel-600"
               />
               連続入力モード（保存後に次の楽曲を追加）
             </label>
@@ -388,7 +388,7 @@ export default function SongEditModal({
             )}
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="px-4 py-2 bg-caramel-600 text-white rounded-md hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600"
             >
               {isNew ? (continuousMode ? "保存して終了" : "追加") : "保存"}
             </button>

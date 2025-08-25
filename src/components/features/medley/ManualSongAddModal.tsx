@@ -83,7 +83,7 @@ export default function ManualSongAddModal({
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white ${
                 errors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
               }`}
               placeholder="楽曲名を入力"
@@ -103,7 +103,7 @@ export default function ManualSongAddModal({
               type="text"
               value={formData.artist}
               onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
               placeholder="アーティスト名を入力（省略可）"
             />
           </div>
@@ -117,15 +117,15 @@ export default function ManualSongAddModal({
               type="url"
               value={formData.originalLink}
               onChange={(e) => setFormData({ ...formData, originalLink: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
               placeholder="https://... (省略可)"
             />
           </div>
         </div>
 
         {/* ヘルプテキスト */}
-        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-md">
-          <p className="text-sm text-blue-800 dark:text-blue-200">
+        <div className="mt-4 p-3 bg-caramel-50 dark:bg-caramel-900/20 rounded-md">
+          <p className="text-sm text-caramel-800 dark:text-caramel-200">
             💡 楽曲を追加後は、楽曲検索から選択してタイムラインに配置できます
           </p>
         </div>
@@ -140,7 +140,7 @@ export default function ManualSongAddModal({
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="px-4 py-2 bg-caramel-600 text-white rounded-md hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600"
           >
             楽曲を追加
           </button>

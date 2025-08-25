@@ -66,7 +66,7 @@ export default function SongTimeControls({
           type="text"
           value={formatTimeSimple(value)}
           onChange={handleInputChange}
-          className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white ${
+          className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white ${
             error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
           }`}
           placeholder={placeholder}
@@ -83,7 +83,7 @@ export default function SongTimeControls({
           <button
             type="button"
             onClick={handleCurrentTimeClick}
-            className="px-3 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm whitespace-nowrap"
+            className="px-3 py-2 bg-caramel-600 text-white rounded-md hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600 text-sm whitespace-nowrap"
             title="現在の再生位置を設定"
           >
             現在時刻

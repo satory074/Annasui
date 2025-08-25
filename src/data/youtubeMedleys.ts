@@ -18,7 +18,6 @@ export const youtubeSampleMedley1: MedleyData = {
       startTime: 0,
       endTime: 212,
       color: "bg-red-500",
-      genre: "Pop",
     }
   ]
 };

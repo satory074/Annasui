@@ -14,7 +14,6 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
     startTime: song.start_time,
     endTime: song.end_time,
     color: song.color,
-    genre: song.genre || '',
     originalLink: song.original_link || undefined
   }
 }
@@ -149,7 +148,6 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
       start_time: song.startTime,
       end_time: song.endTime,
       color: song.color,
-      genre: song.genre || null,
       original_link: song.originalLink || null,
       order_index: index + 1
     }))

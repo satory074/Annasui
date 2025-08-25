@@ -18,7 +18,6 @@ export const sampleMedley1: MedleyData = {
       startTime: 0,
       endTime: 90,
       color: "bg-red-400",
-      genre: "ボカロ",
       originalLink: "https://www.nicovideo.jp/watch/sm15630734", // 後方互換性のため維持
       links: {
         niconico: "https://www.nicovideo.jp/watch/sm15630734",
@@ -33,7 +32,6 @@ export const sampleMedley1: MedleyData = {
       startTime: 90,
       endTime: 175,
       color: "bg-blue-400",
-      genre: "ボカロ",
       originalLink: "https://www.nicovideo.jp/watch/sm11809611", // 後方互換性のため維持
       links: {
         niconico: "https://www.nicovideo.jp/watch/sm11809611",
@@ -48,7 +46,6 @@ export const sampleMedley1: MedleyData = {
       startTime: 175,
       endTime: 265,
       color: "bg-yellow-400",
-      genre: "ボカロ",
       originalLink: "https://www.nicovideo.jp/watch/sm1715919", // 後方互換性のため維持
       links: {
         niconico: "https://www.nicovideo.jp/watch/sm1715919",
@@ -62,7 +59,6 @@ export const sampleMedley1: MedleyData = {
       startTime: 265,
       endTime: 350,
       color: "bg-green-400",
-      genre: "ボカロ",
       originalLink: "https://www.nicovideo.jp/watch/sm3504435", // 後方互換性のため維持
       links: {
         niconico: "https://www.nicovideo.jp/watch/sm3504435",
@@ -77,7 +73,6 @@ export const sampleMedley1: MedleyData = {
       startTime: 350,
       endTime: 440,
       color: "bg-orange-400",
-      genre: "ボカロ",
       originalLink: "https://www.nicovideo.jp/watch/sm31606995", // 後方互換性のため維持
       links: {
         niconico: "https://www.nicovideo.jp/watch/sm31606995",
@@ -92,7 +87,6 @@ export const sampleMedley1: MedleyData = {
       startTime: 440,
       endTime: 530,
       color: "bg-purple-400",
-      genre: "ボカロ",
       originalLink: "https://www.nicovideo.jp/watch/sm9714351"
     },
     {
@@ -102,7 +96,6 @@ export const sampleMedley1: MedleyData = {
       startTime: 530,
       endTime: 600,
       color: "bg-pink-400",
-      genre: "ボカロ",
       originalLink: "https://www.nicovideo.jp/watch/sm20503793"
     }
   ]
@@ -126,7 +119,6 @@ export const sampleMedley2: MedleyData = {
       startTime: 0,
       endTime: 75,
       color: "bg-yellow-400",
-      genre: "J-POP",
       originalLink: "https://www.youtube.com/watch?v=SX_ViT4Ra7k"
     },
     {
@@ -136,7 +128,6 @@ export const sampleMedley2: MedleyData = {
       startTime: 75,
       endTime: 150,
       color: "bg-red-400",
-      genre: "J-POP",
       originalLink: "https://www.youtube.com/watch?v=CwkzK-F0Y00"
     },
     {
@@ -146,7 +137,6 @@ export const sampleMedley2: MedleyData = {
       startTime: 150,
       endTime: 240,
       color: "bg-orange-400",
-      genre: "J-POP",
       originalLink: "https://www.youtube.com/watch?v=0xSiBpUdW4E"
     },
     {
@@ -156,7 +146,6 @@ export const sampleMedley2: MedleyData = {
       startTime: 240,
       endTime: 330,
       color: "bg-blue-400",
-      genre: "J-POP",
       originalLink: "https://www.youtube.com/watch?v=TQ8WlA2GXbk"
     },
     {
@@ -166,7 +155,6 @@ export const sampleMedley2: MedleyData = {
       startTime: 330,
       endTime: 420,
       color: "bg-purple-400",
-      genre: "J-POP",
       originalLink: "https://www.youtube.com/watch?v=x8VYWazR5mE"
     },
     {
@@ -176,7 +164,6 @@ export const sampleMedley2: MedleyData = {
       startTime: 420,
       endTime: 480,
       color: "bg-green-400",
-      genre: "アニソン",
       originalLink: "https://www.youtube.com/watch?v=o6wtDPVkKqI"
     }
   ]
@@ -200,7 +187,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 0,
       endTime: 45,
       color: "bg-blue-400",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -210,7 +196,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 45,
       endTime: 74,
       color: "bg-yellow-400",
-      genre: "アニソン",
       originalLink: "https://www.nicovideo.jp/watch/sm2621549"
     },
     {
@@ -220,7 +205,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 74,
       endTime: 85,
       color: "bg-purple-400",
-      genre: "東方",
       originalLink: ""
     },
     {
@@ -230,7 +214,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 85,
       endTime: 97,
       color: "bg-red-400",
-      genre: "東方",
       originalLink: ""
     },
     {
@@ -240,7 +223,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 97,
       endTime: 120,
       color: "bg-green-400",
-      genre: "アニソン",
       originalLink: ""
     },
     {
@@ -250,7 +232,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 120,
       endTime: 140,
       color: "bg-orange-400",
-      genre: "アニソン",
       originalLink: ""
     },
     {
@@ -260,7 +241,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 140,
       endTime: 151,
       color: "bg-cyan-400",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -270,7 +250,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 151,
       endTime: 162,
       color: "bg-green-500",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -280,7 +259,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 162,
       endTime: 172,
       color: "bg-orange-500",
-      genre: "アニソン",
       originalLink: ""
     },
     {
@@ -290,7 +268,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 172,
       endTime: 196,
       color: "bg-red-500",
-      genre: "アニソン",
       originalLink: ""
     },
     {
@@ -300,7 +277,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 196,
       endTime: 215,
       color: "bg-blue-500",
-      genre: "ニコニコ",
       originalLink: "https://www.nicovideo.jp/watch/sm350170"
     },
     {
@@ -310,7 +286,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 215,
       endTime: 224,
       color: "bg-yellow-500",
-      genre: "その他",
       originalLink: ""
     },
     {
@@ -320,7 +295,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 224,
       endTime: 247,
       color: "bg-gray-400",
-      genre: "アニソン",
       originalLink: ""
     },
     {
@@ -330,7 +304,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 247,
       endTime: 271,
       color: "bg-cyan-500",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -340,7 +313,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 271,
       endTime: 293,
       color: "bg-purple-500",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -350,7 +322,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 293,
       endTime: 340,
       color: "bg-yellow-300",
-      genre: "東方",
       originalLink: "https://www.nicovideo.jp/watch/sm201996"
     },
     {
@@ -360,7 +331,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 340,
       endTime: 402,
       color: "bg-blue-300",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -370,7 +340,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 402,
       endTime: 427,
       color: "bg-purple-300",
-      genre: "アニソン",
       originalLink: ""
     },
     {
@@ -380,7 +349,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 427,
       endTime: 448,
       color: "bg-pink-400",
-      genre: "アニソン",
       originalLink: ""
     },
     {
@@ -390,7 +358,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 448,
       endTime: 464,
       color: "bg-pink-500",
-      genre: "その他",
       originalLink: ""
     },
     {
@@ -400,7 +367,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 464,
       endTime: 486,
       color: "bg-orange-300",
-      genre: "アニソン",
       originalLink: ""
     },
     {
@@ -410,7 +376,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 486,
       endTime: 495,
       color: "bg-green-300",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -420,7 +385,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 495,
       endTime: 507,
       color: "bg-yellow-200",
-      genre: "東方",
       originalLink: ""
     },
     {
@@ -430,7 +394,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 507,
       endTime: 515,
       color: "bg-red-300",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -440,7 +403,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 515,
       endTime: 531,
       color: "bg-pink-300",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -450,7 +412,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 531,
       endTime: 538,
       color: "bg-cyan-300",
-      genre: "その他",
       originalLink: ""
     },
     {
@@ -460,7 +421,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 538,
       endTime: 548,
       color: "bg-blue-200",
-      genre: "その他",
       originalLink: ""
     },
     {
@@ -470,7 +430,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 548,
       endTime: 561,
       color: "bg-purple-200",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -480,7 +439,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 561,
       endTime: 569,
       color: "bg-gray-300",
-      genre: "ゲーム音楽",
       originalLink: ""
     },
     {
@@ -490,7 +448,6 @@ export const nicoMedley1: MedleyData = {
       startTime: 569,
       endTime: 573,
       color: "bg-orange-200",
-      genre: "その他",
       originalLink: ""
     }
   ]

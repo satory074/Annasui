@@ -60,8 +60,7 @@ export default function Home() {
             if (searchMode === "medley") {
                 const matchesSearch = medley.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                     (medley.creator || '').toLowerCase().includes(searchTerm.toLowerCase());
-                const matchesGenre = genreFilter === "" || 
-                                   medley.songs.some(song => song.genre === genreFilter);
+                const matchesGenre = true;
                 return matchesSearch && matchesGenre;
             } else {
                 // 楽曲検索モード
@@ -69,8 +68,7 @@ export default function Home() {
                     song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     song.artist.toLowerCase().includes(searchTerm.toLowerCase())
                 );
-                const matchesGenre = genreFilter === "" || 
-                                   medley.songs.some(song => song.genre === genreFilter);
+                const matchesGenre = true;
                 return hasMatchingSong && matchesGenre;
             }
         })
@@ -142,12 +140,12 @@ export default function Home() {
                     videoId: medley.videoId,
                     platform: medley.platform || 'niconico'
                 }))
-        ).filter(song => genreFilter === "" || song.genre === genreFilter)
+        )
     : [];
 
     // 利用可能なジャンルを取得
     const availableGenres = Array.from(new Set(
-        medleys.flatMap(medley => medley.songs.map(song => song.genre).filter(Boolean))
+        []
     )).sort();
 
     const formatTime = (seconds: number): string => {
@@ -458,13 +456,6 @@ export default function Home() {
                                                 </div>
                                                 <div className="text-right text-sm text-gray-500 dark:text-gray-500">
                                                     <div>{formatTime(song.startTime)} ~ {formatTime(song.endTime)}</div>
-                                                    {song.genre && (
-                                                        <div className="text-xs mt-1">
-                                                            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded">
-                                                                {song.genre}
-                                                            </span>
-                                                        </div>
-                                                    )}
                                                 </div>
                                             </div>
                                         </Link>
@@ -541,22 +532,6 @@ export default function Home() {
                                         {medley.creator}
                                     </p>
                                     
-                                    {/* Genre Tags */}
-                                    <div className="flex flex-wrap gap-1 mb-2">
-                                        {Array.from(new Set(medley.songs.map(song => song.genre).filter(Boolean))).slice(0, 2).map((genre, index) => (
-                                            <span
-                                                key={index}
-                                                className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md"
-                                            >
-                                                {genre}
-                                            </span>
-                                        ))}
-                                        {Array.from(new Set(medley.songs.map(song => song.genre).filter(Boolean))).length > 2 && (
-                                            <span className="px-2 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-md">
-                                                +{Array.from(new Set(medley.songs.map(song => song.genre).filter(Boolean))).length - 2}
-                                            </span>
-                                        )}
-                                    </div>
 
                                     {/* Metadata */}
                                     <div className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-2">

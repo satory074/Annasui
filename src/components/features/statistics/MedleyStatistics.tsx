@@ -22,15 +22,8 @@ export default function MedleyStatistics({ medleys }: MedleyStatisticsProps) {
         ),
     };
 
-    // ジャンル別統計
-    const genreStats = medleys
-        .flatMap(medley => medley.songs)
-        .reduce((acc, song) => {
-            if (song.genre) {
-                acc[song.genre] = (acc[song.genre] || 0) + 1;
-            }
-            return acc;
-        }, {} as Record<string, number>);
+    // ジャンル別統計（削除）
+    const genreStats = {} as Record<string, number>;
 
     const topGenres = Object.entries(genreStats)
         .sort(([, a], [, b]) => b - a)

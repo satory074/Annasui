@@ -147,7 +147,6 @@ export function useMedleyEdit(
         startTime: song.startTime,
         endTime: song.endTime,
         color: song.color,
-        genre: song.genre,
         originalLink: song.originalLink,
         order_index: index + 1
       }));

@@ -256,7 +256,6 @@ export default function MedleyPlayer({
                 ...editingSong,
                 title: songTemplate.title,
                 artist: songTemplate.artist,
-                genre: songTemplate.genre,
                 originalLink: songTemplate.originalLink
             });
         } else {
@@ -322,8 +321,7 @@ export default function MedleyPlayer({
             startTime: Math.round(nextStartTime * 10) / 10,
             endTime: Math.round((nextStartTime + 30) * 10) / 10, // デフォルト30秒
             color: "bg-blue-400",
-            genre: "",
-            originalLink: ""
+                originalLink: ""
         };
         
         setEditingSong(nextSong);
@@ -463,8 +461,7 @@ export default function MedleyPlayer({
                 startTime: roundedStartTime,
                 endTime: finalEndTime,
                 color: "bg-gray-400",
-                genre: "",
-                originalLink: ""
+                        originalLink: ""
             };
             
             // 楽曲を追加
@@ -486,8 +483,7 @@ export default function MedleyPlayer({
                 startTime: Math.round(previousSongEndTime * 10) / 10,
                 endTime: Math.round(time * 10) / 10,
                 color: "bg-blue-400",
-                genre: "",
-                originalLink: ""
+                        originalLink: ""
             };
             setEditingSong(newSong);
             setIsNewSong(true);
@@ -504,8 +500,7 @@ export default function MedleyPlayer({
             startTime: Math.round(time * 10) / 10,
             endTime: Math.round(time * 10) / 10 + 30, // デフォルト30秒
             color: "bg-blue-400",
-            genre: "",
-            originalLink: ""
+                originalLink: ""
         };
         setEditingSong(newSong);
         setIsNewSong(true);

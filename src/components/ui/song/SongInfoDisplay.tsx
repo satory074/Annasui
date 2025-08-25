@@ -220,11 +220,6 @@ export default function SongInfoDisplay({
           </p>
           
           <div className="flex items-center gap-4 text-xs">
-            {song.genre && (
-              <span className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded">
-                {song.genre}
-              </span>
-            )}
             {(song.links || song.originalLink) && (
               <div className="flex flex-wrap gap-1">
                 <PlatformLinks song={song} variant="compact" />
@@ -294,16 +289,6 @@ export default function SongInfoDisplay({
         </div>
       )}
 
-      {song.genre && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            ジャンル
-          </label>
-          <p className="text-gray-900 dark:text-white">
-            {song.genre}
-          </p>
-        </div>
-      )}
 
       {showOriginalLink && (
         <PlatformLinks song={song} variant="detailed" />

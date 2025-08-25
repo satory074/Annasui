@@ -14,7 +14,6 @@ export interface SongDatabaseEntry {
     spotify?: string;
     appleMusic?: string;
   };
-  genre?: string;
   usageCount: number; // この楽曲が使用されている回数
   medleys: Array<{ // 使用されているメドレー情報
     medleyTitle: string;
@@ -57,15 +56,12 @@ export function buildSongDatabase(): SongDatabaseEntry[] {
           platform: medley.platform || 'niconico'
         });
         
-        // より詳細な情報があれば更新（originalLink、links、genreなど）
+        // より詳細な情報があれば更新（originalLink、linksなど）
         if (song.originalLink && !existingEntry.originalLink) {
           existingEntry.originalLink = song.originalLink;
         }
         if (song.links && !existingEntry.links) {
           existingEntry.links = song.links;
-        }
-        if (song.genre && !existingEntry.genre) {
-          existingEntry.genre = song.genre;
         }
       } else {
         // 新しい楽曲エントリを作成
@@ -75,7 +71,6 @@ export function buildSongDatabase(): SongDatabaseEntry[] {
           artist: song.artist,
           originalLink: song.originalLink,
           links: song.links,
-          genre: song.genre,
           usageCount: 1,
           medleys: [{
             medleyTitle: medley.title,
@@ -121,7 +116,6 @@ export function createSongFromDatabase(
     startTime,
     endTime,
     color: "bg-blue-500", // 統一カラー
-    genre: dbEntry.genre || "",
     originalLink: dbEntry.originalLink || "",
     links: dbEntry.links
   };
@@ -175,7 +169,6 @@ export function addManualSong(songData: { title: string; artist: string; origina
     title: songData.title,
     artist: songData.artist,
     originalLink: songData.originalLink,
-    genre: "",
     usageCount: 0,
     medleys: []
   };

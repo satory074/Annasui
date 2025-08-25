@@ -58,7 +58,6 @@ export default function SongEditModal({
     startTime: 0,
     endTime: 0,
     color: "bg-blue-400",
-    genre: "",
     originalLink: "",
     links: {
       niconico: "",
@@ -83,7 +82,6 @@ export default function SongEditModal({
         startTime: 0,
         endTime: 0,
         color: "bg-blue-400",
-        genre: "",
         originalLink: "",
         links: {
           niconico: "",

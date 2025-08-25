@@ -307,6 +307,14 @@ const sendCommand = (command) => {
 - **Tooltip positioning problems**: Check `BaseTooltip` edge detection and viewport boundaries
 - **State synchronization issues**: Ensure tooltip visibility state matches hover state across components
 
+### Song Search Modal Edit Issues
+- **Edit buttons not showing**: Verify `onEditSong` prop is passed to `SongSearchModal` component
+- **Edit form not opening**: Check `editingEntryId` state management and `handleStartEdit` function
+- **Form data not saving**: Verify `handleSaveEdit` function and `onEditSong` callback implementation
+- **Platform URL inputs not working**: Check `handleFormChange` function and `links.` field handling
+- **Edit state persisting**: Ensure modal close resets `editingEntryId` and `editFormData` to null
+- **Visual styling incorrect**: Verify caramel-600 background and sienna-600 button colors are applied
+
 ### Build & Deployment
 - **Build fails**: Ensure `public/favicon.ico` exists
 - **404 on deployed site**: Add video IDs to `generateStaticParams`
@@ -960,6 +968,46 @@ Enhanced SongSearchModal to match SongEditModal design with thumbnail support an
 - ✅ Platform links work properly and open in new tabs
 - ✅ Card-style layout consistent with edit modal design
 - ✅ Coffee & Cream color scheme applied throughout modal
+
+### Song Search Modal Inline Edit Functionality (2025-08-25)
+Major UX enhancement adding direct editing capabilities within the song search modal:
+
+**Key Features Implemented:**
+- **Inline Edit Forms**: Each song in search results now has an "編集" (Edit) button that opens inline edit form
+- **Comprehensive Editing**: Users can edit song title, artist name, and all platform URLs (🎬📺🎵🍎) directly within search modal
+- **Visual Design Integration**: Edit mode uses caramel/sienna colors consistent with Coffee & Cream theme
+- **State Management**: Edit forms maintain independent state with save/cancel functionality
+
+**Technical Implementation:**
+- **Enhanced SongSearchModal.tsx**: Added `editingEntryId`, `editFormData` state and edit handlers
+- **Form Rendering**: Conditional rendering between view mode and edit form with platform URL inputs
+- **MedleyPlayer Integration**: Added `onEditSong` prop and `handleEditSongFromDatabase` handler
+- **CSS Enhancements**: Added sienna-700 hover state for edit buttons
+
+**User Experience Benefits:**
+- **Streamlined Workflow**: Edit songs directly in search context without modal transitions
+- **Immediate Feedback**: Visual highlighting (caramel background) shows which song is being edited
+- **Platform Management**: Edit all streaming platform URLs in organized, labeled input fields
+- **Data Consistency**: Changes propagate immediately to edit modal when song is being edited
+
+**Usage Pattern:**
+```typescript
+// Song search modal with edit functionality
+<SongSearchModal
+  isOpen={songSearchModalOpen}
+  onClose={() => setSongSearchModalOpen(false)}
+  onSelectSong={handleSelectSongFromDatabase}
+  onManualAdd={handleManualAddSong}
+  onEditSong={handleEditSongFromDatabase} // New edit handler
+/>
+```
+
+**Production Verification:**
+- ✅ Edit buttons appear for all songs with proper styling
+- ✅ Inline edit forms open/close correctly with proper state management
+- ✅ Platform URL editing works for all 4 supported platforms
+- ✅ Save functionality properly updates song data and propagates to edit modal
+- ✅ Console logging confirms edit handler receives updated song data
 
 ### Genre Field Removal (2025-08-25)
 Complete removal of genre functionality for simplified data model and cleaner UI:

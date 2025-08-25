@@ -24,6 +24,7 @@
   --color-caramel-700: var(--accent-hover);
   --color-caramel-50: var(--accent-light);
   --color-sienna-600: var(--complementary-purple);
+  --color-sienna-700: #8b4513;
   --color-olive-600: var(--complementary-green);
   --color-brick-600: var(--complementary-red);
   --font-sans: var(--font-geist-sans);

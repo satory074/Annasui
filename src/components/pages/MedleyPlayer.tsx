@@ -292,6 +292,24 @@ export default function MedleyPlayer({
         setSongSearchModalOpen(true);
     };
 
+    // 楽曲検索モーダルから楽曲を編集
+    const handleEditSongFromDatabase = (updatedSong: SongDatabaseEntry) => {
+        // 現在編集中の楽曲を更新された情報に変更
+        if (editingSong) {
+            const updatedSongSection: SongSection = {
+                ...editingSong,
+                title: updatedSong.title,
+                artist: updatedSong.artist,
+                originalLink: updatedSong.originalLink || "",
+                links: updatedSong.links
+            };
+            setEditingSong(updatedSongSection);
+        }
+        
+        // Todo: 実際のデータベース更新ロジックも必要に応じて実装
+        console.log('楽曲情報を更新:', updatedSong);
+    };
+
     const handleSaveSong = (song: SongSection) => {
         if (isNewSong) {
             addSong(song);
@@ -688,6 +706,7 @@ export default function MedleyPlayer({
                 onClose={() => setSongSearchModalOpen(false)}
                 onSelectSong={handleSelectSongFromDatabase}
                 onManualAdd={handleManualAddSong}
+                onEditSong={handleEditSongFromDatabase}
             />
 
             {/* セットリストインポートモーダル */}

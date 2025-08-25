@@ -11,16 +11,30 @@ interface SongSearchModalProps {
   onClose: () => void;
   onSelectSong: (song: SongDatabaseEntry) => void;
   onManualAdd: () => void; // 手動入力オプション
+  onEditSong?: (song: SongDatabaseEntry) => void; // 楽曲編集用
 }
 
 export default function SongSearchModal({
   isOpen,
   onClose,
   onSelectSong,
-  onManualAdd
+  onManualAdd,
+  onEditSong
 }: SongSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [songDatabase] = useState(() => getSongDatabase());
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<{
+    title: string;
+    artist: string;
+    originalLink?: string;
+    links?: {
+      niconico?: string;
+      youtube?: string;
+      spotify?: string;
+      appleMusic?: string;
+    };
+  } | null>(null);
 
   // 検索結果
   const searchResults = useMemo(() => {
@@ -31,8 +45,72 @@ export default function SongSearchModal({
   useEffect(() => {
     if (isOpen) {
       setSearchTerm("");
+      setEditingEntryId(null);
+      setEditFormData(null);
     }
   }, [isOpen]);
+
+  // 編集開始ハンドラ
+  const handleStartEdit = (song: SongDatabaseEntry) => {
+    setEditingEntryId(song.id);
+    setEditFormData({
+      title: song.title,
+      artist: song.artist,
+      originalLink: song.originalLink,
+      links: song.links
+    });
+  };
+
+  // 編集キャンセルハンドラ
+  const handleCancelEdit = () => {
+    setEditingEntryId(null);
+    setEditFormData(null);
+  };
+
+  // 編集保存ハンドラ
+  const handleSaveEdit = () => {
+    if (!editFormData || !editingEntryId) return;
+
+    const originalSong = songDatabase.find(s => s.id === editingEntryId);
+    if (!originalSong) return;
+
+    const updatedSong: SongDatabaseEntry = {
+      ...originalSong,
+      title: editFormData.title,
+      artist: editFormData.artist,
+      originalLink: editFormData.originalLink,
+      links: editFormData.links
+    };
+
+    // 編集コールバックを呼び出し
+    if (onEditSong) {
+      onEditSong(updatedSong);
+    }
+
+    setEditingEntryId(null);
+    setEditFormData(null);
+  };
+
+  // フォーム入力ハンドラ
+  const handleFormChange = (field: string, value: string) => {
+    if (!editFormData) return;
+    
+    if (field.startsWith('links.')) {
+      const linkField = field.split('.')[1] as keyof NonNullable<typeof editFormData.links>;
+      setEditFormData({
+        ...editFormData,
+        links: {
+          ...editFormData.links,
+          [linkField]: value || undefined
+        }
+      });
+    } else {
+      setEditFormData({
+        ...editFormData,
+        [field]: value
+      });
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -81,32 +159,158 @@ export default function SongSearchModal({
           <div className="space-y-3">
             {searchResults.map((song) => {
               const songSection = convertToSongSection(song);
+              const isEditing = editingEntryId === song.id;
+              
               return (
                 <div
                   key={song.id}
-                  onClick={() => onSelectSong(song)}
-                  className="border border-gray-200 dark:border-gray-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors p-3"
+                  className={`border rounded-lg transition-colors p-3 ${
+                    isEditing 
+                      ? 'border-caramel-600 bg-caramel-50 dark:bg-caramel-900/20' 
+                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  }`}
                 >
-                  <div className="flex items-start gap-4">
-                    <div className="flex-1">
-                      <SongInfoDisplay
-                        song={songSection}
-                        variant="card"
-                        showTimeCodes={false}
-                      />
+                  {isEditing ? (
+                    /* 編集フォーム */
+                    <div className="space-y-4">
+                      {/* 基本情報編集 */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            楽曲名
+                          </label>
+                          <input
+                            type="text"
+                            value={editFormData?.title || ''}
+                            onChange={(e) => handleFormChange('title', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            アーティスト名
+                          </label>
+                          <input
+                            type="text"
+                            value={editFormData?.artist || ''}
+                            onChange={(e) => handleFormChange('artist', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                          />
+                        </div>
+                      </div>
+
+                      {/* プラットフォームリンク編集 */}
+                      <div className="space-y-3">
+                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">配信プラットフォーム</h4>
+                        <div className="grid grid-cols-1 gap-3">
+                          <div>
+                            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                              🎬 ニコニコ動画
+                            </label>
+                            <input
+                              type="url"
+                              value={editFormData?.links?.niconico || ''}
+                              onChange={(e) => handleFormChange('links.niconico', e.target.value)}
+                              placeholder="https://www.nicovideo.jp/watch/..."
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                              📺 YouTube
+                            </label>
+                            <input
+                              type="url"
+                              value={editFormData?.links?.youtube || ''}
+                              onChange={(e) => handleFormChange('links.youtube', e.target.value)}
+                              placeholder="https://www.youtube.com/watch?v=..."
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                              🎵 Spotify
+                            </label>
+                            <input
+                              type="url"
+                              value={editFormData?.links?.spotify || ''}
+                              onChange={(e) => handleFormChange('links.spotify', e.target.value)}
+                              placeholder="https://open.spotify.com/track/..."
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                              🍎 Apple Music
+                            </label>
+                            <input
+                              type="url"
+                              value={editFormData?.links?.appleMusic || ''}
+                              onChange={(e) => handleFormChange('links.appleMusic', e.target.value)}
+                              placeholder="https://music.apple.com/..."
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white text-sm"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* 編集ボタン */}
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          onClick={handleSaveEdit}
+                          className="px-4 py-2 bg-caramel-600 text-white rounded text-sm hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600"
+                        >
+                          保存
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="px-4 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                        >
+                          キャンセル
+                        </button>
+                      </div>
                     </div>
-                    
-                    {/* 選択ボタン */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectSong(song);
-                      }}
-                      className="ml-4 px-4 py-2 bg-caramel-600 text-white rounded text-sm hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600 whitespace-nowrap self-center"
+                  ) : (
+                    /* 表示モード */
+                    <div
+                      onClick={() => onSelectSong(song)}
+                      className="cursor-pointer"
                     >
-                      選択
-                    </button>
-                  </div>
+                      <div className="flex items-start gap-4">
+                        <div className="flex-1">
+                          <SongInfoDisplay
+                            song={songSection}
+                            variant="card"
+                            showTimeCodes={false}
+                          />
+                        </div>
+                        
+                        {/* ボタングループ */}
+                        <div className="flex gap-2 self-center">
+                          {onEditSong && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStartEdit(song);
+                              }}
+                              className="px-3 py-2 bg-sienna-600 text-white rounded text-sm hover:bg-sienna-700 focus:outline-none focus:ring-2 focus:ring-sienna-600 whitespace-nowrap"
+                            >
+                              編集
+                            </button>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onSelectSong(song);
+                            }}
+                            className="px-4 py-2 bg-caramel-600 text-white rounded text-sm hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600 whitespace-nowrap"
+                          >
+                            選択
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

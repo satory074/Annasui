@@ -57,6 +57,9 @@ function PlatformLinks({ song, variant = "detailed" }: {
                 rel="noopener noreferrer"
                 className={`text-xs ${config.color} hover:underline flex items-center gap-1`}
                 title={`${config.name}で開く`}
+                onClick={(e) => {
+                  e.stopPropagation(); // 親要素へのイベント伝播を防ぐ
+                }}
               >
                 <span>{config.icon}</span>
                 <span>{config.name}</span>
@@ -83,6 +86,9 @@ function PlatformLinks({ song, variant = "detailed" }: {
               target="_blank"
               rel="noopener noreferrer"
               className={`inline-flex items-center gap-1 px-2 py-1 text-sm ${config.color} bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors`}
+              onClick={(e) => {
+                e.stopPropagation(); // 親要素へのイベント伝播を防ぐ
+              }}
             >
               <span>{config.icon}</span>
               <span>{config.name}</span>

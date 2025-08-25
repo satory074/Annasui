@@ -232,6 +232,7 @@ const effectiveTimelineDuration = actualPlayerDuration || duration;
 ### Modal/Tooltip System Issues
 - **Modal not closing on ESC**: Check BaseModal implementation and focus management
 - **Tooltip positioning off-screen**: Verify BaseTooltip edge detection logic
+- **Tooltip closing when clicking platform links**: Ensure `MedleyPlayer.tsx` document click handler checks for `data-tooltip` and platform URL targets before closing
 - **Time controls not updating**: Check SongTimeControls onChange callback and state binding
 - **Thumbnail not loading**: Check SongThumbnail error handling and URL validation
 - **Inconsistent styling**: Use SongInfoDisplay variants instead of custom implementations
@@ -801,6 +802,47 @@ Major enhancement adding support for Spotify and Apple Music platforms alongside
 - Spotify oEmbed API successfully retrieves album artwork
 - Platform icons and color coding work as intended
 - Backward compatibility maintained with existing `originalLink` data
+
+### Tooltip Event Propagation Fix (2025-08-25)
+Critical fix for tooltip behavior when clicking platform links in normal (non-edit) mode:
+
+**Problem Solved:**
+- Platform links inside tooltips were triggering document-level click handler
+- Caused tooltips to close immediately when clicking Spotify/YouTube/Apple Music/Niconico links
+- Users couldn't access platform links without tooltip closing
+
+**Root Cause:**
+- Global document click handler in `MedleyPlayer.tsx` closed tooltips on ANY document click
+- `e.stopPropagation()` in React components didn't prevent native DOM document click events
+- Event propagation prevention only worked within React component tree
+
+**Solution Implemented:**
+1. **Enhanced Click Detection**: Modified document click handler to check click target before closing tooltip
+2. **Smart Target Detection**: Added checks for `data-tooltip` attribute and platform URL patterns
+3. **Tooltip Identification**: Added `data-tooltip` attribute to BaseTooltip component
+
+**Files Modified:**
+- **MedleyPlayer.tsx (lines 184-194)**: Enhanced `handleDocumentClick` with target element checking
+- **BaseTooltip.tsx (line 57)**: Added `data-tooltip` attribute for element identification
+
+**Technical Implementation:**
+```typescript
+// Enhanced click detection logic
+const target = event.target as HTMLElement;
+const tooltipElement = target.closest('[data-tooltip]');
+const platformLink = target.closest('a[href*="spotify.com"], a[href*="apple.com"], a[href*="youtube.com"], a[href*="nicovideo.jp"]');
+
+// Only close tooltip if click is outside tooltip and not a platform link
+if (tooltipElement || platformLink) {
+  return; // Don't close tooltip
+}
+```
+
+**Production Verification:**
+- ✅ Platform links open correctly in new tabs without closing tooltips
+- ✅ Tooltips remain visible after clicking platform links in normal mode
+- ✅ Edit mode functionality unaffected by changes
+- ✅ Other click-to-close behavior works as expected
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.

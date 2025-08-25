@@ -181,8 +181,18 @@ export default function MedleyPlayer({
 
     // ドキュメントクリックでツールチップを非表示
     useEffect(() => {
-        const handleDocumentClick = () => {
+        const handleDocumentClick = (event: MouseEvent) => {
             if (isTooltipVisible) {
+                // クリックされた要素がツールチップ内またはプラットフォームリンクかどうかをチェック
+                const target = event.target as HTMLElement;
+                const tooltipElement = target.closest('[data-tooltip]');
+                const platformLink = target.closest('a[href*="spotify.com"], a[href*="apple.com"], a[href*="youtube.com"], a[href*="nicovideo.jp"]');
+                
+                // ツールチップ内またはプラットフォームリンクのクリックの場合は閉じない
+                if (tooltipElement || platformLink) {
+                    return;
+                }
+                
                 setIsTooltipVisible(false);
                 setIsHoveringTooltip(false);
                 setIsHoveringSong(false);

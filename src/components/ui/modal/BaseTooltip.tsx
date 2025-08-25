@@ -54,6 +54,7 @@ export default function BaseTooltip({
 
   return (
     <div
+      data-tooltip
       className={`fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-600 p-4 max-w-md transition-all duration-200 opacity-100 scale-100 ${className}`}
       style={{
         left: `${adjustedPosition.x}px`,

@@ -104,7 +104,7 @@ export default function SongTimeControls({
           <button
             type="button"
             onClick={handleAdjacentTimeClick}
-            className="px-3 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-medium transition-colors"
+            className="px-3 py-2 bg-sienna-600 text-white rounded-md hover:bg-sienna-600 focus:outline-none focus:ring-2 focus:ring-sienna-600 text-sm font-medium transition-colors"
             title={`${adjacentLabel}（${formatTimeSimple(adjacentTime)}）`}
           >
             {adjacentLabel}

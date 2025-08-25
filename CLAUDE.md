@@ -670,6 +670,42 @@ Major UI color scheme overhaul from blue-based colors to warm brown Coffee & Cre
 - TypeScript compilation and ESLint checks pass without errors
 - Visual consistency maintained across all UI components
 
+### Complementary Color System Enhancement (2025-08-25)
+Enhanced Coffee & Cream palette with harmonious complementary colors for complete design consistency:
+
+**Complementary Colors Added:**
+- **Sienna Brown** (`#a0522d`) - Replaces purple for special function buttons and M-key indicators
+- **Olive Green** (`#6b8e23`) - Replaces bright green for E-key indicators and success states  
+- **Fire Brick** (`#b22222`) - Warmer red for deletion/error states while maintaining safety visibility
+
+**CSS Variables:**
+```css
+--complementary-purple: #a0522d;  /* Sienna Brown */
+--complementary-green: #6b8e23;   /* Olive Green */
+--complementary-red: #b22222;     /* Fire Brick */
+```
+
+**Tailwind Custom Classes:**
+- `sienna-600` - Adjacent song alignment buttons, marker (M) key indicators
+- `olive-600` - End time (E) key indicators, completion states
+- `brick-600` - Delete buttons, critical error states
+
+**Updated Components:**
+- **SongList.tsx**: All keyboard shortcut visual feedback (S/E/M keys)
+- **SongTimeControls.tsx**: Adjacent song alignment buttons (purple → sienna)
+- **SongEditModal.tsx**: Delete button styling (red → fire brick)
+
+**Color Harmony Principles:**
+- All colors derive from warm earth tones compatible with coffee/cream base
+- Maintains accessibility while reducing visual discord from bright primary colors
+- Preserves functional color coding (red for danger) while warming the overall palette
+- Creates cohesive visual hierarchy supporting the café atmosphere theme
+
+**Production Verification:**
+- Complete color harmony achieved across all UI states and interactions
+- Accessibility standards maintained with proper contrast ratios
+- No remaining blue/purple/bright green elements that conflict with Coffee & Cream theme
+
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.
 NEVER create files unless they're absolutely necessary for achieving your goal.

@@ -503,13 +503,13 @@ export default function SongList({
                   </span>
                 )}
                 {isEditMode && selectedSong && (
-                  <span className="ml-2 text-xs text-green-600 dark:text-green-400">「{selectedSong.title}」選択中</span>
+                  <span className="ml-2 text-xs text-olive-600 dark:text-olive-600">「{selectedSong.title}」選択中</span>
                 )}
                 {isEditMode && (isPressingS || isPressingE || isPressingM) && (
                   <span className={`ml-2 text-xs font-medium animate-pulse ${
                     isPressingS ? 'text-caramel-600 dark:text-caramel-600' :
-                    isPressingE ? 'text-green-600 dark:text-green-400' :
-                    'text-purple-600 dark:text-purple-400'
+                    isPressingE ? 'text-olive-600 dark:text-olive-600' :
+                    'text-sienna-600 dark:text-purple-400'
                   }`}>
                     {isPressingS ? '開始時刻設定中...' :
                      isPressingE ? '終了時刻設定中...' :
@@ -563,14 +563,14 @@ export default function SongList({
                 <>
                   <button
                     onClick={onAddSong}
-                    className="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
+                    className="px-3 py-1 text-xs bg-olive-600 text-white rounded hover:bg-olive-600"
                   >
                     楽曲追加
                   </button>
                   {onImportSetlist && (
                     <button
                       onClick={onImportSetlist}
-                      className="px-3 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
+                      className="px-3 py-1 text-xs bg-sienna-600 text-white rounded hover:bg-sienna-600"
                       title="セットリストから一括インポート"
                     >
                       インポート
@@ -601,8 +601,8 @@ export default function SongList({
                   )}
                   <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                     キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-caramel-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
-                    <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-green-500 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
-                    <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-purple-500 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
+                    <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-olive-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
+                    <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-sienna-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
                   </div>
                 </>
               )}
@@ -778,13 +778,13 @@ export default function SongList({
                       >
                         <div className={`w-1 h-full ${
                           isPressingS ? 'bg-caramel-600' : 
-                          isPressingE ? 'bg-green-500' : 
-                          'bg-purple-500'
+                          isPressingE ? 'bg-olive-600' : 
+                          'bg-sienna-600'
                         } animate-pulse`} />
                         <div className={`text-xs font-bold px-1 py-0.5 rounded text-white shadow-lg -mt-1 ${
                           isPressingS ? 'bg-caramel-600' : 
-                          isPressingE ? 'bg-green-500' : 
-                          'bg-purple-500'
+                          isPressingE ? 'bg-olive-600' : 
+                          'bg-sienna-600'
                         }`}>
                           {isPressingS ? 'S' : isPressingE ? 'E' : 'M'}
                         </div>

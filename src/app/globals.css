@@ -9,6 +9,9 @@
   --accent: #af6f3c;
   --accent-hover: #9a5f33;
   --accent-light: #f0e6dc;
+  --complementary-purple: #a0522d;
+  --complementary-green: #6b8e23;
+  --complementary-red: #b22222;
   --surface: #efebe9;
   --border: #d7ccc8;
   --text-secondary: #6d4c41;
@@ -20,6 +23,9 @@
   --color-caramel-600: var(--accent);
   --color-caramel-700: var(--accent-hover);
   --color-caramel-50: var(--accent-light);
+  --color-sienna-600: var(--complementary-purple);
+  --color-olive-600: var(--complementary-green);
+  --color-brick-600: var(--complementary-red);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -34,6 +40,9 @@
     --accent: #af6f3c;
     --accent-hover: #9a5f33;
     --accent-light: #4e342e;
+    --complementary-purple: #a0522d;
+    --complementary-green: #6b8e23;
+    --complementary-red: #b22222;
     --surface: #3e2723;
     --border: #5d4037;
     --text-secondary: #a1887f;

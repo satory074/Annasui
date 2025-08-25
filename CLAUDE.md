@@ -62,8 +62,39 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 #### Multi-Platform Architecture
 - **Niconico**: Full postMessage integration (seek/play/pause)
 - **YouTube**: Basic iframe embed (seek planned for future)
+- **Spotify**: oEmbed API for album artwork (no playback integration)
+- **Apple Music**: Open Graph meta tag scraping for artwork
 - **URL Structure**: `/`, `/niconico/[videoId]`, `/youtube/[videoId]`
 - **Extensible**: Architecture supports adding new platforms
+
+#### Multiple Platform Support (2025-08-25)
+**Data Structure**: Extended `SongSection` type with `links` field for multiple platform URLs:
+```typescript
+export type SongSection = {
+  // Existing fields...
+  originalLink?: string; // Maintained for backward compatibility
+  links?: {
+    niconico?: string;
+    youtube?: string;
+    spotify?: string;
+    appleMusic?: string;
+  };
+};
+```
+
+**Thumbnail Priority System**: Automatic selection based on priority (Niconico > YouTube > Spotify > Apple Music)
+```typescript
+// Multiple thumbnail sources with fallback
+const thumbnail = await getBestThumbnailFromLinks(song.links, song.originalLink);
+```
+
+**Spotify Integration**: Uses oEmbed API without requiring API keys:
+```typescript
+// Spotify oEmbed endpoint
+const response = await fetch(`https://embed.spotify.com/oembed/?url=spotify:track:${trackId}`);
+const data = await response.json();
+return data.thumbnail_url;
+```
 
 #### Data Flow Architecture
 **Dual-Mode Data Management:**
@@ -225,6 +256,14 @@ const effectiveTimelineDuration = actualPlayerDuration || duration;
 - **Label not showing elapsed time**: Confirm `Math.round((currentTime - tempStartTime) * 10) / 10` calculation
 - **Bar appearing on wrong tracks**: Check conditional rendering logic in timeline rendering loop
 
+### Multiple Platform Support Issues
+- **Spotify thumbnails not loading**: Check oEmbed API response and track ID extraction from URL
+- **Apple Music thumbnails failing**: CORS restrictions may prevent direct scraping - use proxy if needed
+- **Platform icons not showing**: Verify `PLATFORM_CONFIG` constants and emoji/icon rendering
+- **Multiple links not displaying**: Check `PlatformLinks` component integration in `SongInfoDisplay`
+- **Thumbnail priority not working**: Ensure `getBestThumbnailFromLinks` function correctly prioritizes sources
+- **URL parsing errors**: Verify regex patterns in `extractVideoId` for all supported platforms
+
 ### Build & Deployment
 - **Build fails**: Ensure `public/favicon.ico` exists
 - **404 on deployed site**: Add video IDs to `generateStaticParams`
@@ -263,9 +302,13 @@ src/
 **UI System:**
 - `src/components/ui/modal/BaseModal.tsx` - Base modal component
 - `src/components/ui/modal/BaseTooltip.tsx` - Base tooltip component
-- `src/components/ui/song/SongInfoDisplay.tsx` - Unified song information display
+- `src/components/ui/song/SongInfoDisplay.tsx` - Unified song information display with multi-platform link support
 - `src/components/ui/song/SongTimeControls.tsx` - Time input controls with precision adjustment and adjacent song alignment
-- `src/components/ui/song/SongThumbnail.tsx` - Standardized thumbnail component
+- `src/components/ui/song/SongThumbnail.tsx` - Standardized thumbnail component with multi-platform support
+
+**Thumbnail & Multi-Platform:**
+- `src/lib/utils/thumbnail.ts` - Multi-platform thumbnail fetching with Spotify oEmbed and Apple Music support
+- Platform detection and URL parsing for Niconico, YouTube, Spotify, Apple Music
 
 **Annotation Enhancement:**
 - `src/components/features/medley/ImportSetlistModal.tsx` - Bulk setlist import from text format
@@ -725,6 +768,39 @@ Final color scheme completion with player controls updated to Coffee & Cream pal
 - All player control color changes deployed and verified in production environment
 - Consistent Coffee & Cream color scheme now applied to 100% of UI elements
 - No remaining color inconsistencies with established design system
+
+### Multiple Platform Support Implementation (2025-08-25)
+Major enhancement adding support for Spotify and Apple Music platforms alongside existing Niconico/YouTube:
+
+**Key Features Implemented:**
+- **Extended Data Model**: Added `links` field to `SongSection` type supporting 4 platforms
+- **Spotify Integration**: oEmbed API implementation for album artwork without API keys
+- **Apple Music Support**: Open Graph meta tag scraping (CORS limitations noted)
+- **Smart Thumbnail Priority**: Automatic fallback system (Niconico > YouTube > Spotify > Apple Music)
+- **Visual Platform Indicators**: Emoji-based icons (🎬📺🎵🍎) with color-coded links
+
+**Technical Implementation:**
+- `src/lib/utils/thumbnail.ts`: Extended with Spotify oEmbed and Apple Music support
+- `src/components/ui/song/SongInfoDisplay.tsx`: Added `PlatformLinks` component for multi-platform display
+- `src/components/ui/song/SongThumbnail.tsx`: Async thumbnail loading with multiple source support
+- `src/components/features/medley/SongEditModal.tsx`: Multiple URL input fields for new songs
+
+**User Experience Benefits:**
+- **Platform Choice**: Users can access songs on their preferred streaming service
+- **Improved Thumbnails**: Multiple sources increase thumbnail availability and quality
+- **Future Extensibility**: Easy addition of new platforms with consistent architecture
+
+**Implementation Status:**
+- ✅ Existing song editing with multiple platform display
+- ✅ Thumbnail fetching from all 4 platforms  
+- ✅ Platform-specific URL validation and parsing
+- ⚠️ New song manual addition (single URL field - needs update to `ManualSongAddModal`)
+
+**Production Verification:**
+- Multiple platform links display correctly in song edit modals
+- Spotify oEmbed API successfully retrieves album artwork
+- Platform icons and color coding work as intended
+- Backward compatibility maintained with existing `originalLink` data
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.

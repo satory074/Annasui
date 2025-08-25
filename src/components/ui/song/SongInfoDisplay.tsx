@@ -4,6 +4,96 @@ import { SongSection } from "@/types";
 import { formatTime, formatDuration } from "@/lib/utils/time";
 import SongThumbnail from "./SongThumbnail";
 
+// プラットフォーム表示用の設定
+const PLATFORM_CONFIG = {
+  niconico: { name: "ニコニコ動画", icon: "🎬", color: "text-orange-600 dark:text-orange-400" },
+  youtube: { name: "YouTube", icon: "📺", color: "text-red-600 dark:text-red-400" },
+  spotify: { name: "Spotify", icon: "🎵", color: "text-green-600 dark:text-green-400" },
+  appleMusic: { name: "Apple Music", icon: "🍎", color: "text-red-600 dark:text-red-400" }
+};
+
+// 複数リンクを表示するコンポーネント
+function PlatformLinks({ song, variant = "detailed" }: { 
+  song: SongSection; 
+  variant?: "detailed" | "compact" | "card";
+}) {
+  const links = [];
+  
+  // links配列から利用可能なリンクを収集
+  if (song.links) {
+    if (song.links.niconico) {
+      links.push({ platform: 'niconico', url: song.links.niconico });
+    }
+    if (song.links.youtube) {
+      links.push({ platform: 'youtube', url: song.links.youtube });
+    }
+    if (song.links.spotify) {
+      links.push({ platform: 'spotify', url: song.links.spotify });
+    }
+    if (song.links.appleMusic) {
+      links.push({ platform: 'appleMusic', url: song.links.appleMusic });
+    }
+  }
+  
+  // 後方互換性のためoriginalLinkもチェック
+  if (song.originalLink && links.length === 0) {
+    links.push({ platform: 'niconico', url: song.originalLink });
+  }
+  
+  if (links.length === 0) return null;
+
+  if (variant === "compact") {
+    return (
+      <div>
+        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">配信</div>
+        <div className="flex flex-wrap gap-1">
+          {links.map(({ platform, url }, index) => {
+            const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
+            return (
+              <a
+                key={index}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`text-xs ${config.color} hover:underline flex items-center gap-1`}
+                title={`${config.name}で開く`}
+              >
+                <span>{config.icon}</span>
+                <span>{config.name}</span>
+              </a>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        配信プラットフォーム
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {links.map(({ platform, url }, index) => {
+          const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
+          return (
+            <a
+              key={index}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`inline-flex items-center gap-1 px-2 py-1 text-sm ${config.color} bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors`}
+            >
+              <span>{config.icon}</span>
+              <span>{config.name}</span>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 interface SongInfoDisplayProps {
   song: SongSection;
   variant?: "compact" | "detailed" | "card";
@@ -36,6 +126,7 @@ export default function SongInfoDisplay({
               originalLink={song.originalLink}
               title={song.title}
               size="md"
+              links={song.links}
             />
           )}
           <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">楽曲詳細</div>
@@ -79,18 +170,8 @@ export default function SongInfoDisplay({
             </div>
           )}
 
-          {showOriginalLink && song.originalLink && (
-            <div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">元動画</div>
-              <a
-                href={song.originalLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline break-all"
-              >
-                {song.originalLink.length > 30 ? `${song.originalLink.slice(0, 30)}...` : song.originalLink}
-              </a>
-            </div>
+          {showOriginalLink && (
+            <PlatformLinks song={song} variant="compact" />
           )}
         </div>
 
@@ -119,6 +200,7 @@ export default function SongInfoDisplay({
             originalLink={song.originalLink}
             title={song.title}
             size="sm"
+            links={song.links}
           />
         )}
         
@@ -136,18 +218,10 @@ export default function SongInfoDisplay({
                 {song.genre}
               </span>
             )}
-            {song.originalLink && (
-              <a
-                href={song.originalLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                </svg>
-                元動画
-              </a>
+            {(song.links || song.originalLink) && (
+              <div className="flex flex-wrap gap-1">
+                <PlatformLinks song={song} variant="compact" />
+              </div>
             )}
           </div>
         </div>
@@ -162,6 +236,7 @@ export default function SongInfoDisplay({
           originalLink={song.originalLink}
           title={song.title}
           size="lg"
+          links={song.links}
         />
       )}
 
@@ -223,20 +298,8 @@ export default function SongInfoDisplay({
         </div>
       )}
 
-      {showOriginalLink && song.originalLink && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            元動画リンク
-          </label>
-          <a
-            href={song.originalLink}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 underline break-all"
-          >
-            {song.originalLink}
-          </a>
-        </div>
+      {showOriginalLink && (
+        <PlatformLinks song={song} variant="detailed" />
       )}
     </div>
   );

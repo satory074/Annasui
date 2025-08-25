@@ -59,7 +59,13 @@ export default function SongEditModal({
     endTime: 0,
     color: "bg-blue-400",
     genre: "",
-    originalLink: ""
+    originalLink: "",
+    links: {
+      niconico: "",
+      youtube: "",
+      spotify: "",
+      appleMusic: ""
+    }
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -78,7 +84,13 @@ export default function SongEditModal({
         endTime: 0,
         color: "bg-blue-400",
         genre: "",
-        originalLink: ""
+        originalLink: "",
+        links: {
+          niconico: "",
+          youtube: "",
+          spotify: "",
+          appleMusic: ""
+        }
       });
     }
     setErrors({});
@@ -329,17 +341,93 @@ export default function SongEditModal({
 
           {/* 元動画リンク（新規楽曲の手動追加時のみ表示） */}
           {isNew && !isFromDatabase && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                元動画リンク
-              </label>
-              <input
-                type="url"
-                value={formData.originalLink || ""}
-                onChange={(e) => setFormData({ ...formData, originalLink: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
-                placeholder="https://..."
-              />
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  配信プラットフォーム
+                </label>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      🎬 ニコニコ動画
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.links?.niconico || ""}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        links: { ...formData.links, niconico: e.target.value }
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                      placeholder="https://www.nicovideo.jp/watch/sm..."
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      📺 YouTube
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.links?.youtube || ""}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        links: { ...formData.links, youtube: e.target.value }
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                      placeholder="https://www.youtube.com/watch?v=..."
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      🎵 Spotify
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.links?.spotify || ""}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        links: { ...formData.links, spotify: e.target.value }
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                      placeholder="https://open.spotify.com/track/..."
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                      🍎 Apple Music
+                    </label>
+                    <input
+                      type="url"
+                      value={formData.links?.appleMusic || ""}
+                      onChange={(e) => setFormData({ 
+                        ...formData, 
+                        links: { ...formData.links, appleMusic: e.target.value }
+                      })}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                      placeholder="https://music.apple.com/..."
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* 後方互換性のための元動画リンク（非表示にしても内部で使用） */}
+              {formData.originalLink && !formData.links?.niconico && !formData.links?.youtube && !formData.links?.spotify && !formData.links?.appleMusic && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    元動画リンク（従来）
+                  </label>
+                  <input
+                    type="url"
+                    value={formData.originalLink || ""}
+                    onChange={(e) => setFormData({ ...formData, originalLink: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                    placeholder="https://..."
+                  />
+                </div>
+              )}
             </div>
           )}
         </div>

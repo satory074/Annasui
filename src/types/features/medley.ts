@@ -7,7 +7,13 @@ export type SongSection = {
   endTime: number;      // 終了時間（秒）
   color: string;        // 表示色（CSS color code）
   genre?: string;       // ジャンル（オプション）
-  originalLink?: string; // 原曲へのリンク（オプション）
+  originalLink?: string; // 原曲へのリンク（後方互換性のため維持）
+  links?: {             // 複数プラットフォーム対応
+    niconico?: string;  // ニコニコ動画URL
+    youtube?: string;   // YouTubeURL
+    spotify?: string;   // SpotifyURL
+    appleMusic?: string; // Apple MusicURL
+  };
 };
 
 // メドレー情報全体のデータモデル

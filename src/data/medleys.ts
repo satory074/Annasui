@@ -19,7 +19,12 @@ export const sampleMedley1: MedleyData = {
       endTime: 90,
       color: "bg-red-400",
       genre: "ボカロ",
-      originalLink: "https://www.nicovideo.jp/watch/sm15630734"
+      originalLink: "https://www.nicovideo.jp/watch/sm15630734", // 後方互換性のため維持
+      links: {
+        niconico: "https://www.nicovideo.jp/watch/sm15630734",
+        youtube: "https://www.youtube.com/watch?v=K_xTet06SUo",
+        spotify: "https://open.spotify.com/track/6rqhFgbbKwnb9MLmUQDhG6"
+      }
     },
     {
       id: 2,
@@ -29,7 +34,12 @@ export const sampleMedley1: MedleyData = {
       endTime: 175,
       color: "bg-blue-400",
       genre: "ボカロ",
-      originalLink: "https://www.nicovideo.jp/watch/sm11809611"
+      originalLink: "https://www.nicovideo.jp/watch/sm11809611", // 後方互換性のため維持
+      links: {
+        niconico: "https://www.nicovideo.jp/watch/sm11809611",
+        youtube: "https://www.youtube.com/watch?v=HOz-9FzIDf0",
+        spotify: "https://open.spotify.com/track/2uqYupMHgCqaVg2TXfZr4c"
+      }
     },
     {
       id: 3,
@@ -39,7 +49,11 @@ export const sampleMedley1: MedleyData = {
       endTime: 265,
       color: "bg-yellow-400",
       genre: "ボカロ",
-      originalLink: "https://www.nicovideo.jp/watch/sm1715919"
+      originalLink: "https://www.nicovideo.jp/watch/sm1715919", // 後方互換性のため維持
+      links: {
+        niconico: "https://www.nicovideo.jp/watch/sm1715919",
+        youtube: "https://www.youtube.com/watch?v=lW01eSV1u5E"
+      }
     },
     {
       id: 4,
@@ -49,7 +63,12 @@ export const sampleMedley1: MedleyData = {
       endTime: 350,
       color: "bg-green-400",
       genre: "ボカロ",
-      originalLink: "https://www.nicovideo.jp/watch/sm3504435"
+      originalLink: "https://www.nicovideo.jp/watch/sm3504435", // 後方互換性のため維持
+      links: {
+        niconico: "https://www.nicovideo.jp/watch/sm3504435",
+        youtube: "https://www.youtube.com/watch?v=EuJ6UR_pD5s",
+        spotify: "https://open.spotify.com/track/1QrWj8zwWkU1D7RbMhZy7l"
+      }
     },
     {
       id: 5,
@@ -59,7 +78,12 @@ export const sampleMedley1: MedleyData = {
       endTime: 440,
       color: "bg-orange-400",
       genre: "ボカロ",
-      originalLink: "https://www.nicovideo.jp/watch/sm31606995"
+      originalLink: "https://www.nicovideo.jp/watch/sm31606995", // 後方互換性のため維持
+      links: {
+        niconico: "https://www.nicovideo.jp/watch/sm31606995",
+        youtube: "https://www.youtube.com/watch?v=AS4q9yaWJkI",
+        appleMusic: "https://music.apple.com/jp/album/1284121742"
+      }
     },
     {
       id: 6,

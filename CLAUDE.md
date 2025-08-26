@@ -295,9 +295,10 @@ const sendCommand = (command) => {
 ### Multi-Segment Editor Issues
 - **Segments being replaced instead of added**: Check array mutation in `addSegment` function - use `[...segments].sort()` instead of `segments.sort()`
 - **Timeline preview not showing all segments**: Verify segment mapping and positioning calculations in timeline render loop
-- **Segment validation errors**: Check cross-segment overlap detection logic and validation state management
+- **Basic validation errors**: Check start/end time validation (startTime ≥ 0, endTime > startTime, within video duration)
 - **Preview playback not working**: Ensure individual segment preview integrates properly with Niconico postMessage API
 - **Table layout responsive issues**: Check CSS grid/flexbox behavior on mobile devices for compact table design
+- **Note**: Overlap validation has been intentionally removed to support mashup/crossfade effects
 
 ### Multiple Platform Support Issues
 - **Spotify thumbnails not loading**: Check oEmbed API response and track ID extraction from URL
@@ -1026,6 +1027,7 @@ Major feature enhancement enabling songs to have multiple appearance segments wi
 - **Timeline Preview**: Visual representation showing all segments and their positions relative to other songs
 - **Segment Addition**: "区間を追加" button adds new segments in chronological order based on addition sequence
 - **Individual Segment Controls**: Preview playback, time adjustment, and deletion for each segment independently
+- **Overlap Support**: Songs and segments can freely overlap for mashup/crossfade effects
 
 **Technical Implementation:**
 - **TimeSegment Interface**: New data structure for managing individual time segments
@@ -1041,7 +1043,7 @@ export interface TimeSegment {
 
 - **MultiSegmentTimeEditor Component**: Comprehensive editor replacing single time controls in SongEditModal
 - **Batch Processing**: Enhanced MedleyPlayer to handle multiple song instances for the same track
-- **Validation System**: Cross-segment overlap detection and validation with other songs in medley
+- **Simplified Validation**: Only basic validation (startTime ≥ 0, endTime > startTime, within video duration) - overlap restrictions removed
 
 **Critical Bug Fixes:**
 - **Array Mutation Prevention**: Fixed `segments.sort()` array mutation bug that caused segment replacement instead of addition

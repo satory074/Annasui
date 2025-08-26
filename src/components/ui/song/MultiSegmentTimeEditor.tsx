@@ -61,43 +61,8 @@ export default function MultiSegmentTimeEditor({
         errors.endTime = `終了時間は${Math.floor(maxDuration / 60)}:${String(maxDuration % 60).padStart(2, '0')}以下である必要があります`;
       }
 
-      // セグメント重複検証
-      for (let i = 0; i < sortedSegments.length; i++) {
-        if (i === index) continue;
-        const otherSegment = sortedSegments[i];
-        
-        // 重複チェック
-        if (
-          (segment.startTime >= otherSegment.startTime && segment.startTime < otherSegment.endTime) ||
-          (segment.endTime > otherSegment.startTime && segment.endTime <= otherSegment.endTime) ||
-          (segment.startTime <= otherSegment.startTime && segment.endTime >= otherSegment.endTime)
-        ) {
-          errors.startTime = `区間${otherSegment.segmentNumber}と重複しています`;
-          errors.endTime = `区間${otherSegment.segmentNumber}と重複しています`;
-        }
-      }
-
-      // 他の楽曲との重複検証
-      if (currentSongTitle && currentSongArtist) {
-        const otherSongs = allSongs.filter(song => 
-          song.title !== currentSongTitle || song.artist !== currentSongArtist
-        );
-        
-        for (const otherSong of otherSongs) {
-          if (
-            (segment.startTime >= otherSong.startTime && segment.startTime < otherSong.endTime) ||
-            (segment.endTime > otherSong.startTime && segment.endTime <= otherSong.endTime) ||
-            (segment.startTime <= otherSong.startTime && segment.endTime >= otherSong.endTime)
-          ) {
-            if (!errors.startTime) {
-              errors.startTime = `「${otherSong.title}」と重複しています`;
-            }
-            if (!errors.endTime) {
-              errors.endTime = `「${otherSong.title}」と重複しています`;
-            }
-          }
-        }
-      }
+      // セグメント重複検証と他の楽曲との重複検証を削除
+      // マッシュアップやクロスフェードなどの演出を可能にするため
 
       if (Object.keys(errors).length > 0) {
         newErrors[segment.id] = errors;

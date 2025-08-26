@@ -351,6 +351,41 @@ export default function MedleyPlayer({
         setContinuousInputMode(!continuousInputMode);
     };
 
+    // 重複楽曲の一括更新（マルチセグメント対応）
+    const handleBatchUpdate = (updatedSongs: SongSection[]) => {
+        if (updatedSongs.length === 0) return;
+
+        // 既存のインスタンスを削除してから新しいセグメントを追加する場合
+        if (editingSong && updatedSongs.length > 1) {
+            // 現在編集中の楽曲と同じタイトル・アーティストの全インスタンスを取得
+            const currentTitle = editingSong.title.trim();
+            const currentArtist = editingSong.artist.trim();
+            const existingInstances = displaySongs.filter(song => 
+                song.title.trim() === currentTitle && song.artist.trim() === currentArtist
+            );
+
+            // 既存インスタンスを全て削除
+            existingInstances.forEach(instance => {
+                deleteSong(instance.id);
+            });
+
+            // 新しいセグメントを追加
+            updatedSongs.forEach(song => {
+                addSong(song);
+            });
+
+            console.log(`「${currentTitle}」の${existingInstances.length}個のインスタンスを削除し、${updatedSongs.length}個のセグメントを追加しました`);
+        } else {
+            // 従来の単純な更新処理
+            updatedSongs.forEach(song => {
+                updateSong(song);
+            });
+            console.log(`${updatedSongs.length}つの楽曲インスタンスを一括更新しました`);
+        }
+        
+        setEditModalOpen(false);
+    };
+
     // セットリストインポートのハンドラー
     const handleImportSetlist = (songs: SongSection[]) => {
         // インポートした楽曲を一括で追加
@@ -698,6 +733,9 @@ export default function MedleyPlayer({
                 {...(editingSong && !isNewSong ? findAdjacentSongs(editingSong) : {})}
                 // 楽曲選択用
                 onSelectSong={handleSelectSongFromEditModal}
+                // 重複処理用
+                allSongs={displaySongs}
+                onBatchUpdate={handleBatchUpdate}
             />
 
             {/* 楽曲検索モーダル */}
@@ -721,6 +759,7 @@ export default function MedleyPlayer({
                 isOpen={manualAddModalOpen}
                 onClose={() => setManualAddModalOpen(false)}
                 onSave={handleManualSongSave}
+                existingSongs={displaySongs}
             />
 
             

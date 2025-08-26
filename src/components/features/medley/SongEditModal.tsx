@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { SongSection } from "@/types";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import SongInfoDisplay from "@/components/ui/song/SongInfoDisplay";
-import SongTimeControls from "@/components/ui/song/SongTimeControls";
+import MultiSegmentTimeEditor, { TimeSegment } from "@/components/ui/song/MultiSegmentTimeEditor";
+import { getDuplicateInfo } from "@/lib/utils/duplicateSongs";
 
 interface SongEditModalProps {
   isOpen: boolean;
@@ -24,11 +25,11 @@ interface SongEditModalProps {
   onSeek?: (time: number) => void;
   isPlaying?: boolean;
   onTogglePlayPause?: () => void;
-  // 隣接する楽曲との時刻合わせ用
-  previousSong?: SongSection;
-  nextSong?: SongSection;
   // 楽曲選択用
   onSelectSong?: () => void;
+  // 重複処理用
+  allSongs?: SongSection[];
+  onBatchUpdate?: (songs: SongSection[]) => void;
 }
 
 export default function SongEditModal({
@@ -47,9 +48,9 @@ export default function SongEditModal({
   onSeek,
   isPlaying = false,
   onTogglePlayPause,
-  previousSong,
-  nextSong,
-  onSelectSong
+  onSelectSong,
+  allSongs = [],
+  onBatchUpdate
 }: SongEditModalProps) {
   const [formData, setFormData] = useState<SongSection>({
     id: 0,
@@ -67,13 +68,42 @@ export default function SongEditModal({
     }
   });
 
+  const [segments, setSegments] = useState<TimeSegment[]>([]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
   const [previewInterval, setPreviewInterval] = useState<NodeJS.Timeout | null>(null);
+  const [applyToAllInstances, setApplyToAllInstances] = useState<boolean>(false);
 
   useEffect(() => {
     if (song) {
       setFormData(song);
+      // 既存の楽曲の場合、同じ楽曲の全インスタンスを取得してセグメントとして表示
+      if (allSongs.length > 0) {
+        const sameTitle = song.title.trim();
+        const sameArtist = song.artist.trim();
+        const duplicates = allSongs.filter(s => 
+          s.title.trim() === sameTitle && s.artist.trim() === sameArtist
+        ).sort((a, b) => a.startTime - b.startTime);
+        
+        const segmentData: TimeSegment[] = duplicates.map((s, index) => ({
+          id: s.id,
+          startTime: s.startTime,
+          endTime: s.endTime,
+          segmentNumber: index + 1,
+          color: s.color
+        }));
+        setSegments(segmentData);
+      } else {
+        // 単一セグメント
+        setSegments([{
+          id: song.id,
+          startTime: song.startTime,
+          endTime: song.endTime,
+          segmentNumber: 1,
+          color: song.color || "bg-caramel-400"
+        }]);
+      }
     } else if (isNew) {
       setFormData({
         id: Date.now(), // 一時的なID
@@ -90,9 +120,17 @@ export default function SongEditModal({
           appleMusic: ""
         }
       });
+      // 新規作成の場合はデフォルトセグメント
+      setSegments([{
+        id: 1,
+        startTime: currentTime || 0,
+        endTime: Math.min((currentTime || 0) + 30, maxDuration || 300),
+        segmentNumber: 1,
+        color: "bg-caramel-400"
+      }]);
     }
     setErrors({});
-  }, [song, isNew, isOpen]);
+  }, [song, isNew, isOpen, allSongs, currentTime, maxDuration]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -101,16 +139,9 @@ export default function SongEditModal({
       newErrors.title = "楽曲名は必須です";
     }
 
-    if (formData.startTime < 0) {
-      newErrors.startTime = "開始時間は0以上である必要があります";
-    }
-
-    if (formData.endTime <= formData.startTime) {
-      newErrors.endTime = "終了時間は開始時間より後である必要があります";
-    }
-
-    if (maxDuration > 0 && formData.endTime > maxDuration) {
-      newErrors.endTime = `終了時間は動画の長さ（${Math.floor(maxDuration / 60)}:${(maxDuration % 60).toString().padStart(2, '0')}）以下である必要があります`;
+    // セグメント検証は MultiSegmentTimeEditor 内で行われるため、ここでは基本検証のみ
+    if (segments.length === 0) {
+      newErrors.segments = "最低1つの区間が必要です";
     }
 
     setErrors(newErrors);
@@ -119,7 +150,31 @@ export default function SongEditModal({
 
   const handleSave = () => {
     if (validateForm()) {
-      onSave(formData);
+      // セグメントから複数のSongSectionを作成
+      const songsToSave: SongSection[] = segments.map(segment => ({
+        id: segment.id === formData.id ? formData.id : (Date.now() + Math.random()), // 新しいセグメントには新しいID
+        title: formData.title,
+        artist: formData.artist,
+        startTime: segment.startTime,
+        endTime: segment.endTime,
+        color: segment.color || formData.color,
+        originalLink: formData.originalLink,
+        links: formData.links
+      }));
+
+      if (applyToAllInstances && onBatchUpdate && song) {
+        // 全てのインスタンスに適用（時刻情報は各セグメント固有）
+        onBatchUpdate(songsToSave);
+      } else if (onBatchUpdate) {
+        // 複数セグメントの場合はバッチ更新を使用
+        onBatchUpdate(songsToSave);
+      } else {
+        // 単一セグメントの場合は従来の保存方法
+        if (segments.length === 1) {
+          const singleSong = songsToSave[0];
+          onSave(singleSong);
+        }
+      }
       if (!continuousMode) {
         onClose();
       }
@@ -128,51 +183,22 @@ export default function SongEditModal({
 
   const handleSaveAndNext = () => {
     if (validateForm()) {
+      // 複数セグメントの場合、最初のセグメントを代表として使用
+      const representativeSong: SongSection = {
+        ...formData,
+        startTime: segments[0]?.startTime || 0,
+        endTime: segments[0]?.endTime || 30
+      };
       if (onSaveAndNext) {
-        onSaveAndNext(formData);
+        onSaveAndNext(representativeSong);
       } else {
-        onSave(formData);
+        onSave(representativeSong);
       }
       // 連続モードではモーダルを閉じない
     }
   };
 
-  // プレビュー再生機能
-  const handlePreviewToggle = () => {
-    if (!onSeek || !onTogglePlayPause) return;
-
-    if (isPreviewMode) {
-      // プレビュー停止
-      setIsPreviewMode(false);
-      if (previewInterval) {
-        clearInterval(previewInterval);
-        setPreviewInterval(null);
-      }
-      if (isPlaying) {
-        onTogglePlayPause(); // 一時停止
-      }
-    } else {
-      // プレビュー開始
-      if (formData.startTime >= formData.endTime) {
-        alert("終了時刻が開始時刻よりも後である必要があります。");
-        return;
-      }
-
-      setIsPreviewMode(true);
-      onSeek(formData.startTime); // 開始位置にシーク
-      
-      if (!isPlaying) {
-        onTogglePlayPause(); // 再生開始
-      }
-
-      // ループ再生用のインターバルを設定
-      const interval = setInterval(() => {
-        onSeek(formData.startTime); // 開始位置に戻る
-      }, (formData.endTime - formData.startTime) * 1000); // 再生範囲の長さでループ
-
-      setPreviewInterval(interval);
-    }
-  };
+  // プレビュー再生機能（MultiSegmentTimeEditor内で処理されるため削除）
 
   // コンポーネントがアンマウントされる時のクリーンアップ
   useEffect(() => {
@@ -278,62 +304,24 @@ export default function SongEditModal({
             </>
           )}
 
-          {/* 開始時間 */}
-          <SongTimeControls
-            label="開始時間"
-            value={formData.startTime}
-            onChange={(value) => setFormData({ ...formData, startTime: value })}
-            currentTime={currentTime}
-            error={errors.startTime}
-            minValue={0}
-            adjacentTime={previousSong?.endTime}
-            adjacentLabel={previousSong ? "前の楽曲の終了時刻に合わせる" : undefined}
-          />
-
-          {/* 終了時間 */}
-          <SongTimeControls
-            label="終了時間"
-            value={formData.endTime}
-            onChange={(value) => setFormData({ ...formData, endTime: value })}
-            currentTime={currentTime}
-            error={errors.endTime}
-            minValue={formData.startTime + 0.1}
-            maxValue={maxDuration}
-            adjacentTime={nextSong?.startTime}
-            adjacentLabel={nextSong ? "次の楽曲の開始時刻に合わせる" : undefined}
-          />
-
-          {/* プレビュー再生ボタン */}
-          {onSeek && onTogglePlayPause && (
-            <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    プレビュー再生
-                  </h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    設定した範囲をループ再生で確認できます
-                  </p>
-                </div>
-                <button
-                  onClick={handlePreviewToggle}
-                  disabled={formData.startTime >= formData.endTime}
-                  className={`px-4 py-2 text-sm rounded-md font-medium transition-colors ${
-                    isPreviewMode
-                      ? 'bg-brick-600 text-white hover:bg-red-700'
-                      : 'bg-caramel-600 text-white hover:bg-caramel-700'
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {isPreviewMode ? 'プレビュー停止' : 'プレビュー開始'}
-                </button>
-              </div>
-              {isPreviewMode && (
-                <div className="mt-2 text-xs text-caramel-600 dark:text-caramel-600">
-                  🔄 {formData.startTime.toFixed(1)}s ~ {formData.endTime.toFixed(1)}s をループ再生中...
-                </div>
-              )}
-            </div>
-          )}
+          {/* 登場区間エディター */}
+          <div>
+            <MultiSegmentTimeEditor
+              segments={segments}
+              onChange={setSegments}
+              currentTime={currentTime}
+              maxDuration={maxDuration || 0}
+              onSeek={onSeek}
+              isPlaying={isPlaying}
+              onTogglePlayPause={onTogglePlayPause}
+              allSongs={allSongs}
+              currentSongTitle={formData.title}
+              currentSongArtist={formData.artist}
+            />
+            {errors.segments && (
+              <p className="text-red-500 text-sm mt-1">{errors.segments}</p>
+            )}
+          </div>
 
 
 
@@ -444,6 +432,37 @@ export default function SongEditModal({
             </label>
           </div>
         )}
+
+        {/* 重複楽曲の一括更新オプション */}
+        {song && !isNew && (() => {
+          const duplicateInfo = getDuplicateInfo(song, allSongs);
+          return duplicateInfo && duplicateInfo.totalInstances > 1 ? (
+            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-amber-700 dark:text-amber-300 mb-2">
+                    重複楽曲が検出されました
+                  </p>
+                  <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
+                    この楽曲は {duplicateInfo.totalInstances} 回登場します。楽曲情報を全てのインスタンスに適用できます。
+                  </p>
+                  <label className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
+                    <input
+                      type="checkbox"
+                      checked={applyToAllInstances}
+                      onChange={(e) => setApplyToAllInstances(e.target.checked)}
+                      className="rounded border-amber-300 text-caramel-600 focus:ring-caramel-600"
+                    />
+                    全 {duplicateInfo.totalInstances} インスタンスに適用（時刻は各インスタンス固有のまま）
+                  </label>
+                </div>
+              </div>
+            </div>
+          ) : null;
+        })()}
 
         {/* ボタン */}
         <div className="flex justify-between mt-6">

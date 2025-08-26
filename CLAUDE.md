@@ -292,6 +292,13 @@ const sendCommand = (command) => {
 - **Label not showing elapsed time**: Confirm `Math.round((currentTime - tempStartTime) * 10) / 10` calculation
 - **Bar appearing on wrong tracks**: Check conditional rendering logic in timeline rendering loop
 
+### Multi-Segment Editor Issues
+- **Segments being replaced instead of added**: Check array mutation in `addSegment` function - use `[...segments].sort()` instead of `segments.sort()`
+- **Timeline preview not showing all segments**: Verify segment mapping and positioning calculations in timeline render loop
+- **Segment validation errors**: Check cross-segment overlap detection logic and validation state management
+- **Preview playback not working**: Ensure individual segment preview integrates properly with Niconico postMessage API
+- **Table layout responsive issues**: Check CSS grid/flexbox behavior on mobile devices for compact table design
+
 ### Multiple Platform Support Issues
 - **Spotify thumbnails not loading**: Check oEmbed API response and track ID extraction from URL
 - **Apple Music thumbnails failing**: CORS restrictions may prevent direct scraping - use proxy if needed
@@ -363,8 +370,9 @@ src/
 
 **Annotation Enhancement:**
 - `src/components/features/medley/ImportSetlistModal.tsx` - Bulk setlist import from text format
-- Enhanced `SongEditModal.tsx` - Continuous input mode, preview playback, enhanced time controls
+- Enhanced `SongEditModal.tsx` - Continuous input mode, preview playback, enhanced time controls, multi-segment editing support
 - Enhanced `SongList.tsx` - Keyboard shortcuts (S/E/M keys) with comprehensive visual feedback system
+- `src/components/ui/song/MultiSegmentTimeEditor.tsx` - Multi-segment time editor with compact table layout and timeline preview
 
 
 ### Adding New Platforms
@@ -1008,6 +1016,61 @@ Major UX enhancement adding direct editing capabilities within the song search m
 - ✅ Platform URL editing works for all 4 supported platforms
 - ✅ Save functionality properly updates song data and propagates to edit modal
 - ✅ Console logging confirms edit handler receives updated song data
+
+### Multi-Segment Time Editor Implementation (2025-08-26)
+Major feature enhancement enabling songs to have multiple appearance segments within a single medley:
+
+**Key Features Implemented:**
+- **Multiple Time Ranges**: Songs can now have 2+ distinct appearance segments with separate start/end times
+- **Compact Table Layout**: Clean tabular interface for editing segment times with inline controls
+- **Timeline Preview**: Visual representation showing all segments and their positions relative to other songs
+- **Segment Addition**: "区間を追加" button adds new segments in chronological order based on addition sequence
+- **Individual Segment Controls**: Preview playback, time adjustment, and deletion for each segment independently
+
+**Technical Implementation:**
+- **TimeSegment Interface**: New data structure for managing individual time segments
+```typescript
+export interface TimeSegment {
+  id: number;
+  startTime: number;
+  endTime: number;
+  segmentNumber: number;
+  color?: string;
+}
+```
+
+- **MultiSegmentTimeEditor Component**: Comprehensive editor replacing single time controls in SongEditModal
+- **Batch Processing**: Enhanced MedleyPlayer to handle multiple song instances for the same track
+- **Validation System**: Cross-segment overlap detection and validation with other songs in medley
+
+**Critical Bug Fixes:**
+- **Array Mutation Prevention**: Fixed `segments.sort()` array mutation bug that caused segment replacement instead of addition
+```typescript
+// Fixed: Create copy before sorting
+const lastSegment = [...segments].sort((a, b) => a.startTime - b.startTime).pop();
+```
+
+- **Display Order**: Segments display in addition order (区間1, 区間2, etc.) while maintaining time-based sorting for logic operations
+- **State Management**: Proper React state handling prevents component reuse issues
+
+**User Experience Benefits:**
+- **Complex Song Patterns**: Handle songs that appear multiple times in different parts of a medley
+- **Visual Clarity**: Timeline preview shows all segments with color-coded representation
+- **Efficient Editing**: Inline time inputs with real-time validation and preview playback
+- **Professional Interface**: Clean table layout matches modern audio editing software
+
+**Files Modified:**
+- **Core Component**: `src/components/ui/song/MultiSegmentTimeEditor.tsx` - New comprehensive editor
+- **Modal Integration**: `src/components/features/medley/SongEditModal.tsx` - Multi-segment support
+- **Data Processing**: `src/components/pages/MedleyPlayer.tsx` - Batch update handling for multiple segments
+- **Type Definitions**: Enhanced interfaces for multi-segment data structures
+
+**Production Verification:**
+- ✅ Segment addition works correctly (no replacement bug)
+- ✅ Timeline preview displays multiple segments accurately
+- ✅ Compact table layout responsive and functional
+- ✅ Individual segment preview playback operational
+- ✅ Cross-segment validation prevents overlaps
 
 ### Genre Field Removal (2025-08-25)
 Complete removal of genre functionality for simplified data model and cleaner UI:

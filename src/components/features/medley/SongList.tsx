@@ -3,6 +3,7 @@
 import { SongSection } from "@/types";
 import { useEffect, useState } from "react";
 import PlayPauseButton from "@/components/ui/PlayPauseButton";
+import { getDuplicateInfo } from "@/lib/utils/duplicateSongs";
 
 interface SongListProps {
   songs: SongSection[];
@@ -700,13 +701,31 @@ export default function SongList({
                       onMouseLeave={handleSongLeave}
                       title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ⚠️ 動画の長さを超えています' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで再生'}`}
                     >
-                      <div className="text-xs text-gray-800 dark:text-gray-200 font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap"
+                      <div className="text-xs text-gray-800 dark:text-gray-200 font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1"
                            style={{
                              // タイトルをバーの幅を超えても表示（オーバーフロー許可）
                              overflow: 'visible',
                              position: 'relative'
                            }}>
                         {song.title}
+                        {(() => {
+                          const duplicateInfo = getDuplicateInfo(song, songs);
+                          if (duplicateInfo) {
+                            const circledNumbers = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+                            const number = duplicateInfo.instanceNumber <= 10 
+                              ? circledNumbers[duplicateInfo.instanceNumber - 1] 
+                              : `(${duplicateInfo.instanceNumber})`;
+                            return (
+                              <span 
+                                className="bg-caramel-600 text-white text-xs px-1 rounded-full font-bold shadow-sm"
+                                title={`重複楽曲 ${duplicateInfo.instanceNumber}/${duplicateInfo.totalInstances}`}
+                              >
+                                {number}
+                              </span>
+                            );
+                          }
+                          return null;
+                        })()}
                       </div>
                       {/* 重なり表示用の斜線パターン */}
                       {hasOverlap && (

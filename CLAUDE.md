@@ -417,7 +417,7 @@ src/
 - `src/hooks/useNicoPlayer.ts` - Niconico integration
 
 **Data:**
-- `src/lib/api/medleys.ts` - Database API with direct fetch implementation
+- `src/lib/api/medleys.ts` - Database API with direct fetch implementation, includes `getUserMedleys()` for user-specific queries
 - `src/lib/utils/songDatabase.ts` - Song search and caching across all medleys
 - `src/lib/utils/time.ts` - Time formatting and parsing utilities
 - `src/lib/utils/videoMetadata.ts` - Video metadata extraction from platform APIs
@@ -449,10 +449,18 @@ src/
 - `src/contexts/AuthContext.tsx` - React context for authentication state management
 - `src/components/features/auth/AuthModal.tsx` - OAuth login modal (GitHub/Google)
 - `src/components/features/auth/UserProfileDropdown.tsx` - User profile menu with avatar
-- `src/components/ui/user/UserAvatar.tsx` - Reusable avatar component
+- `src/components/ui/user/UserAvatar.tsx` - Reusable avatar component with xl size support
 - `src/app/auth/callback/page.tsx` - OAuth callback handler
 - `src/components/ClientLayout.tsx` - SSR-compatible auth provider wrapper
 - `database/migrations/` - SQL migration files for user authentication schema
+
+**User Profile System:**
+- `src/app/profile/page.tsx` - User profile page route
+- `src/components/pages/ProfilePage.tsx` - Profile page with user stats, medley previews
+- `src/app/my-medleys/page.tsx` - User's medleys management page route
+- `src/components/pages/MyMedleysPage.tsx` - Complete medley management with search, sort, delete
+- `src/app/settings/page.tsx` - Settings page route
+- `src/components/pages/SettingsPage.tsx` - Account settings and dark mode toggle
 
 
 ### Adding New Platforms
@@ -587,6 +595,52 @@ const thumbnail = data.thumbnail_url || getYouTubeThumbnail(videoId);
 - ✅ All metadata fields populate correctly from video APIs
 
 ## Recent Updates
+
+### User Profile System Implementation (2025-08-27)
+Complete user profile management system with three new pages for authenticated users:
+
+**Core Pages Implemented:**
+- **Profile Page (`/profile`)**: User information display with avatar, statistics (medley count, total songs, registration date), and preview of latest 6 medleys
+- **My Medleys Page (`/my-medleys`)**: Complete medley management with search, sorting, editing, deletion, and detailed statistics dashboard
+- **Settings Page (`/settings`)**: Account information display, dark mode toggle, navigation links, and sign-out functionality
+
+**Key Features:**
+- **Authentication Protection**: All pages require login and show AuthModal for anonymous users
+- **Responsive Design**: Coffee & Cream theme integration with full dark mode support
+- **Navigation Integration**: UserProfileDropdown links properly route to all profile pages
+- **Database Integration**: `getUserMedleys()` API function for fetching user-owned medleys
+- **SSR Compatibility**: Proper Next.js 15 hydration handling with loading states
+
+**Technical Implementation:**
+```typescript
+// API integration for user medleys
+export async function getUserMedleys(userId: string): Promise<MedleyData[]> {
+  // Fetch medleys owned by specific user with RLS protection
+  const { data: medleys } = await supabase
+    .from('medleys')
+    .select('*')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+}
+
+// Profile navigation from UserProfileDropdown
+<button onClick={() => router.push('/profile')}>
+  プロフィール
+</button>
+```
+
+**User Experience:**
+- **Statistics Dashboard**: Real-time counts of medleys, songs, platforms, and total duration
+- **Medley Management**: Search, sort by date/title/duration, edit/delete actions with confirmation modals
+- **Settings Control**: Dark mode toggle with localStorage persistence and system preference detection
+- **Seamless Navigation**: Consistent back buttons and cross-page linking
+
+**Production Verification:**
+- ✅ All three pages deployed and accessible at `/profile`, `/my-medleys`, `/settings`
+- ✅ Authentication protection working correctly with appropriate error messages
+- ✅ Coffee & Cream styling consistent across all new pages
+- ✅ UserProfileDropdown navigation functional in production environment
+- ✅ Database queries and user data display working properly
 
 ### User Authentication System Implementation (2025-08-27)
 Complete OAuth-based authentication system with user ownership for medleys:

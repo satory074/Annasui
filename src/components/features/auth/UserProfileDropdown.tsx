@@ -1,12 +1,14 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import UserAvatar from '@/components/ui/user/UserAvatar'
 import AuthModal from './AuthModal'
 
 export default function UserProfileDropdown() {
   const { user, signOut, loading } = useAuth()
+  const router = useRouter()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
@@ -127,8 +129,7 @@ export default function UserProfileDropdown() {
               className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               onClick={() => {
                 setIsDropdownOpen(false)
-                // TODO: Navigate to profile page
-                console.log('Navigate to profile')
+                router.push('/profile')
               }}
             >
               <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -141,8 +142,7 @@ export default function UserProfileDropdown() {
               className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               onClick={() => {
                 setIsDropdownOpen(false)
-                // TODO: Navigate to user's medleys
-                console.log('Navigate to my medleys')
+                router.push('/my-medleys')
               }}
             >
               <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -155,8 +155,7 @@ export default function UserProfileDropdown() {
               className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               onClick={() => {
                 setIsDropdownOpen(false)
-                // TODO: Navigate to settings
-                console.log('Navigate to settings')
+                router.push('/settings')
               }}
             >
               <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

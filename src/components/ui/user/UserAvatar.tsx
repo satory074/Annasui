@@ -5,7 +5,7 @@ import { User } from '@supabase/supabase-js'
 
 interface UserAvatarProps {
   user: User | null
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
   className?: string
 }
 
@@ -13,7 +13,8 @@ export default function UserAvatar({ user, size = 'md', className = '' }: UserAv
   const sizeClasses = {
     sm: 'w-6 h-6 text-xs',
     md: 'w-8 h-8 text-sm',
-    lg: 'w-12 h-12 text-lg'
+    lg: 'w-12 h-12 text-lg',
+    xl: 'w-16 h-16 text-xl'
   }
 
   const avatarUrl = user?.user_metadata?.avatar_url

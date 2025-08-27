@@ -263,6 +263,52 @@ export async function updateMedley(videoId: string, updates: Partial<Omit<Medley
   }
 }
 
+export async function getUserMedleys(userId: string): Promise<MedleyData[]> {
+  if (!supabase) {
+    return []
+  }
+  
+  try {
+    // Get all medleys for this user
+    const { data: medleys, error: medleysError } = await supabase
+      .from('medleys')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (medleysError) {
+      throw medleysError
+    }
+
+    if (!medleys) {
+      return []
+    }
+
+    // Get songs for each medley
+    const medleyDataPromises = medleys.map(async (medley) => {
+      const songsResult = await supabase!
+        .from('songs')
+        .select('*')
+        .eq('medley_id', medley.id as string)
+        .order('order_index', { ascending: true })
+
+      if (songsResult.error) {
+        console.error('Error fetching songs for medley:', medley.id, songsResult.error)
+      }
+
+      return convertDbRowToMedleyData(
+        medley as MedleyRow, 
+        (songsResult.data || []) as SongRow[]
+      )
+    })
+
+    return await Promise.all(medleyDataPromises)
+  } catch (error) {
+    console.error('Error fetching user medleys:', error)
+    return []
+  }
+}
+
 export async function deleteMedley(videoId: string): Promise<boolean> {
   if (!supabase) {
     return false

@@ -306,16 +306,20 @@ export default function MedleyPlayer({
     };
 
     // 手動楽曲追加モーダルから楽曲を保存
-    const handleManualSongSave = (songData: { title: string; artist: string; originalLink?: string }) => {
-        // 楽曲をデータベースに追加
-        const addedSong = addManualSong(songData);
-        
-        // 楽曲検索モーダルを開き直して、追加された楽曲を検索可能にする
-        setManualAddModalOpen(false);
-        setSongSearchModalOpen(true);
-        
-        // 成功メッセージ（オプション）
-        console.log(`楽曲「${addedSong.title}」を楽曲データベースに追加しました`);
+    const handleManualSongSave = async (songData: { title: string; artist: string; originalLink?: string }) => {
+        try {
+            // 楽曲をデータベースに追加
+            const addedSong = await addManualSong(songData);
+            
+            // 楽曲検索モーダルを開き直して、追加された楽曲を検索可能にする
+            setManualAddModalOpen(false);
+            setSongSearchModalOpen(true);
+            
+            // 成功メッセージ（オプション）
+            console.log(`楽曲「${addedSong.title}」を楽曲データベースに追加しました`);
+        } catch (error) {
+            console.error('楽曲の追加に失敗しました:', error);
+        }
     };
 
     // 楽曲編集中に楽曲選択モーダルを開く

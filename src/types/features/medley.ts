@@ -17,12 +17,14 @@ export type SongSection = {
 
 // メドレー情報全体のデータモデル
 export type MedleyData = {
+  id?: string;          // データベースID（作成後に付与）
   videoId: string;      // 動画ID
   title: string;        // メドレータイトル
   creator?: string;     // 制作者
   duration: number;     // 総再生時間（秒）
   songs: SongSection[]; // 楽曲セクション配列
   platform?: 'niconico' | 'youtube'; // プラットフォーム（オプション、デフォルトは'niconico'）
+  user_id?: string;     // 作成者のユーザーID（認証済みユーザーの場合）
   createdAt?: string;   // 投稿日時（ISO 8601形式）
   updatedAt?: string;   // 更新日時（ISO 8601形式）
   viewCount?: number;   // 再生回数

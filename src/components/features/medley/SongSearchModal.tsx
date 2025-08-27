@@ -22,7 +22,8 @@ export default function SongSearchModal({
   onEditSong
 }: SongSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [songDatabase] = useState(() => getSongDatabase());
+  const [songDatabase, setSongDatabase] = useState<SongDatabaseEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<{
     title: string;
@@ -41,12 +42,27 @@ export default function SongSearchModal({
     return searchSongs(songDatabase, searchTerm);
   }, [songDatabase, searchTerm]);
 
-  // モーダルが開かれたときに検索フィールドをクリア
+  // モーダルが開かれたときに検索フィールドをクリアし、データベースを読み込む
   useEffect(() => {
     if (isOpen) {
       setSearchTerm("");
       setEditingEntryId(null);
       setEditFormData(null);
+      
+      // Load song database
+      const loadSongDatabase = async () => {
+        setIsLoading(true);
+        try {
+          const db = await getSongDatabase();
+          setSongDatabase(db);
+        } catch (error) {
+          console.error('Failed to load song database:', error);
+          setSongDatabase([]);
+        }
+        setIsLoading(false);
+      };
+      
+      loadSongDatabase();
     }
   }, [isOpen]);
 

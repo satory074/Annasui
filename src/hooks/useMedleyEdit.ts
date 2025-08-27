@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { SongSection, MedleyData } from '@/types';
 import { updateMedley, createMedley } from '@/lib/api/medleys';
-import { getMedleyByVideoId as getStaticMedleyByVideoId } from '@/data/medleys';
 
 interface UseMedleyEditReturn {
   editingSongs: SongSection[];
@@ -175,8 +174,7 @@ export function useMedleyEdit(
         return false;
       }
 
-      // 既存のメドレーが存在するかチェック
-      const existingMedley = getStaticMedleyByVideoId(videoId);
+      // Database-only mode: no static data fallback needed
       
       // 楽曲データの準備（IDを除く）
       const songsToSave = editingSongs.map((song, index) => ({
@@ -189,16 +187,15 @@ export function useMedleyEdit(
         order_index: index + 1
       }));
 
-      let result;
-      if (existingMedley) {
-        // 既存のメドレーを更新
-        result = await updateMedley(videoId, {
-          title: medleyTitle,
-          creator: medleyCreator,
-          duration: duration
-        });
-      } else {
-        // 新規メドレーを作成
+      // Try to update first, then create if it doesn't exist
+      let result = await updateMedley(videoId, {
+        title: medleyTitle,
+        creator: medleyCreator,
+        duration: duration
+      });
+      
+      if (!result) {
+        // Create new medley if update failed (doesn't exist)
         const medleyData: Omit<MedleyData, 'songs'> & { songs: Omit<SongSection, 'id'>[] } = {
           videoId,
           title: medleyTitle,

@@ -45,5 +45,11 @@ next-env.d.ts
 # Local Netlify folder
 .netlify
 
+# Firebase
+.firebase
+firebase-debug.log
+firebase-debug.*.log
+.runtimeconfig.json
+
 # Playwright MCP screenshots
 .playwright-mcp/

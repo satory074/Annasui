@@ -60,10 +60,14 @@ function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyDa
   const sortedSongs = [...songs].sort((a, b) => a.order_index - b.order_index)
   
   return {
+    id: medley.id,
     videoId: medley.video_id,
     title: medley.title,
     creator: medley.creator || '',
     duration: medley.duration,
+    user_id: medley.user_id || undefined,
+    createdAt: medley.created_at,
+    updatedAt: medley.updated_at,
     songs: sortedSongs.map(convertDbRowToSongSection)
   }
 }
@@ -165,7 +169,7 @@ export async function getAllMedleys(): Promise<MedleyData[]> {
   }
 }
 
-export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { songs: Omit<SongSection, 'id'>[] }): Promise<MedleyData | null> {
+export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { songs: Omit<SongSection, 'id'>[], user_id?: string }): Promise<MedleyData | null> {
   if (!supabase) {
     return null
   }
@@ -179,6 +183,7 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
         title: medleyData.title,
         creator: medleyData.creator || null,
         duration: medleyData.duration,
+        user_id: medleyData.user_id || null,
       })
       .select()
       .single()

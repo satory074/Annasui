@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getYouTubeMedleyByVideoId } from '@/data/youtubeMedleys';
+import { getMedleyByVideoId } from '@/lib/api/medleys';
 
 interface YouTubeMedleyLayoutProps {
     children: React.ReactNode;
@@ -8,7 +8,7 @@ interface YouTubeMedleyLayoutProps {
 
 export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
     const resolvedParams = await params;
-    const medleyData = getYouTubeMedleyByVideoId(resolvedParams.videoId);
+    const medleyData = await getMedleyByVideoId(resolvedParams.videoId);
     
     if (!medleyData) {
         return {

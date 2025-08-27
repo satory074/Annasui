@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { getMedleyByVideoId } from '@/data/medleys';
+import { getMedleyByVideoId } from '@/lib/api/medleys';
 
 interface MedleyLayoutProps {
     children: React.ReactNode;
@@ -8,7 +8,7 @@ interface MedleyLayoutProps {
 
 export async function generateMetadata({ params }: { params: Promise<{ videoId: string }> }): Promise<Metadata> {
     const resolvedParams = await params;
-    const medleyData = getMedleyByVideoId(resolvedParams.videoId);
+    const medleyData = await getMedleyByVideoId(resolvedParams.videoId);
     
     if (!medleyData) {
         return {

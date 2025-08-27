@@ -1,7 +1,18 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dheairurkxjftugrwdjl.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZWFpcnVya3hqZnR1Z3J3ZGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyODI3OTEsImV4cCI6MjA3MTg1ODc5MX0.7VSQnn4HdWrMf3qgdPkB2bSyjSH1nuJhH1DR8m4Y4h8'
+
+// Debug logging for production
+console.log('🔍 Supabase Environment Debug:', {
+  hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+  hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  urlLength: supabaseUrl.length,
+  keyLength: supabaseAnonKey.length,
+  urlValue: supabaseUrl,
+  keyPrefix: supabaseAnonKey.substring(0, 20) + '...',
+  isProduction: process.env.NODE_ENV === 'production'
+})
 
 // Only create client if properly configured
 let supabase: ReturnType<typeof createClient> | null = null
@@ -9,13 +20,17 @@ let supabase: ReturnType<typeof createClient> | null = null
 if (supabaseUrl !== 'https://placeholder.supabase.co' && 
     supabaseAnonKey !== 'placeholder-anon-key' &&
     supabaseUrl !== 'your_supabase_url_here' &&
-    supabaseAnonKey !== 'your_supabase_anon_key_here') {
+    supabaseAnonKey !== 'your_supabase_anon_key_here' &&
+    supabaseUrl.length > 0 && supabaseAnonKey.length > 0) {
   try {
+    console.log('✅ Creating Supabase client...')
     supabase = createClient(supabaseUrl, supabaseAnonKey)
   } catch (error) {
-    console.warn('Failed to create Supabase client:', error)
+    console.warn('❌ Failed to create Supabase client:', error)
     supabase = null
   }
+} else {
+  console.warn('❌ Supabase environment variables not properly configured')
 }
 
 // Export a safe client that checks for null
@@ -25,6 +40,32 @@ export { supabase }
 export type Database = {
   public: {
     Tables: {
+      users: {
+        Row: {
+          id: string
+          email: string
+          name: string | null
+          avatar_url: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id: string
+          email: string
+          name?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          email?: string
+          name?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+      }
       medleys: {
         Row: {
           id: string
@@ -32,6 +73,7 @@ export type Database = {
           title: string
           creator: string | null
           duration: number
+          user_id: string | null
           created_at: string
           updated_at: string
         }
@@ -41,6 +83,7 @@ export type Database = {
           title: string
           creator?: string | null
           duration: number
+          user_id?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -50,6 +93,7 @@ export type Database = {
           title?: string
           creator?: string | null
           duration?: number
+          user_id?: string | null
           created_at?: string
           updated_at?: string
         }

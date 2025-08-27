@@ -26,7 +26,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Anasui is a multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, annotation editing, and searchable medley database. Supports Niconico and YouTube platforms.
 
-**Current Status**: Core features complete (multi-platform support, timeline editing, unified UI, annotation enhancement features). Next: user authentication.
+**Current Status**: Full-featured medley annotation platform with user authentication system implemented. All core features complete including multi-platform support, timeline editing, unified UI, annotation enhancement features, and OAuth-based user authentication.
 
 ## Core Architecture
 
@@ -34,7 +34,7 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 - Next.js 15.2.1 + React 19.0.0 + TypeScript
 - TailwindCSS 4 + Emotion for CSS-in-JS
 - Multi-platform video player support (Niconico postMessage API, YouTube iframe embed)
-- Supabase for database (required - direct fetch implementation)
+- Supabase for database + authentication (OAuth with GitHub/Google)
 - Firebase App Hosting for deployment with SSR support
 
 ### Critical Implementation Details
@@ -96,6 +96,47 @@ const data = await response.json();
 return data.thumbnail_url;
 ```
 
+#### User Authentication Architecture (2025-08-27)
+**OAuth-Based Authentication System:**
+- **Supabase Auth**: Handles GitHub and Google OAuth providers
+- **SSR-Compatible**: Uses ClientLayout wrapper for proper Next.js 15 hydration
+- **Progressive Enhancement**: App works for anonymous users, enhanced features for authenticated users
+- **User Profiles**: Automatic profile creation with avatar and metadata from OAuth providers
+
+**Authentication Flow:**
+```typescript
+// AuthContext provides authentication state throughout app
+const { user, session, loading, signIn, signOut } = useAuth()
+
+// OAuth sign-in with redirect handling
+await signIn('github') // or 'google'
+// Redirects to /auth/callback, then back to origin
+```
+
+**User Data Model:**
+```typescript
+// Database schema (users table)
+{
+  id: string // UUID matching auth.users.id
+  email: string
+  name: string | null
+  avatar_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+// Medleys table extended with user ownership
+{
+  // ... existing fields
+  user_id: string | null // Foreign key to users table
+}
+```
+
+**Authentication Requirements:**
+- **Medley Creation**: Requires authentication (shows AuthModal for anonymous users)
+- **Medley Editing**: Users can only edit their own medleys (Row Level Security)
+- **Data Access**: Public read access to all medleys, user-scoped write access
+
 #### Data Flow Architecture
 **Database-Only Mode (2025-08-27):**
 - **Supabase PostgreSQL**: Primary and only data source - static fallback deprecated
@@ -107,7 +148,8 @@ return data.thumbnail_url;
 - `MedleyPlayer` - Core reusable player with platform detection
 - `SongList` - Unified timeline with editing and interaction
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
-- Modals: `SongEditModal`, `SongSearchModal`, `SongDetailModal`, `ImportSetlistModal`, `CreateMedleyModal`
+- Modals: `SongEditModal`, `SongSearchModal`, `ImportSetlistModal`, `CreateMedleyModal`
+- Authentication: `AuthProvider`, `AuthModal`, `UserProfileDropdown`, `UserAvatar`
 
 #### Unified Modal/Tooltip System
 **Base Components:**
@@ -332,11 +374,20 @@ const sendCommand = (command) => {
 - **Thumbnail preview not showing**: Check conditional rendering `{formData.thumbnailUrl && (...)}`
 - **API parsing errors**: Verify XML/JSON parsing for Niconico getthumbinfo and YouTube oEmbed responses
 
+### Authentication Issues
+- **AuthProvider not rendering**: Check ClientLayout wrapper and SSR hydration - use mounted state
+- **OAuth redirect loops**: Verify callback URL configuration in Supabase Dashboard matches deployed domain
+- **Session not persisting**: Check localStorage/cookies and Supabase client initialization
+- **User not appearing in UI**: Verify UserProfileDropdown is included in header component tree
+- **Database user creation fails**: Check users table triggers and RLS policies
+- **Authentication modal not showing**: Verify auth requirement logic in medley creation handlers
+
 ### Build & Deployment
 - **Build fails**: Ensure `public/favicon.ico` exists
 - **Firebase deployment**: Use `firebase deploy` instead of Netlify
 - **Next.js 15 params**: All routes must handle `params: Promise<{...}>`
 - **Cloud Run access**: Ensure public access is enabled for Cloud Functions
+- **Authentication deployment**: Ensure database migrations are run and OAuth providers configured
 
 ## Data Management Architecture
 
@@ -389,6 +440,15 @@ src/
 **Medley Registration:**
 - `src/components/features/medley/CreateMedleyModal.tsx` - New medley registration modal with platform detection, validation, and automatic metadata retrieval
 - `src/lib/utils/videoMetadata.ts` - Video metadata extraction utilities for automatic information retrieval
+
+**Authentication System:**
+- `src/contexts/AuthContext.tsx` - React context for authentication state management
+- `src/components/features/auth/AuthModal.tsx` - OAuth login modal (GitHub/Google)
+- `src/components/features/auth/UserProfileDropdown.tsx` - User profile menu with avatar
+- `src/components/ui/user/UserAvatar.tsx` - Reusable avatar component
+- `src/app/auth/callback/page.tsx` - OAuth callback handler
+- `src/components/ClientLayout.tsx` - SSR-compatible auth provider wrapper
+- `database/migrations/` - SQL migration files for user authentication schema
 
 
 ### Adding New Platforms
@@ -518,6 +578,66 @@ const thumbnail = data.thumbnail_url || getYouTubeThumbnail(videoId);
 - ✅ All metadata fields populate correctly from video APIs
 
 ## Recent Updates
+
+### User Authentication System Implementation (2025-08-27)
+Complete OAuth-based authentication system with user ownership for medleys:
+
+**Core Features Implemented:**
+- **Supabase Authentication**: GitHub and Google OAuth providers with automatic user profile creation
+- **SSR Compatibility**: ClientLayout wrapper ensures proper Next.js 15 hydration without breaking server-side rendering
+- **Progressive Enhancement**: App functions for anonymous users with enhanced features for authenticated users
+- **User-Owned Medleys**: New medleys require authentication and are owned by the creating user
+
+**Authentication Components:**
+- **AuthContext**: React context providing authentication state (`useAuth()` hook)
+- **AuthModal**: OAuth login modal with GitHub/Google sign-in buttons and Coffee & Cream styling
+- **UserProfileDropdown**: Complete user profile menu with avatar, settings, and sign-out functionality
+- **UserAvatar**: Reusable avatar component with fallback to initials for users without profile pictures
+
+**Database Schema:**
+- **Users Table**: Stores user profiles with automatic creation from OAuth metadata
+- **Medleys Extension**: Added `user_id` foreign key for ownership tracking
+- **Row Level Security**: Users can only edit their own medleys, public read access maintained
+- **Legacy Support**: Existing anonymous medleys remain accessible (user_id = null)
+
+**Security Implementation:**
+```sql
+-- RLS policies ensure data ownership
+CREATE POLICY "Users can update their own medleys" ON medleys
+    FOR UPDATE USING (auth.uid() = user_id);
+```
+
+**User Experience:**
+- **Authentication Required**: "新規メドレー登録" button shows AuthModal for anonymous users
+- **Visual Indicators**: Lock icon appears on auth-required features
+- **Seamless OAuth**: Redirects to provider, returns to callback, then back to original page
+- **Profile Management**: Dropdown shows user info, settings access, and sign-out option
+
+**Technical Architecture:**
+```typescript
+// Authentication flow integration
+const { user } = useAuth();
+const handleCreateMedley = async (medleyData) => {
+  if (!user) {
+    setShowAuthModal(true); // Show login modal
+    return;
+  }
+  // Create medley with user_id
+  await createMedley({ ...medleyData, user_id: user.id });
+};
+```
+
+**Database Setup Required:**
+1. Run SQL migrations in `database/migrations/` directory
+2. Configure OAuth providers in Supabase Dashboard
+3. Set redirect URLs for production and development environments
+
+**Production Status:**
+- ✅ Authentication context and components implemented
+- ✅ Database schema and RLS policies defined
+- ✅ OAuth callback handling functional
+- ⚠️ Requires database migration execution
+- ⚠️ Requires OAuth provider configuration
 
 ### Firebase App Hosting Migration (2025-08-27)
 Complete migration from Netlify to Firebase App Hosting for better SSR support:

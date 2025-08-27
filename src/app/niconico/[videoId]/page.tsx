@@ -6,14 +6,6 @@ interface MedleyPageProps {
     }>;
 }
 
-// 静的エクスポート用の事前定義されたパス
-export async function generateStaticParams() {
-    return [
-        { videoId: 'sm500873' },
-        { videoId: 'sm38343669' },
-        { videoId: 'sm37796813' }
-    ];
-}
 
 export default async function MedleyPage({ params }: MedleyPageProps) {
     const resolvedParams = await params;

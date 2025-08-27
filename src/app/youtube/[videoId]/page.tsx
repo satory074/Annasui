@@ -6,12 +6,6 @@ interface YouTubeMedleyPageProps {
     }>;
 }
 
-// 静的エクスポート用の事前定義されたパス
-export async function generateStaticParams() {
-    return [
-        { videoId: 'dQw4w9WgXcQ' },
-    ];
-}
 
 export default async function YouTubeMedleyPage({ params }: YouTubeMedleyPageProps) {
     const resolvedParams = await params;

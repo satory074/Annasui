@@ -1,6 +1,5 @@
 import { SongSection, MedleyData } from "../../types";
-import { sampleMedley1, sampleMedley2, nicoMedley1, medleyMap } from "../../data/medleys";
-import { getAllYouTubeMedleys } from "../../data/youtubeMedleys";
+import { getAllMedleys } from "../api/medleys";
 
 // 楽曲DBエントリの型定義
 export interface SongDatabaseEntry {
@@ -34,10 +33,8 @@ function normalizeSongInfo(title: string, artist: string): string {
 }
 
 // 全メドレーデータから楽曲DBを構築
-export function buildSongDatabase(): SongDatabaseEntry[] {
-  const nicoMedleys = [sampleMedley1, sampleMedley2, nicoMedley1, ...Object.values(medleyMap)];
-  const youtubeMedleys = getAllYouTubeMedleys();
-  const allMedleys: MedleyData[] = [...nicoMedleys, ...youtubeMedleys];
+export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
+  const allMedleys: MedleyData[] = await getAllMedleys();
 
   const songMap = new Map<string, SongDatabaseEntry>();
 
@@ -125,9 +122,9 @@ export function createSongFromDatabase(
 let cachedSongDatabase: SongDatabaseEntry[] | null = null;
 let manuallyAddedSongs: SongDatabaseEntry[] = [];
 
-export function getSongDatabase(): SongDatabaseEntry[] {
+export async function getSongDatabase(): Promise<SongDatabaseEntry[]> {
   if (!cachedSongDatabase) {
-    cachedSongDatabase = buildSongDatabase();
+    cachedSongDatabase = await buildSongDatabase();
   }
   
   // 手動で追加された楽曲と統合
@@ -149,7 +146,7 @@ export function getSongDatabase(): SongDatabaseEntry[] {
 }
 
 // 手動で楽曲を追加
-export function addManualSong(songData: { title: string; artist: string; originalLink?: string }): SongDatabaseEntry {
+export async function addManualSong(songData: { title: string; artist: string; originalLink?: string }): Promise<SongDatabaseEntry> {
   const normalizedId = normalizeSongInfo(songData.title, songData.artist);
   
   // 既に存在するかチェック
@@ -159,7 +156,8 @@ export function addManualSong(songData: { title: string; artist: string; origina
   }
   
   // 既存のデータベースでも重複チェック
-  const existingDbSong = getSongDatabase().find(song => song.id === normalizedId);
+  const database = await getSongDatabase();
+  const existingDbSong = database.find(song => song.id === normalizedId);
   if (existingDbSong) {
     return existingDbSong;
   }

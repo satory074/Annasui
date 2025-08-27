@@ -11,7 +11,7 @@
       "concurrency": 10,
       "memory": "512MiB",
       "maxInstances": 10,
-      "minInstances": 1
+      "minInstances": 0
     }
   }
 }

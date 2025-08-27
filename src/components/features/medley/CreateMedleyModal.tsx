@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import { MedleyData } from "@/types";
+import { getVideoMetadata, VideoMetadata } from "@/lib/utils/videoMetadata";
 
 interface CreateMedleyModalProps {
   isOpen: boolean;
@@ -23,6 +24,9 @@ export default function CreateMedleyModal({
     platform: "niconico" as "niconico" | "youtube"
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("");
+  const [autoFetched, setAutoFetched] = useState(false);
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -35,6 +39,9 @@ export default function CreateMedleyModal({
         platform: "niconico"
       });
       setErrors({});
+      setIsLoading(false);
+      setLoadingMessage("");
+      setAutoFetched(false);
     }
   }, [isOpen]);
 
@@ -68,6 +75,47 @@ export default function CreateMedleyModal({
     if (detectedPlatform) {
       setFormData(prev => ({ ...prev, platform: detectedPlatform }));
     }
+    
+    // リセット状態を設定
+    setAutoFetched(false);
+    setErrors({});
+  };
+
+  const handleFetchMetadata = async () => {
+    if (!formData.videoUrl.trim()) {
+      setErrors({ videoUrl: "動画URLを入力してください" });
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+    setLoadingMessage("動画情報を取得中...");
+
+    try {
+      const metadata = await getVideoMetadata(formData.videoUrl);
+      
+      if (metadata.success) {
+        setFormData(prev => ({
+          ...prev,
+          title: metadata.title,
+          creator: metadata.creator,
+          duration: metadata.duration ? metadata.duration.toString() : prev.duration
+        }));
+        setAutoFetched(true);
+        
+        if (!metadata.duration) {
+          setLoadingMessage("動画長は手動で入力してください");
+        } else {
+          setLoadingMessage("");
+        }
+      } else {
+        setErrors({ videoUrl: metadata.error || "動画情報の取得に失敗しました" });
+      }
+    } catch (error) {
+      setErrors({ videoUrl: "動画情報の取得中にエラーが発生しました" });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const validateForm = (): boolean => {
@@ -83,11 +131,11 @@ export default function CreateMedleyModal({
     }
 
     if (!formData.title.trim()) {
-      newErrors.title = "メドレータイトルは必須です";
+      newErrors.title = "メドレータイトルは必須です（「取得」ボタンで自動入力できます）";
     }
 
     if (!formData.creator.trim()) {
-      newErrors.creator = "制作者名は必須です";
+      newErrors.creator = "制作者名は必須です（「取得」ボタンで自動入力できます）";
     }
 
     if (!formData.duration.trim()) {
@@ -143,18 +191,42 @@ export default function CreateMedleyModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               動画URL *
             </label>
-            <input
-              type="url"
-              value={formData.videoUrl}
-              onChange={(e) => handleUrlChange(e.target.value)}
-              placeholder="https://www.nicovideo.jp/watch/sm12345678"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-caramel-600 focus:border-caramel-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                errors.videoUrl ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
+            <div className="flex gap-2">
+              <input
+                type="url"
+                value={formData.videoUrl}
+                onChange={(e) => handleUrlChange(e.target.value)}
+                placeholder="https://www.nicovideo.jp/watch/sm12345678"
+                className={`flex-1 px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-caramel-600 focus:border-caramel-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                  errors.videoUrl ? 'border-red-500' : 'border-gray-300'
+                }`}
+                disabled={isLoading}
+              />
+              <button
+                type="button"
+                onClick={handleFetchMetadata}
+                disabled={isLoading || !formData.videoUrl.trim()}
+                className="px-4 py-2 text-sm font-medium text-white bg-caramel-600 border border-transparent rounded-md shadow-sm hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-caramel-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                    取得中
+                  </div>
+                ) : (
+                  "取得"
+                )}
+              </button>
+            </div>
             {errors.videoUrl && (
               <p className="mt-1 text-sm text-red-600">{errors.videoUrl}</p>
             )}
+            {loadingMessage && (
+              <p className="mt-1 text-sm text-blue-600">{loadingMessage}</p>
+            )}
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              URLを入力後、「取得」ボタンで動画情報を自動入力できます
+            </p>
           </div>
 
           {/* プラットフォーム */}
@@ -190,6 +262,9 @@ export default function CreateMedleyModal({
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               メドレータイトル *
+              {autoFetched && formData.title && (
+                <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ 自動入力済み</span>
+              )}
             </label>
             <input
               type="text"
@@ -197,8 +272,11 @@ export default function CreateMedleyModal({
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="ボカロメドレー2025"
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-caramel-600 focus:border-caramel-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                errors.title ? 'border-red-500' : 'border-gray-300'
+                errors.title ? 'border-red-500' : 
+                autoFetched && formData.title ? 'border-green-300 bg-green-50 dark:bg-green-900/20' : 
+                'border-gray-300'
               }`}
+              disabled={isLoading}
             />
             {errors.title && (
               <p className="mt-1 text-sm text-red-600">{errors.title}</p>
@@ -209,6 +287,9 @@ export default function CreateMedleyModal({
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               制作者名 *
+              {autoFetched && formData.creator && (
+                <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ 自動入力済み</span>
+              )}
             </label>
             <input
               type="text"
@@ -216,8 +297,11 @@ export default function CreateMedleyModal({
               onChange={(e) => setFormData(prev => ({ ...prev, creator: e.target.value }))}
               placeholder="メドレー製作者"
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-caramel-600 focus:border-caramel-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                errors.creator ? 'border-red-500' : 'border-gray-300'
+                errors.creator ? 'border-red-500' : 
+                autoFetched && formData.creator ? 'border-green-300 bg-green-50 dark:bg-green-900/20' : 
+                'border-gray-300'
               }`}
+              disabled={isLoading}
             />
             {errors.creator && (
               <p className="mt-1 text-sm text-red-600">{errors.creator}</p>
@@ -228,6 +312,9 @@ export default function CreateMedleyModal({
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               動画の長さ（秒） *
+              {autoFetched && formData.duration && (
+                <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ 自動入力済み</span>
+              )}
             </label>
             <input
               type="number"
@@ -236,8 +323,11 @@ export default function CreateMedleyModal({
               onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
               placeholder="600"
               className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-caramel-600 focus:border-caramel-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                errors.duration ? 'border-red-500' : 'border-gray-300'
+                errors.duration ? 'border-red-500' : 
+                autoFetched && formData.duration ? 'border-green-300 bg-green-50 dark:bg-green-900/20' : 
+                'border-gray-300'
               }`}
+              disabled={isLoading}
             />
             {errors.duration && (
               <p className="mt-1 text-sm text-red-600">{errors.duration}</p>
@@ -252,15 +342,17 @@ export default function CreateMedleyModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-caramel-600 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500"
+              disabled={isLoading}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-caramel-600 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               キャンセル
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-caramel-600 border border-transparent rounded-md shadow-sm hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-caramel-600"
+              disabled={isLoading}
+              className="px-4 py-2 text-sm font-medium text-white bg-caramel-600 border border-transparent rounded-md shadow-sm hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-caramel-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              メドレーを作成
+              {isLoading ? "取得中..." : "メドレーを作成"}
             </button>
           </div>
         </form>

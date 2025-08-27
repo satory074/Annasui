@@ -16,7 +16,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Development: http://localhost:3000
 - Production: https://anasui-e6f49.web.app (Firebase App Hosting)
 
-**Deployment**: `firebase deploy`
+**Deployment**: 
+- Primary: `firebase deploy` (Firebase App Hosting with SSR)
+- GitHub Actions: Automatic deployment on main branch push
 
 ### 動作確認の重要事項
 **CRITICAL**: 機能の動作確認は必ずプロダクション環境（https://anasui-e6f49.web.app）で行うこと。
@@ -24,15 +26,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Anasui is a multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, annotation editing, and searchable medley database. Supports Niconico and YouTube platforms.
+Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, advanced editing capabilities, searchable medley database, and user authentication. Supports 4 platforms: Niconico (full integration), YouTube (embed), Spotify (thumbnails), and Apple Music (thumbnails).
 
-**Current Status**: Full-featured medley annotation platform with user authentication system implemented. All core features complete including multi-platform support, timeline editing, unified UI, annotation enhancement features, and OAuth-based user authentication.
+**Current Status**: Complete medley annotation platform with full user authentication system. All core features implemented including multi-platform support (Niconico, YouTube, Spotify, Apple Music), advanced timeline editing with multi-segment support, unified UI with Coffee & Cream design system, comprehensive annotation enhancement features, and OAuth-based user authentication with database ownership model.
 
 ## Core Architecture
 
 ### Technology Stack
 - Next.js 15.2.1 + React 19.0.0 + TypeScript
 - TailwindCSS 4 + Emotion for CSS-in-JS
+- Coffee & Cream Design System (custom color palette with caramel, sienna, olive themes)
 - Multi-platform video player support (Niconico postMessage API, YouTube iframe embed)
 - Supabase for database + authentication (OAuth with GitHub/Google)
 - Firebase App Hosting for deployment with SSR support
@@ -178,6 +181,7 @@ await signIn('github') // or 'google'
 **Timeline Display**: Always shows full video duration with simplified position calculations
 **Edit Mode Features**: Drag-and-drop editing (0.1s precision), undo/redo (50-action history), keyboard shortcuts
 **Unified Timeline**: SongList integrates timeline, tooltips, and editing functionality
+**Multi-Segment Support**: Songs can have multiple appearance segments within a single medley (e.g., song appears at 0:30-1:00 and 3:45-4:15)
 
 **NEW - Keyboard Shortcuts with Visual Feedback (2025-01-23, enhanced 2025-08-24):**
 - **S** key: Set current time as start time for new song
@@ -413,11 +417,11 @@ src/
 - `src/hooks/useNicoPlayer.ts` - Niconico integration
 
 **Data:**
-- `src/data/medleys.ts` - Niconico medley definitions
-- `src/data/youtubeMedleys.ts` - YouTube medley definitions
-- `src/lib/utils/songDatabase.ts` - Song search and caching
+- `src/lib/api/medleys.ts` - Database API with direct fetch implementation
+- `src/lib/utils/songDatabase.ts` - Song search and caching across all medleys
 - `src/lib/utils/time.ts` - Time formatting and parsing utilities
 - `src/lib/utils/videoMetadata.ts` - Video metadata extraction from platform APIs
+- `src/data/` - **DEPRECATED**: Static data files replaced by Supabase database
 
 
 **UI System:**
@@ -485,6 +489,11 @@ Always verify features work in production environment - SSR behavior and cross-o
 NEXT_PUBLIC_SUPABASE_URL=https://dheairurkxjftugrwdjl.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 ```
+
+**Critical Setup Requirements:**
+1. **Database Migrations**: Run SQL files in `database/migrations/` directory in Supabase
+2. **OAuth Configuration**: Configure GitHub and Google providers in Supabase Auth settings
+3. **RLS Policies**: Ensure Row Level Security policies are active for user data protection
 
 **Current URLs:**
 - **Primary**: https://anasui-e6f49.web.app

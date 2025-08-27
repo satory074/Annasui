@@ -14,13 +14,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing & Deployment
 **Testing**: Manual testing only - no dedicated test framework configured
 - Development: http://localhost:3000
-- Production: https://illustrious-figolla-20f57e.netlify.app (use for final verification)
+- Production: https://anasui-e6f49.web.app (Firebase App Hosting)
 
-**Deployment**: `npx netlify deploy --prod`
+**Deployment**: `firebase deploy`
 
 ### 動作確認の重要事項
-**CRITICAL**: 機能の動作確認は必ずプロダクション環境（https://illustrious-figolla-20f57e.netlify.app）で行うこと。
-ローカル環境とプロダクション環境では、iframe通信やstatic export等の違いにより動作が異なる場合がある。
+**CRITICAL**: 機能の動作確認は必ずプロダクション環境（https://anasui-e6f49.web.app）で行うこと。
+ローカル環境とプロダクション環境では、iframe通信やSSR等の違いにより動作が異なる場合がある。
 
 ## Project Overview
 
@@ -35,7 +35,7 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 - TailwindCSS 4 + Emotion for CSS-in-JS
 - Multi-platform video player support (Niconico postMessage API, YouTube iframe embed)
 - Supabase for database (required - direct fetch implementation)
-- Static export for Netlify deployment
+- Firebase App Hosting for deployment with SSR support
 
 ### Critical Implementation Details
 
@@ -334,8 +334,9 @@ const sendCommand = (command) => {
 
 ### Build & Deployment
 - **Build fails**: Ensure `public/favicon.ico` exists
-- **404 on deployed site**: Add video IDs to `generateStaticParams`
+- **Firebase deployment**: Use `firebase deploy` instead of Netlify
 - **Next.js 15 params**: All routes must handle `params: Promise<{...}>`
+- **Cloud Run access**: Ensure public access is enabled for Cloud Functions
 
 ## Data Management Architecture
 
@@ -405,10 +406,30 @@ src/
 **CRITICAL Verification Process:**
 1. Local testing: `npm run dev`
 2. Type safety: `npx tsc --noEmit` and `npm run lint`
-3. Production deployment: `npx netlify deploy --prod`
-4. Production verification: Test on https://illustrious-figolla-20f57e.netlify.app
+3. Production deployment: `firebase deploy`
+4. Production verification: Test on https://anasui-e6f49.web.app
 
-Always verify features work in production environment - static export and cross-origin iframe behavior differs from local development.
+Always verify features work in production environment - SSR behavior and cross-origin iframe communication differs from local development.
+
+### Firebase App Hosting Setup (2025-08-27)
+**Prerequisites**: Firebase CLI installed (`npm install -g firebase-tools`)
+
+**Commands:**
+- `firebase login` - Authenticate with Google account
+- `firebase use anasui-e6f49` - Select Firebase project
+- `firebase deploy` - Deploy to production
+- `firebase hosting:sites:list` - Check deployment status
+
+**Environment Variables**: Set in Firebase Console or via CLI
+```
+NEXT_PUBLIC_SUPABASE_URL=https://dheairurkxjftugrwdjl.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
+```
+
+**Current URLs:**
+- **Primary**: https://anasui-e6f49.web.app
+- **Alternative**: https://anasui-e6f49.firebaseapp.com
+- **Cloud Function**: https://ssranasuie6f49-j5ffi2qlsq-an.a.run.app
 
 
 ### New Medley Registration Feature (2025-08-27)
@@ -498,23 +519,25 @@ const thumbnail = data.thumbnail_url || getYouTubeThumbnail(videoId);
 
 ## Recent Updates
 
-### Database-Only Mode Implementation (2025-08-27)
-Critical architectural change eliminating static data fallback:
+### Firebase App Hosting Migration (2025-08-27)
+Complete migration from Netlify to Firebase App Hosting for better SSR support:
 
-**Breaking Changes:**
-- **Static Data Deprecated**: All medley data must now come from Supabase database
+**Major Changes:**
+- **Firebase Deployment**: Migrated from Netlify static export to Firebase App Hosting
+- **SSR Support**: Full server-side rendering with Cloud Functions (Node.js 20)
+- **Database-Only Mode**: All medley data now comes from Supabase database (static files deprecated)
 - **Direct Fetch API**: Replaced Supabase client SDK with direct fetch implementation
-- **Production Fix**: Resolved critical 401 authentication errors in production environment
-- **API Endpoints**: Direct calls to `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/` endpoints
 
 **Technical Implementation:**
+- `firebase.json`: Configured for Next.js App Hosting with asia-northeast1 region
 - `src/lib/api/medleys.ts`: Implemented `directFetch()` function bypassing Supabase client
-- Fixed authentication headers for production environment compatibility
-- Removed static data fallback logic from all data fetching operations
+- GitHub Actions: Automatic deployment on main branch push
+- Cloud Run: 512MiB memory, auto-scaling configuration
 
 **Critical Directive:**
 - **Never use static data files** - all future development must rely solely on Supabase database
 - Static files `src/data/medleys.ts` and `src/data/youtubeMedleys.ts` are deprecated
+- Always use Firebase deployment commands instead of Netlify
 
 ### UI Element Cleanup (2025-08-24)
 Removed unnecessary UI elements for cleaner interface:
@@ -688,7 +711,7 @@ Major UX improvement for seamless medley annotation workflow:
 - **Visual Feedback**: Tooltips show exact target time values for transparency
 
 **Production Verification:**
-- Feature tested and confirmed working in production environment (https://illustrious-figolla-20f57e.netlify.app)
+- Feature tested and confirmed working in production environment (https://anasui-e6f49.web.app)
 - Critical verification required due to iframe-based Niconico player communication differences between local/production
 
 ### Real-time Song Bar Feature (2025-08-24)
@@ -722,7 +745,7 @@ tempStartTime={tempStartTime}
 ```
 
 **Production Verification:**
-- Feature tested and confirmed working in production environment (https://illustrious-figolla-20f57e.netlify.app)
+- Feature tested and confirmed working in production environment (https://anasui-e6f49.web.app)
 - Real-time bar updates correctly as video plays
 - Visual styling renders properly at all timeline sizes
 - Performance impact minimal with smooth animation
@@ -810,7 +833,7 @@ const sizeClasses = {
 - **Consistent Sizing**: Proportional scaling maintains aspect ratios across all size variants
 
 **Production Verification:**
-- All improvements tested and confirmed working in production environment (https://illustrious-figolla-20f57e.netlify.app)
+- All improvements tested and confirmed working in production environment (https://anasui-e6f49.web.app)
 - Tooltip positioning logic correctly handles larger dimensions
 - Responsive behavior maintained across different screen sizes
 - Performance impact minimal with optimized rendering
@@ -834,7 +857,7 @@ const sizeClasses = {
 - **Edit button**: Opens song edit modal for modifications
 
 **Production Verification:**
-- プロダクション環境 (https://illustrious-figolla-20f57e.netlify.app) で動作確認済み
+- プロダクション環境 (https://anasui-e6f49.web.app) で動作確認済み
 - 楽曲クリック時にモーダルが表示されないことを確認
 - ツールチップ機能とシーク機能は正常動作
 

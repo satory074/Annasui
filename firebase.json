@@ -9,10 +9,9 @@
     "frameworksBackend": {
       "region": "asia-northeast1",
       "concurrency": 10,
-      "memory": "256MiB",
+      "memory": "512MiB",
       "maxInstances": 10,
-      "minInstances": 0
+      "minInstances": 1
     }
   }
-}
 }

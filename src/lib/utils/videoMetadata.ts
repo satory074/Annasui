@@ -2,12 +2,13 @@
  * 動画のメタデータ（タイトル、制作者、動画長）を取得するためのユーティリティ
  */
 
-import { extractVideoId } from './thumbnail';
+import { extractVideoId, getYouTubeThumbnail } from './thumbnail';
 
 export interface VideoMetadata {
   title: string;
   creator: string;
   duration?: number; // 秒数
+  thumbnail?: string; // サムネイル画像URL
   success: boolean;
   error?: string;
 }
@@ -25,6 +26,7 @@ export async function getNiconicoVideoMetadata(videoId: string): Promise<VideoMe
       return {
         title: '',
         creator: '',
+        thumbnail: undefined,
         success: false,
         error: 'ニコニコ動画APIからの取得に失敗しました'
       };
@@ -41,6 +43,7 @@ export async function getNiconicoVideoMetadata(videoId: string): Promise<VideoMe
       return {
         title: '',
         creator: '',
+        thumbnail: undefined,
         success: false,
         error: `動画が見つかりません（エラーコード: ${errorCode}）`
       };
@@ -50,6 +53,7 @@ export async function getNiconicoVideoMetadata(videoId: string): Promise<VideoMe
     const title = xmlDoc.querySelector('title')?.textContent || '';
     const creator = xmlDoc.querySelector('user_nickname')?.textContent || '';
     const lengthStr = xmlDoc.querySelector('length')?.textContent || '';
+    const thumbnail = xmlDoc.querySelector('thumbnail_url')?.textContent || '';
     
     // 長さをmm:ss形式から秒数に変換
     let duration: number | undefined;
@@ -64,6 +68,7 @@ export async function getNiconicoVideoMetadata(videoId: string): Promise<VideoMe
       title,
       creator,
       duration,
+      thumbnail: thumbnail || undefined,
       success: true
     };
   } catch (error) {
@@ -71,6 +76,7 @@ export async function getNiconicoVideoMetadata(videoId: string): Promise<VideoMe
     return {
       title: '',
       creator: '',
+      thumbnail: undefined,
       success: false,
       error: 'ニコニコ動画の情報取得中にエラーが発生しました'
     };
@@ -91,6 +97,7 @@ export async function getYouTubeVideoMetadata(videoId: string): Promise<VideoMet
       return {
         title: '',
         creator: '',
+        thumbnail: undefined,
         success: false,
         error: 'YouTube APIからの取得に失敗しました'
       };
@@ -98,11 +105,15 @@ export async function getYouTubeVideoMetadata(videoId: string): Promise<VideoMet
     
     const data = await response.json();
     
+    // サムネイルURLを生成（oEmbedのthumbnail_urlまたは標準的なYouTubeサムネイルURLを使用）
+    const thumbnail = data.thumbnail_url || getYouTubeThumbnail(videoId);
+    
     return {
       title: data.title || '',
       creator: data.author_name || '',
       // oEmbedには動画長の情報が含まれない
       duration: undefined,
+      thumbnail: thumbnail || undefined,
       success: true
     };
   } catch (error) {
@@ -110,6 +121,7 @@ export async function getYouTubeVideoMetadata(videoId: string): Promise<VideoMet
     return {
       title: '',
       creator: '',
+      thumbnail: undefined,
       success: false,
       error: 'YouTube動画の情報取得中にエラーが発生しました'
     };
@@ -126,6 +138,7 @@ export async function getVideoMetadata(url: string): Promise<VideoMetadata> {
     return {
       title: '',
       creator: '',
+      thumbnail: undefined,
       success: false,
       error: '有効な動画URLではありません'
     };
@@ -140,6 +153,7 @@ export async function getVideoMetadata(url: string): Promise<VideoMetadata> {
       return {
         title: '',
         creator: '',
+        thumbnail: undefined,
         success: false,
         error: `${platform}はサポートされていません`
       };

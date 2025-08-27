@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import { MedleyData } from "@/types";
-import { getVideoMetadata, VideoMetadata } from "@/lib/utils/videoMetadata";
+import { getVideoMetadata } from "@/lib/utils/videoMetadata";
 
 interface CreateMedleyModalProps {
   isOpen: boolean;
@@ -21,6 +21,7 @@ export default function CreateMedleyModal({
     title: "",
     creator: "",
     duration: "",
+    thumbnailUrl: "",
     platform: "niconico" as "niconico" | "youtube"
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -36,6 +37,7 @@ export default function CreateMedleyModal({
         title: "",
         creator: "",
         duration: "",
+        thumbnailUrl: "",
         platform: "niconico"
       });
       setErrors({});
@@ -78,6 +80,7 @@ export default function CreateMedleyModal({
     
     // リセット状態を設定
     setAutoFetched(false);
+    setFormData(prev => ({ ...prev, thumbnailUrl: "" }));
     setErrors({});
   };
 
@@ -99,7 +102,8 @@ export default function CreateMedleyModal({
           ...prev,
           title: metadata.title,
           creator: metadata.creator,
-          duration: metadata.duration ? metadata.duration.toString() : prev.duration
+          duration: metadata.duration ? metadata.duration.toString() : prev.duration,
+          thumbnailUrl: metadata.thumbnail || ""
         }));
         setAutoFetched(true);
         
@@ -111,7 +115,7 @@ export default function CreateMedleyModal({
       } else {
         setErrors({ videoUrl: metadata.error || "動画情報の取得に失敗しました" });
       }
-    } catch (error) {
+    } catch {
       setErrors({ videoUrl: "動画情報の取得中にエラーが発生しました" });
     } finally {
       setIsLoading(false);
@@ -228,6 +232,29 @@ export default function CreateMedleyModal({
               URLを入力後、「取得」ボタンで動画情報を自動入力できます
             </p>
           </div>
+
+          {/* サムネイルプレビュー */}
+          {formData.thumbnailUrl && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                サムネイルプレビュー
+                {autoFetched && (
+                  <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ 自動取得済み</span>
+                )}
+              </label>
+              <div className="flex justify-center">
+                <img
+                  src={formData.thumbnailUrl}
+                  alt="動画サムネイル"
+                  className="w-80 h-45 object-cover bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded"
+                  onError={(e) => {
+                    // サムネイル読み込みエラー時は非表示にする
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* プラットフォーム */}
           <div>

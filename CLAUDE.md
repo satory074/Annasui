@@ -106,7 +106,7 @@ return data.thumbnail_url;
 - `MedleyPlayer` - Core reusable player with platform detection
 - `SongList` - Unified timeline with editing and interaction
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
-- Modals: `SongEditModal`, `SongSearchModal`, `SongDetailModal`, `ImportSetlistModal`
+- Modals: `SongEditModal`, `SongSearchModal`, `SongDetailModal`, `ImportSetlistModal`, `CreateMedleyModal`
 
 #### Unified Modal/Tooltip System
 **Base Components:**
@@ -375,6 +375,9 @@ src/
 - Enhanced `SongList.tsx` - Keyboard shortcuts (S/E/M keys) with comprehensive visual feedback system
 - `src/components/ui/song/MultiSegmentTimeEditor.tsx` - Multi-segment time editor with compact table layout and timeline preview
 
+**Medley Registration:**
+- `src/components/features/medley/CreateMedleyModal.tsx` - New medley registration modal with platform detection and validation
+
 
 ### Adding New Platforms
 
@@ -396,6 +399,56 @@ src/
 
 Always verify features work in production environment - static export and cross-origin iframe behavior differs from local development.
 
+
+### New Medley Registration Feature (2025-08-27)
+Implemented complete new medley registration system allowing users to add medleys via UI:
+
+**Key Features:**
+- **Homepage Integration**: "新規メドレー登録" button in Coffee & Cream theme (caramel-600 background)
+- **Platform Detection**: Automatic platform detection from URL (Niconico/YouTube) with manual override
+- **Form Validation**: URL validation with video ID extraction, required field checking
+- **Dual Backend Support**: 
+  - **Supabase Mode**: Creates medley in database and redirects to editing page
+  - **Static Mode**: Shows detailed instructions for manual file editing
+
+**Components:**
+- **CreateMedleyModal.tsx**: Complete modal with form validation and platform detection
+- **Homepage (page.tsx)**: Added registration button and handler integration
+- **API Integration**: Uses existing `createMedley` function from medleys API
+
+**User Flow:**
+1. Click "新規メドレー登録" button on homepage
+2. Enter video URL (auto-detects Niconico/YouTube)
+3. Fill medley title, creator name, duration
+4. **Supabase**: Auto-saves and redirects to `/{platform}/{videoId}` for song editing
+5. **Static**: Shows copy-paste instructions for manual data file editing
+
+**Technical Implementation:**
+```typescript
+// URL detection and video ID extraction
+const extractVideoIdFromUrl = (url: string, platform: "niconico" | "youtube") => {
+  if (platform === "niconico") {
+    return url.match(/(?:nicovideo\.jp\/watch\/|nico\.ms\/)([a-z]{2}\d+)/i)?.[1];
+  }
+  return url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/)?.[1];
+};
+
+// Dual-mode handler
+const handleCreateMedley = async (medleyData) => {
+  if (isSupabaseConfigured) {
+    const newMedley = await createMedley({ ...medleyData, songs: [] });
+    router.push(`/${medleyData.platform}/${medleyData.videoId}`);
+  } else {
+    // Display static file instructions
+  }
+};
+```
+
+**Production Verification:**
+- ✅ Modal opens/closes correctly with form validation
+- ✅ Platform auto-detection works for both Niconico and YouTube URLs
+- ✅ Coffee & Cream styling applied consistently
+- ✅ Supabase error handling with fallback to static instructions
 
 ## Recent Updates
 

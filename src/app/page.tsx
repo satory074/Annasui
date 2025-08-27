@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { getAllMedleys } from "@/lib/api/medleys";
+import { useRouter } from "next/navigation";
+import { getAllMedleys, createMedley } from "@/lib/api/medleys";
 import { getMedleyByVideoId as getStaticMedleyByVideoId } from "@/data/medleys";
 import { MedleyData } from "@/types";
 import MedleyStatistics from "@/components/features/statistics/MedleyStatistics";
+import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
 
 export default function Home() {
+    const router = useRouter();
     const [medleys, setMedleys] = useState<MedleyData[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
@@ -18,20 +21,24 @@ export default function Home() {
     const [currentPage, setCurrentPage] = useState(1);
     const [showStatistics, setShowStatistics] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(8);
+    const [showCreateMedleyModal, setShowCreateMedleyModal] = useState(false);
+    const [isSupabaseConfigured, setIsSupabaseConfigured] = useState(false);
 
     useEffect(() => {
         async function fetchMedleys() {
             setLoading(true);
             
             // Supabaseが設定されているかチェック
-            const isSupabaseConfigured = Boolean(
+            const supabaseConfigured = Boolean(
                 process.env.NEXT_PUBLIC_SUPABASE_URL && 
                 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
                 process.env.NEXT_PUBLIC_SUPABASE_URL !== 'your_supabase_url_here' &&
                 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== 'your_supabase_anon_key_here'
             );
+            
+            setIsSupabaseConfigured(supabaseConfigured);
 
-            if (isSupabaseConfigured) {
+            if (supabaseConfigured) {
                 // Supabaseから取得
                 const apiMedleys = await getAllMedleys();
                 setMedleys(apiMedleys);
@@ -53,6 +60,54 @@ export default function Home() {
 
         fetchMedleys();
     }, []);
+
+    const handleCreateMedley = async (medleyData: Omit<MedleyData, 'songs'>) => {
+        if (isSupabaseConfigured) {
+            // Supabaseに保存
+            const newMedley = await createMedley({
+                ...medleyData,
+                songs: []
+            });
+            
+            if (newMedley) {
+                // メドレーリストを更新
+                setMedleys(prev => [newMedley, ...prev]);
+                setShowCreateMedleyModal(false);
+                
+                // 新しく作成されたメドレーの編集ページに遷移
+                const platform = medleyData.platform || 'niconico';
+                router.push(`/${platform}/${medleyData.videoId}`);
+            } else {
+                alert('メドレーの作成に失敗しました');
+            }
+        } else {
+            // 静的ファイル環境の場合、案内メッセージを表示
+            const platform = medleyData.platform || 'niconico';
+            const fileName = platform === 'youtube' ? 'youtubeMedleys.ts' : 'medleys.ts';
+            
+            alert(`静的ファイル環境では、以下の手順でメドレーを追加してください：
+
+1. src/data/${fileName} ファイルを編集
+2. 以下の形式でメドレーデータを追加：
+
+export const ${medleyData.videoId}: MedleyData = {
+  videoId: "${medleyData.videoId}",
+  title: "${medleyData.title}",
+  creator: "${medleyData.creator}",
+  duration: ${medleyData.duration},
+  platform: "${medleyData.platform}",
+  createdAt: "${medleyData.createdAt}",
+  updatedAt: "${medleyData.updatedAt}",
+  viewCount: ${medleyData.viewCount || 0},
+  songs: []
+};
+
+3. getAllMedleys関数の配列に追加
+4. app/${platform}/[videoId]/page.tsx で generateStaticParams に追加`);
+            
+            setShowCreateMedleyModal(false);
+        }
+    };
 
     // フィルタリング・ソート処理
     const filteredAndSortedMedleys = medleys
@@ -214,6 +269,17 @@ export default function Home() {
                                 <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
                                     {showStatistics ? '隠す' : '表示'}
                                 </span>
+                            </button>
+
+                            {/* 新規メドレー登録ボタン */}
+                            <button
+                                onClick={() => setShowCreateMedleyModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-caramel-600 hover:bg-caramel-700 text-white rounded-lg transition-colors shadow-sm font-medium"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                                </svg>
+                                新規メドレー登録
                             </button>
                             
                             {/* メドレー数表示 */}
@@ -634,6 +700,13 @@ export default function Home() {
                     </div>
                 )}
             </div>
+
+            {/* 新規メドレー作成モーダル */}
+            <CreateMedleyModal
+                isOpen={showCreateMedleyModal}
+                onClose={() => setShowCreateMedleyModal(false)}
+                onCreateMedley={handleCreateMedley}
+            />
         </div>
     );
 }

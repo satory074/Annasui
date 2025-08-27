@@ -34,7 +34,7 @@ Anasui is a multi-platform medley annotation platform built with Next.js. Provid
 - Next.js 15.2.1 + React 19.0.0 + TypeScript
 - TailwindCSS 4 + Emotion for CSS-in-JS
 - Multi-platform video player support (Niconico postMessage API, YouTube iframe embed)
-- Supabase for database (optional - falls back to static files)
+- Supabase for database (required - direct fetch implementation)
 - Static export for Netlify deployment
 
 ### Critical Implementation Details
@@ -97,10 +97,11 @@ return data.thumbnail_url;
 ```
 
 #### Data Flow Architecture
-**Dual-Mode Data Management:**
-- **Database Mode**: Supabase PostgreSQL when configured
-- **Static Mode**: `src/data/medleys.ts` and `src/data/youtubeMedleys.ts` as fallback
-- `useMedleyData` automatically detects and switches between modes
+**Database-Only Mode (2025-08-27):**
+- **Supabase PostgreSQL**: Primary and only data source - static fallback deprecated
+- **Direct Fetch Implementation**: Uses direct fetch API calls instead of Supabase client SDK
+- **Production Fix**: Resolved 401 API key errors by bypassing problematic Supabase JavaScript client
+- **Critical**: Never use static data files - all data operations must use Supabase database
 
 #### Component Architecture
 - `MedleyPlayer` - Core reusable player with platform detection
@@ -496,6 +497,24 @@ const thumbnail = data.thumbnail_url || getYouTubeThumbnail(videoId);
 - ✅ All metadata fields populate correctly from video APIs
 
 ## Recent Updates
+
+### Database-Only Mode Implementation (2025-08-27)
+Critical architectural change eliminating static data fallback:
+
+**Breaking Changes:**
+- **Static Data Deprecated**: All medley data must now come from Supabase database
+- **Direct Fetch API**: Replaced Supabase client SDK with direct fetch implementation
+- **Production Fix**: Resolved critical 401 authentication errors in production environment
+- **API Endpoints**: Direct calls to `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/` endpoints
+
+**Technical Implementation:**
+- `src/lib/api/medleys.ts`: Implemented `directFetch()` function bypassing Supabase client
+- Fixed authentication headers for production environment compatibility
+- Removed static data fallback logic from all data fetching operations
+
+**Critical Directive:**
+- **Never use static data files** - all future development must rely solely on Supabase database
+- Static files `src/data/medleys.ts` and `src/data/youtubeMedleys.ts` are deprecated
 
 ### UI Element Cleanup (2025-08-24)
 Removed unnecessary UI elements for cleaner interface:

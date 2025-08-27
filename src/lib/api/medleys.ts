@@ -4,6 +4,43 @@ import type { MedleyData, SongSection } from '@/types'
 type MedleyRow = Database['public']['Tables']['medleys']['Row']
 type SongRow = Database['public']['Tables']['songs']['Row']
 
+// Test function to verify API key
+export async function testSupabaseConnection(): Promise<{ success: boolean; error?: string }> {
+  if (!supabase) {
+    return { success: false, error: 'Supabase client not initialized' }
+  }
+  
+  try {
+    console.log('🔍 Testing Supabase connection...')
+    
+    // Try a simple query to test the connection
+    const { data, error } = await supabase
+      .from('medleys')
+      .select('id')
+      .limit(1)
+    
+    if (error) {
+      console.error('❌ Supabase connection test failed:', {
+        code: error.code,
+        message: error.message,
+        details: error.details
+      })
+      return { 
+        success: false, 
+        error: `${error.code}: ${error.message}` 
+      }
+    }
+    
+    console.log('✅ Supabase connection test successful')
+    return { success: true }
+  } catch (error) {
+    console.error('❌ Supabase connection test error:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : String(error) 
+    }
+  }
+}
 
 // Database row to app type conversion
 function convertDbRowToSongSection(song: SongRow): SongSection {
@@ -31,43 +68,53 @@ function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyDa
   }
 }
 
-// API functions
-export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | null> {
-  // Return null if Supabase is not configured
-  if (!supabase) {
-    return null
+// Direct fetch implementation to bypass Supabase client issues
+async function directFetch(url: string): Promise<any> {
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZWFpcnVya3hqZnR1Z3J3ZGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyODI3OTEsImV4cCI6MjA3MTg1ODc5MX0.7VSQnn4HdWrMf3qgdPkB2bSyjSH1nuJhH1DR8m4Y4h8',
+      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZWFpcnVya3hqZnR1Z3J3ZGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyODI3OTEsImV4cCI6MjA3MTg1ODc5MX0.7VSQnn4HdWrMf3qgdPkB2bSyjSH1nuJhH1DR8m4Y4h8',
+      'Content-Type': 'application/json'
+    }
+  });
+  
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
   }
   
+  return response.json();
+}
+
+// API functions
+export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | null> {
   try {
-    // Get medley data
-    const { data: medley, error: medleyError } = await supabase
-      .from('medleys')
-      .select('*')
-      .eq('video_id', videoId)
-      .single()
+    console.log('🔍 Fetching medley data for:', videoId)
 
-    if (medleyError) {
-      if (medleyError.code === 'PGRST116') {
-        // No rows found
-        return null
-      }
-      throw medleyError
+    // Get the medley using direct fetch
+    const medleyData = await directFetch(
+      `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/medleys?select=*&video_id=eq.${videoId}`
+    );
+
+    if (!medleyData || medleyData.length === 0) {
+      console.log('No medley found for video ID:', videoId)
+      return null
     }
 
-    // Get songs data
-    const { data: songs, error: songsError } = await supabase
-      .from('songs')
-      .select('*')
-      .eq('medley_id', medley.id as string)
-      .order('order_index', { ascending: true })
+    const medley = medleyData[0];
 
-    if (songsError) {
-      throw songsError
-    }
+    // Get the songs for this medley using direct fetch
+    const songData = await directFetch(
+      `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/songs?select=*&medley_id=eq.${medley.id}&order=order_index`
+    );
 
-    return convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[])
+    console.log('✅ Successfully fetched medley data:', {
+      title: medley.title,
+      songCount: songData.length
+    })
+
+    return convertDbRowToMedleyData(medley as MedleyRow, (songData || []) as SongRow[])
   } catch (error) {
-    console.error('Error fetching medley:', error)
+    console.error('❌ Error in getMedleyByVideoId:', error)
     return null
   }
 }

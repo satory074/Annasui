@@ -70,6 +70,19 @@ export default function SongEditModal({
 
   const [segments, setSegments] = useState<TimeSegment[]>([]);
 
+  // segments状態変更をログ
+  useEffect(() => {
+    console.log('🔄 SongEditModal: segments state changed', {
+      segmentsLength: segments.length,
+      segments: segments.map(s => ({ 
+        id: s.id, 
+        segmentNumber: s.segmentNumber,
+        startTime: s.startTime,
+        endTime: s.endTime 
+      }))
+    });
+  }, [segments]);
+
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
   const [previewInterval, setPreviewInterval] = useState<NodeJS.Timeout | null>(null);
@@ -130,7 +143,7 @@ export default function SongEditModal({
       }]);
     }
     setErrors({});
-  }, [song, isNew, isOpen, allSongs, currentTime, maxDuration]);
+  }, [song, isNew, isOpen, currentTime, maxDuration]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};

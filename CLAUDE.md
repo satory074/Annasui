@@ -1074,6 +1074,44 @@ const lastSegment = [...segments].sort((a, b) => a.startTime - b.startTime).pop(
 - ✅ Individual segment preview playback operational
 - ✅ Cross-segment validation prevents overlaps
 
+### Multi-Segment Display State Management Fix (2025-08-27)
+Critical fix for multi-segment UI display issues where segments were being created but not shown in the interface:
+
+**Problem Solved:**
+- Segments were successfully created (confirmed by debug logs: `✅ New segment created`)
+- UI state was updating correctly (`🔄 SongEditModal: segments state changed {segmentsLength: 2}`)
+- However, segments were immediately resetting back to single segment display due to useEffect dependency issues
+
+**Root Cause:**
+- `useEffect` in `SongEditModal.tsx` had `allSongs` in its dependency array (line 146)
+- When segments were added, React state updates triggered useEffect re-execution
+- This caused segment state to be recalculated and reset to original single-segment state
+- Created a race condition between segment addition and state reset
+
+**Solution Implemented:**
+1. **Dependency Array Fix**: Removed `allSongs` from useEffect dependencies in `SongEditModal.tsx`
+2. **State Persistence**: Ensured segment state persists after addition without being reset by useEffect
+3. **Production Testing**: Verified fix works correctly in production environment
+
+**Technical Implementation:**
+```typescript
+// Before: Problematic dependency causing state reset
+}, [song, isNew, isOpen, allSongs, currentTime, maxDuration]); // ❌ allSongs caused resets
+
+// After: Fixed dependency array  
+}, [song, isNew, isOpen, currentTime, maxDuration]); // ✅ Stable state management
+```
+
+**Files Modified:**
+- **SongEditModal.tsx (line 146)**: Removed `allSongs` from useEffect dependency array to prevent state reset
+
+**Production Verification:**
+- ✅ Multi-segment addition now works correctly without state reset
+- ✅ UI displays "登場区間 (2個)" and shows both segments  
+- ✅ Timeline preview correctly displays multiple segment bars
+- ✅ Individual segment controls (edit, preview, delete) function properly
+- ✅ No more segment replacement bug - segments persist after creation
+
 ### Genre Field Removal (2025-08-25)
 Complete removal of genre functionality for simplified data model and cleaner UI:
 

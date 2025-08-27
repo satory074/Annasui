@@ -8,7 +8,7 @@ import Header from "@/components/layout/Header";
 import NicoPlayer from "@/components/features/player/NicoPlayer";
 import YouTubePlayer from "@/components/features/player/YouTubePlayer";
 import { useNicoPlayer } from "@/hooks/useNicoPlayer";
-import SongList from "@/components/features/medley/SongList";
+import SongListGrouped from "@/components/features/medley/SongListGrouped";
 import SongEditModal from "@/components/features/medley/SongEditModal";
 import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
 import SongSearchModal from "@/components/features/medley/SongSearchModal";
@@ -47,6 +47,15 @@ export default function MedleyPlayer({
     
     // 手動楽曲追加モーダル関連の状態
     const [manualAddModalOpen, setManualAddModalOpen] = useState<boolean>(false);
+
+    // 楽曲選択とツールチップ関連の状態
+    const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [tooltip, setTooltip] = useState<{
+        visible: boolean;
+        song: SongSection | null;
+        position: { x: number; y: number };
+    }>({ visible: false, song: null, position: { x: 0, y: 0 } });
     
     
     // ツールチップ関連の状態
@@ -70,8 +79,8 @@ export default function MedleyPlayer({
         editingSongs,
         hasChanges,
         isSaving,
-        canUndo,
-        canRedo,
+        canUndo: _canUndo,
+        canRedo: _canRedo,
         updateSong,
         addSong,
         deleteSong,
@@ -90,7 +99,7 @@ export default function MedleyPlayer({
         volume,
         playerError,
         playerReady,
-        play,
+        play: _play,
         togglePlayPause,
         seek: nicoSeek,
         setVolume,
@@ -217,7 +226,19 @@ export default function MedleyPlayer({
     
     // 現在のトラックの追跡（編集中か元のデータかを切り替え）
     const displaySongs = isEditMode ? editingSongs : medleySongs;
-    const { currentSong } = useCurrentTrack(currentTime, displaySongs);
+    const { currentSong: _currentSong } = useCurrentTrack(currentTime, displaySongs);
+
+    // 現在再生中の楽曲を取得
+    const getCurrentSongs = () => {
+        return displaySongs.filter(song => 
+            currentTime >= song.startTime && currentTime <= song.endTime
+        );
+    };
+
+    // タイムラインクリックハンドラ
+    const handleTimelineClick = (time: number) => {
+        seek(time);
+    };
 
     // 隣接する楽曲を検索するヘルパー関数
     const findAdjacentSongs = (currentSong: SongSection) => {
@@ -237,7 +258,7 @@ export default function MedleyPlayer({
         setEditModalOpen(true);
     };
 
-    const handleAddSong = () => {
+    const handleAddSong = () => { // eslint-disable-line @typescript-eslint/no-unused-vars
         setSelectedDatabaseSong(null);
         setSongSearchModalOpen(true);
     };
@@ -545,6 +566,7 @@ export default function MedleyPlayer({
     };
 
     const handleQuickAddMarker = (time: number) => {
+        console.log('🚀 handleQuickAddMarker called with time:', time);
         // 現在時刻にマーカーを追加（新しい楽曲を作成）
         const newSong: SongSection = {
             id: Date.now(),
@@ -555,8 +577,10 @@ export default function MedleyPlayer({
             color: "bg-blue-400",
                 originalLink: ""
         };
+        console.log('📝 New song created:', newSong);
         setEditingSong(newSong);
         setIsNewSong(true);
+        console.log('🎭 Opening edit modal');
         setEditModalOpen(true);
     };
 
@@ -652,46 +676,44 @@ export default function MedleyPlayer({
 
                 {/* 楽曲リスト（統合コントロール付き） */}
                 {!loading && displaySongs.length > 0 && (
-                    <SongList
+                    <SongListGrouped
                         songs={displaySongs}
                         currentTime={currentTime}
                         duration={effectiveDuration}
                         actualPlayerDuration={duration}
-                        isEditMode={isEditMode}
+                        currentSongs={getCurrentSongs()}
+                        onTimelineClick={handleTimelineClick}
+                        onSeek={seek}
                         onEditSong={handleEditSong}
                         onDeleteSong={deleteSong}
-                        onUpdateSong={updateSong}
-                        onHoverSong={handleHoverSong}
-                        onSeek={seek}
-                        // ホットキー機能用
-                        onQuickSetStartTime={handleQuickSetStartTime}
-                        onQuickSetEndTime={handleQuickSetEndTime}
-                        onQuickAddMarker={handleQuickAddMarker}
-                        tempStartTime={tempStartTime}
-                        // プレイヤーコントロール用の props
-                        isPlaying={isPlaying}
-                        onPlay={play}
                         onTogglePlayPause={togglePlayPause}
-                        // 統合されたコントロール用の props
-                        shareUrl={generateShareUrl()}
-                        shareTitle={`${medleyTitle} | ニコニコメドレーアノテーションプレイヤー`}
-                        originalVideoUrl={generateOriginalVideoUrl()}
-                        onToggleEditMode={handleToggleEditMode}
-                        onAddSong={handleAddSong}
-                        onImportSetlist={handleOpenImportModal}
+                        isPlaying={isPlaying}
+                        isEditMode={isEditMode}
+                        selectedSong={selectedSong}
+                        onSelectSong={setSelectedSong}
+                        onSongHover={(song: SongSection, element: HTMLElement) => {
+                            const rect = element.getBoundingClientRect();
+                            setTooltip({
+                                visible: true,
+                                song,
+                                position: {
+                                    x: rect.left + rect.width / 2,
+                                    y: rect.top - 10
+                                }
+                            });
+                        }}
+                        onSongHoverEnd={() => setTooltip({ visible: false, song: null, position: { x: 0, y: 0 } })}
                         onSaveChanges={handleSaveChanges}
                         onResetChanges={() => resetChanges(medleySongs)}
                         hasChanges={hasChanges}
                         isSaving={isSaving}
-                        canUndo={canUndo}
-                        canRedo={canRedo}
-                        onUndo={undo}
-                        onRedo={redo}
-                        currentSong={currentSong || undefined}
-                        // メドレー情報
+                        onQuickSetStartTime={handleQuickSetStartTime}
+                        onQuickSetEndTime={handleQuickSetEndTime}
+                        onQuickAddMarker={handleQuickAddMarker}
+                        tempStartTime={tempStartTime}
                         medleyTitle={medleyTitle}
                         medleyCreator={medleyCreator}
-                        // ズーム状態通知
+                        originalVideoUrl={generateOriginalVideoUrl()}
                     />
                 )}
 

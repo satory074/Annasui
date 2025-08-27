@@ -4,6 +4,212 @@ import { useState, useEffect, useCallback } from "react";
 import { SongSection } from "@/types";
 import { parseTimeInput, formatTimeSimple } from "@/lib/utils/time";
 
+// セグメント編集状態
+interface SegmentEditState {
+  segmentId: number | null;
+  field: 'startTime' | 'endTime' | null;
+}
+
+// セグメントリストコンポーネント
+interface SegmentListProps {
+  segments: TimeSegment[];
+  errors: Record<number, { startTime?: string; endTime?: string }>;
+  previewingSegmentId: number | null;
+  onUpdateSegment: (segmentId: number, field: 'startTime' | 'endTime', value: number) => void;
+  onTogglePreview: (segmentId: number) => void;
+  onRemoveSegment: (segmentId: number) => void;
+  onSeek?: (time: number) => void;
+  onTogglePlayPause?: () => void;
+}
+
+function SegmentList({
+  segments,
+  errors,
+  previewingSegmentId,
+  onUpdateSegment,
+  onTogglePreview,
+  onRemoveSegment,
+  onSeek,
+  onTogglePlayPause
+}: SegmentListProps) {
+  const [editingSegment, setEditingSegment] = useState<SegmentEditState>({ segmentId: null, field: null });
+  const [tempTimeValue, setTempTimeValue] = useState('');
+
+  // セグメント編集の開始
+  const startEditing = (segmentId: number, field: 'startTime' | 'endTime', currentValue: number) => {
+    setEditingSegment({ segmentId, field });
+    setTempTimeValue(formatTimeSimple(currentValue));
+  };
+
+  // セグメント編集の終了
+  const finishEditing = () => {
+    if (editingSegment.segmentId && editingSegment.field) {
+      const timeValue = parseTimeInput(tempTimeValue);
+      onUpdateSegment(editingSegment.segmentId, editingSegment.field, timeValue);
+    }
+    setEditingSegment({ segmentId: null, field: null });
+    setTempTimeValue('');
+  };
+
+  // キーボード処理
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      finishEditing();
+    } else if (e.key === 'Escape') {
+      setEditingSegment({ segmentId: null, field: null });
+      setTempTimeValue('');
+    }
+  };
+
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md p-4">
+      <div className="flex flex-wrap gap-2">
+        {segments.map((segment) => {
+          const segmentErrors = errors[segment.id] || {};
+          const duration = Math.round((segment.endTime - segment.startTime) * 10) / 10;
+          const isEditing = editingSegment.segmentId === segment.id;
+          const isPreviewPlaying = previewingSegmentId === segment.id;
+          
+          return (
+            <div
+              key={segment.id}
+              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${
+                isPreviewPlaying 
+                  ? 'bg-caramel-100 border-caramel-300 dark:bg-caramel-900/30 dark:border-caramel-600'
+                  : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600'
+              } hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors`}
+            >
+              {/* 区間番号 */}
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+                区間{segment.segmentNumber}
+              </span>
+
+              {/* 開始時間 */}
+              <div className="flex items-center gap-1">
+                {isEditing && editingSegment.field === 'startTime' ? (
+                  <input
+                    type="text"
+                    value={tempTimeValue}
+                    onChange={(e) => setTempTimeValue(e.target.value)}
+                    onBlur={finishEditing}
+                    onKeyDown={handleKeyDown}
+                    className={`w-16 px-1 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-caramel-600 ${
+                      segmentErrors.startTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-500'
+                    } bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100`}
+                    autoFocus
+                  />
+                ) : (
+                  <button
+                    onClick={() => startEditing(segment.id, 'startTime', segment.startTime)}
+                    className={`text-xs px-1 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800 ${
+                      segmentErrors.startTime ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                    title="クリックして編集"
+                  >
+                    {formatTimeSimple(segment.startTime)}
+                  </button>
+                )}
+                
+                <span className="text-xs text-gray-400">-</span>
+                
+                {/* 終了時間 */}
+                {isEditing && editingSegment.field === 'endTime' ? (
+                  <input
+                    type="text"
+                    value={tempTimeValue}
+                    onChange={(e) => setTempTimeValue(e.target.value)}
+                    onBlur={finishEditing}
+                    onKeyDown={handleKeyDown}
+                    className={`w-16 px-1 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-caramel-600 ${
+                      segmentErrors.endTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-500'
+                    } bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100`}
+                    autoFocus
+                  />
+                ) : (
+                  <button
+                    onClick={() => startEditing(segment.id, 'endTime', segment.endTime)}
+                    className={`text-xs px-1 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800 ${
+                      segmentErrors.endTime ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                    title="クリックして編集"
+                  >
+                    {formatTimeSimple(segment.endTime)}
+                  </button>
+                )}
+              </div>
+
+              {/* 長さ表示 */}
+              <span className="text-xs text-gray-500 dark:text-gray-400">({duration}s)</span>
+
+              {/* 再生中インジケーター */}
+              {isPreviewPlaying && (
+                <span className="text-xs bg-caramel-600 text-white px-1.5 py-0.5 rounded-full">
+                  再生中
+                </span>
+              )}
+
+              {/* 操作ボタン */}
+              <div className="flex items-center gap-1 ml-1">
+                {/* プレビューボタン */}
+                {onSeek && onTogglePlayPause && (
+                  <button
+                    onClick={() => onTogglePreview(segment.id)}
+                    className="p-1 text-xs bg-olive-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-1 focus:ring-olive-600"
+                    title={isPreviewPlaying ? "プレビュー停止" : "プレビュー再生"}
+                  >
+                    {isPreviewPlaying ? (
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <rect x="6" y="4" width="4" height="16" />
+                        <rect x="14" y="4" width="4" height="16" />
+                      </svg>
+                    ) : (
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    )}
+                  </button>
+                )}
+                
+                {/* 削除ボタン（2個以上の場合のみ） */}
+                {segments.length > 1 && (
+                  <button
+                    onClick={() => onRemoveSegment(segment.id)}
+                    className="p-1 text-xs bg-brick-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-brick-600"
+                    title="区間を削除"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* エラーメッセージ表示エリア */}
+      {Object.entries(errors).map(([segmentIdStr, segmentErrors]) => {
+        const segmentId = parseInt(segmentIdStr);
+        const segment = segments.find(s => s.id === segmentId);
+        if (!segment || !segmentErrors) return null;
+        
+        return (
+          <div key={segmentId} className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
+            <span className="text-xs font-medium text-red-700 dark:text-red-400">区間{segment.segmentNumber}:</span>
+            {segmentErrors.startTime && (
+              <p className="text-xs text-red-600 dark:text-red-400">• {segmentErrors.startTime}</p>
+            )}
+            {segmentErrors.endTime && (
+              <p className="text-xs text-red-600 dark:text-red-400">• {segmentErrors.endTime}</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export interface TimeSegment {
   id: number;
   startTime: number;
@@ -47,7 +253,7 @@ export default function MultiSegmentTimeEditor({
     const newErrors: Record<number, { startTime?: string; endTime?: string }> = {};
     const sortedSegments = [...newSegments].sort((a, b) => a.startTime - b.startTime);
 
-    sortedSegments.forEach((segment, index) => {
+    sortedSegments.forEach((segment) => {
       const errors: { startTime?: string; endTime?: string } = {};
 
       // 基本検証
@@ -71,7 +277,7 @@ export default function MultiSegmentTimeEditor({
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [allSongs, currentSongTitle, currentSongArtist, maxDuration]);
+  }, [maxDuration]);
 
   // セグメント更新
   const updateSegment = (segmentId: number, field: 'startTime' | 'endTime', value: number) => {
@@ -83,6 +289,11 @@ export default function MultiSegmentTimeEditor({
 
   // セグメント追加
   const addSegment = () => {
+    console.log('🔄 addSegment called', { 
+      segmentsLength: segments.length,
+      segments: segments.map(s => ({ id: s.id, segmentNumber: s.segmentNumber }))
+    });
+    
     const maxId = Math.max(...segments.map(s => s.id), 0);
     const maxSegmentNumber = Math.max(...segments.map(s => s.segmentNumber), 0);
     
@@ -99,7 +310,16 @@ export default function MultiSegmentTimeEditor({
       color: `bg-blue-${400 + (maxSegmentNumber % 3) * 100}` // 色のバリエーション
     };
 
-    onChange([...segments, newSegment]);
+    console.log('✅ New segment created', newSegment);
+    const updatedSegments = [...segments, newSegment];
+    console.log('📤 Calling onChange with segments', updatedSegments.length);
+    console.log('📤 Updated segments:', updatedSegments.map(s => ({ 
+      id: s.id, 
+      segmentNumber: s.segmentNumber,
+      startTime: s.startTime,
+      endTime: s.endTime 
+    })));
+    onChange(updatedSegments);
   };
 
   // セグメント削除
@@ -108,7 +328,7 @@ export default function MultiSegmentTimeEditor({
     
     const newSegments = segments
       .filter(seg => seg.id !== segmentId)
-      .map((seg, index) => ({ ...seg, segmentNumber: index + 1 })); // セグメント番号を再割り当て
+      .map((seg, segIndex) => ({ ...seg, segmentNumber: segIndex + 1 })); // セグメント番号を再割り当て
     
     onChange(newSegments);
   };
@@ -238,123 +458,17 @@ export default function MultiSegmentTimeEditor({
         </button>
       </div>
 
-      {/* コンパクトなセグメント管理テーブル */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md max-h-80 overflow-y-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-            <tr>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">区間</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">開始時間</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">終了時間</th>
-              <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">長さ</th>
-              <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">操作</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
-            {segments.map((segment) => {
-              const segmentErrors = errors[segment.id] || {};
-              const duration = Math.round((segment.endTime - segment.startTime) * 10) / 10;
-              
-              return (
-                <tr 
-                  key={segment.id}
-                  className={`hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
-                    previewingSegmentId === segment.id ? 'bg-caramel-50 dark:bg-caramel-900/20' : ''
-                  }`}
-                >
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                        区間{segment.segmentNumber}
-                      </span>
-                      {previewingSegmentId === segment.id && (
-                        <span className="text-xs bg-caramel-600 text-white px-1.5 py-0.5 rounded-full">
-                          再生中
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={formatTimeSimple(segment.startTime)}
-                        onChange={(e) => {
-                          const timeValue = parseTimeInput(e.target.value);
-                          updateSegment(segment.id, 'startTime', timeValue);
-                        }}
-                        className={`w-20 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-caramel-600 ${
-                          segmentErrors.startTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        } bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100`}
-                      />
-                      {segmentErrors.startTime && (
-                        <p className="text-xs text-red-500">{segmentErrors.startTime}</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <div className="space-y-1">
-                      <input
-                        type="text"
-                        value={formatTimeSimple(segment.endTime)}
-                        onChange={(e) => {
-                          const timeValue = parseTimeInput(e.target.value);
-                          updateSegment(segment.id, 'endTime', timeValue);
-                        }}
-                        className={`w-20 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-caramel-600 ${
-                          segmentErrors.endTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                        } bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100`}
-                      />
-                      {segmentErrors.endTime && (
-                        <p className="text-xs text-red-500">{segmentErrors.endTime}</p>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                    {duration}秒
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <div className="flex items-center justify-center gap-1">
-                      {/* プレビューボタン */}
-                      {onSeek && onTogglePlayPause && (
-                        <button
-                          onClick={() => toggleSegmentPreview(segment.id)}
-                          className="p-1 text-xs bg-olive-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-1 focus:ring-olive-600"
-                          title={previewingSegmentId === segment.id ? "プレビュー停止" : "プレビュー再生"}
-                        >
-                          {previewingSegmentId === segment.id ? (
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                              <rect x="6" y="4" width="4" height="16" />
-                              <rect x="14" y="4" width="4" height="16" />
-                            </svg>
-                          ) : (
-                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M8 5v14l11-7z"/>
-                            </svg>
-                          )}
-                        </button>
-                      )}
-                      
-                      {/* 削除ボタン（2個以上の場合のみ） */}
-                      {segments.length > 1 && (
-                        <button
-                          onClick={() => removeSegment(segment.id)}
-                          className="p-1 text-xs bg-brick-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-brick-600"
-                          title="区間を削除"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* 統合セグメント表示 - 1行レイアウト */}
+      <SegmentList 
+        segments={segments} 
+        errors={errors}
+        previewingSegmentId={previewingSegmentId}
+        onUpdateSegment={updateSegment}
+        onTogglePreview={toggleSegmentPreview}
+        onRemoveSegment={removeSegment}
+        onSeek={onSeek}
+        onTogglePlayPause={onTogglePlayPause}
+      />
 
     </div>
   );

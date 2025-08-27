@@ -80,7 +80,7 @@ function SegmentList({
               } hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors`}
             >
               {/* 区間番号 */}
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">
+              <span className="text-sm font-bold text-caramel-700 dark:text-caramel-400 bg-caramel-50 dark:bg-caramel-900/20 px-2 py-1 rounded-md">
                 区間{segment.segmentNumber}
               </span>
 
@@ -390,8 +390,8 @@ export default function MultiSegmentTimeEditor({
       {/* タイムラインプレビューを上部に移動 */}
       {maxDuration > 0 && (
         <div className="p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md">
-          <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">タイムラインプレビュー</h4>
-          <div className="relative w-full h-8 bg-gray-100 dark:bg-gray-700 rounded-sm overflow-hidden">
+          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">タイムラインプレビュー</h4>
+          <div className="relative w-full h-12 bg-gray-100 dark:bg-gray-700 rounded-sm overflow-hidden">
             {/* 既存の他の楽曲（薄いグレー） */}
             {allSongs
               .filter(song => song.title !== currentSongTitle || song.artist !== currentSongArtist)
@@ -421,7 +421,7 @@ export default function MultiSegmentTimeEditor({
                 title={`区間${segment.segmentNumber}: ${Math.floor(segment.startTime / 60)}:${String(Math.floor(segment.startTime % 60)).padStart(2, '0')} - ${Math.floor(segment.endTime / 60)}:${String(Math.floor(segment.endTime % 60)).padStart(2, '0')}`}
               >
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xs font-bold text-white">
+                  <span className="text-sm font-bold text-white drop-shadow-md">
                     {segment.segmentNumber}
                   </span>
                 </div>

@@ -1112,6 +1112,74 @@ Critical fix for multi-segment UI display issues where segments were being creat
 - ✅ Individual segment controls (edit, preview, delete) function properly
 - ✅ No more segment replacement bug - segments persist after creation
 
+### Multi-Segment Timeline Display Fix (2025-08-27)
+Additional critical fix for multi-segment songs not being reflected in the main timeline after saving:
+
+**Problem Solved:**
+- Multi-segment batch updates were working correctly in backend (confirmed by console logs)
+- Backend showed "batchUpdate: final result: 8 songs total" after adding segments
+- However, UI timeline still displayed old counts ("7楽曲, 7区間" instead of "7楽曲, 8区間")
+- Individual songs showed "1区間" instead of "2区間" after adding segments
+
+**Root Cause:**
+- React component re-rendering wasn't triggered after state updates due to missing component keys
+- `SongListGrouped` component wasn't detecting changes in the songs array
+- Grouped song calculations weren't being recalculated when displaySongs changed
+
+**Solution Implemented:**
+1. **Component Key Fix**: Added unique key to force re-rendering of `SongListGrouped` component in `MedleyPlayer.tsx:687`
+2. **useMemo Optimization**: Added useMemo to optimize grouping calculation with proper debug logging
+3. **Debug Logging**: Added comprehensive state tracking throughout the component hierarchy
+
+**Technical Implementation:**
+```typescript
+// MedleyPlayer.tsx - Force component re-rendering with unique key
+<SongListGrouped
+  key={`songs-${displaySongs.length}-${displaySongs.map(s => s.id).join('-')}`}
+  songs={displaySongs}
+  // ... other props
+/>
+
+// SongListGrouped.tsx - Optimized grouping with useMemo
+const groupedSongs = useMemo(() => {
+  const grouped = songs.reduce((groups, song) => {
+    const key = `${song.title}-${song.artist}`;
+    if (!groups[key]) {
+      groups[key] = {
+        title: song.title,
+        artist: song.artist,
+        segments: []
+      };
+    }
+    groups[key].segments.push(song);
+    return groups;
+  }, {} as Record<string, SongGroup>);
+  
+  console.log('🔄 SongListGrouped: groupedSongs recalculated', {
+    totalSongs: songs.length,
+    totalGroups: Object.keys(grouped).length,
+    groupDetails: Object.entries(grouped).map(([key, group]) => ({
+      key,
+      title: group.title,
+      segmentCount: group.segments.length
+    }))
+  });
+  
+  return grouped;
+}, [songs]);
+```
+
+**Files Modified:**
+- **MedleyPlayer.tsx (line 687)**: Added unique component key and debug logging for displaySongs changes
+- **SongListGrouped.tsx (lines 84-109)**: Added useMemo optimization and debug logging for grouping calculation
+
+**Production Verification:**
+- ✅ Timeline now correctly updates to show increased song/segment counts after multi-segment addition
+- ✅ Individual songs display correct segment counts ("2区間", "3区間", etc.)
+- ✅ Batch update operations properly trigger UI re-rendering
+- ✅ Console logging confirms state changes are properly detected and processed
+- ✅ React component optimization maintains performance while ensuring accurate updates
+
 ### Genre Field Removal (2025-08-25)
 Complete removal of genre functionality for simplified data model and cleaner UI:
 

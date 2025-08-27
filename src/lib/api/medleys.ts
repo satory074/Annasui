@@ -20,7 +20,7 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
 
 
 function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyData {
-  const sortedSongs = songs.sort((a, b) => a.order_index - b.order_index)
+  const sortedSongs = [...songs].sort((a, b) => a.order_index - b.order_index)
   
   return {
     videoId: medley.video_id,

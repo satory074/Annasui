@@ -87,28 +87,67 @@ export default function SongEditModal({
   const [isPreviewMode, setIsPreviewMode] = useState<boolean>(false);
   const [previewInterval, setPreviewInterval] = useState<NodeJS.Timeout | null>(null);
   const [applyToAllInstances, setApplyToAllInstances] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
 
   useEffect(() => {
+    console.log('📋 useEffect triggered:', {
+      isSaving,
+      song: song ? `${song.title} (${song.id})` : null,
+      isNew,
+      isOpen,
+      currentTime,
+      maxDuration,
+      allSongsLength: allSongs.length
+    });
+    
+    // セーブ中はセグメント状態をリセットしない
+    if (isSaving) {
+      console.log('🚫 Skipping useEffect due to isSaving=true');
+      return;
+    }
+    
+    // モーダルが閉じているときは処理をスキップ
+    if (!isOpen) {
+      console.log('🚫 Skipping useEffect due to isOpen=false');
+      return;
+    }
+    
     if (song) {
       setFormData(song);
-      // 既存の楽曲の場合、同じ楽曲の全インスタンスを取得してセグメントとして表示
+      // 楽曲データから直接セグメント情報を設定
+      // マルチセグメント対応：同じ楽曲の複数インスタンスがある場合はそれらを統合
       if (allSongs.length > 0) {
         const sameTitle = song.title.trim();
         const sameArtist = song.artist.trim();
-        const duplicates = allSongs.filter(s => 
+        const duplicates = [...allSongs.filter(s => 
           s.title.trim() === sameTitle && s.artist.trim() === sameArtist
-        ).sort((a, b) => a.startTime - b.startTime);
+        )].sort((a, b) => a.startTime - b.startTime);
         
-        const segmentData: TimeSegment[] = duplicates.map((s, index) => ({
-          id: s.id,
-          startTime: s.startTime,
-          endTime: s.endTime,
-          segmentNumber: index + 1,
-          color: s.color
-        }));
-        setSegments(segmentData);
+        if (duplicates.length > 1) {
+          // 複数のセグメントが見つかった場合
+          const segmentData: TimeSegment[] = duplicates.map((s, index) => ({
+            id: s.id,
+            startTime: s.startTime,
+            endTime: s.endTime,
+            segmentNumber: index + 1,
+            color: s.color
+          }));
+          console.log('🔄 Setting segments from duplicates:', segmentData.length, 'segments');
+          setSegments(segmentData);
+        } else {
+          // 単一セグメント
+          console.log('🔄 Setting single segment for song:', song.title);
+          setSegments([{
+            id: song.id,
+            startTime: song.startTime,
+            endTime: song.endTime,
+            segmentNumber: 1,
+            color: song.color || "bg-caramel-400"
+          }]);
+        }
       } else {
-        // 単一セグメント
+        // allSongsがない場合は単一セグメント
+        console.log('🔄 Setting single segment (no allSongs):', song.title);
         setSegments([{
           id: song.id,
           startTime: song.startTime,
@@ -143,7 +182,7 @@ export default function SongEditModal({
       }]);
     }
     setErrors({});
-  }, [song, isNew, isOpen, currentTime, maxDuration]);
+  }, [song, isNew, isOpen, maxDuration]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -163,6 +202,7 @@ export default function SongEditModal({
 
   const handleSave = () => {
     if (validateForm()) {
+      setIsSaving(true);
       // セグメントから複数のSongSectionを作成
       const songsToSave: SongSection[] = segments.map(segment => ({
         id: segment.id === formData.id ? formData.id : (Date.now() + Math.random()), // 新しいセグメントには新しいID
@@ -188,6 +228,10 @@ export default function SongEditModal({
           onSave(singleSong);
         }
       }
+      
+      // Save operation completed
+      setIsSaving(false);
+      
       if (!continuousMode) {
         onClose();
       }
@@ -211,6 +255,15 @@ export default function SongEditModal({
     }
   };
 
+  // セグメント変更ハンドラー
+  const handleSegmentsChange = (newSegments: TimeSegment[]) => {
+    console.log('🔄 SongEditModal: handleSegmentsChange called', {
+      currentSegments: segments.length,
+      newSegments: newSegments.length
+    });
+    setSegments(newSegments);
+  };
+
   // プレビュー再生機能（MultiSegmentTimeEditor内で処理されるため削除）
 
   // コンポーネントがアンマウントされる時のクリーンアップ
@@ -222,14 +275,18 @@ export default function SongEditModal({
     };
   }, [previewInterval]);
 
-  // モーダルが閉じられる時にプレビューを停止
+  // モーダルが閉じられる時にプレビューを停止とフラグをリセット
   useEffect(() => {
-    if (!isOpen && isPreviewMode) {
-      setIsPreviewMode(false);
-      if (previewInterval) {
-        clearInterval(previewInterval);
-        setPreviewInterval(null);
+    if (!isOpen) {
+      if (isPreviewMode) {
+        setIsPreviewMode(false);
+        if (previewInterval) {
+          clearInterval(previewInterval);
+          setPreviewInterval(null);
+        }
       }
+      // モーダルが閉じられた時にセーブフラグをリセット
+      setIsSaving(false);
     }
   }, [isOpen, isPreviewMode, previewInterval]);
 
@@ -321,7 +378,7 @@ export default function SongEditModal({
           <div>
             <MultiSegmentTimeEditor
               segments={segments}
-              onChange={setSegments}
+              onChange={handleSegmentsChange}
               currentTime={currentTime}
               maxDuration={maxDuration || 0}
               onSeek={onSeek}

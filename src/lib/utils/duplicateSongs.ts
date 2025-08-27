@@ -44,7 +44,7 @@ export function findDuplicateSongs(songs: SongSection[]): Map<string, DuplicateG
   songGroups.forEach((instances, key) => {
     if (instances.length > 1) {
       // startTimeでソート
-      const sortedInstances = instances.sort((a, b) => a.startTime - b.startTime);
+      const sortedInstances = [...instances].sort((a, b) => a.startTime - b.startTime);
       
       duplicateMap.set(key, {
         key,
@@ -123,6 +123,6 @@ export function checkForDuplicateBeforeAdd(
   
   return {
     isDuplicate: existingInstances.length > 0,
-    existingInstances: existingInstances.sort((a, b) => a.startTime - b.startTime)
+    existingInstances: [...existingInstances].sort((a, b) => a.startTime - b.startTime)
   };
 }

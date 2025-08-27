@@ -86,6 +86,7 @@ export default function MedleyPlayer({
         deleteSong,
         saveMedley,
         resetChanges,
+        batchUpdate,
         undo,
         redo
     } = useMedleyEdit(medleySongs);
@@ -226,6 +227,15 @@ export default function MedleyPlayer({
     
     // 現在のトラックの追跡（編集中か元のデータかを切り替え）
     const displaySongs = isEditMode ? editingSongs : medleySongs;
+    
+    // Debug logging for displaySongs changes
+    useEffect(() => {
+        console.log('🔄 MedleyPlayer: displaySongs changed', {
+            isEditMode,
+            songsCount: displaySongs.length,
+            songsInfo: displaySongs.map(s => ({ id: s.id, title: s.title, start: s.startTime, end: s.endTime }))
+        });
+    }, [displaySongs, isEditMode]);
     const { currentSong: _currentSong } = useCurrentTrack(currentTime, displaySongs);
 
     // 現在再生中の楽曲を取得
@@ -242,7 +252,7 @@ export default function MedleyPlayer({
 
     // 隣接する楽曲を検索するヘルパー関数
     const findAdjacentSongs = (currentSong: SongSection) => {
-        const sortedSongs = displaySongs.sort((a, b) => a.startTime - b.startTime);
+        const sortedSongs = [...displaySongs].sort((a, b) => a.startTime - b.startTime);
         const currentIndex = sortedSongs.findIndex(song => song.id === currentSong.id);
         
         const previousSong = currentIndex > 0 ? sortedSongs[currentIndex - 1] : undefined;
@@ -377,7 +387,8 @@ export default function MedleyPlayer({
         if (updatedSongs.length === 0) return;
 
         // 既存のインスタンスを削除してから新しいセグメントを追加する場合
-        if (editingSong && updatedSongs.length > 1) {
+        if (editingSong) {
+            console.log('🔄 handleBatchUpdate called with:', updatedSongs.length, 'segments');
             // 現在編集中の楽曲と同じタイトル・アーティストの全インスタンスを取得
             const currentTitle = editingSong.title.trim();
             const currentArtist = editingSong.artist.trim();
@@ -385,17 +396,22 @@ export default function MedleyPlayer({
                 song.title.trim() === currentTitle && song.artist.trim() === currentArtist
             );
 
-            // 既存インスタンスを全て削除
-            existingInstances.forEach(instance => {
-                deleteSong(instance.id);
-            });
+            // 削除するIDリストと追加する楽曲リストを準備
+            const idsToRemove = existingInstances.map(instance => instance.id);
+            const songsToAdd = updatedSongs.map(song => ({
+                title: song.title,
+                artist: song.artist,
+                startTime: song.startTime,
+                endTime: song.endTime,
+                color: song.color,
+                originalLink: song.originalLink,
+                links: song.links
+            }));
 
-            // 新しいセグメントを追加
-            updatedSongs.forEach(song => {
-                addSong(song);
-            });
+            // 一括更新を実行（アトミック操作）
+            batchUpdate(idsToRemove, songsToAdd);
 
-            console.log(`「${currentTitle}」の${existingInstances.length}個のインスタンスを削除し、${updatedSongs.length}個のセグメントを追加しました`);
+            console.log(`✅ 「${currentTitle}」の${existingInstances.length}個のインスタンスを削除し、${updatedSongs.length}個のセグメントを追加しました`);
         } else {
             // 従来の単純な更新処理
             updatedSongs.forEach(song => {
@@ -677,6 +693,7 @@ export default function MedleyPlayer({
                 {/* 楽曲リスト（統合コントロール付き） */}
                 {!loading && displaySongs.length > 0 && (
                     <SongListGrouped
+                        key={`songs-${displaySongs.length}-${displaySongs.map(s => s.id).join('-')}`}
                         songs={displaySongs}
                         currentTime={currentTime}
                         duration={effectiveDuration}

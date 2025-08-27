@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { SongSection } from "@/types";
 import { formatTime } from "@/lib/utils/time";
 import PlayPauseButton from "@/components/ui/PlayPauseButton";
@@ -81,18 +81,32 @@ export default function SongListGrouped({
   const effectiveTimelineDuration = actualPlayerDuration || duration;
 
   // 楽曲をタイトル・アーティストでグループ化
-  const groupedSongs = songs.reduce((groups, song) => {
-    const key = `${song.title}-${song.artist}`;
-    if (!groups[key]) {
-      groups[key] = {
-        title: song.title,
-        artist: song.artist,
-        segments: []
-      };
-    }
-    groups[key].segments.push(song);
-    return groups;
-  }, {} as Record<string, SongGroup>);
+  const groupedSongs = useMemo(() => {
+    const grouped = songs.reduce((groups, song) => {
+      const key = `${song.title}-${song.artist}`;
+      if (!groups[key]) {
+        groups[key] = {
+          title: song.title,
+          artist: song.artist,
+          segments: []
+        };
+      }
+      groups[key].segments.push(song);
+      return groups;
+    }, {} as Record<string, SongGroup>);
+    
+    console.log('🔄 SongListGrouped: groupedSongs recalculated', {
+      totalSongs: songs.length,
+      totalGroups: Object.keys(grouped).length,
+      groupDetails: Object.entries(grouped).map(([key, group]) => ({
+        key,
+        title: group.title,
+        segmentCount: group.segments.length
+      }))
+    });
+    
+    return grouped;
+  }, [songs]);
 
   // 重複情報を取得する関数
   const getDuplicateInfo = (targetSong: SongSection, allSongs: SongSection[]) => {
@@ -102,7 +116,7 @@ export default function SongListGrouped({
     
     if (sameTitleSongs.length <= 1) return null;
     
-    const sortedSongs = sameTitleSongs.sort((a, b) => a.startTime - b.startTime);
+    const sortedSongs = [...sameTitleSongs].sort((a, b) => a.startTime - b.startTime);
     const instanceNumber = sortedSongs.findIndex(song => song.id === targetSong.id) + 1;
     
     return {

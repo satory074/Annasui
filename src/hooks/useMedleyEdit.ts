@@ -15,6 +15,7 @@ interface UseMedleyEditReturn {
   saveMedley: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number) => Promise<boolean>;
   resetChanges: (originalSongs: SongSection[]) => void;
   reorderSongs: (fromIndex: number, toIndex: number) => void;
+  batchUpdate: (songsToRemove: number[], songsToAdd: Omit<SongSection, 'id'>[]) => void;
   undo: () => void;
   redo: () => void;
 }
@@ -109,6 +110,43 @@ export function useMedleyEdit(
       addToHistory(newSongs);
       detectChanges(newSongs);
       return newSongs;
+    });
+  }, [detectChanges, addToHistory]);
+
+  // 一括更新（マルチセグメント対応）- 複数の削除と追加を一度に処理
+  const batchUpdate = useCallback((
+    songsToRemove: number[], 
+    songsToAdd: Omit<SongSection, 'id'>[]
+  ) => {
+    console.log('🔄 batchUpdate called:', {
+      removing: songsToRemove.length,
+      adding: songsToAdd.length,
+      songsToRemove,
+      songsToAdd: songsToAdd.map(s => ({ title: s.title, startTime: s.startTime, endTime: s.endTime }))
+    });
+    
+    setEditingSongs(prev => {
+      console.log('🔄 batchUpdate: current state:', prev.length, 'songs');
+      
+      // 削除対象以外の楽曲を取得
+      const remainingSongs = prev.filter(song => !songsToRemove.includes(song.id));
+      console.log('🔄 batchUpdate: after removal:', remainingSongs.length, 'songs remain');
+      
+      // 新しいIDを生成して追加する楽曲を準備
+      const currentMaxId = Math.max(...prev.map(s => s.id), 0);
+      const newSongs = songsToAdd.map((song, index) => ({
+        ...song,
+        id: currentMaxId + index + 1
+      }));
+      console.log('🔄 batchUpdate: new songs created:', newSongs.length, 'with IDs:', newSongs.map(s => s.id));
+      
+      // 残りの楽曲と新しい楽曲を結合して時間順にソート
+      const finalSongs = [...remainingSongs, ...newSongs].sort((a, b) => a.startTime - b.startTime);
+      console.log('🔄 batchUpdate: final result:', finalSongs.length, 'songs total');
+      
+      addToHistory(finalSongs);
+      detectChanges(finalSongs);
+      return finalSongs;
     });
   }, [detectChanges, addToHistory]);
 
@@ -238,6 +276,7 @@ export function useMedleyEdit(
     saveMedley,
     resetChanges,
     reorderSongs,
+    batchUpdate,
     undo,
     redo,
   };

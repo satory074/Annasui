@@ -423,13 +423,20 @@ src/
 - `src/lib/utils/videoMetadata.ts` - Video metadata extraction from platform APIs
 - `src/data/` - **DEPRECATED**: Static data files replaced by Supabase database
 
+**Security & Performance:**
+- `src/lib/utils/logger.ts` - Production-safe logging system with environment-based controls
+- `src/lib/utils/sanitize.ts` - Input sanitization utilities for XSS protection
+- Enhanced URL validation with strict domain whitelisting and ID format validation
+
 
 **UI System:**
 - `src/components/ui/modal/BaseModal.tsx` - Base modal component
 - `src/components/ui/modal/BaseTooltip.tsx` - Base tooltip component
 - `src/components/ui/song/SongInfoDisplay.tsx` - Unified song information display with multi-platform link support
 - `src/components/ui/song/SongTimeControls.tsx` - Time input controls with precision adjustment and adjacent song alignment
-- `src/components/ui/song/SongThumbnail.tsx` - Standardized thumbnail component with multi-platform support
+- `src/components/ui/song/SongThumbnail.tsx` - Standardized thumbnail component with loading states and error handling
+- `src/components/ui/LoadingSpinner.tsx` - Coffee & Cream themed loading spinner
+- `src/components/ui/LoadingSkeleton.tsx` - Skeleton components for loading states
 
 **Thumbnail & Multi-Platform:**
 - `src/lib/utils/thumbnail.ts` - Multi-platform thumbnail fetching with Spotify oEmbed and Apple Music support
@@ -1549,6 +1556,44 @@ export type SongSection = {
 - ✅ ESLint checks pass (only pre-existing img element warnings)
 - ✅ Successful production build and deployment
 - ✅ All existing functionality preserved without genre dependencies
+
+## Security & Performance Implementation (2025-08-28)
+
+### Production-Safe Logging System
+**Complete console.log removal**: All 157+ console statements replaced with environment-controlled logger
+- **Logger Usage**: `import { logger } from '@/lib/utils/logger'`
+- **Methods**: `logger.debug()`, `logger.info()`, `logger.warn()`, `logger.error()`
+- **Production Behavior**: Only warns/errors logged in production; debug/info filtered out
+- **Environment Control**: Use `NEXT_PUBLIC_DEBUG_LOGS=true` to enable debug logging
+
+### Input Sanitization System
+**XSS Protection**: Comprehensive input validation for all user-editable fields
+- **Import**: `import { sanitizeSongSection, sanitizeText, sanitizeUrl } from '@/lib/utils/sanitize'`
+- **Usage Pattern**: Always sanitize before saving user input to prevent XSS attacks
+- **Applied To**: Song titles, artist names, URLs, medley metadata
+- **URL Validation**: Strict domain whitelisting for platform URLs only
+
+### Enhanced Security Features
+- **URL Validation**: Platform-specific ID format validation (YouTube: 11 chars, Niconico: sm+digits, etc.)
+- **Domain Whitelisting**: Only allow URLs from trusted platforms
+- **Input Length Limits**: Prevent oversized inputs that could cause performance issues
+- **Error Boundary**: Uses Coffee & Cream colors instead of pink for consistency
+
+### Loading States & UX Improvements
+- **SongThumbnail**: Loading skeletons, error states, proper state reset on prop changes
+- **LoadingSpinner**: Reusable spinner with Coffee & Cream theming
+- **LoadingSkeleton**: Various skeleton components for different UI elements
+- **Error Handling**: User-friendly error messages with visual feedback
+
+### Critical Security Patterns
+```typescript
+// ALWAYS sanitize user input before saving
+const sanitized = sanitizeSongSection(userInput);
+// ALWAYS use logger instead of console
+logger.debug('Operation completed', data);
+// ALWAYS validate URLs before processing  
+const validated = sanitizeUrl(userUrl);
+```
 
 # important-instruction-reminders
 Do what has been asked; nothing more, nothing less.

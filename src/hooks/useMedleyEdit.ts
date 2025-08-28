@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { SongSection, MedleyData } from '@/types';
 import { updateMedley, createMedley } from '@/lib/api/medleys';
+import { logger } from '@/lib/utils/logger';
 
 interface UseMedleyEditReturn {
   editingSongs: SongSection[];
@@ -117,7 +118,7 @@ export function useMedleyEdit(
     songsToRemove: number[], 
     songsToAdd: Omit<SongSection, 'id'>[]
   ) => {
-    console.log('🔄 batchUpdate called:', {
+    logger.debug('🔄 batchUpdate called:', {
       removing: songsToRemove.length,
       adding: songsToAdd.length,
       songsToRemove,
@@ -125,11 +126,11 @@ export function useMedleyEdit(
     });
     
     setEditingSongs(prev => {
-      console.log('🔄 batchUpdate: current state:', prev.length, 'songs');
+      logger.debug('🔄 batchUpdate: current state:', prev.length, 'songs');
       
       // 削除対象以外の楽曲を取得
       const remainingSongs = prev.filter(song => !songsToRemove.includes(song.id));
-      console.log('🔄 batchUpdate: after removal:', remainingSongs.length, 'songs remain');
+      logger.debug('🔄 batchUpdate: after removal:', remainingSongs.length, 'songs remain');
       
       // 新しいIDを生成して追加する楽曲を準備
       const currentMaxId = Math.max(...prev.map(s => s.id), 0);
@@ -137,11 +138,11 @@ export function useMedleyEdit(
         ...song,
         id: currentMaxId + index + 1
       }));
-      console.log('🔄 batchUpdate: new songs created:', newSongs.length, 'with IDs:', newSongs.map(s => s.id));
+      logger.debug('🔄 batchUpdate: new songs created:', newSongs.length, 'with IDs:', newSongs.map(s => s.id));
       
       // 残りの楽曲と新しい楽曲を結合して時間順にソート
       const finalSongs = [...remainingSongs, ...newSongs].sort((a, b) => a.startTime - b.startTime);
-      console.log('🔄 batchUpdate: final result:', finalSongs.length, 'songs total');
+      logger.debug('🔄 batchUpdate: final result:', finalSongs.length, 'songs total');
       
       addToHistory(finalSongs);
       detectChanges(finalSongs);
@@ -169,7 +170,7 @@ export function useMedleyEdit(
       );
 
       if (!isSupabaseConfigured) {
-        console.warn('Supabase is not configured. Changes cannot be saved.');
+        logger.warn('Supabase is not configured. Changes cannot be saved.');
         alert('データベースが設定されていないため、変更を保存できません。Supabaseの設定を確認してください。');
         return false;
       }
@@ -208,15 +209,15 @@ export function useMedleyEdit(
 
       if (result) {
         setHasChanges(false);
-        console.log('Medley saved successfully:', result);
+        logger.info('Medley saved successfully:', result);
         return true;
       } else {
-        console.error('Failed to save medley');
+        logger.error('Failed to save medley');
         alert('メドレーの保存に失敗しました。');
         return false;
       }
     } catch (error) {
-      console.error('Error saving medley:', error);
+      logger.error('Error saving medley:', error);
       alert('メドレーの保存中にエラーが発生しました。');
       return false;
     } finally {

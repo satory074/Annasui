@@ -16,6 +16,7 @@ import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal"
 import ManualSongAddModal from "@/components/features/medley/ManualSongAddModal";
 import { SongSection } from "@/types";
 import { SongDatabaseEntry, createSongFromDatabase, addManualSong } from "@/lib/utils/songDatabase";
+import { logger } from "@/lib/utils/logger";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -128,7 +129,7 @@ export default function MedleyPlayer({
     const seek = (seekTime: number) => {
         if (platform === 'youtube') {
             // YouTube用のシーク実装（将来的にYouTube APIを使用）
-            console.log('YouTube seek not implemented yet:', seekTime);
+            logger.debug('YouTube seek not implemented yet:', seekTime);
         } else {
             nicoSeek(seekTime);
         }
@@ -145,7 +146,7 @@ export default function MedleyPlayer({
         if (initialTime > 0 && effectiveDuration > 0 && initialTime <= effectiveDuration && playerReady) {
             // プレイヤーが準備完了してからシーク（待機時間を短縮）
             const timer = setTimeout(() => {
-                console.log(`Initial time seek to ${initialTime} seconds`);
+                logger.info(`Initial time seek to ${initialTime} seconds`);
                 seek(initialTime);
             }, 500);
             
@@ -230,7 +231,7 @@ export default function MedleyPlayer({
     
     // Debug logging for displaySongs changes
     useEffect(() => {
-        console.log('🔄 MedleyPlayer: displaySongs changed', {
+        logger.debug('🔄 MedleyPlayer: displaySongs changed', {
             isEditMode,
             songsCount: displaySongs.length,
             songsInfo: displaySongs.map(s => ({ id: s.id, title: s.title, start: s.startTime, end: s.endTime }))
@@ -316,9 +317,9 @@ export default function MedleyPlayer({
             setSongSearchModalOpen(true);
             
             // 成功メッセージ（オプション）
-            console.log(`楽曲「${addedSong.title}」を楽曲データベースに追加しました`);
+            logger.info(`楽曲「${addedSong.title}」を楽曲データベースに追加しました`);
         } catch (error) {
-            console.error('楽曲の追加に失敗しました:', error);
+            logger.error('楽曲の追加に失敗しました:', error);
         }
     };
 
@@ -342,7 +343,7 @@ export default function MedleyPlayer({
         }
         
         // Todo: 実際のデータベース更新ロジックも必要に応じて実装
-        console.log('楽曲情報を更新:', updatedSong);
+        logger.debug('楽曲情報を更新:', updatedSong);
     };
 
     const handleSaveSong = (song: SongSection) => {
@@ -392,7 +393,7 @@ export default function MedleyPlayer({
 
         // 既存のインスタンスを削除してから新しいセグメントを追加する場合
         if (editingSong) {
-            console.log('🔄 handleBatchUpdate called with:', updatedSongs.length, 'segments');
+            logger.debug('🔄 handleBatchUpdate called with:', updatedSongs.length, 'segments');
             // 現在編集中の楽曲と同じタイトル・アーティストの全インスタンスを取得
             const currentTitle = editingSong.title.trim();
             const currentArtist = editingSong.artist.trim();
@@ -415,13 +416,13 @@ export default function MedleyPlayer({
             // 一括更新を実行（アトミック操作）
             batchUpdate(idsToRemove, songsToAdd);
 
-            console.log(`✅ 「${currentTitle}」の${existingInstances.length}個のインスタンスを削除し、${updatedSongs.length}個のセグメントを追加しました`);
+            logger.info(`✅ 「${currentTitle}」の${existingInstances.length}個のインスタンスを削除し、${updatedSongs.length}個のセグメントを追加しました`);
         } else {
             // 従来の単純な更新処理
             updatedSongs.forEach(song => {
                 updateSong(song);
             });
-            console.log(`${updatedSongs.length}つの楽曲インスタンスを一括更新しました`);
+            logger.debug(`${updatedSongs.length}つの楽曲インスタンスを一括更新しました`);
         }
         
         setEditModalOpen(false);
@@ -434,7 +435,7 @@ export default function MedleyPlayer({
             addSong(song);
         });
         
-        console.log(`セットリストから${songs.length}曲をインポートしました`);
+        logger.info(`セットリストから${songs.length}曲をインポートしました`);
     };
 
     const handleOpenImportModal = () => {
@@ -527,7 +528,7 @@ export default function MedleyPlayer({
             // 編集中の楽曲がない場合は、開始時刻を一時保存
             const roundedTime = Math.round(time * 10) / 10;
             setTempStartTime(roundedTime);
-            console.log(`開始時刻を設定: ${roundedTime}秒 (Eキーで終了時刻を設定してアノテーションを作成)`);
+            logger.debug(`開始時刻を設定: ${roundedTime}秒 (Eキーで終了時刻を設定してアノテーションを作成)`);
         }
     };
 
@@ -560,7 +561,7 @@ export default function MedleyPlayer({
             
             // 楽曲を追加
             addSong(newSong);
-            console.log(`仮アノテーションを作成: ${roundedStartTime}秒〜${finalEndTime}秒 "${newSong.title}"`);
+            logger.debug(`仮アノテーションを作成: ${roundedStartTime}秒〜${finalEndTime}秒 "${newSong.title}"`);
             
             // 状態をリセット
             setTempStartTime(null);
@@ -586,7 +587,7 @@ export default function MedleyPlayer({
     };
 
     const handleQuickAddMarker = (time: number) => {
-        console.log('🚀 handleQuickAddMarker called with time:', time);
+        logger.debug('🚀 handleQuickAddMarker called with time:', time);
         // 現在時刻にマーカーを追加（新しい楽曲を作成）
         const newSong: SongSection = {
             id: Date.now(),
@@ -597,17 +598,17 @@ export default function MedleyPlayer({
             color: "bg-blue-400",
                 originalLink: ""
         };
-        console.log('📝 New song created:', newSong);
+        logger.debug('📝 New song created:', newSong);
         setEditingSong(newSong);
         setIsNewSong(true);
-        console.log('🎭 Opening edit modal');
+        logger.debug('🎭 Opening edit modal');
         setEditModalOpen(true);
     };
 
     // 動画IDが変更されたときの処理
     const handleVideoIdSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.info("Loading video:", inputVideoId);
+        logger.info("Loading video:", inputVideoId);
         
         // URLを更新（ブラウザの履歴に追加）
         const newUrl = inputVideoId === "sm500873" ? "/" : `/${inputVideoId}`;

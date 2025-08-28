@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
+import { logger } from '@/lib/utils/logger'
 
 interface AuthContextType {
   user: User | null
@@ -40,7 +41,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   useEffect(() => {
     // Only initialize auth if Supabase is available and component is mounted
     if (!supabase) {
-      console.warn('⚠️ Supabase client not available, auth features disabled')
+      logger.warn('⚠️ Supabase client not available, auth features disabled')
       setLoading(false)
       return
     }
@@ -54,14 +55,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         const { data: { session }, error } = await supabase!.auth.getSession()
         if (error) {
-          console.error('Error getting initial session:', error)
+          logger.error('Error getting initial session:', error)
         } else {
           setSession(session)
           setUser(session?.user ?? null)
-          console.log('📱 Initial auth session:', session?.user ? 'authenticated' : 'anonymous')
+          logger.info('📱 Initial auth session:', session?.user ? 'authenticated' : 'anonymous')
         }
       } catch (error) {
-        console.error('Error in getInitialSession:', error)
+        logger.error('Error in getInitialSession:', error)
       } finally {
         setLoading(false)
       }
@@ -71,7 +72,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
-      console.log('🔄 Auth state changed:', event, session?.user ? 'authenticated' : 'anonymous')
+      logger.info('🔄 Auth state changed:', event, session?.user ? 'authenticated' : 'anonymous')
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
@@ -82,12 +83,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const signIn = async (provider: 'github' | 'google') => {
     if (!supabase) {
-      console.warn('⚠️ Authentication unavailable: Supabase client not configured')
+      logger.warn('⚠️ Authentication unavailable: Supabase client not configured')
       return
     }
 
     try {
-      console.log(`🔐 Attempting to sign in with ${provider}...`)
+      logger.info(`🔐 Attempting to sign in with ${provider}...`)
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
@@ -96,31 +97,31 @@ export function AuthProvider({ children }: AuthProviderProps) {
       })
 
       if (error) {
-        console.error(`❌ Error signing in with ${provider}:`, error)
+        logger.error(`❌ Error signing in with ${provider}:`, error)
         throw error
       }
     } catch (error) {
-      console.error('Sign in error:', error)
+      logger.error('Sign in error:', error)
       throw error
     }
   }
 
   const signOut = async () => {
     if (!supabase) {
-      console.warn('⚠️ Sign out unavailable: Supabase client not configured')
+      logger.warn('⚠️ Sign out unavailable: Supabase client not configured')
       return
     }
 
     try {
-      console.log('🚪 Signing out...')
+      logger.info('🚪 Signing out...')
       const { error } = await supabase.auth.signOut()
       if (error) {
-        console.error('❌ Error signing out:', error)
+        logger.error('❌ Error signing out:', error)
         throw error
       }
-      console.log('✅ Signed out successfully')
+      logger.info('✅ Signed out successfully')
     } catch (error) {
-      console.error('Sign out error:', error)
+      logger.error('Sign out error:', error)
       throw error
     }
   }

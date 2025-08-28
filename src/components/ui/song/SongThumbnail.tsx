@@ -2,6 +2,7 @@
 
 import { getThumbnailUrl, handleThumbnailError, getBestThumbnailFromLinks } from "@/lib/utils/thumbnail";
 import { useState, useEffect } from "react";
+import { SkeletonThumbnail } from "@/components/ui/LoadingSkeleton";
 
 interface SongThumbnailProps {
   originalLink?: string;
@@ -27,39 +28,61 @@ export default function SongThumbnail({
 }: SongThumbnailProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [primaryLink, setPrimaryLink] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [hasError, setHasError] = useState<boolean>(false);
 
   useEffect(() => {
     const loadThumbnail = async () => {
       // 楽曲が変更された際にサムネイルをリセット
+      setIsLoading(true);
+      setHasError(false);
       setThumbnailUrl(null);
       setPrimaryLink(null);
 
-      if (links) {
-        // 新しいlinksフィールドを使用
-        const thumbnail = await getBestThumbnailFromLinks(links, originalLink);
-        setThumbnailUrl(thumbnail);
-        
-        // クリック時のリンクを優先度に基づいて設定
-        const bestLink = links.niconico || links.youtube || links.spotify || links.appleMusic || originalLink;
-        setPrimaryLink(bestLink || null);
-      } else if (originalLink) {
-        // 後方互換性のためのoriginalLink対応
-        const thumbnail = getThumbnailUrl(originalLink);
-        setThumbnailUrl(thumbnail);
-        setPrimaryLink(originalLink);
+      try {
+        if (links) {
+          // 新しいlinksフィールドを使用
+          const thumbnail = await getBestThumbnailFromLinks(links, originalLink);
+          setThumbnailUrl(thumbnail);
+          
+          // クリック時のリンクを優先度に基づいて設定
+          const bestLink = links.niconico || links.youtube || links.spotify || links.appleMusic || originalLink;
+          setPrimaryLink(bestLink || null);
+        } else if (originalLink) {
+          // 後方互換性のためのoriginalLink対応
+          const thumbnail = getThumbnailUrl(originalLink);
+          setThumbnailUrl(thumbnail);
+          setPrimaryLink(originalLink);
+        }
+      } catch {
+        setHasError(true);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     loadThumbnail();
   }, [links, originalLink, title]);
 
-  if (!thumbnailUrl || !primaryLink) return null;
-
   const sizeClasses = {
     sm: "w-32 h-18",
     md: "w-40 h-22", 
     lg: "w-full aspect-video"
   };
+
+  if (isLoading) {
+    return <SkeletonThumbnail className={`${sizeClasses[size]} ${className}`} />;
+  }
+
+  if (hasError || !thumbnailUrl || !primaryLink) {
+    return (
+      <div className={`${sizeClasses[size]} ${className} bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center`}>
+        <span className="text-xs text-gray-500 dark:text-gray-400">
+          {hasError ? 'エラー' : '画像なし'}
+        </span>
+      </div>
+    );
+  }
 
   const imageElement = (
     <img

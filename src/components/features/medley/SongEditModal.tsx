@@ -6,6 +6,8 @@ import BaseModal from "@/components/ui/modal/BaseModal";
 import SongInfoDisplay from "@/components/ui/song/SongInfoDisplay";
 import MultiSegmentTimeEditor, { TimeSegment } from "@/components/ui/song/MultiSegmentTimeEditor";
 import { getDuplicateInfo } from "@/lib/utils/duplicateSongs";
+import { sanitizeSongSection } from "@/lib/utils/sanitize";
+import { logger } from "@/lib/utils/logger";
 
 interface SongEditModalProps {
   isOpen: boolean;
@@ -72,7 +74,7 @@ export default function SongEditModal({
 
   // segments状態変更をログ
   useEffect(() => {
-    console.log('🔄 SongEditModal: segments state changed', {
+    logger.debug('🔄 SongEditModal: segments state changed', {
       segmentsLength: segments.length,
       segments: segments.map(s => ({ 
         id: s.id, 
@@ -203,17 +205,28 @@ export default function SongEditModal({
   const handleSave = () => {
     if (validateForm()) {
       setIsSaving(true);
-      // セグメントから複数のSongSectionを作成
-      const songsToSave: SongSection[] = segments.map(segment => ({
-        id: segment.id === formData.id ? formData.id : (Date.now() + Math.random()), // 新しいセグメントには新しいID
-        title: formData.title,
-        artist: formData.artist,
-        startTime: segment.startTime,
-        endTime: segment.endTime,
-        color: segment.color || formData.color,
-        originalLink: formData.originalLink,
-        links: formData.links
-      }));
+      // セグメントから複数のSongSectionを作成（サニタイゼーション適用）
+      const songsToSave: SongSection[] = segments.map(segment => {
+        const songData = {
+          title: formData.title,
+          artist: formData.artist,
+          startTime: segment.startTime,
+          endTime: segment.endTime,
+          originalLink: formData.originalLink,
+          color: segment.color || formData.color
+        };
+        
+        // サニタイゼーションを適用
+        const sanitized = sanitizeSongSection(songData);
+        logger.debug('Sanitized song data:', sanitized);
+        
+        return {
+          id: segment.id === formData.id ? formData.id : (Date.now() + Math.random()), // 新しいセグメントには新しいID
+          ...sanitized,
+          color: sanitized.color || "bg-blue-400", // デフォルトカラーを設定
+          links: formData.links
+        };
+      });
 
       if (applyToAllInstances && onBatchUpdate && song) {
         // 全てのインスタンスに適用（時刻情報は各セグメント固有）
@@ -240,12 +253,27 @@ export default function SongEditModal({
 
   const handleSaveAndNext = () => {
     if (validateForm()) {
-      // 複数セグメントの場合、最初のセグメントを代表として使用
+      // 複数セグメントの場合、最初のセグメントを代表として使用（サニタイゼーション適用）
+      const songData = {
+        title: formData.title,
+        artist: formData.artist,
+        startTime: segments[0]?.startTime || 0,
+        endTime: segments[0]?.endTime || 30,
+        originalLink: formData.originalLink,
+        color: formData.color
+      };
+      
+      // サニタイゼーションを適用
+      const sanitized = sanitizeSongSection(songData);
+      logger.debug('Sanitized song data (save and next):', sanitized);
+      
       const representativeSong: SongSection = {
         ...formData,
-        startTime: segments[0]?.startTime || 0,
-        endTime: segments[0]?.endTime || 30
+        ...sanitized,
+        color: sanitized.color || formData.color || "bg-blue-400", // デフォルトカラーを設定
+        links: formData.links
       };
+      
       if (onSaveAndNext) {
         onSaveAndNext(representativeSong);
       } else {
@@ -257,7 +285,7 @@ export default function SongEditModal({
 
   // セグメント変更ハンドラー
   const handleSegmentsChange = (newSegments: TimeSegment[]) => {
-    console.log('🔄 SongEditModal: handleSegmentsChange called', {
+    logger.debug('🔄 SongEditModal: handleSegmentsChange called', {
       currentSegments: segments.length,
       newSegments: newSegments.length
     });

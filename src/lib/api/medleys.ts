@@ -1,5 +1,6 @@
 import { supabase, type Database } from '@/lib/supabase'
 import type { MedleyData, SongSection } from '@/types'
+import { logger } from '@/lib/utils/logger'
 
 type MedleyRow = Database['public']['Tables']['medleys']['Row']
 type SongRow = Database['public']['Tables']['songs']['Row']
@@ -11,7 +12,7 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; erro
   }
   
   try {
-    console.log('🔍 Testing Supabase connection...')
+    logger.debug('🔍 Testing Supabase connection...')
     
     // Try a simple query to test the connection
     const { data, error } = await supabase
@@ -20,7 +21,7 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; erro
       .limit(1)
     
     if (error) {
-      console.error('❌ Supabase connection test failed:', {
+      logger.error('❌ Supabase connection test failed:', {
         code: error.code,
         message: error.message,
         details: error.details
@@ -31,10 +32,10 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; erro
       }
     }
     
-    console.log('✅ Supabase connection test successful')
+    logger.debug('✅ Supabase connection test successful')
     return { success: true }
   } catch (error) {
-    console.error('❌ Supabase connection test error:', error)
+    logger.error('❌ Supabase connection test error:', error)
     return { 
       success: false, 
       error: error instanceof Error ? error.message : String(error) 
@@ -92,7 +93,7 @@ async function directFetch(url: string): Promise<any> {
 // API functions
 export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | null> {
   try {
-    console.log('🔍 Fetching medley data for:', videoId)
+    logger.debug('🔍 Fetching medley data for:', videoId)
 
     // Get the medley using direct fetch
     const medleyData = await directFetch(
@@ -100,7 +101,7 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
     );
 
     if (!medleyData || medleyData.length === 0) {
-      console.log('No medley found for video ID:', videoId)
+      logger.debug('No medley found for video ID:', videoId)
       return null
     }
 
@@ -111,14 +112,14 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
       `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/songs?select=*&medley_id=eq.${medley.id}&order=order_index`
     );
 
-    console.log('✅ Successfully fetched medley data:', {
+    logger.debug('✅ Successfully fetched medley data:', {
       title: medley.title,
       songCount: songData.length
     })
 
     return convertDbRowToMedleyData(medley as MedleyRow, (songData || []) as SongRow[])
   } catch (error) {
-    console.error('❌ Error in getMedleyByVideoId:', error)
+    logger.error('❌ Error in getMedleyByVideoId:', error)
     return null
   }
 }
@@ -153,7 +154,7 @@ export async function getAllMedleys(): Promise<MedleyData[]> {
           .order('order_index', { ascending: true })
 
       if (songsResult.error) {
-        console.error('Error fetching songs for medley:', medley.id, songsResult.error)
+        logger.error('Error fetching songs for medley:', medley.id, songsResult.error)
       }
 
       return convertDbRowToMedleyData(
@@ -164,7 +165,7 @@ export async function getAllMedleys(): Promise<MedleyData[]> {
 
     return await Promise.all(medleyDataPromises)
   } catch (error) {
-    console.error('Error fetching all medleys:', error)
+    logger.error('Error fetching all medleys:', error)
     return []
   }
 }
@@ -215,7 +216,7 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
 
     return convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[])
   } catch (error) {
-    console.error('Error creating medley:', error)
+    logger.error('Error creating medley:', error)
     return null
   }
 }
@@ -258,7 +259,7 @@ export async function updateMedley(videoId: string, updates: Partial<Omit<Medley
       (songsResult.data || []) as SongRow[]
     )
   } catch (error) {
-    console.error('Error updating medley:', error)
+    logger.error('Error updating medley:', error)
     return null
   }
 }
@@ -293,7 +294,7 @@ export async function getUserMedleys(userId: string): Promise<MedleyData[]> {
         .order('order_index', { ascending: true })
 
       if (songsResult.error) {
-        console.error('Error fetching songs for medley:', medley.id, songsResult.error)
+        logger.error('Error fetching songs for medley:', medley.id, songsResult.error)
       }
 
       return convertDbRowToMedleyData(
@@ -304,7 +305,7 @@ export async function getUserMedleys(userId: string): Promise<MedleyData[]> {
 
     return await Promise.all(medleyDataPromises)
   } catch (error) {
-    console.error('Error fetching user medleys:', error)
+    logger.error('Error fetching user medleys:', error)
     return []
   }
 }
@@ -326,7 +327,7 @@ export async function deleteMedley(videoId: string): Promise<boolean> {
 
     return true
   } catch (error) {
-    console.error('Error deleting medley:', error)
+    logger.error('Error deleting medley:', error)
     return false
   }
 }

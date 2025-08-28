@@ -1,6 +1,10 @@
 /**
  * 動画のサムネイル画像を取得するためのユーティリティ
+ * セキュリティ強化: 安全なURL検証とXSS対策を含む
  */
+
+import { sanitizeUrl } from './sanitize';
+import { logger } from './logger';
 
 export type VideoPlatform = 'youtube' | 'niconico' | 'spotify' | 'appleMusic' | null;
 
@@ -11,18 +15,44 @@ export interface VideoInfo {
 
 /**
  * 動画URLから動画IDとプラットフォームを抽出
+ * セキュリティ強化: URL サニタイゼーションと厳格な検証を実装
  */
 export function extractVideoId(url: string): VideoInfo {
-  if (!url) return { platform: null, id: null };
+  if (!url || typeof url !== 'string') {
+    return { platform: null, id: null };
+  }
+
+  // セキュリティ: URLをサニタイゼーション
+  const sanitizedUrl = sanitizeUrl(url);
+  if (!sanitizedUrl) {
+    logger.warn('Invalid or potentially malicious URL rejected:', url);
+    return { platform: null, id: null };
+  }
 
   try {
-    const urlObj = new URL(url);
+    const urlObj = new URL(sanitizedUrl);
+    
+    // ドメインの厳格な検証
+    const hostname = urlObj.hostname.toLowerCase();
+    const allowedDomains = [
+      'youtube.com', 'www.youtube.com', 'm.youtube.com',
+      'youtu.be',
+      'nicovideo.jp', 'www.nicovideo.jp',
+      'nico.ms',
+      'spotify.com', 'open.spotify.com',
+      'music.apple.com'
+    ];
+
+    if (!allowedDomains.includes(hostname)) {
+      logger.warn('Rejected URL from unauthorized domain:', hostname);
+      return { platform: null, id: null };
+    }
     
     // YouTube の判定
-    if (urlObj.hostname.includes('youtube.com') || urlObj.hostname.includes('youtu.be')) {
+    if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
       let videoId = null;
       
-      if (urlObj.hostname.includes('youtu.be')) {
+      if (hostname.includes('youtu.be')) {
         // youtu.be/VIDEO_ID 形式
         videoId = urlObj.pathname.slice(1);
       } else {
@@ -30,38 +60,60 @@ export function extractVideoId(url: string): VideoInfo {
         videoId = urlObj.searchParams.get('v');
       }
       
-      if (videoId) {
+      // YouTube ID の厳格な検証 (11文字、英数字、ハイフン、アンダースコア)
+      if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
         return { platform: 'youtube', id: videoId };
       }
+      logger.warn('Invalid YouTube video ID format:', videoId);
+      return { platform: null, id: null };
     }
     
     // ニコニコ動画の判定
-    if (urlObj.hostname.includes('nicovideo.jp') || urlObj.hostname.includes('nico.ms')) {
+    if (hostname.includes('nicovideo.jp') || hostname.includes('nico.ms')) {
       const pathMatch = urlObj.pathname.match(/\/watch\/(sm\d+)/);
       if (pathMatch) {
-        return { platform: 'niconico', id: pathMatch[1] };
+        const videoId = pathMatch[1];
+        // ニコニコ動画IDの検証 (sm + 数字、最大8桁程度)
+        if (/^sm\d{1,8}$/.test(videoId)) {
+          return { platform: 'niconico', id: videoId };
+        }
+        logger.warn('Invalid Niconico video ID format:', videoId);
+        return { platform: null, id: null };
       }
     }
     
     // Spotifyの判定
-    if (urlObj.hostname.includes('spotify.com')) {
+    if (hostname.includes('spotify.com')) {
       const trackMatch = urlObj.pathname.match(/\/track\/([a-zA-Z0-9]{22})/);
       if (trackMatch) {
-        return { platform: 'spotify', id: trackMatch[1] };
+        const trackId = trackMatch[1];
+        // Spotify Track IDの検証 (正確に22文字の英数字)
+        if (/^[a-zA-Z0-9]{22}$/.test(trackId)) {
+          return { platform: 'spotify', id: trackId };
+        }
+        logger.warn('Invalid Spotify track ID format:', trackId);
+        return { platform: null, id: null };
       }
     }
     
     // Apple Musicの判定
-    if (urlObj.hostname.includes('music.apple.com')) {
+    if (hostname.includes('music.apple.com')) {
       const albumMatch = urlObj.pathname.match(/\/album\/.*\/(\d+)/);
       if (albumMatch) {
-        return { platform: 'appleMusic', id: albumMatch[1] };
+        const albumId = albumMatch[1];
+        // Apple Music IDの検証 (数字のみ、最大10桁程度)
+        if (/^\d{1,10}$/.test(albumId)) {
+          return { platform: 'appleMusic', id: albumId };
+        }
+        logger.warn('Invalid Apple Music album ID format:', albumId);
+        return { platform: null, id: null };
       }
     }
     
+    logger.warn('No valid video ID found for URL:', sanitizedUrl);
     return { platform: null, id: null };
   } catch (error) {
-    console.warn('Failed to parse video URL:', url, error);
+    logger.error('Failed to parse video URL:', sanitizedUrl, error);
     return { platform: null, id: null };
   }
 }

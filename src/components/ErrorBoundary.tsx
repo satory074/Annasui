@@ -1,6 +1,7 @@
 "use client";
 
 import React, { Component, ReactNode } from 'react';
+import { logger } from '@/lib/utils/logger';
 
 interface Props {
   children: ReactNode;
@@ -19,12 +20,12 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   static getDerivedStateFromError(error: Error): State {
-    console.error("[ERROR BOUNDARY] Caught error:", error);
+    logger.error("[ERROR BOUNDARY] Caught error:", error);
     return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("[ERROR BOUNDARY] Error details:", {
+    logger.error("[ERROR BOUNDARY] Error details:", {
       error: error.toString(),
       errorInfo: errorInfo,
       componentStack: errorInfo.componentStack
@@ -54,7 +55,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             </details>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 bg-pink-600 hover:bg-pink-700 text-white px-4 py-2 rounded transition-colors"
+              className="mt-4 bg-caramel-600 hover:bg-caramel-700 text-white px-4 py-2 rounded transition-colors"
             >
               ページをリロード
             </button>

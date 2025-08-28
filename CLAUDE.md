@@ -356,6 +356,8 @@ const sendCommand = (command) => {
 - **URL parsing errors**: Verify regex patterns in `extractVideoId` for all supported platforms
 
 ### Tooltip System Issues
+- **Tooltips not appearing on hover**: Check state management consistency - ensure `onSongHover` callback uses the correct state setter function. Common issue: old `tooltip` state vs new separate states (`tooltipSong`, `tooltipPosition`, `isTooltipVisible`) mismatch
+- **State management mismatch**: Verify `MedleyPlayer.tsx` onSongHover callback uses `handleHoverSong()` function instead of directly setting old `tooltip` state. The `SongDetailTooltip` component uses new separate states
 - **Thumbnails stuck on first song**: Add unique `key` props to `SongThumbnail` components and reset state in `useEffect`
 - **Tooltips not closing properly**: Check document click handlers and `data-tooltip` attributes
 - **Platform links closing tooltips**: Verify click target detection in `handleDocumentClick` function
@@ -602,6 +604,57 @@ const thumbnail = data.thumbnail_url || getYouTubeThumbnail(videoId);
 - ✅ All metadata fields populate correctly from video APIs
 
 ## Recent Updates
+
+### Tooltip State Management Fix (2025-08-28)
+Critical fix for tooltips not appearing when hovering over song segments in the timeline:
+
+**Problem Solved:**
+- Tooltips were not displaying when hovering over song segments in production environment
+- Issue occurred due to state management mismatch between old and new tooltip state systems
+
+**Root Cause:**
+- `MedleyPlayer.tsx` contained two separate tooltip state management systems:
+  - **Old system**: Single `tooltip` object with `visible`, `song`, and `position` properties (lines 55-59, removed)
+  - **New system**: Separate states `tooltipSong`, `tooltipPosition`, `isTooltipVisible` (lines 63-65)
+- The `onSongHover` callback (lines 716-727) was updating the OLD `tooltip` state
+- The `SongDetailTooltip` component (lines 811-818) was reading from the NEW separate states
+- An unused `handleHoverSong` function (lines 446-471) existed that properly updated the new states
+
+**Solution Implemented:**
+1. **Connected State Management**: Modified `onSongHover` callback to use `handleHoverSong()` function instead of directly setting old `tooltip` state
+2. **Removed Old State**: Cleaned up unused `tooltip` state object to prevent confusion
+3. **State Synchronization**: Ensured hover events properly update the states that the tooltip component reads from
+
+**Technical Fix:**
+```typescript
+// Before (MedleyPlayer.tsx lines 716-723):
+onSongHover={(song: SongSection, element: HTMLElement) => {
+  const rect = element.getBoundingClientRect();
+  setTooltip({ // ❌ Updates old unused state
+    visible: true,
+    song,
+    position: { x: rect.left + rect.width / 2, y: rect.top - 10 }
+  });
+}}
+
+// After (fixed):
+onSongHover={(song: SongSection, element: HTMLElement) => {
+  const rect = element.getBoundingClientRect();
+  handleHoverSong(song, { // ✅ Uses correct state updater
+    x: rect.left + rect.width / 2,
+    y: rect.top - 10
+  });
+}}
+```
+
+**Files Modified:**
+- `src/components/pages/MedleyPlayer.tsx` (lines 716-723): Connected onSongHover to handleHoverSong function
+- `src/components/pages/MedleyPlayer.tsx` (lines 55-59): Removed unused tooltip state object
+
+**Production Verification:**
+- ✅ Tooltips now appear correctly when hovering over song segments in timeline
+- ✅ Tooltip displays thumbnail, song details, platform links, and "この曲から再生" button
+- ✅ Verified working in production environment (https://anasui-e6f49.web.app)
 
 ### User Profile System Implementation (2025-08-27)
 Complete user profile management system with three new pages for authenticated users:

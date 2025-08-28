@@ -52,13 +52,6 @@ export default function MedleyPlayer({
     // 楽曲選択とツールチップ関連の状態
     const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [tooltip, setTooltip] = useState<{
-        visible: boolean;
-        song: SongSection | null;
-        position: { x: number; y: number };
-    }>({ visible: false, song: null, position: { x: 0, y: 0 } });
-    
-    
     // ツールチップ関連の状態
     const [tooltipSong, setTooltipSong] = useState<SongSection | null>(null);
     const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -715,16 +708,12 @@ export default function MedleyPlayer({
                         onSelectSong={setSelectedSong}
                         onSongHover={(song: SongSection, element: HTMLElement) => {
                             const rect = element.getBoundingClientRect();
-                            setTooltip({
-                                visible: true,
-                                song,
-                                position: {
-                                    x: rect.left + rect.width / 2,
-                                    y: rect.top - 10
-                                }
+                            handleHoverSong(song, {
+                                x: rect.left + rect.width / 2,
+                                y: rect.top - 10
                             });
                         }}
-                        onSongHoverEnd={() => setTooltip({ visible: false, song: null, position: { x: 0, y: 0 } })}
+                        onSongHoverEnd={() => handleHoverSong(null, { x: 0, y: 0 })}
                         onSaveChanges={handleSaveChanges}
                         onResetChanges={() => resetChanges(medleySongs)}
                         hasChanges={hasChanges}

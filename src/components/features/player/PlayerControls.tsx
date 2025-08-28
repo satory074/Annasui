@@ -68,8 +68,11 @@ export default function PlayerControls({
           
           {/* 進行状況バー */}
           <div 
-            className="absolute top-0 bottom-0 bg-caramel-600 rounded-l"
-            style={{ width: `${Math.max(0, getSeekBarPosition(currentTime))}%` }}
+            className="absolute top-0 bottom-0 rounded-l"
+            style={{ 
+              background: 'var(--gradient-timeline)',
+              width: `${Math.max(0, getSeekBarPosition(currentTime))}%`
+            }}
           />
           
           {/* 再生位置インジケーター（赤い線） */}
@@ -82,7 +85,7 @@ export default function PlayerControls({
 
       <VolumeSlider volume={volume} onChange={onVolumeChange} />
 
-      <button onClick={onToggleFullscreen} className="text-white hover:text-caramel-400">
+      <button onClick={onToggleFullscreen} className="text-white hover:text-purple-400 transition-colors">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"

@@ -1,52 +1,102 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f3f0;
-  --foreground: #3e2723;
-  --primary: #6f4e37;
-  --primary-hover: #5d4e37;
-  --secondary: #d7ccc8;
-  --accent: #af6f3c;
-  --accent-hover: #9a5f33;
-  --accent-light: #f0e6dc;
-  --complementary-purple: #a0522d;
-  --complementary-green: #6b8e23;
-  --complementary-red: #b22222;
-  --surface: #efebe9;
-  --border: #d7ccc8;
-  --text-secondary: #6d4c41;
+  /* Legacy Color System (for compatibility) */
+  --background: #ffffff;
+  --foreground: #1a1a2e;
+  --primary: #667eea;
+  --primary-hover: #5a67d8;
+  --secondary: #f3f4f6;
+  --accent: #ec4899;
+  --accent-hover: #db2777;
+  --accent-light: #fce7f3;
+  --surface: #f9fafb;
+  --border: #e5e7eb;
+  --text-secondary: #6b7280;
+  
+  /* Gradient Dream Color System */
+  --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  --gradient-secondary: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
+  --gradient-accent: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+  --gradient-music: linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%);
+  --gradient-timeline: linear-gradient(90deg, #3b82f6 0%, #10b981 50%, #fbbf24 100%);
+  
+  /* Interactive Gradients */
+  --gradient-hover: linear-gradient(135deg, #8b5cf6 0%, #f472b6 100%);
+  --gradient-active: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+  --gradient-focus: linear-gradient(135deg, #7c3aed 0%, #dc2626 100%);
+  
+  /* Solid Colors for Gradient System */
+  --color-purple-primary: #667eea;
+  --color-purple-secondary: #764ba2;
+  --color-pink-primary: #ec4899;
+  --color-pink-secondary: #f472b6;
+  --color-amber-primary: #f59e0b;
+  --color-teal-primary: #10b981;
+  --color-cyan-primary: #06b6d4;
+  --color-violet-primary: #8b5cf6;
+  
+  /* Background Gradients */
+  --gradient-surface: linear-gradient(180deg, #faf5ff 0%, #fef3c7 100%);
+  --gradient-card: linear-gradient(135deg, #ffffff 0%, #f3e8ff 100%);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-caramel-600: var(--accent);
-  --color-caramel-700: var(--accent-hover);
+  
+  /* Gradient Dream Theme Colors */
+  --color-purple-600: var(--color-purple-primary);
+  --color-purple-700: var(--color-purple-secondary);
+  --color-pink-600: var(--color-pink-primary);
+  --color-pink-700: var(--color-pink-secondary);
+  --color-amber-600: var(--color-amber-primary);
+  --color-teal-600: var(--color-teal-primary);
+  --color-cyan-600: var(--color-cyan-primary);
+  --color-violet-600: var(--color-violet-primary);
+  
+  /* Legacy mappings for compatibility */
+  --color-caramel-600: var(--color-purple-primary);
+  --color-caramel-700: var(--color-purple-secondary);
   --color-caramel-50: var(--accent-light);
-  --color-sienna-600: var(--complementary-purple);
-  --color-sienna-700: #8b4513;
-  --color-olive-600: var(--complementary-green);
-  --color-brick-600: var(--complementary-red);
+  --color-sienna-600: var(--color-pink-primary);
+  --color-sienna-700: var(--color-pink-secondary);
+  --color-olive-600: var(--color-teal-primary);
+  --color-brick-600: #ef4444;
+  
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1c1410;
-    --foreground: #efebe9;
-    --primary: #6f4e37;
-    --primary-hover: #5d4e37;
-    --secondary: #a1887f;
-    --accent: #af6f3c;
-    --accent-hover: #9a5f33;
-    --accent-light: #4e342e;
-    --complementary-purple: #a0522d;
-    --complementary-green: #6b8e23;
-    --complementary-red: #b22222;
-    --surface: #3e2723;
-    --border: #5d4037;
-    --text-secondary: #a1887f;
+    --background: #0f0f23;
+    --foreground: #e5e7eb;
+    --primary: #818cf8;
+    --primary-hover: #6366f1;
+    --secondary: #1f2937;
+    --accent: #f472b6;
+    --accent-hover: #ec4899;
+    --accent-light: #831843;
+    --surface: #1a1a2e;
+    --border: #374151;
+    --text-secondary: #9ca3af;
+    
+    /* Dark Mode Gradients */
+    --gradient-primary: linear-gradient(135deg, #818cf8 0%, #c084fc 100%);
+    --gradient-secondary: linear-gradient(135deg, #fbbf24 0%, #f87171 50%, #f472b6 100%);
+    --gradient-accent: linear-gradient(90deg, #34d399 0%, #22d3ee 100%);
+    --gradient-music: linear-gradient(90deg, #a78bfa 0%, #f472b6 100%);
+    --gradient-timeline: linear-gradient(90deg, #60a5fa 0%, #34d399 50%, #fde047 100%);
+    
+    /* Dark Interactive Gradients */
+    --gradient-hover: linear-gradient(135deg, #a78bfa 0%, #f9a8d4 100%);
+    --gradient-active: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+    --gradient-focus: linear-gradient(135deg, #8b5cf6 0%, #ef4444 100%);
+    
+    /* Dark Background Gradients */
+    --gradient-surface: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+    --gradient-card: linear-gradient(135deg, #1f2937 0%, #312e81 100%);
   }
 }
 

@@ -227,7 +227,8 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             {/* New medley registration button */}
                             <button
                                 onClick={handleCreateMedleyClick}
-                                className="flex items-center gap-2 px-4 py-2 bg-caramel-600 hover:bg-caramel-700 text-white rounded-lg transition-colors shadow-sm font-medium"
+                                className="flex items-center gap-2 px-4 py-2 text-white rounded-lg transition-all hover:shadow-lg font-medium"
+                                style={{ background: 'var(--gradient-primary)' }}
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

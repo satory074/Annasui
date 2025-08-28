@@ -568,7 +568,7 @@ export default function SongEditModal({
             {!isNew && onDelete && (
               <button
                 onClick={handleDelete}
-                className="px-4 py-2 bg-brick-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-brick-600"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600"
               >
                 削除
               </button>
@@ -584,14 +584,14 @@ export default function SongEditModal({
             {isNew && continuousMode && onSaveAndNext && (
               <button
                 onClick={handleSaveAndNext}
-                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500"
+                className="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-teal-600 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-accent)' }}
               >
                 保存して次へ
               </button>
             )}
             <button
               onClick={handleSave}
-              className="px-4 py-2 bg-caramel-600 text-white rounded-md hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600"
+              className="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-primary)' }}
             >
               {isNew ? (continuousMode ? "保存して終了" : "追加") : "保存"}
             </button>

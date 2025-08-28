@@ -26,16 +26,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Anasui is a comprehensive multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, advanced editing capabilities, searchable medley database, and user authentication. Supports 4 platforms: Niconico (full integration), YouTube (embed), Spotify (thumbnails), and Apple Music (thumbnails).
+**Medlean** (formerly Anasui) is a comprehensive multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, advanced editing capabilities, searchable medley database, and user authentication. Supports 4 platforms: Niconico (full integration), YouTube (embed), Spotify (thumbnails), and Apple Music (thumbnails).
 
-**Current Status**: Complete medley annotation platform with full user authentication system. All core features implemented including multi-platform support (Niconico, YouTube, Spotify, Apple Music), advanced timeline editing with multi-segment support, unified UI with Coffee & Cream design system, comprehensive annotation enhancement features, and OAuth-based user authentication with database ownership model.
+**Current Status**: Complete medley annotation platform with full user authentication system. All core features implemented including multi-platform support (Niconico, YouTube, Spotify, Apple Music), advanced timeline editing with multi-segment support, unified UI with **Gradient Dream** design system (2025-08-28), comprehensive annotation enhancement features, and OAuth-based user authentication with database ownership model.
 
 ## Core Architecture
 
 ### Technology Stack
 - Next.js 15.2.1 + React 19.0.0 + TypeScript
 - TailwindCSS 4 + Emotion for CSS-in-JS
-- Coffee & Cream Design System (custom color palette with caramel, sienna, olive themes)
+- **Gradient Dream Design System** (purple-pink, teal-cyan, amber gradients - implemented 2025-08-28)
 - Multi-platform video player support (Niconico postMessage API, YouTube iframe embed)
 - Supabase for database + authentication (OAuth with GitHub/Google)
 - Firebase App Hosting for deployment with SSR support
@@ -520,7 +520,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 Implemented complete new medley registration system allowing users to add medleys via UI:
 
 **Key Features:**
-- **Homepage Integration**: "新規メドレー登録" button in Coffee & Cream theme (caramel-600 background)
+- **Homepage Integration**: "新規メドレー登録" button with Gradient Dream theme (purple-pink gradient background)
 - **Platform Detection**: Automatic platform detection from URL (Niconico/YouTube) with manual override
 - **Form Validation**: URL validation with video ID extraction, required field checking
 - **Dual Backend Support**: 
@@ -1577,11 +1577,11 @@ export type SongSection = {
 - **URL Validation**: Platform-specific ID format validation (YouTube: 11 chars, Niconico: sm+digits, etc.)
 - **Domain Whitelisting**: Only allow URLs from trusted platforms
 - **Input Length Limits**: Prevent oversized inputs that could cause performance issues
-- **Error Boundary**: Uses Coffee & Cream colors instead of pink for consistency
+- **Error Boundary**: Uses Gradient Dream colors for consistency
 
 ### Loading States & UX Improvements
 - **SongThumbnail**: Loading skeletons, error states, proper state reset on prop changes
-- **LoadingSpinner**: Reusable spinner with Coffee & Cream theming
+- **LoadingSpinner**: Reusable spinner with Gradient Dream theming
 - **LoadingSkeleton**: Various skeleton components for different UI elements
 - **Error Handling**: User-friendly error messages with visual feedback
 
@@ -1595,8 +1595,32 @@ logger.debug('Operation completed', data);
 const validated = sanitizeUrl(userUrl);
 ```
 
-# important-instruction-reminders
-Do what has been asked; nothing more, nothing less.
-NEVER create files unless they're absolutely necessary for achieving your goal.
-ALWAYS prefer editing an existing file to creating a new one.
-NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+## Gradient Dream Color System (2025-08-28)
+
+### Design System Overview
+Complete migration from Coffee & Cream to Gradient Dream color palette:
+- **Primary Gradient**: Purple to pink (`#667eea → #764ba2`)
+- **Secondary Gradient**: Amber to red to pink (`#f59e0b → #ef4444 → #ec4899`)
+- **Accent Gradient**: Teal to cyan (`#10b981 → #06b6d4`)
+- **Timeline Gradient**: Blue to green to yellow (`#3b82f6 → #10b981 → #fbbf24`)
+
+### Implementation Details
+**CSS Variables** (in `globals.css`):
+```css
+--gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+--gradient-secondary: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
+--gradient-accent: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
+--gradient-timeline: linear-gradient(90deg, #3b82f6 0%, #10b981 50%, #fbbf24 100%);
+```
+
+**Component Updates**:
+- Buttons use `style={{ background: 'var(--gradient-primary)' }}` for gradient backgrounds
+- Timeline bars use `bg-gradient-to-r from-purple-600 to-pink-600`
+- Keyboard shortcuts: S=purple, E=teal, M=pink
+- Player controls use gradient timeline for seek bar
+
+### Dark Mode Support
+Complete dark mode gradients with adjusted brightness:
+- Maintains contrast ratios for accessibility
+- Brighter gradient colors in dark mode for visibility
+- Consistent visual hierarchy across themes

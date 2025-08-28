@@ -28,7 +28,8 @@ export default function PlayPauseButton({
   return (
     <button
       onClick={onClick}
-      className={`text-white bg-caramel-600 hover:bg-caramel-700 rounded-full transition-colors ${sizeClasses[size]} ${className}`}
+      className={`text-white rounded-full transition-all hover:shadow-lg ${sizeClasses[size]} ${className}`}
+      style={{ background: 'var(--gradient-primary)' }}
     >
       {isPlaying ? (
         <svg

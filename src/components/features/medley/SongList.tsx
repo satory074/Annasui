@@ -536,7 +536,7 @@ export default function SongList({
                       alert('URLをクリップボードにコピーしました');
                     }
                   }}
-                  className="px-2 py-1 text-xs bg-caramel-600 text-white rounded hover:bg-caramel-700 transition-colors"
+                  className="px-2 py-1 text-xs text-white rounded transition-all hover:shadow-lg" style={{ background: 'var(--gradient-primary)' }}
                   title="この動画を共有"
                 >
                   共有
@@ -555,7 +555,7 @@ export default function SongList({
                 className={`px-3 py-1 text-xs rounded font-medium transition-colors ${
                   isEditMode
                     ? 'bg-orange-500 text-white hover:bg-orange-600'
-                    : 'bg-caramel-600 text-white hover:bg-caramel-700'
+                    : 'text-white hover:shadow-lg'
                 }`}
               >
                 {isEditMode ? '編集終了' : '編集モード'}
@@ -571,7 +571,7 @@ export default function SongList({
                   {onImportSetlist && (
                     <button
                       onClick={onImportSetlist}
-                      className="px-3 py-1 text-xs bg-sienna-600 text-white rounded hover:bg-sienna-600"
+                      className="px-3 py-1 text-xs bg-pink-600 text-white rounded hover:bg-pink-700"
                       title="セットリストから一括インポート"
                     >
                       インポート
@@ -601,9 +601,9 @@ export default function SongList({
                     </span>
                   )}
                   <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                    キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-caramel-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
-                    <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-olive-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
-                    <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-sienna-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
+                    キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-purple-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
+                    <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-teal-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
+                    <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-pink-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
                   </div>
                 </>
               )}
@@ -620,7 +620,7 @@ export default function SongList({
                 <button
                   onClick={onSaveChanges}
                   disabled={!hasChanges || isSaving}
-                  className="px-3 py-1 text-xs bg-caramel-600 text-white rounded hover:bg-caramel-700 disabled:opacity-50"
+                  className="px-3 py-1 text-xs text-white rounded disabled:opacity-50 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-primary)' }}
                 >
                   {isSaving ? '保存中...' : '変更を保存'}
                 </button>
@@ -678,7 +678,7 @@ export default function SongList({
                       className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 ${
                         isBeyondActualDuration 
                           ? 'bg-red-400 dark:bg-red-500 opacity-50' 
-                          : 'bg-caramel-600 dark:bg-caramel-600'
+                          : 'bg-gradient-to-r from-purple-600 to-pink-600'
                       } ${
                         hasOverlap ? 'opacity-80' : ''
                       } ${
@@ -750,7 +750,7 @@ export default function SongList({
                         onClick={() => onEditSong?.(song)}
                         className={`p-0.5 rounded transition-colors bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 ${
                           isEditMode 
-                            ? 'text-caramel-600 hover:bg-caramel-50 dark:hover:bg-amber-900/30' 
+                            ? 'text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30' 
                             : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
                         }`}
                         title="楽曲を編集"

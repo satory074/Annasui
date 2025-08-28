@@ -55,7 +55,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             </details>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 bg-caramel-600 hover:bg-caramel-700 text-white px-4 py-2 rounded transition-colors"
+              className="mt-4 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded transition-colors"
             >
               ページをリロード
             </button>

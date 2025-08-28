@@ -320,7 +320,7 @@ export default function SongListGrouped({
                     href={originalVideoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-lg font-bold text-gray-900 dark:text-white hover:text-caramel-600 dark:hover:text-caramel-600 hover:underline cursor-pointer transition-colors"
+                    className="text-lg font-bold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-600 hover:underline cursor-pointer transition-colors"
                     title="元動画を見る"
                   >
                     {medleyTitle}
@@ -362,9 +362,9 @@ export default function SongListGrouped({
               )}
               {isEditMode && (
                 <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                  キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-caramel-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
-                  <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-olive-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
-                  <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-sienna-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
+                  キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
+                  <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-mint-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
+                  <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-indigo-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
                 </div>
               )}
             </div>
@@ -380,7 +380,7 @@ export default function SongListGrouped({
                 <button
                   onClick={onSaveChanges}
                   disabled={!hasChanges || isSaving}
-                  className="px-3 py-1 text-xs bg-caramel-600 text-white rounded hover:bg-caramel-700 disabled:opacity-50"
+                  className="px-3 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
                 >
                   {isSaving ? '保存中...' : '変更を保存'}
                 </button>
@@ -437,7 +437,7 @@ export default function SongListGrouped({
                       onClick={() => onEditSong?.(group.segments[0])}
                       className={`p-1.5 rounded transition-colors ${
                         isEditMode 
-                          ? 'text-caramel-600 hover:bg-caramel-50 dark:hover:bg-amber-900/30' 
+                          ? 'text-orange-600 hover:bg-caramel-50 dark:hover:bg-amber-900/30' 
                           : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
                       }`}
                       title={`${group.title}を編集 (${group.segments.length}区間)`}
@@ -495,7 +495,7 @@ export default function SongListGrouped({
                         className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 ${
                           isBeyondActualDuration 
                             ? 'bg-red-400 dark:bg-red-500 opacity-50' 
-                            : 'bg-caramel-600 dark:bg-caramel-600'
+                            : 'bg-orange-600 dark:bg-orange-600'
                         } ${
                           hasOverlap ? 'opacity-80' : ''
                         } ${
@@ -534,7 +534,7 @@ export default function SongListGrouped({
                                 : `(${duplicateInfo.instanceNumber})`;
                               return (
                                 <span 
-                                  className="bg-caramel-600 text-white text-xs px-1 rounded-full font-bold shadow-sm"
+                                  className="bg-orange-600 text-white text-xs px-1 rounded-full font-bold shadow-sm"
                                   title={`重複楽曲 ${duplicateInfo.instanceNumber}/${duplicateInfo.totalInstances}`}
                                 >
                                   {number}
@@ -580,14 +580,14 @@ export default function SongListGrouped({
                       }}
                     >
                       <div className={`w-1 h-full ${
-                        isPressingS ? 'bg-caramel-600' : 
-                        isPressingE ? 'bg-olive-600' : 
-                        isPressingM ? 'bg-sienna-600' : 'bg-gray-400'
+                        isPressingS ? 'bg-orange-600' : 
+                        isPressingE ? 'bg-mint-600' : 
+                        isPressingM ? 'bg-indigo-600' : 'bg-gray-400'
                       } opacity-80`} />
                       <div className={`text-xs px-1 py-0.5 rounded text-white font-semibold ${
-                        isPressingS ? 'bg-caramel-600' :
-                        isPressingE ? 'bg-olive-600' :
-                        isPressingM ? 'bg-sienna-600' : 'bg-gray-400'
+                        isPressingS ? 'bg-orange-600' :
+                        isPressingE ? 'bg-mint-600' :
+                        isPressingM ? 'bg-indigo-600' : 'bg-gray-400'
                       }`}>
                         {isPressingS ? 'S' : isPressingE ? 'E' : isPressingM ? 'M' : ''}
                       </div>

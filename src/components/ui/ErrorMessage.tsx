@@ -35,7 +35,7 @@ export default function ErrorMessage({ message, onDismiss }: ErrorMessageProps) 
             <div className="mt-4">
               <button
                 onClick={onDismiss}
-                className="bg-pink-600 hover:bg-pink-700 text-white text-sm px-4 py-2 rounded transition-colors"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded transition-colors"
               >
                 OK
               </button>

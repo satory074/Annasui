@@ -144,7 +144,7 @@ export default function SongEditModal({
             startTime: song.startTime,
             endTime: song.endTime,
             segmentNumber: 1,
-            color: song.color || "bg-caramel-400"
+            color: song.color || "bg-orange-400"
           }]);
         }
       } else {
@@ -155,7 +155,7 @@ export default function SongEditModal({
           startTime: song.startTime,
           endTime: song.endTime,
           segmentNumber: 1,
-          color: song.color || "bg-caramel-400"
+          color: song.color || "bg-orange-400"
         }]);
       }
     } else if (isNew) {
@@ -180,7 +180,7 @@ export default function SongEditModal({
         startTime: currentTime || 0,
         endTime: Math.min((currentTime || 0) + 30, maxDuration || 300),
         segmentNumber: 1,
-        color: "bg-caramel-400"
+        color: "bg-orange-400"
       }]);
     }
     setErrors({});
@@ -376,7 +376,7 @@ export default function SongEditModal({
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white ${
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white ${
                     errors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                   }`}
                   placeholder="楽曲名を入力"
@@ -395,7 +395,7 @@ export default function SongEditModal({
                   type="text"
                   value={formData.artist}
                   onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
                   placeholder="アーティスト名を入力"
                 />
               </div>
@@ -442,7 +442,7 @@ export default function SongEditModal({
                         ...formData, 
                         links: { ...formData.links, niconico: e.target.value }
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
                       placeholder="https://www.nicovideo.jp/watch/sm..."
                     />
                   </div>
@@ -458,7 +458,7 @@ export default function SongEditModal({
                         ...formData, 
                         links: { ...formData.links, youtube: e.target.value }
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
                       placeholder="https://www.youtube.com/watch?v=..."
                     />
                   </div>
@@ -474,7 +474,7 @@ export default function SongEditModal({
                         ...formData, 
                         links: { ...formData.links, spotify: e.target.value }
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
                       placeholder="https://open.spotify.com/track/..."
                     />
                   </div>
@@ -490,7 +490,7 @@ export default function SongEditModal({
                         ...formData, 
                         links: { ...formData.links, appleMusic: e.target.value }
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
                       placeholder="https://music.apple.com/..."
                     />
                   </div>
@@ -507,7 +507,7 @@ export default function SongEditModal({
                     type="url"
                     value={formData.originalLink || ""}
                     onChange={(e) => setFormData({ ...formData, originalLink: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
                     placeholder="https://..."
                   />
                 </div>
@@ -524,7 +524,7 @@ export default function SongEditModal({
                 type="checkbox"
                 checked={continuousMode}
                 onChange={onToggleContinuousMode}
-                className="rounded border-gray-300 text-caramel-600 focus:ring-caramel-600"
+                className="rounded border-gray-300 text-orange-600 focus:ring-orange-600"
               />
               連続入力モード（保存後に次の楽曲を追加）
             </label>
@@ -552,7 +552,7 @@ export default function SongEditModal({
                       type="checkbox"
                       checked={applyToAllInstances}
                       onChange={(e) => setApplyToAllInstances(e.target.checked)}
-                      className="rounded border-amber-300 text-caramel-600 focus:ring-caramel-600"
+                      className="rounded border-amber-300 text-orange-600 focus:ring-orange-600"
                     />
                     全 {duplicateInfo.totalInstances} インスタンスに適用（時刻は各インスタンス固有のまま）
                   </label>
@@ -584,14 +584,14 @@ export default function SongEditModal({
             {isNew && continuousMode && onSaveAndNext && (
               <button
                 onClick={handleSaveAndNext}
-                className="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-teal-600 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-accent)' }}
+                className="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-mint-600 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-accent)' }}
               >
                 保存して次へ
               </button>
             )}
             <button
               onClick={handleSave}
-              className="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-primary)' }}
+              className="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-primary)' }}
             >
               {isNew ? (continuousMode ? "保存して終了" : "追加") : "保存"}
             </button>

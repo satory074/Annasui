@@ -46,7 +46,7 @@ export default function UserProfileDropdown() {
   if (loading) {
     return (
       <div className="flex items-center">
-        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-caramel-600"></div>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
       </div>
     )
   }
@@ -56,7 +56,7 @@ export default function UserProfileDropdown() {
       <>
         <button
           onClick={() => setIsAuthModalOpen(true)}
-          className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-caramel-600 dark:hover:text-caramel-400 transition-colors"
+          className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-orange-600 dark:hover:text-caramel-400 transition-colors"
         >
           <svg 
             className="w-5 h-5 mr-1" 

@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medlean - オレンジ系カラーパレット比較</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* デフォルトパレット: Sunset Glow */
+            --primary-color: #fb923c;
+            --primary-dark: #f97316;
+            --secondary-color: #14b8a6;
+            --secondary-dark: #0d9488;
+            --accent-color: #fbbf24;
+            --accent-dark: #f59e0b;
+            --neutral-100: #f5f5f5;
+            --neutral-200: #e5e5e5;
+            --neutral-300: #d4d4d4;
+            --neutral-800: #262626;
+            --neutral-900: #171717;
+            --text-light: #ffffff;
+            --text-dark: #171717;
+            --background-light: #ffffff;
+            --background-dark: #1a1a1a;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--background-light);
+            color: var(--text-dark);
+            transition: all 0.3s ease;
+            line-height: 1.6;
+        }
+
+        body.dark-mode {
+            background: var(--background-dark);
+            color: var(--text-light);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border-radius: 20px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .palette-selector {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .palette-btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .palette-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .palette-btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.4);
+        }
+
+        .dark-mode-toggle {
+            padding: 12px 24px;
+            background: var(--neutral-800);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .dark-mode-toggle:hover {
+            background: var(--neutral-900);
+            transform: translateY(-2px);
+        }
+
+        .demo-section {
+            background: var(--background-light);
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 2px solid var(--neutral-200);
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .demo-section {
+            background: var(--neutral-900);
+            border-color: var(--neutral-800);
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            color: var(--primary-color);
+            text-align: center;
+        }
+
+        .ui-components {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .component-group {
+            background: var(--neutral-100);
+            padding: 25px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .component-group {
+            background: var(--neutral-800);
+        }
+
+        .component-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: var(--primary-color);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--secondary-color), var(--secondary-dark));
+            color: white;
+        }
+
+        .btn-accent {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-dark));
+            color: var(--text-dark);
+        }
+
+        .timeline-demo {
+            background: var(--neutral-200);
+            height: 60px;
+            border-radius: 10px;
+            position: relative;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        body.dark-mode .timeline-demo {
+            background: var(--neutral-800);
+        }
+
+        .timeline-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            width: 65%;
+            border-radius: 10px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            color: white;
+            font-weight: 600;
+        }
+
+        .player-controls {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: var(--neutral-100);
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        body.dark-mode .player-controls {
+            background: var(--neutral-800);
+        }
+
+        .play-btn {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .play-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .seek-bar {
+            flex: 1;
+            height: 6px;
+            background: var(--neutral-300);
+            border-radius: 3px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .seek-progress {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            width: 45%;
+            border-radius: 3px;
+        }
+
+        .card {
+            background: var(--background-light);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            border: 2px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .card {
+            background: var(--neutral-900);
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        body.dark-mode .form-label {
+            color: var(--text-light);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--neutral-300);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(251, 146, 60, 0.1);
+        }
+
+        body.dark-mode .form-input {
+            background: var(--neutral-800);
+            border-color: var(--neutral-700);
+            color: var(--text-light);
+        }
+
+        .evaluation {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .eval-card {
+            background: var(--neutral-100);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        body.dark-mode .eval-card {
+            background: var(--neutral-800);
+        }
+
+        .eval-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .stars {
+            font-size: 1.5rem;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+        }
+
+        .current-palette-info {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+            color: white;
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .palette-name {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 15px;
+        }
+
+        .palette-description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 20px;
+        }
+
+        .color-swatches {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .color-swatch {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.3);
+            position: relative;
+        }
+
+        .swatch-label {
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .ui-components {
+                grid-template-columns: 1fr;
+            }
+            
+            .controls {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Medlean</h1>
+            <p>オレンジ系カラーパレット比較</p>
+        </div>
+
+        <div class="controls">
+            <div class="palette-selector">
+                <button class="palette-btn active" data-palette="sunset-glow">Sunset Glow</button>
+                <button class="palette-btn" data-palette="vibrant-orange">Vibrant Orange</button>
+                <button class="palette-btn" data-palette="coral-fusion">Coral Fusion</button>
+                <button class="palette-btn" data-palette="tangerine-dream">Tangerine Dream</button>
+                <button class="palette-btn" data-palette="burnt-orange">Burnt Orange</button>
+                <button class="palette-btn" data-palette="peach-melba">Peach Melba</button>
+                <button class="palette-btn" data-palette="autumn-spice">Autumn Spice</button>
+                <button class="palette-btn" data-palette="electric-orange">Electric Orange</button>
+            </div>
+            <button class="dark-mode-toggle" onclick="toggleDarkMode()">🌙 ダークモード</button>
+        </div>
+
+        <div class="current-palette-info" id="palette-info">
+            <div class="palette-name" id="palette-name">Sunset Glow</div>
+            <div class="palette-description" id="palette-description">温かみと親しみやすさを表現する夕焼けのような美しいオレンジ</div>
+            <div class="color-swatches">
+                <div class="color-swatch" style="background: var(--primary-color)">
+                    <div class="swatch-label">Primary</div>
+                </div>
+                <div class="color-swatch" style="background: var(--secondary-color)">
+                    <div class="swatch-label">Secondary</div>
+                </div>
+                <div class="color-swatch" style="background: var(--accent-color)">
+                    <div class="swatch-label">Accent</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="section-title">UIコンポーネント</h2>
+            <div class="ui-components">
+                <div class="component-group">
+                    <h3 class="component-title">ボタン</h3>
+                    <button class="btn btn-primary">プライマリボタン</button>
+                    <button class="btn btn-secondary">セカンダリボタン</button>
+                    <button class="btn btn-accent">アクセントボタン</button>
+                </div>
+
+                <div class="component-group">
+                    <h3 class="component-title">プレイヤーコントロール</h3>
+                    <div class="player-controls">
+                        <button class="play-btn">▶</button>
+                        <div class="seek-bar">
+                            <div class="seek-progress"></div>
+                        </div>
+                        <span>2:34 / 5:28</span>
+                    </div>
+                </div>
+
+                <div class="component-group">
+                    <h3 class="component-title">タイムライン</h3>
+                    <div class="timeline-demo">
+                        <div class="timeline-bar">
+                            楽曲A - アーティストB
+                        </div>
+                    </div>
+                </div>
+
+                <div class="component-group">
+                    <h3 class="component-title">カード</h3>
+                    <div class="card">
+                        <h4 style="color: var(--primary-color); margin-bottom: 10px;">メドレータイトル</h4>
+                        <p>素晴らしいメドレーの説明文がここに入ります。</p>
+                    </div>
+                </div>
+
+                <div class="component-group">
+                    <h3 class="component-title">フォーム</h3>
+                    <div class="form-group">
+                        <label class="form-label">楽曲名</label>
+                        <input class="form-input" type="text" placeholder="楽曲名を入力">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">アーティスト</label>
+                        <input class="form-input" type="text" placeholder="アーティスト名を入力">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h2 class="section-title">評価指標</h2>
+            <div class="evaluation" id="evaluation">
+                <div class="eval-card">
+                    <div class="eval-title">視認性</div>
+                    <div class="stars" id="visibility-stars">★★★★★</div>
+                    <div>テキストとの コントラスト</div>
+                </div>
+                <div class="eval-card">
+                    <div class="eval-title">エネルギー感</div>
+                    <div class="stars" id="energy-stars">★★★★★</div>
+                    <div>活発さと 魅力度</div>
+                </div>
+                <div class="eval-card">
+                    <div class="eval-title">プロ感</div>
+                    <div class="stars" id="professional-stars">★★★★☆</div>
+                    <div>ビジネス での使いやすさ</div>
+                </div>
+                <div class="eval-card">
+                    <div class="eval-title">親しみやすさ</div>
+                    <div class="stars" id="friendly-stars">★★★★★</div>
+                    <div>ユーザーとの 距離感</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const palettes = {
+            'sunset-glow': {
+                name: 'Sunset Glow',
+                description: '温かみと親しみやすさを表現する夕焼けのような美しいオレンジ',
+                colors: {
+                    primary: '#fb923c',
+                    primaryDark: '#f97316',
+                    secondary: '#14b8a6',
+                    secondaryDark: '#0d9488',
+                    accent: '#fbbf24',
+                    accentDark: '#f59e0b'
+                },
+                evaluation: {
+                    visibility: 5,
+                    energy: 5,
+                    professional: 4,
+                    friendly: 5
+                }
+            },
+            'vibrant-orange': {
+                name: 'Vibrant Orange',
+                description: '活発で元気な印象を与える若々しいエネルギーに満ちたオレンジ',
+                colors: {
+                    primary: '#ff6b35',
+                    primaryDark: '#ff8c42',
+                    secondary: '#4338ca',
+                    secondaryDark: '#3730a3',
+                    accent: '#06d6a0',
+                    accentDark: '#059669'
+                },
+                evaluation: {
+                    visibility: 5,
+                    energy: 5,
+                    professional: 3,
+                    friendly: 5
+                }
+            },
+            'coral-fusion': {
+                name: 'Coral Fusion',
+                description: 'ピンク寄りのオレンジで優しく洗練された上品な印象',
+                colors: {
+                    primary: '#ff7f50',
+                    primaryDark: '#ff6347',
+                    secondary: '#6366f1',
+                    secondaryDark: '#4f46e5',
+                    accent: '#8b5cf6',
+                    accentDark: '#7c3aed'
+                },
+                evaluation: {
+                    visibility: 4,
+                    energy: 4,
+                    professional: 5,
+                    friendly: 4
+                }
+            },
+            'tangerine-dream': {
+                name: 'Tangerine Dream',
+                description: '明るく鮮やかな純粋なオレンジで注目を集める力強さ',
+                colors: {
+                    primary: '#ffa500',
+                    primaryDark: '#ff8c00',
+                    secondary: '#1e40af',
+                    secondaryDark: '#1e3a8a',
+                    accent: '#10b981',
+                    accentDark: '#059669'
+                },
+                evaluation: {
+                    visibility: 5,
+                    energy: 5,
+                    professional: 3,
+                    friendly: 4
+                }
+            },
+            'burnt-orange': {
+                name: 'Burnt Orange',
+                description: '深みのある落ち着いたオレンジで高級感と信頼性を演出',
+                colors: {
+                    primary: '#cc5500',
+                    primaryDark: '#bf4f00',
+                    secondary: '#1f2937',
+                    secondaryDark: '#111827',
+                    accent: '#92400e',
+                    accentDark: '#78350f'
+                },
+                evaluation: {
+                    visibility: 4,
+                    energy: 3,
+                    professional: 5,
+                    friendly: 3
+                }
+            },
+            'peach-melba': {
+                name: 'Peach Melba',
+                description: '柔らかく優しいオレンジで親しみやすさとやわらかさを表現',
+                colors: {
+                    primary: '#ffb07c',
+                    primaryDark: '#ff9a5c',
+                    secondary: '#ec4899',
+                    secondaryDark: '#db2777',
+                    accent: '#f59e0b',
+                    accentDark: '#d97706'
+                },
+                evaluation: {
+                    visibility: 3,
+                    energy: 3,
+                    professional: 4,
+                    friendly: 5
+                }
+            },
+            'autumn-spice': {
+                name: 'Autumn Spice',
+                description: '茶色がかったオレンジで落ち着きと温もりのある自然な印象',
+                colors: {
+                    primary: '#d2691e',
+                    primaryDark: '#cd853f',
+                    secondary: '#059669',
+                    secondaryDark: '#047857',
+                    accent: '#92400e',
+                    accentDark: '#78350f'
+                },
+                evaluation: {
+                    visibility: 4,
+                    energy: 3,
+                    professional: 4,
+                    friendly: 4
+                }
+            },
+            'electric-orange': {
+                name: 'Electric Orange',
+                description: '鮮烈で目を引くデジタル感溢れる革新的なオレンジ',
+                colors: {
+                    primary: '#ff4500',
+                    primaryDark: '#ff6600',
+                    secondary: '#8b5cf6',
+                    secondaryDark: '#7c3aed',
+                    accent: '#06b6d4',
+                    accentDark: '#0891b2'
+                },
+                evaluation: {
+                    visibility: 5,
+                    energy: 5,
+                    professional: 3,
+                    friendly: 3
+                }
+            }
+        };
+
+        function applyPalette(paletteKey) {
+            const palette = palettes[paletteKey];
+            const root = document.documentElement;
+            
+            root.style.setProperty('--primary-color', palette.colors.primary);
+            root.style.setProperty('--primary-dark', palette.colors.primaryDark);
+            root.style.setProperty('--secondary-color', palette.colors.secondary);
+            root.style.setProperty('--secondary-dark', palette.colors.secondaryDark);
+            root.style.setProperty('--accent-color', palette.colors.accent);
+            root.style.setProperty('--accent-dark', palette.colors.accentDark);
+
+            // Update palette info
+            document.getElementById('palette-name').textContent = palette.name;
+            document.getElementById('palette-description').textContent = palette.description;
+
+            // Update evaluation
+            updateEvaluation(palette.evaluation);
+
+            // Update button styles
+            const buttons = document.querySelectorAll('.palette-btn');
+            buttons.forEach(btn => {
+                if (btn.dataset.palette === paletteKey) {
+                    btn.style.background = `linear-gradient(135deg, ${palette.colors.primary}, ${palette.colors.primaryDark})`;
+                } else {
+                    btn.style.background = '#6b7280';
+                }
+            });
+        }
+
+        function updateEvaluation(evaluation) {
+            const getStars = (rating) => '★'.repeat(rating) + '☆'.repeat(5 - rating);
+            
+            document.getElementById('visibility-stars').textContent = getStars(evaluation.visibility);
+            document.getElementById('energy-stars').textContent = getStars(evaluation.energy);
+            document.getElementById('professional-stars').textContent = getStars(evaluation.professional);
+            document.getElementById('friendly-stars').textContent = getStars(evaluation.friendly);
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+            const toggle = document.querySelector('.dark-mode-toggle');
+            toggle.textContent = document.body.classList.contains('dark-mode') ? '☀️ ライトモード' : '🌙 ダークモード';
+        }
+
+        // Initialize palette buttons
+        document.querySelectorAll('.palette-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                applyPalette(btn.dataset.palette);
+            });
+        });
+
+        // Set initial palette button styles
+        document.querySelectorAll('.palette-btn').forEach(btn => {
+            const palette = palettes[btn.dataset.palette];
+            if (btn.classList.contains('active')) {
+                btn.style.background = `linear-gradient(135deg, ${palette.colors.primary}, ${palette.colors.primaryDark})`;
+            } else {
+                btn.style.background = '#6b7280';
+            }
+        });
+
+        // Initialize with default palette
+        applyPalette('sunset-glow');
+    </script>
+</body>
+</html>

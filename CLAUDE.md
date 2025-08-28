@@ -28,14 +28,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Medlean** (formerly Anasui) is a comprehensive multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, advanced editing capabilities, searchable medley database, and user authentication. Supports 4 platforms: Niconico (full integration), YouTube (embed), Spotify (thumbnails), and Apple Music (thumbnails).
 
-**Current Status**: Complete medley annotation platform with full user authentication system. All core features implemented including multi-platform support (Niconico, YouTube, Spotify, Apple Music), advanced timeline editing with multi-segment support, unified UI with **Gradient Dream** design system (2025-08-28), comprehensive annotation enhancement features, and OAuth-based user authentication with database ownership model.
+**Current Status**: Complete medley annotation platform with full user authentication system. All core features implemented including multi-platform support (Niconico, YouTube, Spotify, Apple Music), advanced timeline editing with multi-segment support, unified UI with **Vibrant Orange** design system (2025-08-28), comprehensive annotation enhancement features, and OAuth-based user authentication with database ownership model.
 
 ## Core Architecture
 
 ### Technology Stack
 - Next.js 15.2.1 + React 19.0.0 + TypeScript
 - TailwindCSS 4 + Emotion for CSS-in-JS
-- **Gradient Dream Design System** (purple-pink, teal-cyan, amber gradients - implemented 2025-08-28)
+- **Vibrant Orange Design System** (orange-indigo, mint gradients - implemented 2025-08-28)
 - Multi-platform video player support (Niconico postMessage API, YouTube iframe embed)
 - Supabase for database + authentication (OAuth with GitHub/Google)
 - Firebase App Hosting for deployment with SSR support
@@ -437,7 +437,7 @@ src/
 - `src/components/ui/song/SongInfoDisplay.tsx` - Unified song information display with multi-platform link support
 - `src/components/ui/song/SongTimeControls.tsx` - Time input controls with precision adjustment and adjacent song alignment
 - `src/components/ui/song/SongThumbnail.tsx` - Standardized thumbnail component with loading states and error handling
-- `src/components/ui/LoadingSpinner.tsx` - Coffee & Cream themed loading spinner
+- `src/components/ui/LoadingSpinner.tsx` - Vibrant Orange themed loading spinner
 - `src/components/ui/LoadingSkeleton.tsx` - Skeleton components for loading states
 
 **Thumbnail & Multi-Platform:**
@@ -522,7 +522,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 Implemented complete new medley registration system allowing users to add medleys via UI:
 
 **Key Features:**
-- **Homepage Integration**: "新規メドレー登録" button with Gradient Dream theme (purple-pink gradient background)
+- **Homepage Integration**: "新規メドレー登録" button with Vibrant Orange theme (orange gradient background)
 - **Platform Detection**: Automatic platform detection from URL (Niconico/YouTube) with manual override
 - **Form Validation**: URL validation with video ID extraction, required field checking
 - **Dual Backend Support**: 
@@ -598,12 +598,48 @@ const thumbnail = data.thumbnail_url || getYouTubeThumbnail(videoId);
 **Production Verification:**
 - ✅ Modal opens/closes correctly with form validation
 - ✅ Platform auto-detection works for both Niconico and YouTube URLs
-- ✅ Coffee & Cream styling applied consistently
+- ✅ Vibrant Orange styling applied consistently
 - ✅ Supabase error handling with fallback to static instructions
 - ✅ Automatic thumbnail retrieval and preview display
 - ✅ All metadata fields populate correctly from video APIs
 
 ## Recent Updates
+
+### Vibrant Orange Color System Implementation (2025-08-28)
+Complete color system overhaul from Gradient Dream to Vibrant Orange for energetic, youthful branding:
+
+**Key Changes Implemented:**
+- **Primary Colors**: Orange gradients (`#ff6b35` → `#ff8c42`) for main brand elements
+- **Secondary Colors**: Indigo gradients (`#4338ca` → `#3730a3`) for complementary contrast  
+- **Accent Colors**: Mint gradients (`#06d6a0` → `#059669`) for success states and highlights
+- **Timeline Gradient**: Orange → Mint → Indigo progression for visual flow
+
+**Technical Implementation:**
+- **CSS Variables**: Updated all gradient definitions in `globals.css`
+- **Component Migration**: Mass replacement of legacy color classes across 17+ files
+- **Color Class Mapping**:
+  - `caramel-600/700` → `orange-600/700` (primary actions)
+  - `sienna-600/700` → `indigo-600/700` (secondary actions)  
+  - `olive-600` → `mint-600` (accent elements)
+  - `purple-600/700` → `orange-600/700` (priority buttons)
+
+**User Experience Benefits:**
+- **Energetic Branding**: Conveys activity and engagement for music platform
+- **Visual Hierarchy**: Clear color coding for different interaction types
+- **Keyboard Shortcuts**: S=orange, E=mint, M=indigo for intuitive feedback
+- **Brand Differentiation**: Distinctive from typical blue-based music platforms
+
+**Files Updated:**
+- `src/app/globals.css` - CSS variables and gradient definitions
+- `src/components/features/` - All feature components (share, medley, player, auth)
+- `src/components/ui/` - All UI components (buttons, modals, forms)
+- `src/components/pages/` - Page-level components with color usage
+
+**Production Verification:**
+- ✅ Complete visual consistency across all UI elements
+- ✅ Both light and dark mode implementations functional
+- ✅ Accessibility maintained with proper contrast ratios
+- ✅ Deployed successfully to production (https://anasui-e6f49.web.app)
 
 ### Tooltip State Management Fix (2025-08-28)
 Critical fix for tooltips not appearing when hovering over song segments in the timeline:
@@ -666,7 +702,7 @@ Complete user profile management system with three new pages for authenticated u
 
 **Key Features:**
 - **Authentication Protection**: All pages require login and show AuthModal for anonymous users
-- **Responsive Design**: Coffee & Cream theme integration with full dark mode support
+- **Responsive Design**: Vibrant Orange theme integration with full dark mode support
 - **Navigation Integration**: UserProfileDropdown links properly route to all profile pages
 - **Database Integration**: `getUserMedleys()` API function for fetching user-owned medleys
 - **SSR Compatibility**: Proper Next.js 15 hydration handling with loading states
@@ -698,7 +734,7 @@ export async function getUserMedleys(userId: string): Promise<MedleyData[]> {
 **Production Verification:**
 - ✅ All three pages deployed and accessible at `/profile`, `/my-medleys`, `/settings`
 - ✅ Authentication protection working correctly with appropriate error messages
-- ✅ Coffee & Cream styling consistent across all new pages
+- ✅ Vibrant Orange styling consistent across all new pages
 - ✅ UserProfileDropdown navigation functional in production environment
 - ✅ Database queries and user data display working properly
 
@@ -713,7 +749,7 @@ Complete OAuth-based authentication system with user ownership for medleys:
 
 **Authentication Components:**
 - **AuthContext**: React context providing authentication state (`useAuth()` hook)
-- **AuthModal**: OAuth login modal with GitHub/Google sign-in buttons and Coffee & Cream styling
+- **AuthModal**: OAuth login modal with GitHub/Google sign-in buttons and Vibrant Orange styling
 - **UserProfileDropdown**: Complete user profile menu with avatar, settings, and sign-out functionality
 - **UserAvatar**: Reusable avatar component with fallback to initials for users without profile pictures
 
@@ -1648,32 +1684,44 @@ logger.debug('Operation completed', data);
 const validated = sanitizeUrl(userUrl);
 ```
 
-## Gradient Dream Color System (2025-08-28)
+## Vibrant Orange Color System (2025-08-28)
 
 ### Design System Overview
-Complete migration from Coffee & Cream to Gradient Dream color palette:
-- **Primary Gradient**: Purple to pink (`#667eea → #764ba2`)
-- **Secondary Gradient**: Amber to red to pink (`#f59e0b → #ef4444 → #ec4899`)
-- **Accent Gradient**: Teal to cyan (`#10b981 → #06b6d4`)
-- **Timeline Gradient**: Blue to green to yellow (`#3b82f6 → #10b981 → #fbbf24`)
+Complete implementation of Vibrant Orange color palette for energetic, youthful branding:
+- **Primary**: Orange gradients (`#ff6b35 → #ff8c42`) - Active, vibrant energy
+- **Secondary**: Indigo gradients (`#4338ca → #3730a3`) - Complementary contrast
+- **Accent**: Mint gradients (`#06d6a0 → #059669`) - Fresh, modern accent
+- **Timeline**: Orange to indigo gradient for visual progression
 
 ### Implementation Details
 **CSS Variables** (in `globals.css`):
 ```css
---gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
---gradient-secondary: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #ec4899 100%);
---gradient-accent: linear-gradient(90deg, #10b981 0%, #06b6d4 100%);
---gradient-timeline: linear-gradient(90deg, #3b82f6 0%, #10b981 50%, #fbbf24 100%);
+--gradient-primary: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
+--gradient-secondary: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+--gradient-accent: linear-gradient(90deg, #06d6a0 0%, #059669 100%);
+--gradient-timeline: linear-gradient(90deg, #ff6b35 0%, #06d6a0 50%, #4338ca 100%);
 ```
 
 **Component Updates**:
 - Buttons use `style={{ background: 'var(--gradient-primary)' }}` for gradient backgrounds
-- Timeline bars use `bg-gradient-to-r from-purple-600 to-pink-600`
-- Keyboard shortcuts: S=purple, E=teal, M=pink
-- Player controls use gradient timeline for seek bar
+- Timeline bars use `bg-gradient-to-r from-orange-600 to-indigo-600`
+- Keyboard shortcuts: S=orange, E=mint, M=indigo
+- Player controls use vibrant orange for all interactive elements
+
+**Color Mapping**:
+- `orange-600/700` - Primary actions, main brand elements
+- `indigo-600/700` - Secondary actions, markers
+- `mint-600/700` - Success states, end time controls
+- All legacy color classes updated for consistency
+
+### Brand Identity Benefits
+- **Energetic**: Conveys activity and engagement for music platform
+- **Youthful**: Appeals to target demographic with vibrant aesthetics
+- **Accessible**: Maintains proper contrast ratios in both light/dark modes
+- **Distinctive**: Differentiates from typical blue-based music platforms
 
 ### Dark Mode Support
-Complete dark mode gradients with adjusted brightness:
-- Maintains contrast ratios for accessibility
-- Brighter gradient colors in dark mode for visibility
-- Consistent visual hierarchy across themes
+Complete dark mode implementation with enhanced brightness:
+- Lighter orange tones in dark mode for visibility
+- Adjusted gradients maintain visual hierarchy
+- Consistent brand identity across all themes

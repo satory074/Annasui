@@ -44,7 +44,7 @@ export default function UserAvatar({ user, size = 'md', className = '' }: UserAv
 
   return (
     <div
-      className={`${sizeClasses[size]} rounded-full bg-caramel-600 text-white font-semibold flex items-center justify-center ${className}`}
+      className={`${sizeClasses[size]} rounded-full bg-orange-600 text-white font-semibold flex items-center justify-center ${className}`}
     >
       {initials}
     </div>

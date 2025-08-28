@@ -39,7 +39,7 @@ export default function SafeModePlayer({ videoId, onRetry }: SafeModePlayerProps
         <div className="space-y-3">
           <button
             onClick={onRetry}
-            className="w-full bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 px-6 rounded transition-colors"
+            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded transition-colors"
           >
             🔄 プレイヤーを再読み込み
           </button>

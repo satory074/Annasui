@@ -66,7 +66,7 @@ export default function SongTimeControls({
           type="text"
           value={formatTimeSimple(value)}
           onChange={handleInputChange}
-          className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white ${
+          className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white ${
             error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
           }`}
           placeholder={placeholder}
@@ -83,7 +83,7 @@ export default function SongTimeControls({
           <button
             type="button"
             onClick={handleCurrentTimeClick}
-            className="px-3 py-2 bg-caramel-600 text-white rounded-md hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600 text-sm whitespace-nowrap"
+            className="px-3 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm whitespace-nowrap"
             title="現在の再生位置を設定"
           >
             現在時刻
@@ -104,7 +104,7 @@ export default function SongTimeControls({
           <button
             type="button"
             onClick={handleAdjacentTimeClick}
-            className="px-3 py-2 bg-sienna-600 text-white rounded-md hover:bg-sienna-600 focus:outline-none focus:ring-2 focus:ring-sienna-600 text-sm font-medium transition-colors"
+            className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm font-medium transition-colors"
             title={`${adjacentLabel}（${formatTimeSimple(adjacentTime)}）`}
           >
             {adjacentLabel}

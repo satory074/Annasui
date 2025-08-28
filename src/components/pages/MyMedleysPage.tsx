@@ -134,7 +134,7 @@ export default function MyMedleysPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-caramel-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     )
   }
@@ -152,7 +152,7 @@ export default function MyMedleysPage() {
             </p>
             <button
               onClick={() => setShowAuthModal(true)}
-              className="px-6 py-3 bg-caramel-600 hover:bg-caramel-700 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
             >
               ログイン
             </button>
@@ -177,7 +177,7 @@ export default function MyMedleysPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-caramel-600 dark:hover:text-caramel-400 transition-colors"
+                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-caramel-400 transition-colors"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -201,7 +201,7 @@ export default function MyMedleysPage() {
               </Link>
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-caramel-600 hover:bg-caramel-700 text-white rounded-lg transition-colors font-medium"
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-medium"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -267,7 +267,7 @@ export default function MyMedleysPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-caramel-600 dark:text-caramel-400">
+              <div className="text-2xl font-bold text-orange-600 dark:text-caramel-400">
                 {medleysLoading ? '-' : filteredAndSortedMedleys.length}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -275,7 +275,7 @@ export default function MyMedleysPage() {
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-olive-600">
+              <div className="text-2xl font-bold text-mint-600">
                 {medleysLoading ? '-' : userMedleys.reduce((total, medley) => total + medley.songs.length, 0)}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -283,7 +283,7 @@ export default function MyMedleysPage() {
               </div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-sienna-600">
+              <div className="text-2xl font-bold text-indigo-600">
                 {medleysLoading ? '-' : Math.floor(userMedleys.reduce((total, medley) => total + medley.duration, 0) / 60)}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -304,7 +304,7 @@ export default function MyMedleysPage() {
         {/* Content */}
         {medleysLoading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-caramel-600"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
           </div>
         ) : filteredAndSortedMedleys.length === 0 ? (
           <div className="text-center py-12">
@@ -314,7 +314,7 @@ export default function MyMedleysPage() {
             {!searchTerm && (
               <button
                 onClick={() => setShowCreateModal(true)}
-                className="px-4 py-2 bg-caramel-600 hover:bg-caramel-700 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
               >
                 最初のメドレーを作成する
               </button>
@@ -333,7 +333,7 @@ export default function MyMedleysPage() {
                       href={getMedleyUrl(medley)}
                       className="group block mb-2"
                     >
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-caramel-600 dark:group-hover:text-caramel-400 transition-colors line-clamp-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-caramel-400 transition-colors line-clamp-2">
                         {medley.title}
                       </h3>
                     </Link>
@@ -370,7 +370,7 @@ export default function MyMedleysPage() {
                   <div className="flex items-center gap-2 ml-4">
                     <Link
                       href={getMedleyUrl(medley)}
-                      className="flex items-center px-3 py-2 text-sm bg-caramel-100 dark:bg-caramel-900 text-caramel-700 dark:text-caramel-300 rounded-lg hover:bg-caramel-200 dark:hover:bg-caramel-800 transition-colors"
+                      className="flex items-center px-3 py-2 text-sm bg-caramel-100 dark:bg-caramel-900 text-orange-700 dark:text-caramel-300 rounded-lg hover:bg-caramel-200 dark:hover:bg-caramel-800 transition-colors"
                     >
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

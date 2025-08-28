@@ -463,7 +463,7 @@ export default function SongList({
                     href={originalVideoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-lg font-bold text-gray-900 dark:text-white hover:text-caramel-600 dark:hover:text-caramel-600 hover:underline cursor-pointer transition-colors"
+                    className="text-lg font-bold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-600 hover:underline cursor-pointer transition-colors"
                     title="元動画を見る"
                   >
                     {medleyTitle}
@@ -504,13 +504,13 @@ export default function SongList({
                   </span>
                 )}
                 {isEditMode && selectedSong && (
-                  <span className="ml-2 text-xs text-olive-600 dark:text-olive-600">「{selectedSong.title}」選択中</span>
+                  <span className="ml-2 text-xs text-mint-600 dark:text-mint-600">「{selectedSong.title}」選択中</span>
                 )}
                 {isEditMode && (isPressingS || isPressingE || isPressingM) && (
                   <span className={`ml-2 text-xs font-medium animate-pulse ${
-                    isPressingS ? 'text-caramel-600 dark:text-caramel-600' :
-                    isPressingE ? 'text-olive-600 dark:text-olive-600' :
-                    'text-sienna-600 dark:text-purple-400'
+                    isPressingS ? 'text-orange-600 dark:text-orange-600' :
+                    isPressingE ? 'text-mint-600 dark:text-mint-600' :
+                    'text-indigo-600 dark:text-purple-400'
                   }`}>
                     {isPressingS ? '開始時刻設定中...' :
                      isPressingE ? '終了時刻設定中...' :
@@ -564,14 +564,14 @@ export default function SongList({
                 <>
                   <button
                     onClick={onAddSong}
-                    className="px-3 py-1 text-xs bg-olive-600 text-white rounded hover:bg-olive-600"
+                    className="px-3 py-1 text-xs bg-mint-600 text-white rounded hover:bg-mint-600"
                   >
                     楽曲追加
                   </button>
                   {onImportSetlist && (
                     <button
                       onClick={onImportSetlist}
-                      className="px-3 py-1 text-xs bg-pink-600 text-white rounded hover:bg-pink-700"
+                      className="px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
                       title="セットリストから一括インポート"
                     >
                       インポート
@@ -601,9 +601,9 @@ export default function SongList({
                     </span>
                   )}
                   <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                    キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-purple-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
-                    <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-teal-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
-                    <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-pink-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
+                    キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
+                    <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-mint-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
+                    <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-indigo-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
                   </div>
                 </>
               )}
@@ -678,7 +678,7 @@ export default function SongList({
                       className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 ${
                         isBeyondActualDuration 
                           ? 'bg-red-400 dark:bg-red-500 opacity-50' 
-                          : 'bg-gradient-to-r from-purple-600 to-pink-600'
+                          : 'bg-gradient-to-r from-orange-600 to-indigo-600'
                       } ${
                         hasOverlap ? 'opacity-80' : ''
                       } ${
@@ -717,7 +717,7 @@ export default function SongList({
                               : `(${duplicateInfo.instanceNumber})`;
                             return (
                               <span 
-                                className="bg-caramel-600 text-white text-xs px-1 rounded-full font-bold shadow-sm"
+                                className="bg-orange-600 text-white text-xs px-1 rounded-full font-bold shadow-sm"
                                 title={`重複楽曲 ${duplicateInfo.instanceNumber}/${duplicateInfo.totalInstances}`}
                               >
                                 {number}
@@ -750,7 +750,7 @@ export default function SongList({
                         onClick={() => onEditSong?.(song)}
                         className={`p-0.5 rounded transition-colors bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 ${
                           isEditMode 
-                            ? 'text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30' 
+                            ? 'text-orange-600 hover:bg-purple-50 dark:hover:bg-purple-900/30' 
                             : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
                         }`}
                         title="楽曲を編集"
@@ -796,14 +796,14 @@ export default function SongList({
                         }}
                       >
                         <div className={`w-1 h-full ${
-                          isPressingS ? 'bg-caramel-600' : 
-                          isPressingE ? 'bg-olive-600' : 
-                          'bg-sienna-600'
+                          isPressingS ? 'bg-orange-600' : 
+                          isPressingE ? 'bg-mint-600' : 
+                          'bg-indigo-600'
                         } animate-pulse`} />
                         <div className={`text-xs font-bold px-1 py-0.5 rounded text-white shadow-lg -mt-1 ${
-                          isPressingS ? 'bg-caramel-600' : 
-                          isPressingE ? 'bg-olive-600' : 
-                          'bg-sienna-600'
+                          isPressingS ? 'bg-orange-600' : 
+                          isPressingE ? 'bg-mint-600' : 
+                          'bg-indigo-600'
                         }`}>
                           {isPressingS ? 'S' : isPressingE ? 'E' : 'M'}
                         </div>

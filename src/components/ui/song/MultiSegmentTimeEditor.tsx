@@ -75,12 +75,12 @@ function SegmentList({
               key={segment.id}
               className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${
                 isPreviewPlaying 
-                  ? 'bg-caramel-100 border-caramel-300 dark:bg-caramel-900/30 dark:border-caramel-600'
+                  ? 'bg-caramel-100 border-caramel-300 dark:bg-caramel-900/30 dark:border-orange-600'
                   : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600'
               } hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors`}
             >
               {/* 区間番号 */}
-              <span className="text-sm font-bold text-caramel-700 dark:text-caramel-400 bg-caramel-50 dark:bg-caramel-900/20 px-2 py-1 rounded-md">
+              <span className="text-sm font-bold text-orange-700 dark:text-caramel-400 bg-caramel-50 dark:bg-caramel-900/20 px-2 py-1 rounded-md">
                 区間{segment.segmentNumber}
               </span>
 
@@ -93,7 +93,7 @@ function SegmentList({
                     onChange={(e) => setTempTimeValue(e.target.value)}
                     onBlur={finishEditing}
                     onKeyDown={handleKeyDown}
-                    className={`w-16 px-1 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-caramel-600 ${
+                    className={`w-16 px-1 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-orange-600 ${
                       segmentErrors.startTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-500'
                     } bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100`}
                     autoFocus
@@ -120,7 +120,7 @@ function SegmentList({
                     onChange={(e) => setTempTimeValue(e.target.value)}
                     onBlur={finishEditing}
                     onKeyDown={handleKeyDown}
-                    className={`w-16 px-1 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-caramel-600 ${
+                    className={`w-16 px-1 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-orange-600 ${
                       segmentErrors.endTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-500'
                     } bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100`}
                     autoFocus
@@ -143,7 +143,7 @@ function SegmentList({
 
               {/* 再生中インジケーター */}
               {isPreviewPlaying && (
-                <span className="text-xs bg-caramel-600 text-white px-1.5 py-0.5 rounded-full">
+                <span className="text-xs bg-orange-600 text-white px-1.5 py-0.5 rounded-full">
                   再生中
                 </span>
               )}
@@ -154,7 +154,7 @@ function SegmentList({
                 {onSeek && onTogglePlayPause && (
                   <button
                     onClick={() => onTogglePreview(segment.id)}
-                    className="p-1 text-xs bg-olive-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-1 focus:ring-olive-600"
+                    className="p-1 text-xs bg-mint-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-1 focus:ring-mint-600"
                     title={isPreviewPlaying ? "プレビュー停止" : "プレビュー再生"}
                   >
                     {isPreviewPlaying ? (
@@ -411,7 +411,7 @@ export default function MultiSegmentTimeEditor({
             {[...segments].sort((a, b) => a.startTime - b.startTime).map(segment => (
               <div
                 key={segment.id}
-                className={`absolute h-full bg-caramel-500 border border-caramel-600 ${
+                className={`absolute h-full bg-caramel-500 border border-orange-600 ${
                   previewingSegmentId === segment.id ? 'ring-2 ring-blue-400' : ''
                 }`}
                 style={{
@@ -449,7 +449,7 @@ export default function MultiSegmentTimeEditor({
         </h3>
         <button
           onClick={addSegment}
-          className="flex items-center gap-1 px-2 py-1 text-xs bg-caramel-600 text-white rounded-md hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600"
+          className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600"
         >
           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

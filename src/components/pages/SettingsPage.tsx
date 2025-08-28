@@ -84,7 +84,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-caramel-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     )
   }
@@ -102,7 +102,7 @@ export default function SettingsPage() {
             </p>
             <button
               onClick={() => setShowAuthModal(true)}
-              className="px-6 py-3 bg-caramel-600 hover:bg-caramel-700 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
             >
               ログイン
             </button>
@@ -127,7 +127,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-caramel-600 dark:hover:text-caramel-400 transition-colors"
+                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-caramel-400 transition-colors"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -224,7 +224,7 @@ export default function SettingsPage() {
                   <button
                     onClick={handleDarkModeToggle}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-caramel-500 focus:ring-offset-2 ${
-                      darkMode ? 'bg-caramel-600' : 'bg-gray-200'
+                      darkMode ? 'bg-orange-600' : 'bg-gray-200'
                     }`}
                   >
                     <span

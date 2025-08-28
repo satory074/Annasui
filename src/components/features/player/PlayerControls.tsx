@@ -85,7 +85,7 @@ export default function PlayerControls({
 
       <VolumeSlider volume={volume} onChange={onVolumeChange} />
 
-      <button onClick={onToggleFullscreen} className="text-white hover:text-purple-400 transition-colors">
+      <button onClick={onToggleFullscreen} className="text-white hover:text-orange-400 transition-colors">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           width="20"

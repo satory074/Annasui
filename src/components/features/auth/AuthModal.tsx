@@ -48,7 +48,7 @@ export default function AuthModal({
         <div className="text-center mb-6">
           <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-caramel-100 dark:bg-caramel-900/30 mb-4">
             <svg 
-              className="w-6 h-6 text-caramel-600 dark:text-caramel-400" 
+              className="w-6 h-6 text-orange-600 dark:text-caramel-400" 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -125,11 +125,11 @@ export default function AuthModal({
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             ログインすることで、{' '}
-            <a href="/terms" className="text-caramel-600 dark:text-caramel-400 hover:underline">
+            <a href="/terms" className="text-orange-600 dark:text-caramel-400 hover:underline">
               利用規約
             </a>{' '}
             と{' '}
-            <a href="/privacy" className="text-caramel-600 dark:text-caramel-400 hover:underline">
+            <a href="/privacy" className="text-orange-600 dark:text-caramel-400 hover:underline">
               プライバシーポリシー
             </a>{' '}
             に同意したものとみなします。

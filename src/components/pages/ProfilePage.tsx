@@ -54,7 +54,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-caramel-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     )
   }
@@ -72,7 +72,7 @@ export default function ProfilePage() {
             </p>
             <button
               onClick={() => setShowAuthModal(true)}
-              className="px-6 py-3 bg-caramel-600 hover:bg-caramel-700 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
             >
               ログイン
             </button>
@@ -96,7 +96,7 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => router.back()}
-              className="flex items-center text-gray-600 dark:text-gray-400 hover:text-caramel-600 dark:hover:text-caramel-400 transition-colors"
+              className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-caramel-400 transition-colors"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -133,7 +133,7 @@ export default function ProfilePage() {
               </p>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-2xl font-bold text-caramel-600 dark:text-caramel-400">
+                  <div className="text-2xl font-bold text-orange-600 dark:text-caramel-400">
                     {medleysLoading ? '-' : userMedleys.length}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -141,7 +141,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-2xl font-bold text-olive-600">
+                  <div className="text-2xl font-bold text-mint-600">
                     {medleysLoading ? '-' : userMedleys.reduce((total, medley) => total + medley.songs.length, 0)}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -149,7 +149,7 @@ export default function ProfilePage() {
                   </div>
                 </div>
                 <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-2xl font-bold text-sienna-600">
+                  <div className="text-2xl font-bold text-indigo-600">
                     {new Date(user.created_at || '').toLocaleDateString('ja-JP', {
                       year: 'numeric',
                       month: 'short',
@@ -173,7 +173,7 @@ export default function ProfilePage() {
             </h3>
             <button
               onClick={() => router.push('/my-medleys')}
-              className="text-caramel-600 hover:text-caramel-700 dark:text-caramel-400 dark:hover:text-caramel-300 text-sm font-medium transition-colors"
+              className="text-orange-600 hover:text-orange-700 dark:text-caramel-400 dark:hover:text-caramel-300 text-sm font-medium transition-colors"
             >
               すべて表示 →
             </button>
@@ -181,7 +181,7 @@ export default function ProfilePage() {
 
           {medleysLoading ? (
             <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-caramel-600"></div>
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
             </div>
           ) : userMedleys.length === 0 ? (
             <div className="text-center py-12">
@@ -190,7 +190,7 @@ export default function ProfilePage() {
               </div>
               <button
                 onClick={() => router.push('/')}
-                className="px-4 py-2 bg-caramel-600 hover:bg-caramel-700 text-white rounded-lg transition-colors"
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
               >
                 メドレーを作成する
               </button>
@@ -242,7 +242,7 @@ export default function ProfilePage() {
                     </div>
                     
                     <div className="p-3">
-                      <h4 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-2 group-hover:text-caramel-600 dark:group-hover:text-caramel-400 transition-colors">
+                      <h4 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-2 group-hover:text-orange-600 dark:group-hover:text-caramel-400 transition-colors">
                         {medley.title}
                       </h4>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">

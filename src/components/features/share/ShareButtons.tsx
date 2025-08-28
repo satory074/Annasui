@@ -83,7 +83,7 @@ export default function ShareButtons({
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             この動画を共有
             {currentSong && (
-              <span className="ml-2 text-xs text-caramel-600 dark:text-caramel-600">
+              <span className="ml-2 text-xs text-orange-600 dark:text-orange-600">
                 ({currentSong.title} から)
               </span>
             )}
@@ -124,7 +124,7 @@ export default function ShareButtons({
           {typeof navigator !== 'undefined' && 'share' in navigator && (
             <button
               onClick={handleNativeShare}
-              className="px-3 py-2 bg-caramel-600 text-white rounded-md hover:bg-caramel-700 text-sm"
+              className="px-3 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 text-sm"
             >
               共有
             </button>
@@ -134,7 +134,7 @@ export default function ShareButtons({
           <div className="flex items-center gap-1">
             <button
               onClick={() => handleShare('twitter')}
-              className="p-2 bg-caramel-600 text-white rounded hover:bg-caramel-700 transition-colors"
+              className="p-2 bg-orange-600 text-white rounded hover:bg-orange-700 transition-colors"
               title="Twitterで共有"
             >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">

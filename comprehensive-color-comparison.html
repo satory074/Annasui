@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medlean - 包括的カラーパレット比較検討</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .main-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            text-align: center;
+            padding: 3rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .main-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 25%, transparent 25%), 
+                        linear-gradient(-45deg, rgba(255,255,255,0.1) 25%, transparent 25%), 
+                        linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.1) 75%), 
+                        linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.1) 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        .main-header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .main-header p {
+            font-size: 1.25rem;
+            opacity: 0.95;
+            position: relative;
+            z-index: 2;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .color-category-section {
+            margin: 4rem 0;
+        }
+
+        .category-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .category-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        .category-description {
+            font-size: 1.125rem;
+            color: #64748b;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .palette-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .palette-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .palette-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        .palette-header {
+            padding: 2rem;
+            color: white;
+            position: relative;
+        }
+
+        .palette-name {
+            font-size: 1.75rem;
+            font-weight: bold;
+            margin-bottom: 0.75rem;
+        }
+
+        .palette-subtitle {
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+            font-size: 1.125rem;
+        }
+
+        .color-samples {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .color-sample {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            border: 3px solid rgba(255,255,255,0.3);
+            position: relative;
+            cursor: pointer;
+        }
+
+        .color-sample:hover::after {
+            content: attr(data-color);
+            position: absolute;
+            bottom: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+
+        .palette-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .palette-tag {
+            background: rgba(255,255,255,0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+        }
+
+        .palette-demo {
+            padding: 2rem;
+        }
+
+        .demo-player {
+            margin-bottom: 1.5rem;
+        }
+
+        .demo-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+            border-bottom: 3px solid;
+        }
+
+        .demo-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .demo-time {
+            font-weight: 500;
+        }
+
+        .demo-controls {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .demo-btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .demo-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+        }
+
+        .demo-timeline {
+            height: 70px;
+            border-radius: 15px;
+            margin-bottom: 1.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .timeline-segment {
+            position: absolute;
+            height: 100%;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .demo-songs {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .demo-song {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 2px solid;
+            transition: all 0.3s ease;
+        }
+
+        .demo-song:hover {
+            transform: translateX(8px);
+        }
+
+        .palette-evaluation {
+            background: #f8fafc;
+            padding: 1.5rem;
+            margin-top: 1rem;
+            border-radius: 0 0 20px 20px;
+        }
+
+        .eval-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .eval-section {
+            padding: 1rem;
+            border-radius: 10px;
+            border: 2px solid;
+        }
+
+        .eval-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+
+        .eval-list {
+            list-style: none;
+            font-size: 0.8rem;
+            line-height: 1.4;
+        }
+
+        .eval-list li {
+            margin-bottom: 0.25rem;
+            padding-left: 1rem;
+            position: relative;
+        }
+
+        .eval-list li:before {
+            content: "•";
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .rating-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            border: 2px solid #e2e8f0;
+        }
+
+        .rating-label {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 2px;
+        }
+
+        .star {
+            width: 16px;
+            height: 16px;
+            background: #e2e8f0;
+            border-radius: 2px;
+        }
+
+        .star.filled {
+            background: #fbbf24;
+        }
+
+        /* Interactive Comparison Section */
+        .interactive-section {
+            background: white;
+            border-radius: 20px;
+            padding: 3rem;
+            margin: 4rem 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+
+        .interactive-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .interactive-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            font-weight: bold;
+        }
+
+        .color-selector-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-bottom: 3rem;
+        }
+
+        .color-selector-btn {
+            padding: 1rem;
+            border: 3px solid transparent;
+            border-radius: 15px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .color-selector-btn:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .color-selector-btn.active {
+            border-color: #3b82f6;
+            transform: translateY(-4px) scale(1.05);
+        }
+
+        .selector-color-preview {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            margin: 0 auto 0.5rem;
+        }
+
+        .selector-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .live-preview {
+            background: #f8fafc;
+            border-radius: 15px;
+            padding: 2rem;
+        }
+
+        .comparison-footer {
+            background: #1e293b;
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            margin-top: 4rem;
+        }
+
+        .footer-title {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-subtitle {
+            font-size: 1.125rem;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Color Palette Styles */
+        .red-passionate .palette-header { background: linear-gradient(135deg, #dc2626, #991b1b); }
+        .red-passionate .demo-header { border-color: #dc2626; }
+        .red-passionate .demo-title { color: #7f1d1d; }
+        .red-passionate .demo-time { color: #991b1b; }
+        .red-passionate .demo-btn-primary { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; }
+        .red-passionate .demo-btn-secondary { background: #fef2f2; color: #7f1d1d; border: 2px solid #dc2626; }
+        .red-passionate .demo-timeline { background: linear-gradient(90deg, #fed7d7, #fecaca); }
+        .red-passionate .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #dc2626, #b91c1c); left: 5%; width: 20%; }
+        .red-passionate .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #f59e0b, #d97706); left: 27%; width: 18%; }
+        .red-passionate .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #7c3aed, #6d28d9); left: 47%; width: 22%; }
+        .red-passionate .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #059669, #047857); left: 71%; width: 24%; }
+        .red-passionate .demo-song { background: #fef2f2; border-color: #dc2626; color: #7f1d1d; }
+        .red-passionate .demo-song:hover { background: #fed7d7; border-color: #b91c1c; }
+        .red-passionate .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .red-passionate .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .red-crimson .palette-header { background: linear-gradient(135deg, #be123c, #881337); }
+        .red-crimson .demo-header { border-color: #be123c; }
+        .red-crimson .demo-title { color: #4c0519; }
+        .red-crimson .demo-time { color: #881337; }
+        .red-crimson .demo-btn-primary { background: linear-gradient(135deg, #be123c, #9f1239); color: white; }
+        .red-crimson .demo-btn-secondary { background: #fff1f2; color: #4c0519; border: 2px solid #be123c; }
+        .red-crimson .demo-timeline { background: linear-gradient(90deg, #ffe4e6, #fecdd3); }
+        .red-crimson .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #be123c, #9f1239); left: 5%; width: 20%; }
+        .red-crimson .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #fbbf24, #f59e0b); left: 27%; width: 18%; }
+        .red-crimson .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #6366f1, #4f46e5); left: 47%; width: 22%; }
+        .red-crimson .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #10b981, #059669); left: 71%; width: 24%; }
+        .red-crimson .demo-song { background: #fff1f2; border-color: #be123c; color: #4c0519; }
+        .red-crimson .demo-song:hover { background: #ffe4e6; border-color: #9f1239; }
+        .red-crimson .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .red-crimson .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .brown-warm .palette-header { background: linear-gradient(135deg, #92400e, #451a03); }
+        .brown-warm .demo-header { border-color: #92400e; }
+        .brown-warm .demo-title { color: #451a03; }
+        .brown-warm .demo-time { color: #78350f; }
+        .brown-warm .demo-btn-primary { background: linear-gradient(135deg, #92400e, #78350f); color: white; }
+        .brown-warm .demo-btn-secondary { background: #fefce8; color: #451a03; border: 2px solid #92400e; }
+        .brown-warm .demo-timeline { background: linear-gradient(90deg, #fef3c7, #fde68a); }
+        .brown-warm .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #92400e, #78350f); left: 5%; width: 20%; }
+        .brown-warm .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #16a34a, #15803d); left: 27%; width: 18%; }
+        .brown-warm .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #8b5cf6, #7c3aed); left: 47%; width: 22%; }
+        .brown-warm .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #0ea5e9, #0284c7); left: 71%; width: 24%; }
+        .brown-warm .demo-song { background: #fefce8; border-color: #92400e; color: #451a03; }
+        .brown-warm .demo-song:hover { background: #fef3c7; border-color: #78350f; }
+        .brown-warm .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .brown-warm .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .brown-mocha .palette-header { background: linear-gradient(135deg, #78350f, #7c2d12); }
+        .brown-mocha .demo-header { border-color: #78350f; }
+        .brown-mocha .demo-title { color: #431407; }
+        .brown-mocha .demo-time { color: #7c2d12; }
+        .brown-mocha .demo-btn-primary { background: linear-gradient(135deg, #78350f, #a16207); color: white; }
+        .brown-mocha .demo-btn-secondary { background: #fefbeb; color: #431407; border: 2px solid #78350f; }
+        .brown-mocha .demo-timeline { background: linear-gradient(90deg, #fef3c7, #fde047); }
+        .brown-mocha .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #78350f, #a16207); left: 5%; width: 20%; }
+        .brown-mocha .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #818cf8, #6366f1); left: 27%; width: 18%; }
+        .brown-mocha .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #06b6d4, #0891b2); left: 47%; width: 22%; }
+        .brown-mocha .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #ef4444, #dc2626); left: 71%; width: 24%; }
+        .brown-mocha .demo-song { background: #fefbeb; border-color: #78350f; color: #431407; }
+        .brown-mocha .demo-song:hover { background: #fef3c7; border-color: #a16207; }
+        .brown-mocha .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .brown-mocha .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .green-fresh .palette-header { background: linear-gradient(135deg, #10b981, #065f46); }
+        .green-fresh .demo-header { border-color: #10b981; }
+        .green-fresh .demo-title { color: #065f46; }
+        .green-fresh .demo-time { color: #047857; }
+        .green-fresh .demo-btn-primary { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .green-fresh .demo-btn-secondary { background: #f0fdf4; color: #065f46; border: 2px solid #10b981; }
+        .green-fresh .demo-timeline { background: linear-gradient(90deg, #d1fae5, #a7f3d0); }
+        .green-fresh .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #10b981, #059669); left: 5%; width: 20%; }
+        .green-fresh .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #f472b6, #ec4899); left: 27%; width: 18%; }
+        .green-fresh .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #fbbf24, #f59e0b); left: 47%; width: 22%; }
+        .green-fresh .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #8b5cf6, #7c3aed); left: 71%; width: 24%; }
+        .green-fresh .demo-song { background: #f0fdf4; border-color: #10b981; color: #065f46; }
+        .green-fresh .demo-song:hover { background: #d1fae5; border-color: #059669; }
+        .green-fresh .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .green-fresh .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .green-forest .palette-header { background: linear-gradient(135deg, #059669, #064e3b); }
+        .green-forest .demo-header { border-color: #059669; }
+        .green-forest .demo-title { color: #064e3b; }
+        .green-forest .demo-time { color: #047857; }
+        .green-forest .demo-btn-primary { background: linear-gradient(135deg, #059669, #047857); color: white; }
+        .green-forest .demo-btn-secondary { background: #ecfdf5; color: #064e3b; border: 2px solid #059669; }
+        .green-forest .demo-timeline { background: linear-gradient(90deg, #d1fae5, #bbf7d0); }
+        .green-forest .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #059669, #047857); left: 5%; width: 20%; }
+        .green-forest .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #f59e0b, #d97706); left: 27%; width: 18%; }
+        .green-forest .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #c084fc, #a855f7); left: 47%; width: 22%; }
+        .green-forest .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #0ea5e9, #0284c7); left: 71%; width: 24%; }
+        .green-forest .demo-song { background: #ecfdf5; border-color: #059669; color: #064e3b; }
+        .green-forest .demo-song:hover { background: #d1fae5; border-color: #047857; }
+        .green-forest .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .green-forest .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .purple-royal .palette-header { background: linear-gradient(135deg, #9333ea, #581c87); }
+        .purple-royal .demo-header { border-color: #9333ea; }
+        .purple-royal .demo-title { color: #581c87; }
+        .purple-royal .demo-time { color: #7c3aed; }
+        .purple-royal .demo-btn-primary { background: linear-gradient(135deg, #9333ea, #7c3aed); color: white; }
+        .purple-royal .demo-btn-secondary { background: #faf5ff; color: #581c87; border: 2px solid #9333ea; }
+        .purple-royal .demo-timeline { background: linear-gradient(90deg, #e9d5ff, #ddd6fe); }
+        .purple-royal .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #9333ea, #7c3aed); left: 5%; width: 20%; }
+        .purple-royal .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #fbbf24, #f59e0b); left: 27%; width: 18%; }
+        .purple-royal .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #10b981, #059669); left: 47%; width: 22%; }
+        .purple-royal .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #ef4444, #dc2626); left: 71%; width: 24%; }
+        .purple-royal .demo-song { background: #faf5ff; border-color: #9333ea; color: #581c87; }
+        .purple-royal .demo-song:hover { background: #e9d5ff; border-color: #7c3aed; }
+        .purple-royal .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .purple-royal .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .purple-mystic .palette-header { background: linear-gradient(135deg, #7c3aed, #4c1d95); }
+        .purple-mystic .demo-header { border-color: #7c3aed; }
+        .purple-mystic .demo-title { color: #4c1d95; }
+        .purple-mystic .demo-time { color: #6d28d9; }
+        .purple-mystic .demo-btn-primary { background: linear-gradient(135deg, #7c3aed, #8b5cf6); color: white; }
+        .purple-mystic .demo-btn-secondary { background: #f3e8ff; color: #4c1d95; border: 2px solid #7c3aed; }
+        .purple-mystic .demo-timeline { background: linear-gradient(90deg, #ddd6fe, #c4b5fd); }
+        .purple-mystic .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #7c3aed, #8b5cf6); left: 5%; width: 20%; }
+        .purple-mystic .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #34d399, #10b981); left: 27%; width: 18%; }
+        .purple-mystic .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #fb923c, #f97316); left: 47%; width: 22%; }
+        .purple-mystic .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #06b6d4, #0891b2); left: 71%; width: 24%; }
+        .purple-mystic .demo-song { background: #f3e8ff; border-color: #7c3aed; color: #4c1d95; }
+        .purple-mystic .demo-song:hover { background: #ddd6fe; border-color: #8b5cf6; }
+        .purple-mystic .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .purple-mystic .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .orange-sunset .palette-header { background: linear-gradient(135deg, #ea580c, #9a3412); }
+        .orange-sunset .demo-header { border-color: #ea580c; }
+        .orange-sunset .demo-title { color: #9a3412; }
+        .orange-sunset .demo-time { color: #c2410c; }
+        .orange-sunset .demo-btn-primary { background: linear-gradient(135deg, #ea580c, #fb923c); color: white; }
+        .orange-sunset .demo-btn-secondary { background: #fff7ed; color: #9a3412; border: 2px solid #ea580c; }
+        .orange-sunset .demo-timeline { background: linear-gradient(90deg, #fed7aa, #fdba74); }
+        .orange-sunset .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #ea580c, #fb923c); left: 5%; width: 20%; }
+        .orange-sunset .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #06b6d4, #0891b2); left: 27%; width: 18%; }
+        .orange-sunset .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #8b5cf6, #7c3aed); left: 47%; width: 22%; }
+        .orange-sunset .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #10b981, #059669); left: 71%; width: 24%; }
+        .orange-sunset .demo-song { background: #fff7ed; border-color: #ea580c; color: #9a3412; }
+        .orange-sunset .demo-song:hover { background: #fed7aa; border-color: #fb923c; }
+        .orange-sunset .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .orange-sunset .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .yellow-golden .palette-header { background: linear-gradient(135deg, #ca8a04, #713f12); }
+        .yellow-golden .demo-header { border-color: #ca8a04; }
+        .yellow-golden .demo-title { color: #713f12; }
+        .yellow-golden .demo-time { color: #a16207; }
+        .yellow-golden .demo-btn-primary { background: linear-gradient(135deg, #ca8a04, #facc15); color: #713f12; }
+        .yellow-golden .demo-btn-secondary { background: #fefce8; color: #713f12; border: 2px solid #ca8a04; }
+        .yellow-golden .demo-timeline { background: linear-gradient(90deg, #fef3c7, #fde047); }
+        .yellow-golden .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #ca8a04, #facc15); left: 5%; width: 20%; color: #713f12; }
+        .yellow-golden .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #6366f1, #4f46e5); left: 27%; width: 18%; }
+        .yellow-golden .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #ec4899, #db2777); left: 47%; width: 22%; }
+        .yellow-golden .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #10b981, #059669); left: 71%; width: 24%; }
+        .yellow-golden .demo-song { background: #fefce8; border-color: #ca8a04; color: #713f12; }
+        .yellow-golden .demo-song:hover { background: #fef3c7; border-color: #facc15; }
+        .yellow-golden .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .yellow-golden .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .mono-midnight .palette-header { background: linear-gradient(135deg, #18181b, #3f3f46); }
+        .mono-midnight .demo-header { border-color: #52525b; }
+        .mono-midnight .demo-title { color: #18181b; }
+        .mono-midnight .demo-time { color: #3f3f46; }
+        .mono-midnight .demo-btn-primary { background: linear-gradient(135deg, #18181b, #3f3f46); color: white; }
+        .mono-midnight .demo-btn-secondary { background: #fafafa; color: #18181b; border: 2px solid #52525b; }
+        .mono-midnight .demo-timeline { background: linear-gradient(90deg, #f4f4f5, #e4e4e7); }
+        .mono-midnight .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #18181b, #3f3f46); left: 5%; width: 20%; }
+        .mono-midnight .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #f59e0b, #d97706); left: 27%; width: 18%; }
+        .mono-midnight .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #06b6d4, #0891b2); left: 47%; width: 22%; }
+        .mono-midnight .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #ec4899, #db2777); left: 71%; width: 24%; }
+        .mono-midnight .demo-song { background: #fafafa; border-color: #52525b; color: #18181b; }
+        .mono-midnight .demo-song:hover { background: #f4f4f5; border-color: #3f3f46; }
+        .mono-midnight .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .mono-midnight .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        .mono-silver .palette-header { background: linear-gradient(135deg, #6b7280, #374151); }
+        .mono-silver .demo-header { border-color: #6b7280; }
+        .mono-silver .demo-title { color: #374151; }
+        .mono-silver .demo-time { color: #4b5563; }
+        .mono-silver .demo-btn-primary { background: linear-gradient(135deg, #6b7280, #9ca3af); color: white; }
+        .mono-silver .demo-btn-secondary { background: #f9fafb; color: #374151; border: 2px solid #6b7280; }
+        .mono-silver .demo-timeline { background: linear-gradient(90deg, #f3f4f6, #e5e7eb); }
+        .mono-silver .timeline-segment:nth-child(1) { background: linear-gradient(90deg, #6b7280, #9ca3af); left: 5%; width: 20%; }
+        .mono-silver .timeline-segment:nth-child(2) { background: linear-gradient(90deg, #ef4444, #dc2626); left: 27%; width: 18%; }
+        .mono-silver .timeline-segment:nth-child(3) { background: linear-gradient(90deg, #10b981, #059669); left: 47%; width: 22%; }
+        .mono-silver .timeline-segment:nth-child(4) { background: linear-gradient(90deg, #8b5cf6, #7c3aed); left: 71%; width: 24%; }
+        .mono-silver .demo-song { background: #f9fafb; border-color: #6b7280; color: #374151; }
+        .mono-silver .demo-song:hover { background: #f3f4f6; border-color: #9ca3af; }
+        .mono-silver .eval-section:nth-child(1) { background: #f0fff4; border-color: #16a34a; }
+        .mono-silver .eval-section:nth-child(2) { background: #fef2f2; border-color: #dc2626; }
+
+        @media (max-width: 768px) {
+            .palette-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .color-selector-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .eval-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .main-header h1 {
+                font-size: 2rem;
+            }
+            
+            .palette-card {
+                margin-bottom: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="main-header">
+        <h1>🎨 包括的カラーパレット比較</h1>
+        <p>Medleanブランドに最適なカラーを見つけよう</p>
+    </header>
+
+    <main class="container">
+        <!-- Red Colors Section -->
+        <section class="color-category-section">
+            <div class="category-header">
+                <h2 class="category-title">🔴 赤系パレット</h2>
+                <p class="category-description">
+                    情熱的でエネルギッシュ。音楽の熱量と感情を強く表現できるカラー。注目度が高く、アクションを促進する効果があります。
+                </p>
+            </div>
+
+            <div class="palette-grid">
+                <div class="palette-card red-passionate">
+                    <div class="palette-header">
+                        <h3 class="palette-name">🔥 Passionate Red</h3>
+                        <p class="palette-subtitle">音楽の情熱を表現する力強い赤</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #dc2626;" data-color="#dc2626"></div>
+                            <div class="color-sample" style="background: #ef4444;" data-color="#ef4444"></div>
+                            <div class="color-sample" style="background: #991b1b;" data-color="#991b1b"></div>
+                            <div class="color-sample" style="background: #fbbf24;" data-color="#fbbf24"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">情熱的</span>
+                            <span class="palette-tag">エネルギッシュ</span>
+                            <span class="palette-tag">注目</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">ボカロメドレー 情熱編</h4>
+                                <span class="demo-time">9:15</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">ロキ</div>
+                                <div class="timeline-segment">千本桜</div>
+                                <div class="timeline-segment">シャルル</div>
+                                <div class="timeline-segment">砂の惑星</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 ロキ / みきとP</span>
+                                    <span>0:00-1:50</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 千本桜 / 黒うさP</span>
+                                    <span>1:50-3:15</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>音楽の熱量を強く表現</li>
+                                    <li>高い注目度とインパクト</li>
+                                    <li>アクション促進効果</li>
+                                    <li>記憶に残りやすい</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>YouTubeとの競合リスク</li>
+                                    <li>目の疲労を招きやすい</li>
+                                    <li>長時間使用に不向き</li>
+                                    <li>威圧感を与える可能性</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="palette-card red-crimson">
+                    <div class="palette-header">
+                        <h3 class="palette-name">🌹 Crimson Elegance</h3>
+                        <p class="palette-subtitle">上品で洗練された深紅色</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #be123c;" data-color="#be123c"></div>
+                            <div class="color-sample" style="background: #f43f5e;" data-color="#f43f5e"></div>
+                            <div class="color-sample" style="background: #881337;" data-color="#881337"></div>
+                            <div class="color-sample" style="background: #6366f1;" data-color="#6366f1"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">エレガント</span>
+                            <span class="palette-tag">高級感</span>
+                            <span class="palette-tag">独自性</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">クラシカルメドレー</h4>
+                                <span class="demo-time">7:30</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">愛言葉</div>
+                                <div class="timeline-segment">夜撫でるメノウ</div>
+                                <div class="timeline-segment">ヴィラン</div>
+                                <div class="timeline-segment">ハート</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 愛言葉 / DECO*27</span>
+                                    <span>0:00-1:45</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 夜撫でるメノウ / Ayase</span>
+                                    <span>1:45-3:20</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>高級感とブランド力</li>
+                                    <li>独自性が極めて高い</li>
+                                    <li>記憶に残る印象</li>
+                                    <li>プレミアム感を演出</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>ターゲット層が限定的</li>
+                                    <li>親しみやすさに欠ける</li>
+                                    <li>若年層に敬遠される可能性</li>
+                                    <li>アクセシビリティ要検証</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Brown Colors Section -->
+        <section class="color-category-section">
+            <div class="category-header">
+                <h2 class="category-title">🤎 茶色系パレット</h2>
+                <p class="category-description">
+                    温かみと安心感。自然な印象で長時間の使用に優しく、独自性の高いブランディングが可能。落ち着いた雰囲気を演出します。
+                </p>
+            </div>
+
+            <div class="palette-grid">
+                <div class="palette-card brown-warm">
+                    <div class="palette-header">
+                        <h3 class="palette-name">🌾 Warm Earth</h3>
+                        <p class="palette-subtitle">大地の温かみを感じる自然色</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #92400e;" data-color="#92400e"></div>
+                            <div class="color-sample" style="background: #d97706;" data-color="#d97706"></div>
+                            <div class="color-sample" style="background: #451a03;" data-color="#451a03"></div>
+                            <div class="color-sample" style="background: #16a34a;" data-color="#16a34a"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">温かみ</span>
+                            <span class="palette-tag">自然</span>
+                            <span class="palette-tag">安心感</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">アコースティックメドレー</h4>
+                                <span class="demo-time">6:45</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">花に亡霊</div>
+                                <div class="timeline-segment">夜好性</div>
+                                <div class="timeline-segment">怪物</div>
+                                <div class="timeline-segment">うっせぇわ</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 花に亡霊 / ヨルシカ</span>
+                                    <span>0:00-1:35</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 夜好性 / syudou</span>
+                                    <span>1:35-3:10</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>長時間使用に優しい</li>
+                                    <li>独自性が極めて高い</li>
+                                    <li>温かみのある印象</li>
+                                    <li>目に負担をかけない</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>地味な印象のリスク</li>
+                                    <li>若年層への訴求力不足</li>
+                                    <li>エンターテイメント感に欠ける</li>
+                                    <li>季節感が限定的</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="palette-card brown-mocha">
+                    <div class="palette-header">
+                        <h3 class="palette-name">☕ Mocha Premium</h3>
+                        <p class="palette-subtitle">プレミアムなモカ色の品格</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #78350f;" data-color="#78350f"></div>
+                            <div class="color-sample" style="background: #a16207;" data-color="#a16207"></div>
+                            <div class="color-sample" style="background: #7c2d12;" data-color="#7c2d12"></div>
+                            <div class="color-sample" style="background: #818cf8;" data-color="#818cf8"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">プレミアム</span>
+                            <span class="palette-tag">落ち着き</span>
+                            <span class="palette-tag">品格</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">ジャズ風メドレー</h4>
+                                <span class="demo-time">8:20</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">猫</div>
+                                <div class="timeline-segment">命に嫌われている</div>
+                                <div class="timeline-segment">プラスティック・ラブ</div>
+                                <div class="timeline-segment">紅蓮華</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 猫 / DISH//</span>
+                                    <span>0:00-2:05</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 命に嫌われている / カンザキイオリ</span>
+                                    <span>2:05-4:10</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>プレミアム感演出</li>
+                                    <li>ブランド力向上</li>
+                                    <li>差別化効果大</li>
+                                    <li>落ち着いた信頼感</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>若年層への訴求力</li>
+                                    <li>カジュアル感不足</li>
+                                    <li>親しみやすさに欠ける</li>
+                                    <li>トレンド感の不足</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Green Colors Section -->
+        <section class="color-category-section">
+            <div class="category-header">
+                <h2 class="category-title">💚 緑系パレット</h2>
+                <p class="category-description">
+                    新鮮さと成長を象徴。目に優しく、ポジティブな印象を与えます。調和と平和感を表現でき、長時間の作業に適しています。
+                </p>
+            </div>
+
+            <div class="palette-grid">
+                <div class="palette-card green-fresh">
+                    <div class="palette-header">
+                        <h3 class="palette-name">🌱 Fresh Mint</h3>
+                        <p class="palette-subtitle">新鮮なミントのような爽やかさ</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #10b981;" data-color="#10b981"></div>
+                            <div class="color-sample" style="background: #34d399;" data-color="#34d399"></div>
+                            <div class="color-sample" style="background: #065f46;" data-color="#065f46"></div>
+                            <div class="color-sample" style="background: #f472b6;" data-color="#f472b6"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">新鮮</span>
+                            <span class="palette-tag">成長</span>
+                            <span class="palette-tag">調和</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">グリーンメドレー</h4>
+                                <span class="demo-time">7:25</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">青春</div>
+                                <div class="timeline-segment">春雷</div>
+                                <div class="timeline-segment">花鳥風月</div>
+                                <div class="timeline-segment">夏祭り</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 青春 / 毛皮のマリーズ</span>
+                                    <span>0:00-1:45</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 春雷 / 米津玄師</span>
+                                    <span>1:45-3:20</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>目に優しく疲れにくい</li>
+                                    <li>ポジティブな印象</li>
+                                    <li>成長・進歩を表現</li>
+                                    <li>リラックス効果</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>Spotifyとの競合リスク</li>
+                                    <li>音楽らしさに欠ける</li>
+                                    <li>インパクト不足</li>
+                                    <li>保守的な印象</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="palette-card green-forest">
+                    <div class="palette-header">
+                        <h3 class="palette-name">🌲 Forest Harmony</h3>
+                        <p class="palette-subtitle">森の調和を感じる深い緑</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #059669;" data-color="#059669"></div>
+                            <div class="color-sample" style="background: #047857;" data-color="#047857"></div>
+                            <div class="color-sample" style="background: #064e3b;" data-color="#064e3b"></div>
+                            <div class="color-sample" style="background: #c084fc;" data-color="#c084fc"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">自然</span>
+                            <span class="palette-tag">安定</span>
+                            <span class="palette-tag">プロ向け</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">ナチュラルサウンド</h4>
+                                <span class="demo-time">8:10</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">森</div>
+                                <div class="timeline-segment">海の幽霊</div>
+                                <div class="timeline-segment">パプリカ</div>
+                                <div class="timeline-segment">Pretender</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 森 / 中島らも</span>
+                                    <span>0:00-2:05</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 海の幽霊 / 米津玄師</span>
+                                    <span>2:05-4:20</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>落ち着いて集中できる</li>
+                                    <li>プロフェッショナル感</li>
+                                    <li>環境に配慮した印象</li>
+                                    <li>安定感のあるブランド</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>エンターテイメント感不足</li>
+                                    <li>若年層への訴求力</li>
+                                    <li>地味な印象リスク</li>
+                                    <li>活気に欠ける場合</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Purple Colors Section -->
+        <section class="color-category-section">
+            <div class="category-header">
+                <h2 class="category-title">💜 紫系パレット</h2>
+                <p class="category-description">
+                    創造性と神秘性を表現。音楽との親和性が高く、ニコニコ文化とも合致。独自性とアート性を兼ね備えた色彩です。
+                </p>
+            </div>
+
+            <div class="palette-grid">
+                <div class="palette-card purple-royal">
+                    <div class="palette-header">
+                        <h3 class="palette-name">👑 Royal Purple</h3>
+                        <p class="palette-subtitle">創造性を象徴する王道の紫</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #9333ea;" data-color="#9333ea"></div>
+                            <div class="color-sample" style="background: #a855f7;" data-color="#a855f7"></div>
+                            <div class="color-sample" style="background: #581c87;" data-color="#581c87"></div>
+                            <div class="color-sample" style="background: #fbbf24;" data-color="#fbbf24"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">創造性</span>
+                            <span class="palette-tag">高貴</span>
+                            <span class="palette-tag">音楽性</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">クリエイティブメドレー</h4>
+                                <span class="demo-time">9:45</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">マトリョシカ</div>
+                                <div class="timeline-segment">天ノ弱</div>
+                                <div class="timeline-segment">初音ミクの消失</div>
+                                <div class="timeline-segment">脳漿炸裂ガール</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 マトリョシカ / ハチ</span>
+                                    <span>0:00-2:25</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 天ノ弱 / 164</span>
+                                    <span>2:25-4:15</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>音楽との親和性極高</li>
+                                    <li>ニコニコ文化に最適</li>
+                                    <li>創造性を強く表現</li>
+                                    <li>独自性とインパクト</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>Twitchとの差別化必要</li>
+                                    <li>万人受けしにくい</li>
+                                    <li>ビジネス用途に不向き</li>
+                                    <li>疲労感を与える場合</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="palette-card purple-mystic">
+                    <div class="palette-header">
+                        <h3 class="palette-name">🔮 Mystic Violet</h3>
+                        <p class="palette-subtitle">神秘的な未来感のあるバイオレット</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #7c3aed;" data-color="#7c3aed"></div>
+                            <div class="color-sample" style="background: #8b5cf6;" data-color="#8b5cf6"></div>
+                            <div class="color-sample" style="background: #4c1d95;" data-color="#4c1d95"></div>
+                            <div class="color-sample" style="background: #34d399;" data-color="#34d399"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">未来感</span>
+                            <span class="palette-tag">アート性</span>
+                            <span class="palette-tag">神秘的</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">サイバーメドレー</h4>
+                                <span class="demo-time">8:30</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">Ghost Rule</div>
+                                <div class="timeline-segment">ゴーストルール</div>
+                                <div class="timeline-segment">39</div>
+                                <div class="timeline-segment">ワールドイズマイン</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 ゴーストルール / DECO*27</span>
+                                    <span>0:00-2:10</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 39 / sasakure.UK</span>
+                                    <span>2:10-4:05</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>デジタル音楽に最適</li>
+                                    <li>未来感のあるブランド</li>
+                                    <li>アート性の表現</li>
+                                    <li>極めて独自性が高い</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>ニッチなターゲット</li>
+                                    <li>親しみやすさに欠ける</li>
+                                    <li>ビジネス向けではない</li>
+                                    <li>長時間使用に不向き</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Orange/Yellow Colors Section -->
+        <section class="color-category-section">
+            <div class="category-header">
+                <h2 class="category-title">🟠 オレンジ・黄色系パレット</h2>
+                <p class="category-description">
+                    活気とエネルギーを表現。親しみやすく楽観的な印象で、音楽の楽しさを直接的に伝えます。記憶に残りやすく注目を集める色彩です。
+                </p>
+            </div>
+
+            <div class="palette-grid">
+                <div class="palette-card orange-sunset">
+                    <div class="palette-header">
+                        <h3 class="palette-name">🌅 Sunset Orange</h3>
+                        <p class="palette-subtitle">夕日のように温かいオレンジ</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #ea580c;" data-color="#ea580c"></div>
+                            <div class="color-sample" style="background: #fb923c;" data-color="#fb923c"></div>
+                            <div class="color-sample" style="background: #9a3412;" data-color="#9a3412"></div>
+                            <div class="color-sample" style="background: #06b6d4;" data-color="#06b6d4"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">活気</span>
+                            <span class="palette-tag">楽観的</span>
+                            <span class="palette-tag">親しみやすい</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">サンセットメドレー</h4>
+                                <span class="demo-time">7:55</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">オレンジ</div>
+                                <div class="timeline-segment">夏色</div>
+                                <div class="timeline-segment">津軽海峡冬景色</div>
+                                <div class="timeline-segment">乾杯</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 オレンジ / SMAP</span>
+                                    <span>0:00-1:55</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 夏色 / ゆず</span>
+                                    <span>1:55-3:45</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>エネルギッシュで親しみやすい</li>
+                                    <li>高い注目度とインパクト</li>
+                                    <li>記憶に残りやすい</li>
+                                    <li>音楽の楽しさを表現</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>SoundCloudとの競合</li>
+                                    <li>プロフェッショナル感不足</li>
+                                    <li>落ち着きに欠ける</li>
+                                    <li>季節感が限定的</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="palette-card yellow-golden">
+                    <div class="palette-header">
+                        <h3 class="palette-name">✨ Golden Hour</h3>
+                        <p class="palette-subtitle">黄金時間の輝きを表現</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #ca8a04;" data-color="#ca8a04"></div>
+                            <div class="color-sample" style="background: #facc15;" data-color="#facc15"></div>
+                            <div class="color-sample" style="background: #713f12;" data-color="#713f12"></div>
+                            <div class="color-sample" style="background: #6366f1;" data-color="#6366f1"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">輝き</span>
+                            <span class="palette-tag">希望</span>
+                            <span class="palette-tag">プレミアム</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">ゴールデンメドレー</h4>
+                                <span class="demo-time">6:40</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">金色の風</div>
+                                <div class="timeline-segment">黄金魂</div>
+                                <div class="timeline-segment">光</div>
+                                <div class="timeline-segment">栄光の架橋</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 金色の風 / 宇多田ヒカル</span>
+                                    <span>0:00-1:35</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 黄金魂 / 湘南乃風</span>
+                                    <span>1:35-3:15</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>高級感とプレミアム感</li>
+                                    <li>希望と成功を象徴</li>
+                                    <li>極めて独自性が高い</li>
+                                    <li>記憶に強く残る</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>視認性の調整が必要</li>
+                                    <li>まぶしすぎる場合がある</li>
+                                    <li>長時間使用に不向き</li>
+                                    <li>落ち着きに欠ける</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Monochrome Colors Section -->
+        <section class="color-category-section">
+            <div class="category-header">
+                <h2 class="category-title">⚫ モノトーン系パレット</h2>
+                <p class="category-description">
+                    プロフェッショナルでミニマル。どんな色とも相性が良く、高級感を演出。長期使用に適し、飽きが来にくい特徴があります。
+                </p>
+            </div>
+
+            <div class="palette-grid">
+                <div class="palette-card mono-midnight">
+                    <div class="palette-header">
+                        <h3 class="palette-name">🌙 Midnight Black</h3>
+                        <p class="palette-subtitle">深夜の静けさを表現するブラック</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #18181b;" data-color="#18181b"></div>
+                            <div class="color-sample" style="background: #3f3f46;" data-color="#3f3f46"></div>
+                            <div class="color-sample" style="background: #f59e0b;" data-color="#f59e0b"></div>
+                            <div class="color-sample" style="background: #06b6d4;" data-color="#06b6d4"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">プロ</span>
+                            <span class="palette-tag">ミニマル</span>
+                            <span class="palette-tag">高級感</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">ミッドナイトメドレー</h4>
+                                <span class="demo-time">8:20</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">夜に駆ける</div>
+                                <div class="timeline-segment">夜空ノムコウ</div>
+                                <div class="timeline-segment">月光</div>
+                                <div class="timeline-segment">津軽海峡冬景色</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 夜に駆ける / YOASOBI</span>
+                                    <span>0:00-2:05</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 夜空ノムコウ / SMAP</span>
+                                    <span>2:05-4:15</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>どんな色とも相性良い</li>
+                                    <li>高級感とプロ感演出</li>
+                                    <li>飽きが来にくい</li>
+                                    <li>長時間使用に最適</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>Apple Musicとの競合</li>
+                                    <li>インパクト不足</li>
+                                    <li>エンターテイメント感不足</li>
+                                    <li>個性に欠ける</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="palette-card mono-silver">
+                    <div class="palette-header">
+                        <h3 class="palette-name">🪙 Silver Sophistication</h3>
+                        <p class="palette-subtitle">洗練されたシルバーグレー</p>
+                        <div class="color-samples">
+                            <div class="color-sample" style="background: #6b7280;" data-color="#6b7280"></div>
+                            <div class="color-sample" style="background: #9ca3af;" data-color="#9ca3af"></div>
+                            <div class="color-sample" style="background: #374151;" data-color="#374151"></div>
+                            <div class="color-sample" style="background: #ef4444;" data-color="#ef4444"></div>
+                        </div>
+                        <div class="palette-tags">
+                            <span class="palette-tag">洗練</span>
+                            <span class="palette-tag">中立的</span>
+                            <span class="palette-tag">柔軟</span>
+                        </div>
+                    </div>
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">シルバーメドレー</h4>
+                                <span class="demo-time">7:15</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">銀世界</div>
+                                <div class="timeline-segment">シルエット</div>
+                                <div class="timeline-segment">グレイ</div>
+                                <div class="timeline-segment">白日</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 銀世界 / 福山雅治</span>
+                                    <span>0:00-1:50</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 シルエット / KANA-BOON</span>
+                                    <span>1:50-3:35</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="palette-evaluation">
+                        <div class="eval-grid">
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #16a34a;">✅ 利点</div>
+                                <ul class="eval-list">
+                                    <li>飽きが来ない安定感</li>
+                                    <li>プロフェッショナル向け</li>
+                                    <li>アクセント色が映える</li>
+                                    <li>上品で洗練された印象</li>
+                                </ul>
+                            </div>
+                            <div class="eval-section">
+                                <div class="eval-title" style="color: #dc2626;">⚠️ 課題</div>
+                                <ul class="eval-list">
+                                    <li>個性とインパクト不足</li>
+                                    <li>エンターテイメント感薄い</li>
+                                    <li>若年層への訴求力不足</li>
+                                    <li>記憶に残りにくい</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="rating-section">
+                            <span class="rating-label">総合評価</span>
+                            <div class="rating-stars">
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star filled"></div>
+                                <div class="star"></div>
+                                <div class="star"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Interactive Comparison Section -->
+        <section class="interactive-section">
+            <div class="interactive-header">
+                <h2 class="interactive-title">🔄 リアルタイム比較ツール</h2>
+                <p>全12種類のカラーパレットをリアルタイムで比較できます</p>
+            </div>
+
+            <div class="color-selector-grid">
+                <div class="color-selector-btn active" data-palette="red-passionate">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #dc2626, #ef4444);"></div>
+                    <div class="selector-name">Passionate Red</div>
+                </div>
+                <div class="color-selector-btn" data-palette="red-crimson">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #be123c, #f43f5e);"></div>
+                    <div class="selector-name">Crimson Elegance</div>
+                </div>
+                <div class="color-selector-btn" data-palette="brown-warm">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #92400e, #d97706);"></div>
+                    <div class="selector-name">Warm Earth</div>
+                </div>
+                <div class="color-selector-btn" data-palette="brown-mocha">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #78350f, #a16207);"></div>
+                    <div class="selector-name">Mocha Premium</div>
+                </div>
+                <div class="color-selector-btn" data-palette="green-fresh">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #10b981, #34d399);"></div>
+                    <div class="selector-name">Fresh Mint</div>
+                </div>
+                <div class="color-selector-btn" data-palette="green-forest">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #059669, #047857);"></div>
+                    <div class="selector-name">Forest Harmony</div>
+                </div>
+                <div class="color-selector-btn" data-palette="purple-royal">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #9333ea, #a855f7);"></div>
+                    <div class="selector-name">Royal Purple</div>
+                </div>
+                <div class="color-selector-btn" data-palette="purple-mystic">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #7c3aed, #8b5cf6);"></div>
+                    <div class="selector-name">Mystic Violet</div>
+                </div>
+                <div class="color-selector-btn" data-palette="orange-sunset">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #ea580c, #fb923c);"></div>
+                    <div class="selector-name">Sunset Orange</div>
+                </div>
+                <div class="color-selector-btn" data-palette="yellow-golden">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #ca8a04, #facc15);"></div>
+                    <div class="selector-name">Golden Hour</div>
+                </div>
+                <div class="color-selector-btn" data-palette="mono-midnight">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #18181b, #3f3f46);"></div>
+                    <div class="selector-name">Midnight Black</div>
+                </div>
+                <div class="color-selector-btn" data-palette="mono-silver">
+                    <div class="selector-color-preview" style="background: linear-gradient(135deg, #6b7280, #9ca3af);"></div>
+                    <div class="selector-name">Silver Sophistication</div>
+                </div>
+            </div>
+
+            <div class="live-preview">
+                <div id="live-palette-demo" class="palette-card red-passionate">
+                    <div class="palette-demo">
+                        <div class="demo-player">
+                            <div class="demo-header">
+                                <h4 class="demo-title">リアルタイム比較デモ</h4>
+                                <span class="demo-time">8:45</span>
+                            </div>
+                            <div class="demo-controls">
+                                <button class="demo-btn demo-btn-primary">▶️ 再生</button>
+                                <button class="demo-btn demo-btn-secondary">✏️ 編集</button>
+                                <button class="demo-btn demo-btn-secondary">🔗 共有</button>
+                            </div>
+                            <div class="demo-timeline">
+                                <div class="timeline-segment">楽曲1</div>
+                                <div class="timeline-segment">楽曲2</div>
+                                <div class="timeline-segment">楽曲3</div>
+                                <div class="timeline-segment">楽曲4</div>
+                            </div>
+                            <div class="demo-songs">
+                                <div class="demo-song">
+                                    <span>🎵 このカラーはどうですか？</span>
+                                    <span>印象は？</span>
+                                </div>
+                                <div class="demo-song">
+                                    <span>🎵 ブランドに合いますか？</span>
+                                    <span>検討中...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+        <!-- Recommendation System -->
+        <section class="interactive-section" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+            <div class="interactive-header">
+                <h2 class="interactive-title" style="color: white;">🏆 総合推奨システム</h2>
+                <p style="color: rgba(255,255,255,0.9);">Medleanに最適なカラーパレットを総合的に評価・推奨いたします</p>
+            </div>
+
+            <div class="recommendation-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; margin-bottom: 3rem;">
+                <div class="recommendation-card" style="background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); border-radius: 15px; padding: 2rem; backdrop-filter: blur(10px);">
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        🥇 <span style="color: #fbbf24;">最優秀賞</span>
+                    </h3>
+                    <h4 style="font-size: 1.25rem; margin-bottom: 1rem;">👑 Royal Purple</h4>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">
+                        音楽との親和性が極めて高く、ニコニコ文化に最適。創造性と独自性を兼ね備えた、Medleanに最もふさわしいカラーパレットです。
+                    </p>
+                    <ul style="list-style: none; font-size: 0.9rem; line-height: 1.5;">
+                        <li>⭐ 総合スコア: 95/100</li>
+                        <li>🎯 ターゲット適合度: ★★★★★</li>
+                        <li>🎨 独自性: ★★★★★</li>
+                        <li>⚡ 実装しやすさ: ★★★★</li>
+                    </ul>
+                </div>
+
+                <div class="recommendation-card" style="background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); border-radius: 15px; padding: 2rem; backdrop-filter: blur(10px);">
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        🥈 <span style="color: #d1d5db;">優秀賞</span>
+                    </h3>
+                    <h4 style="font-size: 1.25rem; margin-bottom: 1rem;">🌅 Sunset Orange</h4>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">
+                        エネルギッシュで親しみやすく、音楽の楽しさを直接的に表現。競合との差別化も図れる魅力的な選択肢です。
+                    </p>
+                    <ul style="list-style: none; font-size: 0.9rem; line-height: 1.5;">
+                        <li>⭐ 総合スコア: 88/100</li>
+                        <li>🎯 ターゲット適合度: ★★★★</li>
+                        <li>🎨 独自性: ★★★★</li>
+                        <li>⚡ 実装しやすさ: ★★★★★</li>
+                    </ul>
+                </div>
+
+                <div class="recommendation-card" style="background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); border-radius: 15px; padding: 2rem; backdrop-filter: blur(10px);">
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                        🥉 <span style="color: #cd7f32;">奨励賞</span>
+                    </h3>
+                    <h4 style="font-size: 1.25rem; margin-bottom: 1rem;">🌊 Ocean Breeze</h4>
+                    <p style="margin-bottom: 1rem; line-height: 1.6;">
+                        清潔感と信頼性を重視する場合の安全な選択。長時間使用に優しく、幅広いユーザーに受け入れられます。
+                    </p>
+                    <ul style="list-style: none; font-size: 0.9rem; line-height: 1.5;">
+                        <li>⭐ 総合スコア: 82/100</li>
+                        <li>🎯 ターゲット適合度: ★★★</li>
+                        <li>🎨 独自性: ★★★★</li>
+                        <li>⚡ 実装しやすさ: ★★★★★</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="implementation-strategy" style="background: rgba(255,255,255,0.1); border-radius: 15px; padding: 2rem; backdrop-filter: blur(10px);">
+                <h3 style="font-size: 1.5rem; margin-bottom: 2rem; text-align: center;">📋 実装戦略提案</h3>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+                    <div>
+                        <h4 style="font-size: 1.125rem; margin-bottom: 1rem; color: #fbbf24;">⚡ 短期（1-2週間）</h4>
+                        <ul style="line-height: 1.6; font-size: 0.9rem;">
+                            <li>• Royal Purpleプロトタイプ作成</li>
+                            <li>• A/Bテスト環境構築</li>
+                            <li>• アクセシビリティ検証</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 1.125rem; margin-bottom: 1rem; color: #34d399;">🎯 中期（1-2ヶ月）</h4>
+                        <ul style="line-height: 1.6; font-size: 0.9rem;">
+                            <li>• ユーザーフィードバック収集</li>
+                            <li>• 段階的移行テスト</li>
+                            <li>• ブランドガイドライン策定</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 1.125rem; margin-bottom: 1rem; color: #fb7185;">🚀 長期（2-6ヶ月）</h4>
+                        <ul style="line-height: 1.6; font-size: 0.9rem;">
+                            <li>• 本格導入・全機能適用</li>
+                            <li>• 季節限定バリエーション</li>
+                            <li>• マーケティング展開</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </section>
+
+    <footer class="comparison-footer">
+        <h2 class="footer-title">🎯 最終決定のサポート</h2>
+        <p class="footer-subtitle">
+            12種類のカラーパレットを包括的に検討していただきました。<br>
+            Royal Purpleを中心とした戦略的なカラー選択で、Medleanの独自性を最大化しませんか？<br><br>
+            <strong>ご質問やご相談がございましたら、お気軽にお聞かせください。</strong>
+        </p>
+    </footer>
+
+    <script>
+        // Interactive palette switching
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectorButtons = document.querySelectorAll('.color-selector-btn');
+            const liveDemo = document.getElementById('live-palette-demo');
+            
+            selectorButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    selectorButtons.forEach(btn => btn.classList.remove('active'));
+                    
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    // Change the live demo palette
+                    const paletteClass = this.getAttribute('data-palette');
+                    liveDemo.className = `palette-card ${paletteClass}`;
+                });
+            });
+
+            // Smooth scroll animations
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            document.querySelectorAll('.palette-card').forEach(card => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(30px)';
+                card.style.transition = 'all 0.8s ease';
+                observer.observe(card);
+            });
+
+            // Enhanced button interactions
+            document.querySelectorAll('.demo-btn').forEach(btn => {
+                btn.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-3px) scale(1.05)';
+                });
+                btn.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0) scale(1)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

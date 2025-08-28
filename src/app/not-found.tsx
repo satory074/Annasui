@@ -32,7 +32,7 @@ export default function NotFound() {
         
         <Link
           href="/"
-          className="inline-block bg-pink-600 hover:bg-pink-700 text-white font-medium py-2 px-4 rounded transition-colors"
+          className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded transition-colors"
         >
           ホームに戻る
         </Link>

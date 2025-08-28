@@ -201,7 +201,7 @@ export default function CreateMedleyModal({
                 value={formData.videoUrl}
                 onChange={(e) => handleUrlChange(e.target.value)}
                 placeholder="https://www.nicovideo.jp/watch/sm12345678"
-                className={`flex-1 px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-caramel-600 focus:border-caramel-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                className={`flex-1 px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
                   errors.videoUrl ? 'border-red-500' : 'border-gray-300'
                 }`}
                 disabled={isLoading}
@@ -210,7 +210,7 @@ export default function CreateMedleyModal({
                 type="button"
                 onClick={handleFetchMetadata}
                 disabled={isLoading || !formData.videoUrl.trim()}
-                className="px-4 py-2 text-sm font-medium text-white bg-caramel-600 border border-transparent rounded-md shadow-sm hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-caramel-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent rounded-md shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <div className="flex items-center">
@@ -268,7 +268,7 @@ export default function CreateMedleyModal({
                   value="niconico"
                   checked={formData.platform === "niconico"}
                   onChange={(e) => setFormData(prev => ({ ...prev, platform: e.target.value as "niconico" }))}
-                  className="mr-2 text-caramel-600 focus:ring-caramel-600"
+                  className="mr-2 text-orange-600 focus:ring-orange-600"
                 />
                 ニコニコ動画
               </label>
@@ -278,7 +278,7 @@ export default function CreateMedleyModal({
                   value="youtube"
                   checked={formData.platform === "youtube"}
                   onChange={(e) => setFormData(prev => ({ ...prev, platform: e.target.value as "youtube" }))}
-                  className="mr-2 text-caramel-600 focus:ring-caramel-600"
+                  className="mr-2 text-orange-600 focus:ring-orange-600"
                 />
                 YouTube
               </label>
@@ -298,7 +298,7 @@ export default function CreateMedleyModal({
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="ボカロメドレー2025"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-caramel-600 focus:border-caramel-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
                 errors.title ? 'border-red-500' : 
                 autoFetched && formData.title ? 'border-green-300 bg-green-50 dark:bg-green-900/20' : 
                 'border-gray-300'
@@ -323,7 +323,7 @@ export default function CreateMedleyModal({
               value={formData.creator}
               onChange={(e) => setFormData(prev => ({ ...prev, creator: e.target.value }))}
               placeholder="メドレー製作者"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-caramel-600 focus:border-caramel-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
                 errors.creator ? 'border-red-500' : 
                 autoFetched && formData.creator ? 'border-green-300 bg-green-50 dark:bg-green-900/20' : 
                 'border-gray-300'
@@ -349,7 +349,7 @@ export default function CreateMedleyModal({
               value={formData.duration}
               onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
               placeholder="600"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-caramel-600 focus:border-caramel-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
                 errors.duration ? 'border-red-500' : 
                 autoFetched && formData.duration ? 'border-green-300 bg-green-50 dark:bg-green-900/20' : 
                 'border-gray-300'
@@ -370,14 +370,14 @@ export default function CreateMedleyModal({
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-caramel-600 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               キャンセル
             </button>
             <button
               type="submit"
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-white bg-caramel-600 border border-transparent rounded-md shadow-sm hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-caramel-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-white bg-orange-600 border border-transparent rounded-md shadow-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? "取得中..." : "メドレーを作成"}
             </button>

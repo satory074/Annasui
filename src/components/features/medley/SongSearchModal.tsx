@@ -152,7 +152,7 @@ export default function SongSearchModal({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="楽曲名またはアーティスト名で検索..."
-            className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+            className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
             autoFocus
           />
           <svg 
@@ -182,7 +182,7 @@ export default function SongSearchModal({
                   key={song.id}
                   className={`border rounded-lg transition-colors p-3 ${
                     isEditing 
-                      ? 'border-caramel-600 bg-caramel-50 dark:bg-caramel-900/20' 
+                      ? 'border-orange-600 bg-caramel-50 dark:bg-caramel-900/20' 
                       : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
@@ -199,7 +199,7 @@ export default function SongSearchModal({
                             type="text"
                             value={editFormData?.title || ''}
                             onChange={(e) => handleFormChange('title', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
                           />
                         </div>
                         <div>
@@ -210,7 +210,7 @@ export default function SongSearchModal({
                             type="text"
                             value={editFormData?.artist || ''}
                             onChange={(e) => handleFormChange('artist', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
                           />
                         </div>
                       </div>
@@ -228,7 +228,7 @@ export default function SongSearchModal({
                               value={editFormData?.links?.niconico || ''}
                               onChange={(e) => handleFormChange('links.niconico', e.target.value)}
                               placeholder="https://www.nicovideo.jp/watch/..."
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white text-sm"
                             />
                           </div>
                           <div>
@@ -240,7 +240,7 @@ export default function SongSearchModal({
                               value={editFormData?.links?.youtube || ''}
                               onChange={(e) => handleFormChange('links.youtube', e.target.value)}
                               placeholder="https://www.youtube.com/watch?v=..."
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white text-sm"
                             />
                           </div>
                           <div>
@@ -252,7 +252,7 @@ export default function SongSearchModal({
                               value={editFormData?.links?.spotify || ''}
                               onChange={(e) => handleFormChange('links.spotify', e.target.value)}
                               placeholder="https://open.spotify.com/track/..."
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white text-sm"
                             />
                           </div>
                           <div>
@@ -264,7 +264,7 @@ export default function SongSearchModal({
                               value={editFormData?.links?.appleMusic || ''}
                               onChange={(e) => handleFormChange('links.appleMusic', e.target.value)}
                               placeholder="https://music.apple.com/..."
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-caramel-600 dark:bg-gray-700 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white text-sm"
                             />
                           </div>
                         </div>
@@ -274,7 +274,7 @@ export default function SongSearchModal({
                       <div className="flex gap-2 pt-2">
                         <button
                           onClick={handleSaveEdit}
-                          className="px-4 py-2 bg-caramel-600 text-white rounded text-sm hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600"
+                          className="px-4 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600"
                         >
                           保存
                         </button>
@@ -309,7 +309,7 @@ export default function SongSearchModal({
                                 e.stopPropagation();
                                 handleStartEdit(song);
                               }}
-                              className="px-3 py-2 bg-sienna-600 text-white rounded text-sm hover:bg-sienna-700 focus:outline-none focus:ring-2 focus:ring-sienna-600 whitespace-nowrap"
+                              className="px-3 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 whitespace-nowrap"
                             >
                               編集
                             </button>
@@ -319,7 +319,7 @@ export default function SongSearchModal({
                               e.stopPropagation();
                               onSelectSong(song);
                             }}
-                            className="px-4 py-2 bg-caramel-600 text-white rounded text-sm hover:bg-caramel-700 focus:outline-none focus:ring-2 focus:ring-caramel-600 whitespace-nowrap"
+                            className="px-4 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 whitespace-nowrap"
                           >
                             選択
                           </button>
@@ -337,7 +337,7 @@ export default function SongSearchModal({
                 <p className="mb-4">「{searchTerm}」に一致する楽曲が見つかりませんでした</p>
                 <button
                   onClick={onManualAdd}
-                  className="px-4 py-2 bg-olive-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-2 focus:ring-olive-600"
+                  className="px-4 py-2 bg-mint-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-2 focus:ring-mint-600"
                 >
                   新しい楽曲として手動で追加
                 </button>
@@ -350,7 +350,7 @@ export default function SongSearchModal({
         <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4 flex justify-between">
           <button
             onClick={onManualAdd}
-            className="px-4 py-2 bg-olive-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-2 focus:ring-olive-600"
+            className="px-4 py-2 bg-mint-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-2 focus:ring-mint-600"
           >
             手動で新しい楽曲を追加
           </button>

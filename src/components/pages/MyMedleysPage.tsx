@@ -8,6 +8,7 @@ import { getUserMedleys, deleteMedley } from '@/lib/api/medleys'
 import { MedleyData } from '@/types'
 import AuthModal from '@/components/features/auth/AuthModal'
 import CreateMedleyModal from '@/components/features/medley/CreateMedleyModal'
+import DarkModeToggle from '@/components/ui/DarkModeToggle'
 
 export default function MyMedleysPage() {
   const { user, loading } = useAuth()
@@ -190,6 +191,8 @@ export default function MyMedleysPage() {
             </div>
             
             <div className="flex items-center gap-3">
+              {/* Dark mode toggle */}
+              <DarkModeToggle />
               <Link
                 href="/profile"
                 className="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"

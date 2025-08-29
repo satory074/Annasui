@@ -9,6 +9,7 @@ import MedleyStatistics from "@/components/features/statistics/MedleyStatistics"
 import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
 import UserProfileDropdown from "@/components/features/auth/UserProfileDropdown";
 import AuthModal from "@/components/features/auth/AuthModal";
+import DarkModeToggle from "@/components/ui/DarkModeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface HomePageClientProps {
@@ -207,6 +208,9 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
+                            {/* Dark mode toggle */}
+                            <DarkModeToggle />
+
                             {/* User profile dropdown */}
                             <UserProfileDropdown />
 

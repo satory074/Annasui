@@ -1,9 +1,18 @@
 interface ErrorMessageProps {
   message: string;
   onDismiss?: () => void;
+  title?: string;
+  actionText?: string;
+  onAction?: () => void;
 }
 
-export default function ErrorMessage({ message, onDismiss }: ErrorMessageProps) {
+export default function ErrorMessage({ 
+  message, 
+  onDismiss, 
+  title = "エラーが発生しました", 
+  actionText = "再読み込み",
+  onAction
+}: ErrorMessageProps) {
   return (
     <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-20">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4 shadow-lg">
@@ -26,19 +35,30 @@ export default function ErrorMessage({ message, onDismiss }: ErrorMessageProps) 
           
           <div className="flex-1">
             <h3 className="text-sm font-medium text-gray-900 dark:text-white">
-              再生エラー
+              {title}
             </h3>
             <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
               <p>{message}</p>
             </div>
             
-            <div className="mt-4">
-              <button
-                onClick={onDismiss}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-sm px-4 py-2 rounded transition-colors"
-              >
-                OK
-              </button>
+            <div className="mt-4 flex gap-2">
+              {onAction && (
+                <button
+                  onClick={onAction}
+                  style={{ background: 'var(--gradient-primary)' }}
+                  className="text-white text-sm px-4 py-2 rounded transition-opacity hover:opacity-90"
+                >
+                  {actionText}
+                </button>
+              )}
+              {onDismiss && (
+                <button
+                  onClick={onDismiss}
+                  className="bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white text-sm px-4 py-2 rounded transition-colors"
+                >
+                  閉じる
+                </button>
+              )}
             </div>
           </div>
         </div>

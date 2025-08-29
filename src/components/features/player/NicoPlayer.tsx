@@ -127,7 +127,21 @@ export default function NicoPlayer({
         {/* エラーメッセージ */}
         {playerError && (
           <ErrorMessage
-            message={playerError}
+            title={playerError.includes('タイムアウト') ? 'プレイヤー初期化エラー' : 'プレイヤーエラー'}
+            message={
+              playerError.includes('タイムアウト') 
+                ? '動画の読み込みに時間がかかっています。ネットワーク接続を確認するか、SafeModeをお試しください。' 
+                : playerError
+            }
+            actionText={playerError.includes('タイムアウト') ? 'リトライ' : '再読み込み'}
+            onAction={() => {
+              if (playerError.includes('タイムアウト')) {
+                // リトライを試行
+                window.location.reload();
+              } else {
+                window.location.reload();
+              }
+            }}
             onDismiss={onErrorDismiss}
           />
         )}

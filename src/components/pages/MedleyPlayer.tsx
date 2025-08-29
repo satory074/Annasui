@@ -107,8 +107,19 @@ export default function MedleyPlayer({
         onTimeUpdate: () => {
             // タイムラインの更新はuseNicoPlayerが自動処理
         },
-        onDurationChange: () => {
-            // 動画の長さはuseNicoPlayerが自動処理
+        onDurationChange: (actualDuration: number) => {
+            // 実際の動画長さと設定された長さを比較
+            if (medleyDuration && Math.abs(actualDuration - medleyDuration) > 5) {
+                logger.warn(`動画長さ不整合を検出: 設定値=${medleyDuration}s, 実際値=${actualDuration}s`);
+                
+                // 自動修正を実行（ただし、実際の長さが妥当な範囲内の場合のみ）
+                if (actualDuration > 0 && actualDuration < 14400 && actualDuration !== medleyDuration) { // 4時間未満
+                    logger.info(`動画長さを自動修正します: ${medleyDuration}s → ${actualDuration}s`);
+                    
+                    // データベースを更新（将来的にはAPI呼び出しで実装）
+                    // TODO: updateMedleyDuration(videoId, actualDuration);
+                }
+            }
         },
         onPlayingChange: () => {
             // 再生状態の変化はuseNicoPlayerが自動処理

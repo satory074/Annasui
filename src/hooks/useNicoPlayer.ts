@@ -53,6 +53,11 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
     const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const previousTimeRef = useRef<number>(0); // 前回の正常な時間値を保持
 
+    // プレイヤー初期化リトライ用の状態
+    const [initRetryCount, setInitRetryCount] = useState(0);
+    const [isRetrying, setIsRetrying] = useState(false);
+    const maxRetryCount = 3; // 最大リトライ回数
+
     // プレイヤーステータス監視関数（簡略化）
     const logPlayerStatus = useCallback(() => {
         logger.debug(`📊 PLAYER STATUS:`);
@@ -60,7 +65,8 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         logger.debug(`  ⏱️ Duration: ${duration}s | Current: ${currentTime.toFixed(1)}s`);
         logger.debug(`  🎮 Player Ready: ${playerReady} | Playing: ${isPlaying}`);
         logger.debug(`  🔗 Player Connection: ${!!playerRef.current?.contentWindow ? 'Connected' : 'Disconnected'}`);
-    }, [videoId, duration, currentTime, playerReady, isPlaying]);
+        logger.debug(`  🔄 Retry Count: ${initRetryCount}/${maxRetryCount} | Retrying: ${isRetrying}`);
+    }, [videoId, duration, currentTime, playerReady, isPlaying, initRetryCount, isRetrying]);
 
     // videoIdが変更されたときの初期化処理（簡略化）
     useEffect(() => {
@@ -84,6 +90,8 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         setPlayerError(null);
         setVideoInfo(null);
         previousTimeRef.current = 0;
+        setInitRetryCount(0);
+        setIsRetrying(false);
         
         logger.info("🔄 Player state reset for video:", videoId);
         
@@ -129,6 +137,35 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
             syncIntervalRef.current = null;
         }
     }, []);
+
+    // プレイヤー初期化のリトライ機構
+    const retryInitialization = useCallback(() => {
+        if (initRetryCount >= maxRetryCount) {
+            logger.error(`❌ Maximum retry count (${maxRetryCount}) reached. Suggesting SafeMode.`);
+            setPlayerError("プレイヤーの初期化に失敗しました。SafeModeに切り替えてください。");
+            setIsRetrying(false);
+            return;
+        }
+
+        logger.warn(`🔄 Retrying player initialization... (${initRetryCount + 1}/${maxRetryCount})`);
+        setIsRetrying(true);
+        setInitRetryCount(prev => prev + 1);
+        setPlayerError(null);
+
+        // iframeをリロードしてリトライ
+        setTimeout(() => {
+            if (playerRef.current) {
+                const currentSrc = playerRef.current.src;
+                playerRef.current.src = '';
+                setTimeout(() => {
+                    if (playerRef.current) {
+                        playerRef.current.src = currentSrc;
+                        iframeLoadHandled.current = false;
+                    }
+                }, 100);
+            }
+        }, 1000);
+    }, [initRetryCount, maxRetryCount]);
 
     // PostMessageの検証関数
     const validatePlayerMessage = (data: unknown): boolean => {
@@ -193,11 +230,16 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                         case "loadComplete":
                             logger.info("Player load complete - setting playerReady to true");
                             setPlayerReady(true);
+                            setIsRetrying(false);
                             
                             // タイムアウトをクリア
                             if (initTimeoutRef.current) {
                                 clearTimeout(initTimeoutRef.current);
                                 initTimeoutRef.current = null;
+                            }
+                            
+                            if (initRetryCount > 0) {
+                                logger.info(`✅ Player initialization succeeded after ${initRetryCount} retry(s)`);
                             }
                             
                             // 動画情報の処理（強化されたduration検証付き）
@@ -339,13 +381,18 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         logger.info("Player iframe loaded - initializing...");
         iframeLoadHandled.current = true;
 
-        // タイムアウトを設定（30秒に延長）
+        // タイムアウトを設定（10秒に短縮してリトライを促進）
         initTimeoutRef.current = setTimeout(() => {
-            if (!playerReady) {
+            if (!playerReady && !isRetrying) {
                 logger.error("Player initialization timeout");
-                setPlayerError("プレイヤーの初期化がタイムアウトしました。SafeModeに切り替えてください。");
+                if (initRetryCount < maxRetryCount) {
+                    logger.warn(`⏱️ Initialization timeout. Triggering retry (${initRetryCount + 1}/${maxRetryCount})`);
+                    retryInitialization();
+                } else {
+                    setPlayerError("プレイヤーの初期化に失敗しました。SafeModeに切り替えてください。");
+                }
             }
-        }, 30000);
+        }, 10000); // 10秒に短縮してよりレスポンシブに
 
         // 最小限の初期化プロセス - loadCompleteイベントを待つ方式に変更
         setTimeout(() => {
@@ -372,7 +419,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                 setPlayerError("プレイヤーの初期化に失敗しました");
             }
         }, 1000); // より長い遅延でプレイヤーの完全な読み込みを待つ
-    }, [sendMessageToPlayer, playerReady]);
+    }, [sendMessageToPlayer, playerReady, retryInitialization, initRetryCount, maxRetryCount, isRetrying]);
 
     // 再生のみ（一時停止中でも再生開始）
     const play = useCallback(() => {

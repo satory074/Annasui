@@ -30,6 +30,8 @@ export default function SongThumbnail({
   const [primaryLink, setPrimaryLink] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [hasError, setHasError] = useState<boolean>(false);
+  const [retryCount, setRetryCount] = useState<number>(0);
+  const maxRetries = 2;
 
   useEffect(() => {
     const loadThumbnail = async () => {
@@ -38,6 +40,11 @@ export default function SongThumbnail({
       setHasError(false);
       setThumbnailUrl(null);
       setPrimaryLink(null);
+      
+      // 新しい楽曲の場合はリトライカウントをリセット
+      if (retryCount > 0) {
+        setRetryCount(0);
+      }
 
       try {
         if (links) {
@@ -54,15 +61,33 @@ export default function SongThumbnail({
           setThumbnailUrl(thumbnail);
           setPrimaryLink(originalLink);
         }
-      } catch {
-        setHasError(true);
+      } catch (error) {
+        console.error('Thumbnail loading error:', error);
+        // リトライ可能な場合はリトライ
+        if (retryCount < maxRetries) {
+          console.warn(`サムネイル読み込み失敗。リトライします... (${retryCount + 1}/${maxRetries})`);
+          setRetryCount(prev => prev + 1);
+          setIsLoading(false);
+          
+          // 1.5秒後にリトライ
+          setTimeout(() => {
+            setIsLoading(true);
+            loadThumbnail();
+          }, 1500);
+          return;
+        } else {
+          console.error('最大リトライ回数に達しました。サムネイル読み込みに失敗。');
+          setHasError(true);
+        }
       } finally {
-        setIsLoading(false);
+        if (retryCount >= maxRetries || thumbnailUrl) {
+          setIsLoading(false);
+        }
       }
     };
 
     loadThumbnail();
-  }, [links, originalLink, title]);
+  }, [links, originalLink, title, retryCount]);
 
   const sizeClasses = {
     sm: "w-32 h-18",
@@ -77,9 +102,16 @@ export default function SongThumbnail({
   if (hasError || !thumbnailUrl || !primaryLink) {
     return (
       <div className={`${sizeClasses[size]} ${className} bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center`}>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
-          {hasError ? 'エラー' : '画像なし'}
-        </span>
+        <div className="text-center">
+          <span className="text-xs text-gray-500 dark:text-gray-400 block">
+            {hasError ? 'サムネイル読み込みエラー' : '画像なし'}
+          </span>
+          {retryCount > 0 && (
+            <span className="text-xs text-gray-400 dark:text-gray-500 block mt-1">
+              {retryCount}/{maxRetries}回リトライ済み
+            </span>
+          )}
+        </div>
       </div>
     );
   }
@@ -88,10 +120,24 @@ export default function SongThumbnail({
     <img
       src={thumbnailUrl}
       alt={`${title} サムネイル`}
+      loading="lazy"
       className={`${sizeClasses[size]} object-cover bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 ${className}`}
       onError={(e) => {
-        if (primaryLink) {
-          handleThumbnailError(e.currentTarget, primaryLink);
+        console.warn(`Image load failed for: ${title}`, { url: thumbnailUrl, primaryLink });
+        if (retryCount < maxRetries) {
+          console.log(`Image error - retrying thumbnail load (${retryCount + 1}/${maxRetries})`);
+          setRetryCount(prev => prev + 1);
+          setThumbnailUrl(null);
+        } else {
+          setHasError(true);
+          if (primaryLink) {
+            handleThumbnailError(e.currentTarget, primaryLink);
+          }
+        }
+      }}
+      onLoad={() => {
+        if (retryCount > 0) {
+          console.log(`✅ Thumbnail loaded successfully after ${retryCount} retry(s): ${title}`);
         }
       }}
     />

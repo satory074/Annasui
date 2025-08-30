@@ -231,8 +231,8 @@ export function getThumbnailUrl(originalLink: string): string | null {
     case 'youtube':
       return getYouTubeThumbnail(id);
     case 'niconico':
-      // 直接CDN URLを試行（Lサイズ）
-      return getNiconicoThumbnail(id, 'L');
+      // プロキシサーバーを経由してニコニコのサムネイルを取得
+      return `/api/thumbnail/niconico/${id}`;
     case 'spotify':
       // SpotifyはasyncなAPIが必要なため、同期的にはプレースホルダーを返す
       return getSpotifyThumbnailPlaceholder();
@@ -291,7 +291,7 @@ export async function getBestThumbnailFromLinks(links: {
   spotify?: string;
   appleMusic?: string;
 } | undefined, originalLink?: string): Promise<string | null> {
-  // 優先順位に従ってサムネイルを取得
+  // 優先順位に従ってサムネイルを取得（ニコニコを最優先に戻す）
   if (links?.niconico) {
     const thumbnail = getThumbnailUrl(links.niconico);
     if (thumbnail) return thumbnail;

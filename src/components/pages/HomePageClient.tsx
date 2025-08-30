@@ -11,6 +11,7 @@ import UserProfileDropdown from "@/components/features/auth/UserProfileDropdown"
 import AuthModal from "@/components/features/auth/AuthModal";
 import DarkModeToggle from "@/components/ui/DarkModeToggle";
 import { useAuth } from "@/contexts/AuthContext";
+import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
 
 interface HomePageClientProps {
     initialMedleys: MedleyData[];
@@ -200,9 +201,14 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 <div className="mb-8">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                         <div>
-                            <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                                Medlean
-                            </h1>
+                            <div className="flex items-center gap-3 mb-2">
+                                <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+                                    Medlean
+                                </h1>
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-700">
+                                    ALPHA
+                                </span>
+                            </div>
                             <p className="text-lg text-gray-600 dark:text-gray-400">
                                 メドレー楽曲の詳細なアノテーション・検索プラットフォーム
                             </p>
@@ -213,6 +219,20 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
 
                             {/* User profile dropdown */}
                             <UserProfileDropdown />
+
+                            {/* Feedback button */}
+                            <a
+                                href="https://github.com/anthropics/claude-code/issues"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors shadow-sm"
+                                title="フィードバック・バグ報告"
+                            >
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                                </svg>
+                                <span className="hidden sm:inline">フィードバック</span>
+                            </a>
 
                             {/* Statistics button */}
                             <button
@@ -504,22 +524,23 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                 <div className="aspect-video bg-gray-200 dark:bg-gray-700 relative overflow-hidden">
                                     {medley.platform === 'youtube' ? (
                                         <img
-                                            src={`https://img.youtube.com/vi/${medley.videoId}/maxresdefault.jpg`}
+                                            src={getYouTubeThumbnail(medley.videoId, 'maxresdefault')}
                                             alt={medley.title}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             onError={(e) => {
                                                 const target = e.target as HTMLImageElement;
-                                                target.src = `https://img.youtube.com/vi/${medley.videoId}/hqdefault.jpg`;
+                                                target.src = getYouTubeThumbnail(medley.videoId, 'hqdefault');
                                             }}
                                         />
                                     ) : (
                                         <img
-                                            src={`https://tn.smilevideo.jp/smile?i=${medley.videoId.replace('sm', '')}`}
+                                            src={getThumbnailUrl(`https://www.nicovideo.jp/watch/${medley.videoId}`) || '/default-thumbnail.svg'}
                                             alt={medley.title}
                                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                             onError={(e) => {
                                                 const target = e.target as HTMLImageElement;
-                                                target.style.display = 'none';
+                                                target.src = '/default-thumbnail.svg';
+                                                target.alt = `${medley.title} (デフォルトサムネイル)`;
                                             }}
                                         />
                                     )}

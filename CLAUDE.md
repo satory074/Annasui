@@ -86,6 +86,29 @@ export type SongSection = {
 
 **Thumbnail Priority System**: Automatic selection based on priority (Niconico > YouTube > Spotify > Apple Music)
 
+#### Thumbnail API Architecture (Added 2025-08-30)
+**Critical**: CORS restrictions prevent direct access to Niconico thumbnail APIs from browsers.
+
+**Proxy Server Implementation:**
+- **API Route**: `/api/thumbnail/niconico/[videoId]/route.ts` 
+- **Multi-Source Fallback**: CDN URLs → getthumbinfo API → legacy APIs
+- **Cache Strategy**: 1hr browser cache, 24hr CDN cache via redirect responses
+- **URL Pattern**: `/api/thumbnail/niconico/sm500873` returns thumbnail image
+
+**Fallback Hierarchy:**
+```typescript
+1. https://nicovideo.cdn.nimg.jp/thumbnails/{id}/{id}.L  // Large
+2. https://nicovideo.cdn.nimg.jp/thumbnails/{id}/{id}.M  // Medium  
+3. https://nicovideo.cdn.nimg.jp/thumbnails/{id}/{id}    // Default
+4. https://ext.nicovideo.jp/api/getthumbinfo/{videoId}   // XML API
+5. https://tn.smilevideo.jp/smile?i={id}                // Legacy (often fails)
+```
+
+**Usage in Components:**
+- `getThumbnailUrl()` automatically routes Niconico URLs through proxy
+- No changes needed in existing thumbnail display components
+- Automatic fallback to `/default-thumbnail.svg` on complete failure
+
 #### User Authentication Architecture
 **OAuth-Based Authentication System:**
 - **Supabase Auth**: Handles GitHub and Google OAuth providers
@@ -208,6 +231,13 @@ const sendCommand = (command) => {
 - **Background not changing**: Ensure `.dark` class selector has `!important` flags for CSS priority
 - **Styles not applying**: Check both media query and `.dark` class implementations are present
 
+### Thumbnail Issues
+- **Images not loading**: Verify proxy API route is working (`/api/thumbnail/niconico/[videoId]`)
+- **CORS errors**: Direct CDN access blocked - must use server-side proxy implementation
+- **Fallback failure**: Check all 5-tier fallback hierarchy (CDN L/M/default → getthumbinfo API → legacy)
+- **404 responses**: Some video IDs may be invalid or videos deleted from platform
+- **Cache issues**: Production deployment may need cache clearing for new proxy API
+
 ### Build & Deployment
 - **Firebase deployment**: Use `firebase deploy` instead of Netlify
 - **Next.js 15 params**: All routes must handle `params: Promise<{...}>`
@@ -242,6 +272,11 @@ database/ - Database migrations and schema
 - `src/lib/utils/songDatabase.ts` - Song search and caching
 - `src/lib/utils/videoMetadata.ts` - Video metadata extraction
 
+**Thumbnail System:**
+- `src/app/api/thumbnail/niconico/[videoId]/route.ts` - CORS proxy for Niconico thumbnails
+- `src/lib/utils/thumbnail.ts` - Multi-platform thumbnail URL generation
+- `src/components/ui/song/SongThumbnail.tsx` - Thumbnail display component with retry logic
+
 **Security & Performance:**
 - `src/lib/utils/logger.ts` - Production-safe logging system
 - `src/lib/utils/sanitize.ts` - Input sanitization utilities
@@ -270,8 +305,9 @@ database/ - Database migrations and schema
 2. Type safety: `npx tsc --noEmit` and `npm run lint`
 3. Production deployment: `firebase deploy`
 4. Production verification: Test on https://anasui-e6f49.web.app
+5. **Thumbnail API verification**: Test `/api/thumbnail/niconico/sm500873` directly in production
 
-Always verify features work in production environment - SSR behavior and cross-origin iframe communication differs from local development.
+Always verify features work in production environment - SSR behavior, CORS policies, and cross-origin iframe communication differs from local development.
 
 ### Firebase App Hosting Setup
 **Prerequisites**: Firebase CLI installed (`npm install -g firebase-tools`)

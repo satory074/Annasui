@@ -226,7 +226,8 @@ export default function ProfilePage() {
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                           onError={(e) => {
                             const target = e.target as HTMLImageElement
-                            target.style.display = 'none'
+                            target.src = '/default-thumbnail.svg'
+                            target.alt = `${medley.title} (デフォルトサムネイル)`
                           }}
                         />
                       )}

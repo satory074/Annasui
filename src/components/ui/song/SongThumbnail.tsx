@@ -99,20 +99,35 @@ export default function SongThumbnail({
     return <SkeletonThumbnail className={`${sizeClasses[size]} ${className}`} />;
   }
 
-  if (hasError || !thumbnailUrl || !primaryLink) {
-    return (
-      <div className={`${sizeClasses[size]} ${className} bg-gray-200 dark:bg-gray-700 rounded flex items-center justify-center`}>
-        <div className="text-center">
-          <span className="text-xs text-gray-500 dark:text-gray-400 block">
-            {hasError ? 'サムネイル読み込みエラー' : '画像なし'}
-          </span>
-          {retryCount > 0 && (
-            <span className="text-xs text-gray-400 dark:text-gray-500 block mt-1">
-              {retryCount}/{maxRetries}回リトライ済み
-            </span>
-          )}
+  if (hasError || !thumbnailUrl) {
+    // デフォルトサムネイルを表示
+    const defaultImageElement = (
+      <img
+        src="/default-thumbnail.svg"
+        alt={`${title} デフォルトサムネイル`}
+        className={`${sizeClasses[size]} object-cover bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 ${className}`}
+        loading="lazy"
+      />
+    );
+
+    if (!isClickable || !primaryLink) {
+      return (
+        <div className="flex-shrink-0 rounded overflow-hidden">
+          {defaultImageElement}
         </div>
-      </div>
+      );
+    }
+
+    return (
+      <a
+        href={primaryLink || '#'}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-shrink-0 rounded overflow-hidden hover:opacity-80 transition-opacity"
+        title={hasError ? 'サムネイル読み込みエラー（クリックで動画を表示）' : '動画を表示'}
+      >
+        {defaultImageElement}
+      </a>
     );
   }
 
@@ -153,7 +168,7 @@ export default function SongThumbnail({
 
   return (
     <a
-      href={primaryLink}
+      href={primaryLink || '#'}
       target="_blank"
       rel="noopener noreferrer"
       className="flex-shrink-0 rounded overflow-hidden hover:opacity-80 transition-opacity"

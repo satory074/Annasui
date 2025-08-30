@@ -20,13 +20,18 @@ export default function Header({
     <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-4 shadow-lg">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <Link href="/" className="text-2xl font-bold hover:text-blue-300 transition-colors flex items-center gap-2">
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
-              <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
-            </svg>
-            Medlean
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link href="/" className="text-2xl font-bold hover:text-blue-300 transition-colors flex items-center gap-2">
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
+              </svg>
+              Medlean
+            </Link>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-sm">
+              ALPHA
+            </span>
+          </div>
           <Link 
             href="/" 
             className="text-sm bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
@@ -38,6 +43,20 @@ export default function Header({
           </Link>
         </div>
         <div className="flex items-center gap-3">
+          {/* Feedback button */}
+          <a
+            href="https://github.com/anthropics/claude-code/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors shadow-sm"
+            title="フィードバック・バグ報告"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+            </svg>
+            <span className="hidden sm:inline text-sm">フィードバック</span>
+          </a>
+
           {/* Dark mode toggle */}
           <DarkModeToggle />
           {showSearch && (

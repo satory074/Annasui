@@ -241,6 +241,12 @@ const sendCommand = (command) => {
 - **Unterminated string literals**: If modifying Tailwind classes (especially dark: prefixes), watch for broken template literals that need closing quotes
 - **Component prop validation**: UserAvatar component expects size props as "sm" | "md" | "lg" | "xl", not "large"
 
+### Firebase Deployment Issues
+- **409 Conflict Error**: If deployment fails with "unable to queue the operation", wait 30 seconds and retry
+- **Function timeout**: Cloud Functions may timeout during first deploy - retry after a few minutes
+- **Cache issues**: Production deployment may need cache clearing for logo/favicon updates
+- **Logo not displaying**: Check that HomePageClient.tsx uses Logo component, not plain text
+
 ## File Organization
 
 ```
@@ -283,6 +289,13 @@ database/ - Database migrations and schema
 - `src/components/ui/modal/BaseModal.tsx` - Base modal component
 - `src/components/ui/song/SongInfoDisplay.tsx` - Unified song display with multi-platform support
 - `src/components/ui/song/MultiSegmentTimeEditor.tsx` - Multi-segment editor
+- `src/components/ui/Logo.tsx` - Reusable Medlean logo component with size variations
+
+**Logo & Branding System:**
+- `public/logo.svg` - Main Medlean logo with wave symbols and text
+- `public/logo-icon.svg` - Icon-only version for compact spaces
+- `public/favicon.ico` - Browser icon with orange branding
+- Logo Component supports sizes: sm, md, lg, xl with optional text display
 
 **Note**: Dark mode functionality (DarkModeToggle component) has been completely removed from the application as of 2025-08-30.
 
@@ -308,10 +321,12 @@ database/ - Database migrations and schema
 **CRITICAL Verification Process:**
 1. Local testing: `npm run dev`
 2. Type safety: `npx tsc --noEmit` and `npm run lint`
-3. Production deployment: `firebase deploy`
-4. Production verification: Test on https://anasui-e6f49.web.app
-5. **Thumbnail API verification**: Test `/api/thumbnail/niconico/sm500873` directly in production
-6. **SEO verification**: 
+3. Production build: `npm run build` (verify no build errors)
+4. Production deployment: `firebase deploy --only hosting` (avoid function conflicts)
+5. Production verification: Test on https://anasui-e6f49.web.app
+6. **Logo verification**: Confirm Logo component displays with proper gradients
+7. **Thumbnail API verification**: Test `/api/thumbnail/niconico/sm500873` directly in production
+8. **SEO verification**: 
    - Check `/sitemap.xml` and `/robots.txt` accessibility
    - Test structured data with Google Rich Results Test
    - Verify metadata with browser developer tools
@@ -349,6 +364,14 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 - **Primary**: Orange gradients (`#ff8c42 → #ffa55c`) - Active, vibrant energy
 - **Secondary**: Indigo gradients (`#5b6dee → #4c63d2`) - Complementary contrast  
 - **Accent**: Mint gradients (`#00d9a3 → #06b981`) - Fresh, modern accent
+
+### Logo Design
+The Medlean logo features three flowing wave forms representing different songs in a medley:
+- **Orange wave**: Primary song/melody line
+- **Indigo wave**: Secondary harmony/accompaniment
+- **Mint wave**: Bass line/rhythm section
+- **Text**: Gradient from orange → indigo → mint
+- **Symbol**: Circular timeline markers at wave intersections
 
 **Note**: Only light theme is supported. Dark mode has been completely removed from the application.
 

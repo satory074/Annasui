@@ -1,0 +1,62 @@
+<svg width="200" height="60" viewBox="0 0 200 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle for brand mark -->
+  <circle cx="30" cy="30" r="26" fill="url(#primaryGradient)" opacity="0.1"/>
+  
+  <!-- Main logo symbol: Musical waves/timeline -->
+  <g transform="translate(8, 12)">
+    <!-- First wave (representing first song in medley) -->
+    <path d="M4 20 Q8 16 12 20 T20 20" 
+          stroke="url(#primaryGradient)" 
+          stroke-width="3" 
+          stroke-linecap="round" 
+          fill="none"/>
+    
+    <!-- Second wave (representing second song) -->
+    <path d="M6 28 Q12 22 18 28 T30 28" 
+          stroke="url(#secondaryGradient)" 
+          stroke-width="3" 
+          stroke-linecap="round" 
+          fill="none"/>
+    
+    <!-- Third wave (representing third song) -->
+    <path d="M8 36 Q16 30 24 36 T40 36" 
+          stroke="url(#accentGradient)" 
+          stroke-width="3" 
+          stroke-linecap="round" 
+          fill="none"/>
+    
+    <!-- Timeline markers -->
+    <circle cx="6" cy="20" r="2" fill="#ff8c42"/>
+    <circle cx="12" cy="28" r="2" fill="#5b6dee"/>
+    <circle cx="20" cy="36" r="2" fill="#00d9a3"/>
+  </g>
+  
+  <!-- Medlean text -->
+  <text x="70" y="40" font-family="system-ui, -apple-system, sans-serif" font-size="24" font-weight="700" fill="url(#textGradient)">
+    Medlean
+  </text>
+  
+  <!-- Gradients definition -->
+  <defs>
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff8c42"/>
+      <stop offset="100%" style="stop-color:#ffa55c"/>
+    </linearGradient>
+    
+    <linearGradient id="secondaryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#5b6dee"/>
+      <stop offset="100%" style="stop-color:#4c63d2"/>
+    </linearGradient>
+    
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00d9a3"/>
+      <stop offset="100%" style="stop-color:#06b981"/>
+    </linearGradient>
+    
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#ff8c42"/>
+      <stop offset="50%" style="stop-color:#5b6dee"/>
+      <stop offset="100%" style="stop-color:#00d9a3"/>
+    </linearGradient>
+  </defs>
+</svg>

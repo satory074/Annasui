@@ -11,6 +11,7 @@ import UserProfileDropdown from "@/components/features/auth/UserProfileDropdown"
 import AuthModal from "@/components/features/auth/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
+import Logo from "@/components/ui/Logo";
 
 interface HomePageClientProps {
     initialMedleys: MedleyData[];
@@ -201,9 +202,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                         <div>
                             <div className="flex items-center gap-3 mb-2">
-                                <h1 className="text-4xl font-bold text-gray-900">
-                                    Medlean
-                                </h1>
+                                <Logo size="xl" />
                                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border border-orange-200">
                                     ALPHA
                                 </span>

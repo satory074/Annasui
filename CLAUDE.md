@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Medlean** (formerly Anasui) is a comprehensive multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, advanced editing capabilities, searchable medley database, and user authentication. Supports 4 platforms: Niconico (full integration), YouTube (embed), Spotify (thumbnails), and Apple Music (thumbnails).
 
-**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, and comprehensive annotation enhancement features.
+**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, and comprehensive annotation enhancement features. Recently cleaned and optimized codebase (2025-08-30).
 
 ## Core Architecture
 
@@ -219,12 +219,15 @@ const sendCommand = (command) => {
 src/
 ├── app/ - Next.js App Router (platform-specific routes)
 ├── components/
-│   ├── features/ - Feature components (medley, player, share)
+│   ├── features/ - Feature components (medley, player, share, auth)
 │   ├── pages/ - Page-level components
 │   └── ui/ - Reusable UI components (modal, song display)
+├── contexts/ - React contexts (AuthContext)
 ├── hooks/ - Data management hooks
-├── lib/ - Utilities, API clients
+├── lib/ - Utilities, API clients, Supabase
 └── types/ - Type definitions
+docs/ - Documentation (moved from root)
+database/ - Database migrations and schema
 ```
 
 ### Key Files
@@ -285,7 +288,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 ```
 
 **Critical Setup Requirements:**
-1. **Database Migrations**: Run SQL files in `database/migrations/` directory in Supabase
+1. **Database Migrations**: Run SQL files in `database/migrations/` directory in Supabase Dashboard
+   - `001_create_users_table.sql` - User profiles table
+   - `002_add_user_id_to_medleys.sql` - User ownership for medleys
 2. **OAuth Configuration**: Configure GitHub and Google providers in Supabase Auth settings
 3. **RLS Policies**: Ensure Row Level Security policies are active for user data protection
 

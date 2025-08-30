@@ -16,12 +16,12 @@ Since we cannot complete Firebase login in this CLI environment, you'll need to:
 
 ### 1. Create Firebase Project
 1. Visit [Firebase Console](https://console.firebase.google.com/)
-2. Create new project with name: `anasui-medley`
+2. Create new project with name: `medlean-app`
 3. Enable App Hosting service (requires Blaze plan)
 
 ### 2. Connect GitHub Repository  
 1. In Firebase Console → App Hosting
-2. Connect your GitHub repository: `satory074/Anasui` (or equivalent)
+2. Connect your GitHub repository: `satory074/Medlean` (or equivalent)
 3. Set build configuration:
    - **Framework**: Next.js
    - **Branch**: main

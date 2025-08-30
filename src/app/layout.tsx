@@ -18,8 +18,8 @@ export const metadata: Metadata = {
   title: "ニコニコメドレーアノテーションプレイヤー",
   description: "ニコニコ動画のメドレー楽曲に詳細なアノテーション情報を提供するWebアプリケーション。Songleスタイルのタイムライン表示で、楽曲ごとの時間情報と詳細情報を確認できます。",
   keywords: ["ニコニコ動画", "メドレー", "アノテーション", "楽曲情報", "タイムライン"],
-  authors: [{ name: "Anasui Team" }],
-  creator: "Anasui Team",
+  authors: [{ name: "Medlean Team" }],
+  creator: "Medlean Team",
   openGraph: {
     title: "ニコニコメドレーアノテーションプレイヤー",
     description: "ニコニコ動画のメドレー楽曲に詳細なアノテーション情報を提供するWebアプリケーション",

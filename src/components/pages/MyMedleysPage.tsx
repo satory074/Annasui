@@ -46,7 +46,7 @@ export default function MyMedleysPage() {
     loadUserMedleys()
   }, [user, loading])
 
-  const handleCreateMedley = async (medleyData: Omit<MedleyData, 'songs'>) => {
+  const handleCreateMedley = async () => {
     // This would typically create a medley and refresh the list
     // For now, we'll close the modal and potentially navigate to the new medley
     setShowCreateModal(false)
@@ -162,7 +162,7 @@ export default function MyMedleysPage() {
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          title="Anasui にログイン"
+          title="Medlean にログイン"
           description="マイメドレーページにアクセスするには、ログインが必要です。"
         />
       </>
@@ -178,7 +178,7 @@ export default function MyMedleysPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-caramel-400 transition-colors"
+                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -231,7 +231,7 @@ export default function MyMedleysPage() {
                 placeholder="メドレー名、作者名で検索..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-caramel-500 dark:text-white"
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
               />
             </div>
             <div>
@@ -240,8 +240,8 @@ export default function MyMedleysPage() {
               </label>
               <select
                 value={sortBy}
-                onChange={(e) => setSortBy(e.target.value as any)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-caramel-500 dark:text-white"
+                onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
               >
                 <option value="created">作成日</option>
                 <option value="updated">更新日</option>
@@ -256,8 +256,8 @@ export default function MyMedleysPage() {
               </label>
               <select
                 value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as any)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-caramel-500 dark:text-white"
+                onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
+                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
               >
                 <option value="desc">降順</option>
                 <option value="asc">昇順</option>
@@ -270,7 +270,7 @@ export default function MyMedleysPage() {
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600 dark:text-caramel-400">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {medleysLoading ? '-' : filteredAndSortedMedleys.length}
               </div>
               <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -336,7 +336,7 @@ export default function MyMedleysPage() {
                       href={getMedleyUrl(medley)}
                       className="group block mb-2"
                     >
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-caramel-400 transition-colors line-clamp-2">
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors line-clamp-2">
                         {medley.title}
                       </h3>
                     </Link>
@@ -373,7 +373,7 @@ export default function MyMedleysPage() {
                   <div className="flex items-center gap-2 ml-4">
                     <Link
                       href={getMedleyUrl(medley)}
-                      className="flex items-center px-3 py-2 text-sm bg-caramel-100 dark:bg-caramel-900 text-orange-700 dark:text-caramel-300 rounded-lg hover:bg-caramel-200 dark:hover:bg-caramel-800 transition-colors"
+                      className="flex items-center px-3 py-2 text-sm bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors"
                     >
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />

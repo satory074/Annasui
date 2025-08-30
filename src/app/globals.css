@@ -55,7 +55,7 @@
   --color-vibrant-600: var(--color-vibrant-primary);
   --color-vibrant-700: var(--color-vibrant-secondary);
   
-  /* Legacy mappings for compatibility */
+  /* Legacy mappings for compatibility - being phased out */
   --color-caramel-600: var(--color-orange-primary);
   --color-caramel-700: var(--color-orange-secondary);
   --color-caramel-50: #fff5f0;

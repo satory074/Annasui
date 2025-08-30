@@ -56,7 +56,7 @@ export default function UserProfileDropdown() {
       <>
         <button
           onClick={() => setIsAuthModalOpen(true)}
-          className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-orange-600 dark:hover:text-caramel-400 transition-colors"
+          className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
         >
           <svg 
             className="w-5 h-5 mr-1" 
@@ -77,7 +77,7 @@ export default function UserProfileDropdown() {
         <AuthModal
           isOpen={isAuthModalOpen}
           onClose={() => setIsAuthModalOpen(false)}
-          title="Anasui にログイン"
+          title="Medlean にログイン"
           description="メドレーを作成・編集するには、ログインが必要です。"
         />
       </>

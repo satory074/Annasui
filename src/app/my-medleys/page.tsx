@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 import MyMedleysPage from '@/components/pages/MyMedleysPage'
 
 export const metadata: Metadata = {
-  title: 'マイメドレー - Anasui',
+  title: 'マイメドレー - Medlean',
   description: 'あなたが作成したメドレー一覧'
 }
 

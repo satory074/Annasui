@@ -46,9 +46,9 @@ export default function AuthModal({
     <BaseModal isOpen={isOpen} onClose={handleClose} maxWidth="md">
       <div className="p-6">
         <div className="text-center mb-6">
-          <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-caramel-100 dark:bg-caramel-900/30 mb-4">
+          <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-900/30 mb-4">
             <svg 
-              className="w-6 h-6 text-orange-600 dark:text-caramel-400" 
+              className="w-6 h-6 text-orange-600 dark:text-orange-400" 
               fill="none" 
               stroke="currentColor" 
               viewBox="0 0 24 24"
@@ -81,7 +81,7 @@ export default function AuthModal({
           <button
             onClick={() => handleSignIn('github')}
             disabled={signingIn || loading}
-            className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-caramel-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {signingIn ? (
               <div className="flex items-center">
@@ -101,7 +101,7 @@ export default function AuthModal({
           <button
             onClick={() => handleSignIn('google')}
             disabled={signingIn || loading}
-            className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-caramel-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {signingIn ? (
               <div className="flex items-center">
@@ -125,11 +125,11 @@ export default function AuthModal({
         <div className="mt-6 text-center">
           <p className="text-xs text-gray-500 dark:text-gray-400">
             ログインすることで、{' '}
-            <a href="/terms" className="text-orange-600 dark:text-caramel-400 hover:underline">
+            <a href="/terms" className="text-orange-600 dark:text-orange-400 hover:underline">
               利用規約
             </a>{' '}
             と{' '}
-            <a href="/privacy" className="text-orange-600 dark:text-caramel-400 hover:underline">
+            <a href="/privacy" className="text-orange-600 dark:text-orange-400 hover:underline">
               プライバシーポリシー
             </a>{' '}
             に同意したものとみなします。

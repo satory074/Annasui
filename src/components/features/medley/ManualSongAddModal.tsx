@@ -172,8 +172,8 @@ export default function ManualSongAddModal({
         )}
 
         {/* ヘルプテキスト */}
-        <div className="mt-4 p-3 bg-caramel-50 dark:bg-caramel-900/20 rounded-md">
-          <p className="text-sm text-caramel-800 dark:text-caramel-200">
+        <div className="mt-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded-md">
+          <p className="text-sm text-orange-800 dark:text-orange-200">
             💡 楽曲を追加後は、楽曲検索から選択してタイムラインに配置できます
           </p>
         </div>

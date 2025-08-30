@@ -51,7 +51,6 @@ export default function MedleyPlayer({
 
     // 楽曲選択とツールチップ関連の状態
     const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     // ツールチップ関連の状態
     const [tooltipSong, setTooltipSong] = useState<SongSection | null>(null);
     const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -73,8 +72,6 @@ export default function MedleyPlayer({
         editingSongs,
         hasChanges,
         isSaving,
-        canUndo: _canUndo,
-        canRedo: _canRedo,
         updateSong,
         addSong,
         deleteSong,
@@ -94,7 +91,6 @@ export default function MedleyPlayer({
         volume,
         playerError,
         playerReady,
-        play: _play,
         togglePlayPause,
         seek: nicoSeek,
         setVolume,
@@ -116,8 +112,7 @@ export default function MedleyPlayer({
                 if (actualDuration > 0 && actualDuration < 14400 && actualDuration !== medleyDuration) { // 4時間未満
                     logger.info(`動画長さを自動修正します: ${medleyDuration}s → ${actualDuration}s`);
                     
-                    // データベースを更新（将来的にはAPI呼び出しで実装）
-                    // TODO: updateMedleyDuration(videoId, actualDuration);
+                    // Note: Database update for medley duration will be implemented when API endpoints are available
                 }
             }
         },
@@ -241,7 +236,7 @@ export default function MedleyPlayer({
             songsInfo: displaySongs.map(s => ({ id: s.id, title: s.title, start: s.startTime, end: s.endTime }))
         });
     }, [displaySongs, isEditMode]);
-    const { currentSong: _currentSong } = useCurrentTrack(currentTime, displaySongs);
+    useCurrentTrack(currentTime, displaySongs);
 
     // 現在再生中の楽曲を取得
     const getCurrentSongs = () => {
@@ -442,9 +437,6 @@ export default function MedleyPlayer({
         logger.info(`セットリストから${songs.length}曲をインポートしました`);
     };
 
-    const handleOpenImportModal = () => {
-        setImportModalOpen(true);
-    };
 
     
     const handleHoverSong = (song: SongSection | null, position: { x: number; y: number }) => {
@@ -497,16 +489,6 @@ export default function MedleyPlayer({
         setHideTooltipTimeout(timeout);
     };
 
-    const handleToggleEditMode = () => {
-        if (isEditMode && hasChanges) {
-            if (confirm("未保存の変更があります。編集モードを終了しますか？")) {
-                resetChanges(medleySongs);
-                setIsEditMode(false);
-            }
-        } else {
-            setIsEditMode(!isEditMode);
-        }
-    };
 
     const handleSaveChanges = async () => {
         const success = await saveMedley(videoId, medleyTitle, medleyCreator, effectiveDuration);
@@ -623,13 +605,6 @@ export default function MedleyPlayer({
     };
 
 
-    // 共有URL生成
-    const generateShareUrl = () => {
-        const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-        const path = `/${platform}/${videoId}`;
-        const timeParam = currentTime > 0 ? `?t=${Math.floor(currentTime)}` : '';
-        return `${baseUrl}${path}${timeParam}`;
-    };
 
     // 元動画URL生成
     const generateOriginalVideoUrl = () => {

@@ -68,7 +68,6 @@ export default function SettingsPage() {
   }
 
   const displayName = user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0]
-  const avatarUrl = user?.user_metadata?.avatar_url
   const provider = user?.app_metadata?.provider
   const providerIcon = provider === 'github' ? 
     <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -111,7 +110,7 @@ export default function SettingsPage() {
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          title="Anasui にログイン"
+          title="Medlean にログイン"
           description="設定ページにアクセスするには、ログインが必要です。"
         />
       </>
@@ -127,7 +126,7 @@ export default function SettingsPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-caramel-400 transition-colors"
+                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -223,7 +222,7 @@ export default function SettingsPage() {
                   </div>
                   <button
                     onClick={handleDarkModeToggle}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-caramel-500 focus:ring-offset-2 ${
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
                       darkMode ? 'bg-orange-600' : 'bg-gray-200'
                     }`}
                   >

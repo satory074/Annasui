@@ -18,36 +18,36 @@ class Logger {
     return this.isDevelopment || this.isDebugEnabled;
   }
 
-  debug(message: string, ...args: any[]): void {
+  debug(message: string, ...args: unknown[]): void {
     if (this.shouldLog('debug')) {
       console.log(`[DEBUG] ${message}`, ...args);
     }
   }
 
-  info(message: string, ...args: any[]): void {
+  info(message: string, ...args: unknown[]): void {
     if (this.shouldLog('info')) {
       console.log(`[INFO] ${message}`, ...args);
     }
   }
 
-  warn(message: string, ...args: any[]): void {
+  warn(message: string, ...args: unknown[]): void {
     if (this.shouldLog('warn')) {
       console.warn(`[WARN] ${message}`, ...args);
     }
   }
 
-  error(message: string, ...args: any[]): void {
+  error(message: string, ...args: unknown[]): void {
     if (this.shouldLog('error')) {
       console.error(`[ERROR] ${message}`, ...args);
     }
   }
 
   // Utility methods for common logging patterns
-  apiCall(endpoint: string, data?: any): void {
+  apiCall(endpoint: string, data?: unknown): void {
     this.debug(`API Call: ${endpoint}`, data);
   }
 
-  userAction(action: string, data?: any): void {
+  userAction(action: string, data?: unknown): void {
     this.debug(`User Action: ${action}`, data);
   }
 

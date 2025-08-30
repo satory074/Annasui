@@ -23,7 +23,7 @@ export default function SongSearchModal({
 }: SongSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [songDatabase, setSongDatabase] = useState<SongDatabaseEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [, setIsLoading] = useState(false);
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<{
     title: string;
@@ -182,7 +182,7 @@ export default function SongSearchModal({
                   key={song.id}
                   className={`border rounded-lg transition-colors p-3 ${
                     isEditing 
-                      ? 'border-orange-600 bg-caramel-50 dark:bg-caramel-900/20' 
+                      ? 'border-orange-600 bg-orange-50 dark:bg-orange-900/20' 
                       : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >

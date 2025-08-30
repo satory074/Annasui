@@ -82,7 +82,7 @@ export default function ProfilePage() {
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          title="Anasui にログイン"
+          title="Medlean にログイン"
           description="プロフィールページにアクセスするには、ログインが必要です。"
         />
       </>
@@ -97,7 +97,7 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => router.back()}
-              className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-caramel-400 transition-colors"
+              className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -138,7 +138,7 @@ export default function ProfilePage() {
               </p>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
                 <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600 dark:text-caramel-400">
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                     {medleysLoading ? '-' : userMedleys.length}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -178,7 +178,7 @@ export default function ProfilePage() {
             </h3>
             <button
               onClick={() => router.push('/my-medleys')}
-              className="text-orange-600 hover:text-orange-700 dark:text-caramel-400 dark:hover:text-caramel-300 text-sm font-medium transition-colors"
+              className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-sm font-medium transition-colors"
             >
               すべて表示 →
             </button>
@@ -247,7 +247,7 @@ export default function ProfilePage() {
                     </div>
                     
                     <div className="p-3">
-                      <h4 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-2 group-hover:text-orange-600 dark:group-hover:text-caramel-400 transition-colors">
+                      <h4 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
                         {medley.title}
                       </h4>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">

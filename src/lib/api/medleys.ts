@@ -15,7 +15,7 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; erro
     logger.debug('🔍 Testing Supabase connection...')
     
     // Try a simple query to test the connection
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('medleys')
       .select('id')
       .limit(1)
@@ -74,7 +74,7 @@ function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyDa
 }
 
 // Direct fetch implementation to bypass Supabase client issues
-async function directFetch(url: string): Promise<any> {
+async function directFetch(url: string): Promise<unknown> {
   const response = await fetch(url, {
     headers: {
       'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZWFpcnVya3hqZnR1Z3J3ZGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyODI3OTEsImV4cCI6MjA3MTg1ODc5MX0.7VSQnn4HdWrMf3qgdPkB2bSyjSH1nuJhH1DR8m4Y4h8',
@@ -98,19 +98,19 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
     // Get the medley using direct fetch
     const medleyData = await directFetch(
       `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/medleys?select=*&video_id=eq.${videoId}`
-    );
+    ) as unknown[];
 
     if (!medleyData || medleyData.length === 0) {
       logger.debug('No medley found for video ID:', videoId)
       return null
     }
 
-    const medley = medleyData[0];
+    const medley = medleyData[0] as any;
 
     // Get the songs for this medley using direct fetch
     const songData = await directFetch(
       `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/songs?select=*&medley_id=eq.${medley.id}&order=order_index`
-    );
+    ) as unknown[];
 
     logger.debug('✅ Successfully fetched medley data:', {
       title: medley.title,

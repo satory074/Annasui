@@ -47,9 +47,7 @@ export default function SongListGrouped({
   duration,
   actualPlayerDuration,
   currentTime,
-  currentSongs: _currentSongs = [],
   onTimelineClick,
-  onSeek: _onSeek,
   onEditSong,
   onDeleteSong,
   onTogglePlayPause,
@@ -151,9 +149,9 @@ export default function SongListGrouped({
     
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    const clickTime = (x / rect.width) * effectiveTimelineDuration;
+    const time = (x / rect.width) * effectiveTimelineDuration;
     
-    onTimelineClick(clickTime);
+    onTimelineClick(time);
   };
 
   // 楽曲クリック処理
@@ -186,8 +184,6 @@ export default function SongListGrouped({
     e.stopPropagation();
 
     const rect = timelineElement.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const clickTime = (x / rect.width) * effectiveTimelineDuration;
 
     setDraggingSong(song);
     setDragMode('move');
@@ -198,22 +194,15 @@ export default function SongListGrouped({
     });
   };
 
-  const handleMouseMove = useCallback((e: MouseEvent) => {
+  const handleMouseMove = useCallback(() => {
     if (!draggingSong || !dragStart || !dragMode) return;
 
-    const deltaX = e.clientX - dragStart.x;
-    const deltaTime = (deltaX / dragStart.timelineWidth) * effectiveTimelineDuration;
+    // Drag calculation logic would go here
     
     if (dragMode === 'move') {
-      const _newStartTime = Math.max(0, Math.min(
-        effectiveTimelineDuration - (draggingSong.endTime - draggingSong.startTime),
-        dragStart.initialTime + deltaTime
-      ));
-      const _songDuration = draggingSong.endTime - draggingSong.startTime;
-      
       // 更新処理は省略（実際の実装では onUpdateSong などを呼び出し）
     }
-  }, [draggingSong, dragStart, dragMode, effectiveTimelineDuration]);
+  }, [draggingSong, dragStart, dragMode]);
 
   const handleMouseUp = useCallback(() => {
     setDraggingSong(null);
@@ -395,10 +384,6 @@ export default function SongListGrouped({
         <div className="space-y-0.5">
           {Object.entries(groupedSongs).map(([groupKey, group]) => {
             // グループ全体の状態を計算
-            const _hasAnyOverlap = group.segments.some(song => {
-              const { hasOverlap } = detectOverlaps(song);
-              return hasOverlap;
-            });
             const isAnyCurrentlyPlaying = group.segments.some(song => 
               currentSongs_computed.some(s => s.id === song.id)
             );
@@ -437,7 +422,7 @@ export default function SongListGrouped({
                       onClick={() => onEditSong?.(group.segments[0])}
                       className={`p-1.5 rounded transition-colors ${
                         isEditMode 
-                          ? 'text-orange-600 hover:bg-caramel-50 dark:hover:bg-amber-900/30' 
+                          ? 'text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30' 
                           : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
                       }`}
                       title={`${group.title}を編集 (${group.segments.length}区間)`}

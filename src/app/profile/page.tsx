@@ -3,7 +3,7 @@ import { Metadata } from 'next'
 import ProfilePage from '@/components/pages/ProfilePage'
 
 export const metadata: Metadata = {
-  title: 'プロフィール - Anasui',
+  title: 'プロフィール - Medlean',
   description: 'ユーザープロフィール'
 }
 

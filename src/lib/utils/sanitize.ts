@@ -165,7 +165,10 @@ export function sanitizeSongSection(song: {
   };
 
   // Optional fields
-  const result: any = sanitized;
+  const result: typeof sanitized & {
+    originalLink?: string;
+    color?: string;
+  } = sanitized;
   
   if (song.originalLink) {
     const sanitizedUrl = sanitizeUrl(song.originalLink);

@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { SongSection } from '@/types';
 import { useMedleyDataApi } from './useMedleyDataApi';
 

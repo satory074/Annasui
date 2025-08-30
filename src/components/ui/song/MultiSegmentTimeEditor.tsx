@@ -75,12 +75,12 @@ function SegmentList({
               key={segment.id}
               className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${
                 isPreviewPlaying 
-                  ? 'bg-caramel-100 border-caramel-300 dark:bg-caramel-900/30 dark:border-orange-600'
+                  ? 'bg-orange-100 border-orange-300 dark:bg-orange-900/30 dark:border-orange-600'
                   : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600'
               } hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors`}
             >
               {/* 区間番号 */}
-              <span className="text-sm font-bold text-orange-700 dark:text-caramel-400 bg-caramel-50 dark:bg-caramel-900/20 px-2 py-1 rounded-md">
+              <span className="text-sm font-bold text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-md">
                 区間{segment.segmentNumber}
               </span>
 
@@ -411,7 +411,7 @@ export default function MultiSegmentTimeEditor({
             {[...segments].sort((a, b) => a.startTime - b.startTime).map(segment => (
               <div
                 key={segment.id}
-                className={`absolute h-full bg-caramel-500 border border-orange-600 ${
+                className={`absolute h-full bg-orange-500 border border-orange-600 ${
                   previewingSegmentId === segment.id ? 'ring-2 ring-blue-400' : ''
                 }`}
                 style={{

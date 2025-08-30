@@ -1,6 +1,7 @@
 "use client";
 
-import { getThumbnailUrl, handleThumbnailError, getBestThumbnailFromLinks } from "@/lib/utils/thumbnail";
+import Image from 'next/image';
+import { getThumbnailUrl, getBestThumbnailFromLinks } from "@/lib/utils/thumbnail";
 import { useState, useEffect } from "react";
 import { SkeletonThumbnail } from "@/components/ui/LoadingSkeleton";
 
@@ -95,6 +96,7 @@ export default function SongThumbnail({
     lg: "w-full aspect-video"
   };
 
+
   if (isLoading) {
     return <SkeletonThumbnail className={`${sizeClasses[size]} ${className}`} />;
   }
@@ -102,12 +104,15 @@ export default function SongThumbnail({
   if (hasError || !thumbnailUrl) {
     // デフォルトサムネイルを表示
     const defaultImageElement = (
-      <img
-        src="/default-thumbnail.svg"
-        alt={`${title} デフォルトサムネイル`}
-        className={`${sizeClasses[size]} object-cover bg-gray-50 border border-gray-200 ${className}`}
-        loading="lazy"
-      />
+      <div className={`relative ${sizeClasses[size]} bg-gray-50 border border-gray-200 ${className}`}>
+        <Image
+          src="/default-thumbnail.svg"
+          alt={`${title} デフォルトサムネイル`}
+          fill
+          className="object-cover"
+          sizes={size === 'lg' ? '100vw' : size === 'md' ? '160px' : '128px'}
+        />
+      </div>
     );
 
     if (!isClickable || !primaryLink) {
@@ -132,30 +137,31 @@ export default function SongThumbnail({
   }
 
   const imageElement = (
-    <img
-      src={thumbnailUrl}
-      alt={`${title} サムネイル`}
-      loading="lazy"
-      className={`${sizeClasses[size]} object-cover bg-gray-100 border border-gray-200 ${className}`}
-      onError={(e) => {
-        console.warn(`Image load failed for: ${title}`, { url: thumbnailUrl, primaryLink });
-        if (retryCount < maxRetries) {
-          console.log(`Image error - retrying thumbnail load (${retryCount + 1}/${maxRetries})`);
-          setRetryCount(prev => prev + 1);
-          setThumbnailUrl(null);
-        } else {
-          setHasError(true);
-          if (primaryLink) {
-            handleThumbnailError(e.currentTarget, primaryLink);
+    <div className={`relative ${sizeClasses[size]} bg-gray-100 border border-gray-200 ${className}`}>
+      <Image
+        src={thumbnailUrl}
+        alt={`${title} サムネイル`}
+        fill
+        className="object-cover"
+        sizes={size === 'lg' ? '100vw' : size === 'md' ? '160px' : '128px'}
+        priority={size === 'lg'}
+        onError={() => {
+          console.warn(`Image load failed for: ${title}`, { url: thumbnailUrl, primaryLink });
+          if (retryCount < maxRetries) {
+            console.log(`Image error - retrying thumbnail load (${retryCount + 1}/${maxRetries})`);
+            setRetryCount(prev => prev + 1);
+            setThumbnailUrl(null);
+          } else {
+            setHasError(true);
           }
-        }
-      }}
-      onLoad={() => {
-        if (retryCount > 0) {
-          console.log(`✅ Thumbnail loaded successfully after ${retryCount} retry(s): ${title}`);
-        }
-      }}
-    />
+        }}
+        onLoad={() => {
+          if (retryCount > 0) {
+            console.log(`✅ Thumbnail loaded successfully after ${retryCount} retry(s): ${title}`);
+          }
+        }}
+      />
+    </div>
   );
 
   if (!isClickable) {

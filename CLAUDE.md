@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Medlean** (formerly Anasui) is a comprehensive multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, advanced editing capabilities, searchable medley database, and user authentication. Supports 4 platforms: Niconico (full integration), YouTube (embed), Spotify (thumbnails), and Apple Music (thumbnails).
 
-**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, and comprehensive annotation enhancement features. Dark mode functionality has been completely removed. Recently cleaned and optimized codebase (2025-08-30).
+**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, comprehensive annotation enhancement features, and full SEO optimization. Dark mode functionality has been completely removed. SEO implementation completed (2025-08-30).
 
 ## Core Architecture
 
@@ -155,6 +155,21 @@ export type SongSection = {
 - Real-time search across titles/artists with inline editing capabilities
 - Database built from all medley data with deduplication
 - Multi-platform URL editing for all songs
+
+#### SEO Architecture (Added 2025-08-30)
+**Comprehensive SEO Implementation:**
+- **Dynamic Sitemap**: Auto-generated `/sitemap.xml` with all pages
+- **Robots.txt**: Crawler control with private page exclusions
+- **Dynamic Metadata**: Page-specific titles, descriptions, keywords
+- **Structured Data**: VideoObject, MusicRecording, BreadcrumbList JSON-LD
+- **Image Optimization**: Next.js Image component with WebP conversion
+- **Rich Results**: Google validated structured data for enhanced search display
+
+**SEO Files:**
+- `/src/app/sitemap.ts` - Dynamic sitemap generation
+- `/src/app/robots.ts` - Robots.txt configuration
+- `/src/components/ui/Breadcrumb.tsx` - Breadcrumb with structured data
+- Individual page `generateMetadata` functions for dynamic SEO
 
 ### Key Technical Constraints
 - Niconico API is undocumented and may change without notice
@@ -282,6 +297,12 @@ database/ - Database migrations and schema
 - `src/app/my-medleys/page.tsx` - User's medleys management page
 - `src/app/settings/page.tsx` - Settings page
 
+**SEO System:**
+- `src/app/sitemap.ts` - Dynamic sitemap generation
+- `src/app/robots.ts` - Robots.txt configuration
+- `src/components/ui/Breadcrumb.tsx` - Breadcrumb navigation with structured data
+- `src/components/seo/StructuredData.tsx` - Structured data utilities
+
 ## Development Workflow
 
 **CRITICAL Verification Process:**
@@ -290,6 +311,10 @@ database/ - Database migrations and schema
 3. Production deployment: `firebase deploy`
 4. Production verification: Test on https://anasui-e6f49.web.app
 5. **Thumbnail API verification**: Test `/api/thumbnail/niconico/sm500873` directly in production
+6. **SEO verification**: 
+   - Check `/sitemap.xml` and `/robots.txt` accessibility
+   - Test structured data with Google Rich Results Test
+   - Verify metadata with browser developer tools
 
 Always verify features work in production environment - SSR behavior, CORS policies, and cross-origin iframe communication differs from local development.
 

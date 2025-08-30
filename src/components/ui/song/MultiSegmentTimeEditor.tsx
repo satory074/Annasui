@@ -62,7 +62,7 @@ function SegmentList({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md p-4">
+    <div className="bg-white border border-gray-200 rounded-md p-4">
       <div className="flex flex-wrap gap-2">
         {segments.map((segment) => {
           const segmentErrors = errors[segment.id] || {};
@@ -75,12 +75,12 @@ function SegmentList({
               key={segment.id}
               className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${
                 isPreviewPlaying 
-                  ? 'bg-orange-100 border-orange-300 dark:bg-orange-900/30 dark:border-orange-600'
-                  : 'bg-gray-50 border-gray-200 dark:bg-gray-700 dark:border-gray-600'
-              } hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors`}
+                  ? 'bg-orange-100 border-orange-300'
+                  : 'bg-gray-50 border-gray-200'
+              } hover:bg-gray-100 transition-colors`}
             >
               {/* 区間番号 */}
-              <span className="text-sm font-bold text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded-md">
+              <span className="text-sm font-bold text-orange-700 bg-orange-50 px-2 py-1 rounded-md">
                 区間{segment.segmentNumber}
               </span>
 
@@ -94,15 +94,15 @@ function SegmentList({
                     onBlur={finishEditing}
                     onKeyDown={handleKeyDown}
                     className={`w-16 px-1 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-orange-600 ${
-                      segmentErrors.startTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-500'
-                    } bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100`}
+                      segmentErrors.startTime ? 'border-red-500' : 'border-gray-300'
+                    } bg-white text-gray-900`}
                     autoFocus
                   />
                 ) : (
                   <button
                     onClick={() => startEditing(segment.id, 'startTime', segment.startTime)}
-                    className={`text-xs px-1 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800 ${
-                      segmentErrors.startTime ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-700 dark:text-gray-300'
+                    className={`text-xs px-1 py-0.5 rounded hover:bg-white ${
+                      segmentErrors.startTime ? 'text-red-500 bg-red-50' : 'text-gray-700'
                     }`}
                     title="クリックして編集"
                   >
@@ -121,15 +121,15 @@ function SegmentList({
                     onBlur={finishEditing}
                     onKeyDown={handleKeyDown}
                     className={`w-16 px-1 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-orange-600 ${
-                      segmentErrors.endTime ? 'border-red-500' : 'border-gray-300 dark:border-gray-500'
-                    } bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100`}
+                      segmentErrors.endTime ? 'border-red-500' : 'border-gray-300'
+                    } bg-white text-gray-900`}
                     autoFocus
                   />
                 ) : (
                   <button
                     onClick={() => startEditing(segment.id, 'endTime', segment.endTime)}
-                    className={`text-xs px-1 py-0.5 rounded hover:bg-white dark:hover:bg-gray-800 ${
-                      segmentErrors.endTime ? 'text-red-500 bg-red-50 dark:bg-red-900/20' : 'text-gray-700 dark:text-gray-300'
+                    className={`text-xs px-1 py-0.5 rounded hover:bg-white ${
+                      segmentErrors.endTime ? 'text-red-500 bg-red-50' : 'text-gray-700'
                     }`}
                     title="クリックして編集"
                   >
@@ -139,7 +139,7 @@ function SegmentList({
               </div>
 
               {/* 長さ表示 */}
-              <span className="text-xs text-gray-500 dark:text-gray-400">({duration}s)</span>
+              <span className="text-xs text-gray-500">({duration}s)</span>
 
               {/* 再生中インジケーター */}
               {isPreviewPlaying && (
@@ -195,13 +195,13 @@ function SegmentList({
         if (!segment || !segmentErrors) return null;
         
         return (
-          <div key={segmentId} className="mt-2 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded">
-            <span className="text-xs font-medium text-red-700 dark:text-red-400">区間{segment.segmentNumber}:</span>
+          <div key={segmentId} className="mt-2 p-2 bg-red-50 border border-red-200 rounded">
+            <span className="text-xs font-medium text-red-700">区間{segment.segmentNumber}:</span>
             {segmentErrors.startTime && (
-              <p className="text-xs text-red-600 dark:text-red-400">• {segmentErrors.startTime}</p>
+              <p className="text-xs text-red-600">• {segmentErrors.startTime}</p>
             )}
             {segmentErrors.endTime && (
-              <p className="text-xs text-red-600 dark:text-red-400">• {segmentErrors.endTime}</p>
+              <p className="text-xs text-red-600">• {segmentErrors.endTime}</p>
             )}
           </div>
         );
@@ -389,16 +389,16 @@ export default function MultiSegmentTimeEditor({
     <div className="space-y-4">
       {/* タイムラインプレビューを上部に移動 */}
       {maxDuration > 0 && (
-        <div className="p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-md">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">タイムラインプレビュー</h4>
-          <div className="relative w-full h-12 bg-gray-100 dark:bg-gray-700 rounded-sm overflow-hidden">
+        <div className="p-3 bg-white border border-gray-200 rounded-md">
+          <h4 className="text-sm font-medium text-gray-700 mb-3">タイムラインプレビュー</h4>
+          <div className="relative w-full h-12 bg-gray-100 rounded-sm overflow-hidden">
             {/* 既存の他の楽曲（薄いグレー） */}
             {allSongs
               .filter(song => song.title !== currentSongTitle || song.artist !== currentSongArtist)
               .map(song => (
               <div
                 key={`other-${song.id}`}
-                className="absolute h-full bg-gray-300 dark:bg-gray-600 opacity-50"
+                className="absolute h-full bg-gray-300 opacity-50"
                 style={{
                   left: `${(song.startTime / maxDuration) * 100}%`,
                   width: `${((song.endTime - song.startTime) / maxDuration) * 100}%`
@@ -435,7 +435,7 @@ export default function MultiSegmentTimeEditor({
               title={`現在時刻: ${Math.floor(currentTime / 60)}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`}
             />
           </div>
-          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+          <div className="flex justify-between text-xs text-gray-500 mt-1">
             <span>0:00</span>
             <span>{Math.floor(maxDuration / 60)}:{String(Math.floor(maxDuration % 60)).padStart(2, '0')}</span>
           </div>
@@ -444,7 +444,7 @@ export default function MultiSegmentTimeEditor({
 
       {/* セグメント一覧ヘッダー */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+        <h3 className="text-sm font-medium text-gray-700">
           登場区間 ({segments.length}個)
         </h3>
         <button

@@ -105,7 +105,7 @@ export default function SongThumbnail({
       <img
         src="/default-thumbnail.svg"
         alt={`${title} デフォルトサムネイル`}
-        className={`${sizeClasses[size]} object-cover bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 ${className}`}
+        className={`${sizeClasses[size]} object-cover bg-gray-50 border border-gray-200 ${className}`}
         loading="lazy"
       />
     );
@@ -136,7 +136,7 @@ export default function SongThumbnail({
       src={thumbnailUrl}
       alt={`${title} サムネイル`}
       loading="lazy"
-      className={`${sizeClasses[size]} object-cover bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 ${className}`}
+      className={`${sizeClasses[size]} object-cover bg-gray-100 border border-gray-200 ${className}`}
       onError={(e) => {
         console.warn(`Image load failed for: ${title}`, { url: thumbnailUrl, primaryLink });
         if (retryCount < maxRetries) {

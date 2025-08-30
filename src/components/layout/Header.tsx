@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import DarkModeToggle from "@/components/ui/DarkModeToggle";
 
 interface HeaderProps {
   inputVideoId: string;
@@ -57,8 +56,6 @@ export default function Header({
             <span className="hidden sm:inline text-sm">フィードバック</span>
           </a>
 
-          {/* Dark mode toggle */}
-          <DarkModeToggle />
           {showSearch && (
             <form onSubmit={onVideoIdSubmit} className="flex gap-2">
               <div className="relative">

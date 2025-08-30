@@ -77,25 +77,25 @@ export default function ShareButtons({
   };
 
   return (
-    <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <div className="p-4 border-b border-gray-200 bg-white">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="flex-1">
-          <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <h4 className="text-sm font-medium text-gray-700 mb-2">
             この動画を共有
             {currentSong && (
-              <span className="ml-2 text-xs text-orange-600 dark:text-orange-600">
+              <span className="ml-2 text-xs text-orange-600">
                 ({currentSong.title} から)
               </span>
             )}
           </h4>
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="flex items-center gap-2 text-xs text-gray-500">
             <span>URL: {url}</span>
             <button
               onClick={handleCopyUrl}
               className={`px-2 py-1 rounded text-xs font-medium transition-colors ${
                 copied
-                  ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
             >
               {copied ? 'コピー済み!' : 'URLコピー'}

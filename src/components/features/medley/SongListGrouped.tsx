@@ -296,32 +296,32 @@ export default function SongListGrouped({
   const currentSongs_computed = getCurrentSongs();
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
+    <div className="bg-gray-50">
       {/* ヘッダー部分 */}
-      <div className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <div className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
           {/* メドレータイトルと制作者 */}
           {(medleyTitle || medleyCreator) && (
-            <div className="mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+            <div className="mb-2 border-b border-gray-200 pb-2">
               {medleyTitle && (
                 originalVideoUrl ? (
                   <a
                     href={originalVideoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-lg font-bold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-600 hover:underline cursor-pointer transition-colors"
+                    className="text-lg font-bold text-gray-900 hover:text-orange-600 hover:underline cursor-pointer transition-colors"
                     title="元動画を見る"
                   >
                     {medleyTitle}
                   </a>
                 ) : (
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-lg font-bold text-gray-900">
                     {medleyTitle}
                   </h2>
                 )
               )}
               {medleyCreator && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                <p className="text-sm text-gray-600 flex items-center">
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -341,19 +341,19 @@ export default function SongListGrouped({
                   size="sm"
                 />
               )}
-              <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              <h3 className="text-xs font-medium text-gray-700">
                 楽曲一覧 ({Object.keys(groupedSongs).length}楽曲, {songs.length}区間)
               </h3>
               {hasChanges && (
-                <span className="text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-2 py-1 rounded">
+                <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
                   未保存の変更があります
                 </span>
               )}
               {isEditMode && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                  キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
-                  <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-mint-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
-                  <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-indigo-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
+                <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                  キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200'}`}>S</kbd>開始時刻 
+                  <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-mint-600 text-white animate-pulse' : 'bg-gray-200'}`}>E</kbd>終了時刻 
+                  <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-indigo-600 text-white animate-pulse' : 'bg-gray-200'}`}>M</kbd>マーカー追加
                 </div>
               )}
             </div>
@@ -396,23 +396,23 @@ export default function SongListGrouped({
                 key={groupKey}
                 className={`relative p-2 rounded-lg border transition-all ${
                   hasAnyBeyondDuration
-                    ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-60"
+                    ? "bg-red-50 border-red-200 opacity-60"
                     : isAnyCurrentlyPlaying
-                    ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                    : "bg-white dark:bg-slate-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700/50"
+                    ? "bg-blue-50 border-blue-200"
+                    : "bg-white border-gray-200 hover:bg-gray-50"
                 }`}
               >
                 {/* 楽曲情報ヘッダー */}
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-gray-900 dark:text-white">
+                    <h3 className="font-medium text-gray-900">
                       {group.title}
                     </h3>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">-</span>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="text-sm text-gray-600">-</span>
+                    <span className="text-sm text-gray-600">
                       {group.artist}
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-500 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                       {group.segments.length}区間
                     </span>
                   </div>
@@ -422,8 +422,8 @@ export default function SongListGrouped({
                       onClick={() => onEditSong?.(group.segments[0])}
                       className={`p-1.5 rounded transition-colors ${
                         isEditMode 
-                          ? 'text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/30' 
-                          : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
+                          ? 'text-orange-600 hover:bg-orange-50' 
+                          : 'text-gray-600 hover:bg-gray-100'
                       }`}
                       title={`${group.title}を編集 (${group.segments.length}区間)`}
                     >
@@ -441,7 +441,7 @@ export default function SongListGrouped({
                             });
                           }
                         }}
-                        className="p-1.5 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors"
+                        className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors"
                         title="全区間削除"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -454,7 +454,7 @@ export default function SongListGrouped({
                 
                 {/* タイムライン */}
                 <div 
-                  className="timeline-container relative w-full h-8 ml-0 transition-colors bg-blue-50 dark:bg-blue-900/10 rounded"
+                  className="timeline-container relative w-full h-8 ml-0 transition-colors bg-blue-50 rounded"
                   onClick={handleTimelineClick}
                 >
                   {/* 時間グリッド（背景）- 固定10本 */}
@@ -462,7 +462,7 @@ export default function SongListGrouped({
                     {Array.from({ length: 11 }).map((_, i) => (
                       <div 
                         key={i} 
-                        className="border-l border-gray-200 dark:border-gray-700 opacity-50" 
+                        className="border-l border-gray-200 opacity-50" 
                         style={{ left: `${(i / 10) * 100}%` }}
                       />
                     ))}
@@ -479,8 +479,8 @@ export default function SongListGrouped({
                         key={song.id}
                         className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 ${
                           isBeyondActualDuration 
-                            ? 'bg-red-400 dark:bg-red-500 opacity-50' 
-                            : 'bg-orange-600 dark:bg-orange-600'
+                            ? 'bg-red-400 opacity-50' 
+                            : 'bg-orange-600'
                         } ${
                           hasOverlap ? 'opacity-80' : ''
                         } ${
@@ -503,7 +503,7 @@ export default function SongListGrouped({
                         onMouseLeave={handleSongLeave}
                         title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで再生'}`}
                       >
-                        <div className="text-xs text-gray-800 dark:text-gray-200 font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1"
+                        <div className="text-xs text-gray-800 font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1"
                              style={{
                                overflow: 'visible',
                                position: 'relative'

@@ -14,8 +14,8 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
-      <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 text-center">
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="max-w-md w-full bg-white rounded-lg shadow-md p-6 text-center">
         <div className="mb-4">
           <svg
             className="mx-auto h-16 w-16 text-red-500"
@@ -32,11 +32,11 @@ export default function Error({
           </svg>
         </div>
         
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
           アプリケーションエラー
         </h2>
         
-        <p className="text-gray-600 dark:text-gray-300 mb-6">
+        <p className="text-gray-600 mb-6">
           申し訳ございません。予期しないエラーが発生しました。
         </p>
         
@@ -50,7 +50,7 @@ export default function Error({
           
           <button
             onClick={() => window.location.href = "/"}
-            className="w-full bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-800 dark:text-white font-medium py-2 px-4 rounded transition-colors"
+            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded transition-colors"
           >
             ホームに戻る
           </button>
@@ -61,7 +61,7 @@ export default function Error({
             <summary className="cursor-pointer text-sm text-gray-500">
               エラー詳細 (開発環境のみ)
             </summary>
-            <pre className="mt-2 text-xs bg-gray-100 dark:bg-gray-900 p-2 rounded overflow-auto">
+            <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">
               {error.message}
             </pre>
           </details>

@@ -9,7 +9,6 @@ import MedleyStatistics from "@/components/features/statistics/MedleyStatistics"
 import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
 import UserProfileDropdown from "@/components/features/auth/UserProfileDropdown";
 import AuthModal from "@/components/features/auth/AuthModal";
-import DarkModeToggle from "@/components/ui/DarkModeToggle";
 import { useAuth } from "@/contexts/AuthContext";
 import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
 
@@ -195,28 +194,25 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="min-h-screen bg-gray-100">
             <div className="max-w-6xl mx-auto py-8 px-4">
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
                         <div>
                             <div className="flex items-center gap-3 mb-2">
-                                <h1 className="text-4xl font-bold text-gray-900 dark:text-white">
+                                <h1 className="text-4xl font-bold text-gray-900">
                                     Medlean
                                 </h1>
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/30 text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-700">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border border-orange-200">
                                     ALPHA
                                 </span>
                             </div>
-                            <p className="text-lg text-gray-600 dark:text-gray-400">
+                            <p className="text-lg text-gray-600">
                                 メドレー楽曲の詳細なアノテーション・検索プラットフォーム
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            {/* Dark mode toggle */}
-                            <DarkModeToggle />
-
                             {/* User profile dropdown */}
                             <UserProfileDropdown />
 
@@ -225,7 +221,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                 href="https://github.com/anthropics/claude-code/issues"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors shadow-sm"
+                                className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                                 title="フィードバック・バグ報告"
                             >
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -237,13 +233,13 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             {/* Statistics button */}
                             <button
                                 onClick={() => setShowStatistics(!showStatistics)}
-                                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors shadow-sm"
+                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
                             >
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
                                 </svg>
                                 統計情報
-                                <span className="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
                                     {showStatistics ? '隠す' : '表示'}
                                 </span>
                             </button>
@@ -266,7 +262,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             </button>
 
                             {/* Medley count display */}
-                            <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 rounded-lg text-sm">
+                            <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm">
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -299,15 +295,15 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     setSearchTerm(e.target.value);
                                     setCurrentPage(1);
                                 }}
-                                className="w-full pl-12 pr-4 py-4 text-lg bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:text-white transition-all duration-200 shadow-sm"
+                                className="w-full pl-12 pr-4 py-4 text-lg bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
                             />
                         </div>
                     </div>
 
                     {/* Tabs and filters */}
-                    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+                    <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                         {/* Tab switching */}
-                        <div className="border-b border-gray-200 dark:border-gray-700">
+                        <div className="border-b border-gray-200">
                             <nav className="flex space-x-8 px-6" aria-label="Tabs">
                                 <button
                                     onClick={() => {
@@ -317,8 +313,8 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     }}
                                     className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                                         searchMode === "medley"
-                                            ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+                                            ? "border-blue-500 text-blue-600"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                     }`}
                                 >
                                     <div className="flex items-center gap-2">
@@ -336,8 +332,8 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     }}
                                     className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                                         searchMode === "song"
-                                            ? "border-blue-500 text-blue-600 dark:text-blue-400"
-                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300"
+                                            ? "border-blue-500 text-blue-600"
+                                            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                     }`}
                                 >
                                     <div className="flex items-center gap-2">
@@ -354,7 +350,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                         <div className="p-6">
                             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                         ジャンル
                                     </label>
                                     <select
@@ -363,7 +359,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                             setGenreFilter(e.target.value);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm"
+                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                     >
                                         <option value="">すべてのジャンル</option>
                                         {availableGenres.map(genre => (
@@ -372,7 +368,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                         並び順
                                     </label>
                                     <select
@@ -383,7 +379,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                             setSortOrder(newSortOrder);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm"
+                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                     >
                                         <option value="createdAt-desc">🆕 新着順</option>
                                         <option value="viewCount-desc">🔥 人気順（再生回数）</option>
@@ -403,7 +399,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
                                         表示件数
                                     </label>
                                     <select
@@ -413,7 +409,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                             setItemsPerPage(newItemsPerPage);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:text-white text-sm"
+                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                     >
                                         <option value={8}>8件</option>
                                         <option value={16}>16件</option>
@@ -427,30 +423,30 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 </div>
 
                 {/* Results display and actions */}
-                <div className="mb-6 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4 shadow-sm">
+                <div className="mb-6 bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                         <div className="flex items-center gap-4">
-                            <div className="text-sm text-gray-600 dark:text-gray-400">
+                            <div className="text-sm text-gray-600">
                                 {searchMode === "medley" ? (
                                     <div className="flex items-center gap-2">
-                                        <span className="font-medium text-gray-900 dark:text-white">
+                                        <span className="font-medium text-gray-900">
                                             {filteredAndSortedMedleys.length}件
                                         </span>
                                         <span>のメドレーが見つかりました</span>
                                         {totalPages > 1 && (
-                                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                                            <span className="px-2 py-1 bg-gray-100 rounded text-xs">
                                                 {currentPage}/{totalPages}ページ
                                             </span>
                                         )}
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2">
-                                        <span className="font-medium text-gray-900 dark:text-white">
+                                        <span className="font-medium text-gray-900">
                                             {songSearchResults.length}件
                                         </span>
                                         <span>の楽曲が見つかりました</span>
                                         {filteredAndSortedMedleys.length > 0 && (
-                                            <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded text-xs">
+                                            <span className="px-2 py-1 bg-gray-100 rounded text-xs">
                                                 {filteredAndSortedMedleys.length}メドレー中
                                             </span>
                                         )}
@@ -466,7 +462,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     setGenreFilter("");
                                     setCurrentPage(1);
                                 }}
-                                className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                                className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -480,30 +476,30 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 {/* Song search results */}
                 {searchMode === "song" && songSearchResults.length > 0 && (
                     <div className="mb-8">
-                        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                        <h2 className="text-xl font-semibold text-gray-900 mb-4">
                             楽曲検索結果
                         </h2>
-                        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md overflow-hidden">
+                        <div className="bg-white rounded-lg shadow-md overflow-hidden">
                             <div className="max-h-96 overflow-y-auto">
                                 {songSearchResults.map((song, index) => (
-                                    <div key={`${song.videoId}-${song.id}`} className={`p-4 border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-750 ${index === songSearchResults.length - 1 ? 'border-b-0' : ''}`}>
+                                    <div key={`${song.videoId}-${song.id}`} className={`p-4 border-b border-gray-200 hover:bg-gray-50 ${index === songSearchResults.length - 1 ? 'border-b-0' : ''}`}>
                                         <Link 
                                             href={getSongUrl(song)}
                                             className="block"
                                         >
                                             <div className="flex justify-between items-start">
                                                 <div className="flex-1">
-                                                    <h3 className="font-medium text-gray-900 dark:text-white">
+                                                    <h3 className="font-medium text-gray-900">
                                                         {song.title}
                                                     </h3>
-                                                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                                                    <p className="text-sm text-gray-600">
                                                         {song.artist}
                                                     </p>
-                                                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                                                    <p className="text-xs text-gray-500 mt-1">
                                                         収録: {song.medleyTitle} ({song.medleyCreator})
                                                     </p>
                                                 </div>
-                                                <div className="text-right text-sm text-gray-500 dark:text-gray-500">
+                                                <div className="text-right text-sm text-gray-500">
                                                     <div>{formatTime(song.startTime)} ~ {formatTime(song.endTime)}</div>
                                                 </div>
                                             </div>
@@ -519,9 +515,9 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 {searchMode === "medley" && (
                     <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         {paginatedMedleys.map((medley) => (
-                        <div key={medley.videoId} className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-200 dark:border-gray-700">
+                        <div key={medley.videoId} className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-200">
                             <Link href={getMedleyUrl(medley)} className="block">
-                                <div className="aspect-video bg-gray-200 dark:bg-gray-700 relative overflow-hidden">
+                                <div className="aspect-video bg-gray-200 relative overflow-hidden">
                                     {medley.platform === 'youtube' ? (
                                         <img
                                             src={getYouTubeThumbnail(medley.videoId, 'maxresdefault')}
@@ -575,16 +571,16 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                 </div>
                                 
                                 <div className="p-4">
-                                    <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    <h2 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
                                         {medley.title}
                                     </h2>
-                                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-1">
+                                    <p className="text-sm text-gray-600 mb-3 line-clamp-1">
                                         {medley.creator}
                                     </p>
                                     
 
                                     {/* Metadata */}
-                                    <div className="text-xs text-gray-500 dark:text-gray-500 flex items-center gap-2">
+                                    <div className="text-xs text-gray-500 flex items-center gap-2">
                                         <span className="flex items-center gap-1">
                                             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
@@ -608,7 +604,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             <button
                                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                                 disabled={currentPage === 1}
-                                className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 ← 前
                             </button>
@@ -630,7 +626,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                                 className={`px-3 py-2 rounded ${
                                                     currentPage === page
                                                         ? "bg-blue-500 text-white"
-                                                        : "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600"
+                                                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                                                 }`}
                                             >
                                                 {page}
@@ -643,7 +639,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             <button
                                 onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                                 disabled={currentPage === totalPages}
-                                className="px-3 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 次 →
                             </button>
@@ -656,7 +652,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                   (searchMode === "song" && songSearchResults.length === 0)) && 
                  (searchTerm || genreFilter) && (
                     <div className="text-center py-12">
-                        <div className="text-gray-500 dark:text-gray-400 text-lg mb-4">
+                        <div className="text-gray-500 text-lg mb-4">
                             {searchMode === "medley" ? "検索条件に一致するメドレーが見つかりませんでした" : "検索条件に一致する楽曲が見つかりませんでした"}
                         </div>
                         <button
@@ -675,10 +671,10 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 {/* No data message */}
                 {medleys.length === 0 && (
                     <div className="text-center py-12">
-                        <div className="text-gray-500 dark:text-gray-400 text-lg mb-4">
+                        <div className="text-gray-500 text-lg mb-4">
                             メドレーデータがありません
                         </div>
-                        <p className="text-sm text-gray-400 dark:text-gray-500">
+                        <p className="text-sm text-gray-400">
                             新規メドレー登録機能を使用してメドレーを追加してください。
                         </p>
                     </div>

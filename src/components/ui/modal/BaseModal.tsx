@@ -50,7 +50,7 @@ export default function BaseModal({
       onClick={onClose}
     >
       <div
-        className={`bg-white dark:bg-gray-800 rounded-lg p-6 w-full ${maxWidthClasses[maxWidth]} mx-4 max-h-[90vh] overflow-y-auto ${className}`}
+        className={`bg-white rounded-lg p-6 w-full ${maxWidthClasses[maxWidth]} mx-4 max-h-[90vh] overflow-y-auto ${className}`}
         onClick={(e) => e.stopPropagation()}
       >
         {children}

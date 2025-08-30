@@ -8,7 +8,6 @@ import { getUserMedleys, deleteMedley } from '@/lib/api/medleys'
 import { MedleyData } from '@/types'
 import AuthModal from '@/components/features/auth/AuthModal'
 import CreateMedleyModal from '@/components/features/medley/CreateMedleyModal'
-import DarkModeToggle from '@/components/ui/DarkModeToggle'
 
 export default function MyMedleysPage() {
   const { user, loading } = useAuth()
@@ -134,7 +133,7 @@ export default function MyMedleysPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     )
@@ -143,12 +142,12 @@ export default function MyMedleysPage() {
   if (!user) {
     return (
       <>
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
               ログインが必要です
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-600 mb-6">
               マイメドレーページを表示するには、ログインしてください。
             </p>
             <button
@@ -170,7 +169,7 @@ export default function MyMedleysPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-100">
       <div className="max-w-6xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-8">
@@ -178,24 +177,22 @@ export default function MyMedleysPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                className="flex items-center text-gray-600 hover:text-orange-600 transition-colors"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 戻る
               </button>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-3xl font-bold text-gray-900">
                 マイメドレー
               </h1>
             </div>
             
             <div className="flex items-center gap-3">
-              {/* Dark mode toggle */}
-              <DarkModeToggle />
               <Link
                 href="/profile"
-                className="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -214,16 +211,16 @@ export default function MyMedleysPage() {
             </div>
           </div>
 
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-600">
             あなたが作成したメドレー一覧
           </p>
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <div className="lg:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 検索
               </label>
               <input
@@ -231,17 +228,17 @@ export default function MyMedleysPage() {
                 placeholder="メドレー名、作者名で検索..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 並び順
               </label>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="created">作成日</option>
                 <option value="updated">更新日</option>
@@ -251,13 +248,13 @@ export default function MyMedleysPage() {
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 順序
               </label>
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as typeof sortOrder)}
-                className="w-full px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 dark:text-white"
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="desc">降順</option>
                 <option value="asc">昇順</option>
@@ -267,13 +264,13 @@ export default function MyMedleysPage() {
         </div>
 
         {/* Stats */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              <div className="text-2xl font-bold text-orange-600">
                 {medleysLoading ? '-' : filteredAndSortedMedleys.length}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-gray-600">
                 {searchTerm ? '検索結果' : 'メドレー数'}
               </div>
             </div>
@@ -281,7 +278,7 @@ export default function MyMedleysPage() {
               <div className="text-2xl font-bold text-mint-600">
                 {medleysLoading ? '-' : userMedleys.reduce((total, medley) => total + medley.songs.length, 0)}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-gray-600">
                 総楽曲数
               </div>
             </div>
@@ -289,7 +286,7 @@ export default function MyMedleysPage() {
               <div className="text-2xl font-bold text-indigo-600">
                 {medleysLoading ? '-' : Math.floor(userMedleys.reduce((total, medley) => total + medley.duration, 0) / 60)}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-gray-600">
                 総再生時間(分)
               </div>
             </div>
@@ -297,7 +294,7 @@ export default function MyMedleysPage() {
               <div className="text-2xl font-bold text-blue-600">
                 {medleysLoading ? '-' : userMedleys.filter(m => m.platform === 'niconico').length}
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="text-sm text-gray-600">
                 ニコニコ動画
               </div>
             </div>
@@ -311,7 +308,7 @@ export default function MyMedleysPage() {
           </div>
         ) : filteredAndSortedMedleys.length === 0 ? (
           <div className="text-center py-12">
-            <div className="text-gray-500 dark:text-gray-400 mb-4">
+            <div className="text-gray-500 mb-4">
               {searchTerm ? '検索条件に一致するメドレーが見つかりませんでした' : 'まだメドレーを作成していません'}
             </div>
             {!searchTerm && (
@@ -328,7 +325,7 @@ export default function MyMedleysPage() {
             {filteredAndSortedMedleys.map((medley) => (
               <div
                 key={medley.id}
-                className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 hover:shadow-md transition-shadow"
+                className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex-1 min-w-0">
@@ -336,12 +333,12 @@ export default function MyMedleysPage() {
                       href={getMedleyUrl(medley)}
                       className="group block mb-2"
                     >
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors line-clamp-2">
+                      <h3 className="text-lg font-semibold text-gray-900 group-hover:text-orange-600 transition-colors line-clamp-2">
                         {medley.title}
                       </h3>
                     </Link>
                     
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-4">
                       <div className="flex items-center gap-1">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
@@ -357,15 +354,15 @@ export default function MyMedleysPage() {
                       <div className="flex items-center gap-1">
                         <span className={`px-2 py-1 text-xs rounded ${
                           medley.platform === 'youtube' 
-                            ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' 
-                            : 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+                            ? 'bg-red-100 text-red-800' 
+                            : 'bg-orange-100 text-orange-800'
                         }`}>
                           {medley.platform === 'youtube' ? 'YouTube' : 'ニコニコ'}
                         </span>
                       </div>
                     </div>
                     
-                    <div className="text-xs text-gray-500 dark:text-gray-400">
+                    <div className="text-xs text-gray-500">
                       作成: {formatDate(medley.createdAt)} • 更新: {formatDate(medley.updatedAt)}
                     </div>
                   </div>
@@ -373,7 +370,7 @@ export default function MyMedleysPage() {
                   <div className="flex items-center gap-2 ml-4">
                     <Link
                       href={getMedleyUrl(medley)}
-                      className="flex items-center px-3 py-2 text-sm bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-800 transition-colors"
+                      className="flex items-center px-3 py-2 text-sm bg-orange-100 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors"
                     >
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -382,7 +379,7 @@ export default function MyMedleysPage() {
                     </Link>
                     <button
                       onClick={() => setDeleteConfirmId(medley.id || null)}
-                      className="flex items-center px-3 py-2 text-sm bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-800 transition-colors"
+                      className="flex items-center px-3 py-2 text-sm bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                     >
                       <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -400,17 +397,17 @@ export default function MyMedleysPage() {
       {/* Delete Confirmation Modal */}
       {deleteConfirmId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
               メドレーを削除しますか？
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-600 mb-6">
               この操作は取り消せません。本当に削除しますか？
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setDeleteConfirmId(null)}
-                className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                className="flex-1 px-4 py-2 bg-gray-200 text-gray-900 rounded-lg hover:bg-gray-300 transition-colors"
                 disabled={deleteLoading}
               >
                 キャンセル

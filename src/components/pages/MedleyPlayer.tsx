@@ -616,8 +616,8 @@ export default function MedleyPlayer({
     };
 
     return (
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
-            <div className="max-w-6xl mx-auto bg-white dark:bg-gray-800 shadow-lg">
+        <div className="min-h-screen bg-gray-100">
+            <div className="max-w-6xl mx-auto bg-white shadow-lg">
                 {/* ヘッダー */}
                 <Header
                     inputVideoId={inputVideoId}
@@ -662,13 +662,13 @@ export default function MedleyPlayer({
 
                 {/* データロード状態とエラー表示 */}
                 {loading && (
-                    <div className="p-4 text-center text-gray-600 dark:text-gray-400">
+                    <div className="p-4 text-center text-gray-600">
                         メドレーデータを読み込み中...
                     </div>
                 )}
 
                 {error && (
-                    <div className="p-4 text-center text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg mx-4">
+                    <div className="p-4 text-center text-red-600 bg-red-50 border border-red-200 rounded-lg mx-4">
                         {error}
                     </div>
                 )}
@@ -717,7 +717,7 @@ export default function MedleyPlayer({
 
                 {/* メドレーデータがない場合の表示 */}
                 {!loading && !error && medleySongs.length === 0 && (
-                    <div className="p-8 text-center text-gray-600 dark:text-gray-400">
+                    <div className="p-8 text-center text-gray-600">
                         <p className="text-lg mb-2">メドレーデータが見つかりません</p>
                         <p className="text-sm">動画ID「{videoId}」のアノテーションデータが登録されていません。</p>
                     </div>

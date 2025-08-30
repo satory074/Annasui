@@ -15,7 +15,7 @@ export default function ErrorMessage({
 }: ErrorMessageProps) {
   return (
     <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center z-20">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4 shadow-lg">
+      <div className="bg-white rounded-lg p-6 max-w-md mx-4 shadow-lg">
         <div className="flex items-start space-x-3">
           <div className="flex-shrink-0">
             <svg
@@ -34,10 +34,10 @@ export default function ErrorMessage({
           </div>
           
           <div className="flex-1">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white">
+            <h3 className="text-sm font-medium text-gray-900">
               {title}
             </h3>
-            <div className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+            <div className="mt-2 text-sm text-gray-600">
               <p>{message}</p>
             </div>
             
@@ -54,7 +54,7 @@ export default function ErrorMessage({
               {onDismiss && (
                 <button
                   onClick={onDismiss}
-                  className="bg-gray-300 hover:bg-gray-400 dark:bg-gray-600 dark:hover:bg-gray-500 text-gray-800 dark:text-white text-sm px-4 py-2 rounded transition-colors"
+                  className="bg-gray-300 hover:bg-gray-400 text-gray-800 text-sm px-4 py-2 rounded transition-colors"
                 >
                   閉じる
                 </button>

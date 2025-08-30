@@ -56,7 +56,7 @@ export default function UserProfileDropdown() {
       <>
         <button
           onClick={() => setIsAuthModalOpen(true)}
-          className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+          className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-orange-600 transition-colors"
         >
           <svg 
             className="w-5 h-5 mr-1" 
@@ -90,10 +90,10 @@ export default function UserProfileDropdown() {
     <div className="relative" ref={dropdownRef}>
       <button
         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-        className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        className="flex items-center space-x-2 p-1 rounded-full hover:bg-gray-100 transition-colors"
       >
         <UserAvatar user={user} size="md" />
-        <span className="hidden sm:block text-sm font-medium text-gray-700 dark:text-gray-200">
+        <span className="hidden sm:block text-sm font-medium text-gray-700">
           {displayName}
         </span>
         <svg 
@@ -107,16 +107,16 @@ export default function UserProfileDropdown() {
       </button>
 
       {isDropdownOpen && (
-        <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
           {/* User Info */}
-          <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-4 py-3 border-b border-gray-200">
             <div className="flex items-center space-x-3">
               <UserAvatar user={user} size="lg" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                <p className="text-sm font-medium text-gray-900 truncate">
                   {displayName}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                <p className="text-xs text-gray-500 truncate">
                   {user.email}
                 </p>
               </div>
@@ -126,7 +126,7 @@ export default function UserProfileDropdown() {
           {/* Menu Items */}
           <div className="py-1">
             <button
-              className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               onClick={() => {
                 setIsDropdownOpen(false)
                 router.push('/profile')
@@ -139,7 +139,7 @@ export default function UserProfileDropdown() {
             </button>
 
             <button
-              className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               onClick={() => {
                 setIsDropdownOpen(false)
                 router.push('/my-medleys')
@@ -152,7 +152,7 @@ export default function UserProfileDropdown() {
             </button>
 
             <button
-              className="w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              className="w-full flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
               onClick={() => {
                 setIsDropdownOpen(false)
                 router.push('/settings')
@@ -167,11 +167,11 @@ export default function UserProfileDropdown() {
           </div>
 
           {/* Sign Out */}
-          <div className="border-t border-gray-200 dark:border-gray-700 py-1">
+          <div className="border-t border-gray-200 py-1">
             <button
               onClick={handleSignOut}
               disabled={isSigningOut}
-              className="w-full flex items-center px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+              className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
             >
               {isSigningOut ? (
                 <>

@@ -331,7 +331,7 @@ export default function SongEditModal({
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="md">
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+        <h2 className="text-xl font-bold mb-4 text-gray-900">
           {isNew ? (isFromDatabase ? "楽曲DBから追加" : "楽曲を追加") : "楽曲を編集"}
         </h2>
         
@@ -349,13 +349,13 @@ export default function SongEditModal({
                 showTimeCodes={false}
               />
             </div>
-            <p className="text-sm text-blue-800 dark:text-blue-200 mt-2 text-center">
+            <p className="text-sm text-blue-800 mt-2 text-center">
               {isFromDatabase && isNew 
                 ? "楽曲データベースから選択されました。開始時間と終了時間を設定してください。"
                 : "楽曲情報を確認し、開始時間と終了時間を編集してください。"
               }
               {onSelectSong && (
-                <span className="block text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <span className="block text-xs text-gray-600 mt-1">
                   💡 楽曲情報をクリックして楽曲を変更できます
                 </span>
               )}
@@ -369,15 +369,15 @@ export default function SongEditModal({
             <>
               {/* 楽曲名 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   楽曲名 <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white ${
-                    errors.title ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
+                    errors.title ? 'border-red-500' : 'border-gray-300'
                   }`}
                   placeholder="楽曲名を入力"
                 />
@@ -388,14 +388,14 @@ export default function SongEditModal({
 
               {/* アーティスト名 */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   アーティスト名
                 </label>
                 <input
                   type="text"
                   value={formData.artist}
                   onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
                   placeholder="アーティスト名を入力"
                 />
               </div>
@@ -427,12 +427,12 @@ export default function SongEditModal({
           {isNew && !isFromDatabase && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   配信プラットフォーム
                 </label>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
                       🎬 ニコニコ動画
                     </label>
                     <input
@@ -442,13 +442,13 @@ export default function SongEditModal({
                         ...formData, 
                         links: { ...formData.links, niconico: e.target.value }
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
                       placeholder="https://www.nicovideo.jp/watch/sm..."
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
                       📺 YouTube
                     </label>
                     <input
@@ -458,13 +458,13 @@ export default function SongEditModal({
                         ...formData, 
                         links: { ...formData.links, youtube: e.target.value }
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
                       placeholder="https://www.youtube.com/watch?v=..."
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
                       🎵 Spotify
                     </label>
                     <input
@@ -474,13 +474,13 @@ export default function SongEditModal({
                         ...formData, 
                         links: { ...formData.links, spotify: e.target.value }
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
                       placeholder="https://open.spotify.com/track/..."
                     />
                   </div>
                   
                   <div>
-                    <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
+                    <label className="block text-xs font-medium text-gray-600 mb-1">
                       🍎 Apple Music
                     </label>
                     <input
@@ -490,7 +490,7 @@ export default function SongEditModal({
                         ...formData, 
                         links: { ...formData.links, appleMusic: e.target.value }
                       })}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
                       placeholder="https://music.apple.com/..."
                     />
                   </div>
@@ -500,14 +500,14 @@ export default function SongEditModal({
               {/* 後方互換性のための元動画リンク（非表示にしても内部で使用） */}
               {formData.originalLink && !formData.links?.niconico && !formData.links?.youtube && !formData.links?.spotify && !formData.links?.appleMusic && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     元動画リンク（従来）
                   </label>
                   <input
                     type="url"
                     value={formData.originalLink || ""}
                     onChange={(e) => setFormData({ ...formData, originalLink: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
                     placeholder="https://..."
                   />
                 </div>
@@ -518,8 +518,8 @@ export default function SongEditModal({
 
         {/* 連続入力モードトグル（新規追加時のみ） */}
         {isNew && onToggleContinuousMode && (
-          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+          <div className="mt-4 p-3 bg-gray-50 rounded-md">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
               <input
                 type="checkbox"
                 checked={continuousMode}
@@ -535,19 +535,19 @@ export default function SongEditModal({
         {song && !isNew && (() => {
           const duplicateInfo = getDuplicateInfo(song, allSongs);
           return duplicateInfo && duplicateInfo.totalInstances > 1 ? (
-            <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-md">
+            <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
               <div className="flex items-start gap-3">
                 <svg className="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                 </svg>
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-amber-700 dark:text-amber-300 mb-2">
+                  <p className="text-sm font-medium text-amber-700 mb-2">
                     重複楽曲が検出されました
                   </p>
-                  <p className="text-xs text-amber-600 dark:text-amber-400 mb-3">
+                  <p className="text-xs text-amber-600 mb-3">
                     この楽曲は {duplicateInfo.totalInstances} 回登場します。楽曲情報を全てのインスタンスに適用できます。
                   </p>
-                  <label className="flex items-center gap-2 text-sm text-amber-700 dark:text-amber-300">
+                  <label className="flex items-center gap-2 text-sm text-amber-700">
                     <input
                       type="checkbox"
                       checked={applyToAllInstances}

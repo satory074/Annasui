@@ -10,15 +10,15 @@ interface VideoInfoProps {
 export default function VideoInfo({ videoInfo }: VideoInfoProps) {
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-6 border-b border-gray-200 dark:border-gray-700">
+    <div className="bg-white p-6 border-b border-gray-200">
       <div className="max-w-4xl mx-auto">
         {/* メインタイトルとメタデータ */}
         <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
             {videoInfo?.title || `ニコニコ動画 - ${videoInfo?.videoId || 'Loading...'}`}
           </h1>
           
-          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-300">
+          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
             <span className="flex items-center gap-1">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
@@ -74,7 +74,7 @@ export default function VideoInfo({ videoInfo }: VideoInfoProps) {
 
         {/* 説明文 */}
         {videoInfo?.description && (
-          <div className="text-sm text-gray-700 dark:text-gray-300">
+          <div className="text-sm text-gray-700">
             <p className="line-clamp-3 hover:line-clamp-none transition-all duration-200 cursor-pointer">
               {videoInfo.description}
             </p>

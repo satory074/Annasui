@@ -10,25 +10,7 @@ export default function SettingsPage() {
   const { user, loading, signOut } = useAuth()
   const router = useRouter()
   const [showAuthModal, setShowAuthModal] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
-
-  // Initialize dark mode from localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedDarkMode = localStorage.getItem('darkMode')
-      const systemDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const shouldUseDarkMode = savedDarkMode ? savedDarkMode === 'true' : systemDarkMode
-      
-      setDarkMode(shouldUseDarkMode)
-      
-      if (shouldUseDarkMode) {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
-    }
-  }, [])
 
   // Check authentication
   useEffect(() => {
@@ -39,21 +21,6 @@ export default function SettingsPage() {
       return
     }
   }, [user, loading])
-
-  const handleDarkModeToggle = () => {
-    const newDarkMode = !darkMode
-    setDarkMode(newDarkMode)
-    
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('darkMode', newDarkMode.toString())
-      
-      if (newDarkMode) {
-        document.documentElement.classList.add('dark')
-      } else {
-        document.documentElement.classList.remove('dark')
-      }
-    }
-  }
 
   const handleSignOut = async () => {
     setIsSigningOut(true)
@@ -82,7 +49,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     )
@@ -91,12 +58,12 @@ export default function SettingsPage() {
   if (!user) {
     return (
       <>
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
               ログインが必要です
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-600 mb-6">
               設定ページを表示するには、ログインしてください。
             </p>
             <button
@@ -118,7 +85,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-100">
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-8">
@@ -126,199 +93,71 @@ export default function SettingsPage() {
             <div className="flex items-center gap-4">
               <button
                 onClick={() => router.back()}
-                className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                className="flex items-center text-gray-600 hover:text-orange-600 transition-colors"
               >
                 <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
                 戻る
               </button>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-3xl font-bold text-gray-900">
                 設定
               </h1>
             </div>
           </div>
 
-          <p className="text-gray-600 dark:text-gray-400">
-            アカウント設定と表示設定を管理
+          <p className="text-gray-600">
+            アカウント設定を管理
           </p>
         </div>
 
         <div className="space-y-6">
           {/* Account Settings */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                アカウント情報
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                アカウント
               </h2>
+              <p className="text-sm text-gray-600">
+                ログイン情報とプロフィール設定
+              </p>
             </div>
+            
             <div className="p-6">
-              <div className="flex items-start space-x-6">
-                <UserAvatar user={user} size="xl" />
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      表示名
-                    </label>
-                    <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white">
-                      {displayName}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      メールアドレス
-                    </label>
-                    <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white">
-                      {user.email}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      認証プロバイダ
-                    </label>
-                    <div className="flex items-center px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white">
-                      {providerIcon}
-                      <span className="ml-2 capitalize">
-                        {provider === 'github' ? 'GitHub' : provider === 'google' ? 'Google' : provider}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      登録日
-                    </label>
-                    <div className="px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white">
-                      {new Date(user.created_at || '').toLocaleDateString('ja-JP', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </div>
+              <div className="flex items-center space-x-4">
+                <UserAvatar
+                  user={user}
+                  size="lg"
+                />
+                
+                <div className="flex-1">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {displayName}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    {user.email}
+                  </p>
+                  <div className="flex items-center mt-2">
+                    {providerIcon}
+                    <span className="ml-2 text-xs text-gray-500 capitalize">
+                      {provider} でログイン
+                    </span>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Display Settings */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                表示設定
-              </h2>
-            </div>
-            <div className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <label className="text-sm font-medium text-gray-900 dark:text-white">
-                      ダークモード
-                    </label>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
-                      アプリの表示テーマを切り替えます
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleDarkModeToggle}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${
-                      darkMode ? 'bg-orange-600' : 'bg-gray-200'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        darkMode ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Navigation Links */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                ナビゲーション
-              </h2>
-            </div>
-            <div className="p-6">
-              <div className="space-y-2">
+              
+              <div className="mt-6 pt-6 border-t border-gray-200">
                 <button
-                  onClick={() => router.push('/profile')}
-                  className="w-full flex items-center justify-between p-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                  onClick={handleSignOut}
+                  disabled={isSigningOut}
+                  className="flex items-center px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                    プロフィール
-                  </div>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                   </svg>
-                </button>
-                <button
-                  onClick={() => router.push('/my-medleys')}
-                  className="w-full flex items-center justify-between p-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-                    </svg>
-                    マイメドレー
-                  </div>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </button>
-                <button
-                  onClick={() => router.push('/')}
-                  className="w-full flex items-center justify-between p-3 text-left text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-                >
-                  <div className="flex items-center">
-                    <svg className="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                    </svg>
-                    ホーム
-                  </div>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
+                  {isSigningOut ? 'ログアウト中...' : 'ログアウト'}
                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* Account Actions */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                アカウント操作
-              </h2>
-            </div>
-            <div className="p-6">
-              <button
-                onClick={handleSignOut}
-                disabled={isSigningOut}
-                className="flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50"
-              >
-                {isSigningOut ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    ログアウト中...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                    ログアウト
-                  </>
-                )}
-              </button>
             </div>
           </div>
         </div>

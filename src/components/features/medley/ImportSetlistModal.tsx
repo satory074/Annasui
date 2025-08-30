@@ -143,15 +143,15 @@ export default function ImportSetlistModal({
 
   return (
     <BaseModal isOpen={isOpen} onClose={handleClose} maxWidth="lg">
-      <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+      <h2 className="text-xl font-bold mb-4 text-gray-900">
         セットリストインポート
       </h2>
       
       <div className="space-y-4">
         {/* 説明 */}
-        <div className="p-3 bg-blue-50 dark:bg-blue-900/30 rounded-md">
-          <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">サポートする形式:</h3>
-          <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+        <div className="p-3 bg-blue-50 rounded-md">
+          <h3 className="font-medium text-blue-900 mb-2">サポートする形式:</h3>
+          <ul className="text-sm text-blue-800 space-y-1">
             <li>• <code>MM:SS 楽曲名 / アーティスト名</code></li>
             <li>• <code>MM:SS 楽曲名 - アーティスト名</code></li>
             <li>• <code>MM:SS 楽曲名</code></li>
@@ -160,14 +160,14 @@ export default function ImportSetlistModal({
 
         {/* テキストエリア */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
             セットリスト
           </label>
           <textarea
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
             placeholder={`例:\n${sampleText}`}
-            className="w-full h-32 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white font-mono text-sm"
+            className="w-full h-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
           />
         </div>
 
@@ -182,34 +182,34 @@ export default function ImportSetlistModal({
 
         {/* エラー表示 */}
         {parseError && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 rounded-md">
-            <p className="text-red-800 dark:text-red-200 text-sm">{parseError}</p>
+          <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+            <p className="text-red-800 text-sm">{parseError}</p>
           </div>
         )}
 
         {/* プレビュー表示 */}
         {previewSongs.length > 0 && (
-          <div className="max-h-60 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-md">
-            <div className="p-3 bg-gray-50 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-600">
-              <h3 className="font-medium text-gray-900 dark:text-white">
+          <div className="max-h-60 overflow-y-auto border border-gray-300 rounded-md">
+            <div className="p-3 bg-gray-50 border-b border-gray-300">
+              <h3 className="font-medium text-gray-900">
                 プレビュー ({previewSongs.length}曲)
               </h3>
             </div>
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="divide-y divide-gray-200">
               {previewSongs.map((entry, index) => (
                 <div key={index} className="p-3">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900 dark:text-white">
+                      <h4 className="font-medium text-gray-900">
                         {entry.title}
                       </h4>
                       {entry.artist && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-gray-600">
                           {entry.artist}
                         </p>
                       )}
                     </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                    <div className="text-sm text-gray-500">
                       {entry.time} ~ {Math.floor((entry.endTime || 0) / 60)}:{String((entry.endTime || 0) % 60).padStart(2, '0')}
                     </div>
                   </div>

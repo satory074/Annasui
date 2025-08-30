@@ -58,7 +58,7 @@ export default function SongTimeControls({
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
         {label} <span className="text-red-500">*</span>
       </label>
       <div className="flex gap-2">
@@ -66,8 +66,8 @@ export default function SongTimeControls({
           type="text"
           value={formatTimeSimple(value)}
           onChange={handleInputChange}
-          className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white ${
-            error ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+          className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
+            error ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder={placeholder}
         />

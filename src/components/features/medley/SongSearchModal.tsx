@@ -141,7 +141,7 @@ export default function SongSearchModal({
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="xl">
         {/* ヘッダー */}
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+        <h2 className="text-xl font-bold mb-4 text-gray-900">
           楽曲を選択
         </h2>
         
@@ -152,7 +152,7 @@ export default function SongSearchModal({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="楽曲名またはアーティスト名で検索..."
-            className="w-full px-4 py-2 pr-10 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
+            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-600"
             autoFocus
           />
           <svg 
@@ -166,7 +166,7 @@ export default function SongSearchModal({
         </div>
         
         {/* 結果件数 */}
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-sm text-gray-600 mb-4">
           {searchResults.length}件の楽曲が見つかりました
         </p>
 
@@ -182,8 +182,8 @@ export default function SongSearchModal({
                   key={song.id}
                   className={`border rounded-lg transition-colors p-3 ${
                     isEditing 
-                      ? 'border-orange-600 bg-orange-50 dark:bg-orange-900/20' 
-                      : 'border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                      ? 'border-orange-600 bg-orange-50' 
+                      : 'border-gray-200 hover:bg-gray-50'
                   }`}
                 >
                   {isEditing ? (
@@ -192,35 +192,35 @@ export default function SongSearchModal({
                       {/* 基本情報編集 */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             楽曲名
                           </label>
                           <input
                             type="text"
                             value={editFormData?.title || ''}
                             onChange={(e) => handleFormChange('title', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
                             アーティスト名
                           </label>
                           <input
                             type="text"
                             value={editFormData?.artist || ''}
                             onChange={(e) => handleFormChange('artist', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
                           />
                         </div>
                       </div>
 
                       {/* プラットフォームリンク編集 */}
                       <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">配信プラットフォーム</h4>
+                        <h4 className="text-sm font-medium text-gray-700">配信プラットフォーム</h4>
                         <div className="grid grid-cols-1 gap-3">
                           <div>
-                            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <label className="block text-xs text-gray-600 mb-1">
                               🎬 ニコニコ動画
                             </label>
                             <input
@@ -228,11 +228,11 @@ export default function SongSearchModal({
                               value={editFormData?.links?.niconico || ''}
                               onChange={(e) => handleFormChange('links.niconico', e.target.value)}
                               placeholder="https://www.nicovideo.jp/watch/..."
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <label className="block text-xs text-gray-600 mb-1">
                               📺 YouTube
                             </label>
                             <input
@@ -240,11 +240,11 @@ export default function SongSearchModal({
                               value={editFormData?.links?.youtube || ''}
                               onChange={(e) => handleFormChange('links.youtube', e.target.value)}
                               placeholder="https://www.youtube.com/watch?v=..."
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <label className="block text-xs text-gray-600 mb-1">
                               🎵 Spotify
                             </label>
                             <input
@@ -252,11 +252,11 @@ export default function SongSearchModal({
                               value={editFormData?.links?.spotify || ''}
                               onChange={(e) => handleFormChange('links.spotify', e.target.value)}
                               placeholder="https://open.spotify.com/track/..."
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
                           </div>
                           <div>
-                            <label className="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+                            <label className="block text-xs text-gray-600 mb-1">
                               🍎 Apple Music
                             </label>
                             <input
@@ -264,7 +264,7 @@ export default function SongSearchModal({
                               value={editFormData?.links?.appleMusic || ''}
                               onChange={(e) => handleFormChange('links.appleMusic', e.target.value)}
                               placeholder="https://music.apple.com/..."
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 dark:bg-gray-700 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
                           </div>
                         </div>
@@ -333,7 +333,7 @@ export default function SongSearchModal({
             
             {/* 検索結果がない場合 */}
             {searchResults.length === 0 && searchTerm && (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+              <div className="text-center py-8 text-gray-500">
                 <p className="mb-4">「{searchTerm}」に一致する楽曲が見つかりませんでした</p>
                 <button
                   onClick={onManualAdd}
@@ -347,7 +347,7 @@ export default function SongSearchModal({
         </div>
 
         {/* フッター */}
-        <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-4 flex justify-between">
+        <div className="border-t border-gray-200 pt-4 mt-4 flex justify-between">
           <button
             onClick={onManualAdd}
             className="px-4 py-2 bg-mint-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-2 focus:ring-mint-600"

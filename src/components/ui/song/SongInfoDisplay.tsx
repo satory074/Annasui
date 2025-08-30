@@ -45,7 +45,7 @@ function PlatformLinks({ song, variant = "detailed" }: {
   if (variant === "compact") {
     return (
       <div>
-        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">配信</div>
+        <div className="text-xs text-gray-500 mb-1">配信</div>
         <div className="flex flex-wrap gap-1">
           {links.map(({ platform, url }, index) => {
             const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
@@ -73,7 +73,7 @@ function PlatformLinks({ song, variant = "detailed" }: {
 
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+      <label className="block text-sm font-medium text-gray-700 mb-1">
         配信プラットフォーム
       </label>
       <div className="flex flex-wrap gap-2">
@@ -85,7 +85,7 @@ function PlatformLinks({ song, variant = "detailed" }: {
               href={url}
               target="_blank"
               rel="noopener noreferrer"
-              className={`inline-flex items-center gap-1 px-2 py-1 text-sm ${config.color} bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors`}
+              className={`inline-flex items-center gap-1 px-2 py-1 text-sm ${config.color} bg-gray-100 rounded-md hover:bg-gray-200 transition-colors`}
               onClick={(e) => {
                 e.stopPropagation(); // 親要素へのイベント伝播を防ぐ
               }}
@@ -136,20 +136,20 @@ export default function SongInfoDisplay({
               links={song.links}
             />
           )}
-          <div className="text-sm text-gray-600 dark:text-gray-400 font-medium">楽曲詳細</div>
+          <div className="text-sm text-gray-600 font-medium">楽曲詳細</div>
         </div>
 
         <div className="space-y-3">
           <div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">楽曲名</div>
-            <div className="text-sm font-semibold text-gray-900 dark:text-white break-words">
+            <div className="text-xs text-gray-500 mb-1">楽曲名</div>
+            <div className="text-sm font-semibold text-gray-900 break-words">
               {song.title}
             </div>
           </div>
 
           <div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">アーティスト</div>
-            <div className="text-sm text-gray-900 dark:text-white break-words">
+            <div className="text-xs text-gray-500 mb-1">アーティスト</div>
+            <div className="text-sm text-gray-900 break-words">
               {song.artist || "未設定"}
             </div>
           </div>
@@ -157,20 +157,20 @@ export default function SongInfoDisplay({
           {showTimeCodes && (
             <div className="grid grid-cols-3 gap-2 text-xs">
               <div>
-                <div className="text-gray-500 dark:text-gray-400 mb-1">開始</div>
-                <div className="font-mono text-gray-900 dark:text-white">
+                <div className="text-gray-500 mb-1">開始</div>
+                <div className="font-mono text-gray-900">
                   {formatTime(song.startTime)}
                 </div>
               </div>
               <div>
-                <div className="text-gray-500 dark:text-gray-400 mb-1">終了</div>
-                <div className="font-mono text-gray-900 dark:text-white">
+                <div className="text-gray-500 mb-1">終了</div>
+                <div className="font-mono text-gray-900">
                   {formatTime(song.endTime)}
                 </div>
               </div>
               <div>
-                <div className="text-gray-500 dark:text-gray-400 mb-1">時間</div>
-                <div className="font-mono text-gray-900 dark:text-white">
+                <div className="text-gray-500 mb-1">時間</div>
+                <div className="font-mono text-gray-900">
                   {formatDuration(song.startTime, song.endTime)}
                 </div>
               </div>
@@ -183,7 +183,7 @@ export default function SongInfoDisplay({
         </div>
 
         {onSeek && (
-          <div className="pt-3 border-t border-gray-200 dark:border-gray-600">
+          <div className="pt-3 border-t border-gray-200">
             <button
               onClick={handlePlayFromHere}
               className="w-full px-3 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center gap-2 transition-colors"
@@ -201,7 +201,7 @@ export default function SongInfoDisplay({
 
   if (variant === "card") {
     return (
-      <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800 flex gap-4">
+      <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex gap-4">
         {showThumbnail && (
           <SongThumbnail
             originalLink={song.originalLink}
@@ -212,10 +212,10 @@ export default function SongInfoDisplay({
         )}
         
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-gray-900 dark:text-white text-lg mb-1 truncate">
+          <h3 className="font-semibold text-gray-900 text-lg mb-1 truncate">
             {song.title}
           </h3>
-          <p className="text-gray-600 dark:text-gray-400 text-sm mb-3 truncate">
+          <p className="text-gray-600 text-sm mb-3 truncate">
             {song.artist}
           </p>
           
@@ -243,19 +243,19 @@ export default function SongInfoDisplay({
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           楽曲名
         </label>
-        <p className="text-lg font-semibold text-gray-900 dark:text-white">
+        <p className="text-lg font-semibold text-gray-900">
           {song.title}
         </p>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1">
           アーティスト
         </label>
-        <p className="text-gray-900 dark:text-white">
+        <p className="text-gray-900">
           {song.artist || "未設定"}
         </p>
       </div>
@@ -263,26 +263,26 @@ export default function SongInfoDisplay({
       {showTimeCodes && (
         <div className="grid grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               開始時間
             </label>
-            <p className="text-gray-900 dark:text-white font-mono">
+            <p className="text-gray-900 font-mono">
               {formatTime(song.startTime)}
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               終了時間
             </label>
-            <p className="text-gray-900 dark:text-white font-mono">
+            <p className="text-gray-900 font-mono">
               {formatTime(song.endTime)}
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
               演奏時間
             </label>
-            <p className="text-gray-900 dark:text-white font-mono">
+            <p className="text-gray-900 font-mono">
               {formatDuration(song.startTime, song.endTime)}
             </p>
           </div>

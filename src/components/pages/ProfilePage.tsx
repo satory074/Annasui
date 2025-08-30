@@ -7,7 +7,6 @@ import { getUserMedleys } from '@/lib/api/medleys'
 import { MedleyData } from '@/types'
 import UserAvatar from '@/components/ui/user/UserAvatar'
 import AuthModal from '@/components/features/auth/AuthModal'
-import DarkModeToggle from '@/components/ui/DarkModeToggle'
 
 export default function ProfilePage() {
   const { user, loading } = useAuth()
@@ -54,7 +53,7 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
       </div>
     )
@@ -63,12 +62,12 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <>
-        <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">
               ログインが必要です
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-gray-600 mb-6">
               プロフィールページを表示するには、ログインしてください。
             </p>
             <button
@@ -90,14 +89,14 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-100">
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <button
               onClick={() => router.back()}
-              className="flex items-center text-gray-600 dark:text-gray-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+              className="flex items-center text-gray-600 hover:text-orange-600 transition-colors"
             >
               <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -105,11 +104,9 @@ export default function ProfilePage() {
               戻る
             </button>
             <div className="flex items-center gap-3">
-              {/* Dark mode toggle */}
-              <DarkModeToggle />
               <button
                 onClick={() => router.push('/settings')}
-                className="flex items-center px-4 py-2 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-200 rounded-lg transition-colors"
               >
                 <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -120,40 +117,40 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             プロフィール
           </h1>
         </div>
 
         {/* Profile Info Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mb-8">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex items-center space-x-6">
             <UserAvatar user={user} size="xl" />
             <div className="flex-1">
-              <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
+              <h2 className="text-2xl font-semibold text-gray-900 mb-1">
                 {displayName}
               </h2>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-gray-600 mb-4">
                 {user.email}
               </p>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-                <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-600">
                     {medleysLoading ? '-' : userMedleys.length}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-gray-600">
                     作成メドレー数
                   </div>
                 </div>
-                <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
                   <div className="text-2xl font-bold text-mint-600">
                     {medleysLoading ? '-' : userMedleys.reduce((total, medley) => total + medley.songs.length, 0)}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-gray-600">
                     総楽曲数
                   </div>
                 </div>
-                <div className="text-center p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
                   <div className="text-2xl font-bold text-indigo-600">
                     {new Date(user.created_at || '').toLocaleDateString('ja-JP', {
                       year: 'numeric',
@@ -161,7 +158,7 @@ export default function ProfilePage() {
                       day: 'numeric'
                     })}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
+                  <div className="text-sm text-gray-600">
                     登録日
                   </div>
                 </div>
@@ -171,14 +168,14 @@ export default function ProfilePage() {
         </div>
 
         {/* My Medleys Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
+            <h3 className="text-xl font-semibold text-gray-900">
               マイメドレー
             </h3>
             <button
               onClick={() => router.push('/my-medleys')}
-              className="text-orange-600 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300 text-sm font-medium transition-colors"
+              className="text-orange-600 hover:text-orange-700 text-sm font-medium transition-colors"
             >
               すべて表示 →
             </button>
@@ -190,7 +187,7 @@ export default function ProfilePage() {
             </div>
           ) : userMedleys.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-gray-500 dark:text-gray-400 mb-4">
+              <div className="text-gray-500 mb-4">
                 まだメドレーを作成していません
               </div>
               <button
@@ -205,10 +202,10 @@ export default function ProfilePage() {
               {userMedleys.slice(0, 6).map((medley) => (
                 <div
                   key={medley.id}
-                  className="group bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden hover:shadow-md transition-all duration-200"
+                  className="group bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-all duration-200"
                 >
                   <a href={getMedleyUrl(medley)} className="block">
-                    <div className="aspect-video bg-gray-200 dark:bg-gray-600 relative overflow-hidden">
+                    <div className="aspect-video bg-gray-200 relative overflow-hidden">
                       {medley.platform === 'youtube' ? (
                         <img
                           src={`https://img.youtube.com/vi/${medley.videoId}/maxresdefault.jpg`}
@@ -248,10 +245,10 @@ export default function ProfilePage() {
                     </div>
                     
                     <div className="p-3">
-                      <h4 className="font-medium text-gray-900 dark:text-white text-sm line-clamp-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                      <h4 className="font-medium text-gray-900 text-sm line-clamp-2 group-hover:text-orange-600 transition-colors">
                         {medley.title}
                       </h4>
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      <p className="text-xs text-gray-600 mt-1">
                         {medley.songs.length}曲 • {formatDuration(medley.duration)}
                       </p>
                     </div>

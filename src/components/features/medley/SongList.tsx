@@ -449,33 +449,33 @@ export default function SongList({
   const currentSongs = getCurrentSongs();
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900">
+    <div className="bg-gray-50">
       {/* 統一スティッキーコントロールヘッダー */}
-      <div className="sticky top-0 z-50 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
         {/* セクション1: 再生ステータス + 共有エリア */}
-        <div className="px-3 py-2 bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
           {/* メドレータイトルと制作者 */}
           {(medleyTitle || medleyCreator) && (
-            <div className="mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">
+            <div className="mb-2 border-b border-gray-200 pb-2">
               {medleyTitle && (
                 originalVideoUrl ? (
                   <a
                     href={originalVideoUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-lg font-bold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-600 hover:underline cursor-pointer transition-colors"
+                    className="text-lg font-bold text-gray-900 hover:text-orange-600 hover:underline cursor-pointer transition-colors"
                     title="元動画を見る"
                   >
                     {medleyTitle}
                   </a>
                 ) : (
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-lg font-bold text-gray-900">
                     {medleyTitle}
                   </h2>
                 )
               )}
               {medleyCreator && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center">
+                <p className="text-sm text-gray-600 flex items-center">
                   <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                   </svg>
@@ -496,21 +496,21 @@ export default function SongList({
                   size="sm"
                 />
               )}
-              <h3 className="text-xs font-medium text-gray-700 dark:text-gray-300">
+              <h3 className="text-xs font-medium text-gray-700">
                 {formatTime(currentTime)} / {formatTime(actualPlayerDuration || duration)}
                 {actualPlayerDuration && actualPlayerDuration !== duration && (
-                  <span className="ml-2 text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/30 px-1.5 py-0.5 rounded" title={`設定値: ${formatTime(duration)}`}>
+                  <span className="ml-2 text-xs text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded" title={`設定値: ${formatTime(duration)}`}>
                     ⚠️ 長さ不一致
                   </span>
                 )}
                 {isEditMode && selectedSong && (
-                  <span className="ml-2 text-xs text-mint-600 dark:text-mint-600">「{selectedSong.title}」選択中</span>
+                  <span className="ml-2 text-xs text-mint-600">「{selectedSong.title}」選択中</span>
                 )}
                 {isEditMode && (isPressingS || isPressingE || isPressingM) && (
                   <span className={`ml-2 text-xs font-medium animate-pulse ${
-                    isPressingS ? 'text-orange-600 dark:text-orange-600' :
-                    isPressingE ? 'text-mint-600 dark:text-mint-600' :
-                    'text-indigo-600 dark:text-purple-400'
+                    isPressingS ? 'text-orange-600' :
+                    isPressingE ? 'text-mint-600' :
+                    'text-indigo-600'
                   }`}>
                     {isPressingS ? '開始時刻設定中...' :
                      isPressingE ? '終了時刻設定中...' :
@@ -518,7 +518,7 @@ export default function SongList({
                   </span>
                 )}
                 {currentSongs.length > 1 && (
-                  <span className="ml-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-100 dark:bg-orange-900/30 px-1.5 py-0.5 rounded">
+                  <span className="ml-2 text-xs text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded">
                     マッシュアップ: {currentSongs.length}曲
                   </span>
                 )}
@@ -547,7 +547,7 @@ export default function SongList({
         </div>
 
         {/* セクション2: 編集コントロール */}
-        <div className="px-3 py-2 bg-gray-100 dark:bg-gray-800">
+        <div className="px-3 py-2 bg-gray-100">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
               <button
@@ -596,14 +596,14 @@ export default function SongList({
                     </button>
                   </div>
                   {hasChanges && (
-                    <span className="text-xs text-orange-600 dark:text-orange-400">
+                    <span className="text-xs text-orange-600">
                       未保存の変更があります
                     </span>
                   )}
-                  <div className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                    キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>S</kbd>開始時刻 
-                    <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-mint-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>E</kbd>終了時刻 
-                    <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-indigo-600 text-white animate-pulse' : 'bg-gray-200 dark:bg-gray-600'}`}>M</kbd>マーカー追加
+                  <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200'}`}>S</kbd>開始時刻 
+                    <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-mint-600 text-white animate-pulse' : 'bg-gray-200'}`}>E</kbd>終了時刻 
+                    <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-indigo-600 text-white animate-pulse' : 'bg-gray-200'}`}>M</kbd>マーカー追加
                   </div>
                 </>
               )}
@@ -646,10 +646,10 @@ export default function SongList({
                   key={song.id}
                   className={`relative p-1 rounded-lg border transition-all ${
                     isBeyondActualDuration
-                      ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-60"
+                      ? "bg-red-50 border-red-200 opacity-60"
                       : isCurrentlyPlaying
-                      ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                      : "bg-white dark:bg-slate-800 border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-700/50"
+                      ? "bg-blue-50 border-blue-200"
+                      : "bg-white border-gray-200 hover:bg-gray-50"
                   }`}
                 >
 
@@ -657,8 +657,8 @@ export default function SongList({
                   <div 
                     className={`timeline-container relative w-full h-8 ml-0 transition-colors ${
                       false
-                        ? 'bg-blue-100 dark:bg-blue-900/20 shadow-inner'
-                        : 'bg-blue-50 dark:bg-blue-900/10'
+                        ? 'bg-blue-100 shadow-inner'
+                        : 'bg-blue-50'
                     }`}
                     onClick={handleTimelineClick}
                   >
@@ -667,7 +667,7 @@ export default function SongList({
                       {Array.from({ length: 11 }).map((_, i) => (
                         <div 
                           key={i} 
-                          className="border-l border-gray-200 dark:border-gray-700 opacity-50" 
+                          className="border-l border-gray-200 opacity-50" 
                           style={{ left: `${(i / 10) * 100}%` }}
                         />
                       ))}
@@ -677,7 +677,7 @@ export default function SongList({
                     <div
                       className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 ${
                         isBeyondActualDuration 
-                          ? 'bg-red-400 dark:bg-red-500 opacity-50' 
+                          ? 'bg-red-400 opacity-50' 
                           : 'bg-gradient-to-r from-orange-600 to-indigo-600'
                       } ${
                         hasOverlap ? 'opacity-80' : ''
@@ -701,7 +701,7 @@ export default function SongList({
                       onMouseLeave={handleSongLeave}
                       title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで再生'}`}
                     >
-                      <div className="text-xs text-gray-800 dark:text-gray-200 font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1"
+                      <div className="text-xs text-gray-800 font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1"
                            style={{
                              // タイトルをバーの幅を超えても表示（オーバーフロー許可）
                              overflow: 'visible',
@@ -748,10 +748,10 @@ export default function SongList({
                       {/* 編集ボタン（常時表示） */}
                       <button
                         onClick={() => onEditSong?.(song)}
-                        className={`p-0.5 rounded transition-colors bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 ${
+                        className={`p-0.5 rounded transition-colors bg-white border border-gray-300 ${
                           isEditMode 
-                            ? 'text-orange-600 hover:bg-purple-50 dark:hover:bg-purple-900/30' 
-                            : 'text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:text-gray-400'
+                            ? 'text-orange-600 hover:bg-purple-50' 
+                            : 'text-gray-600 hover:bg-gray-100'
                         }`}
                         title="楽曲を編集"
                       >
@@ -767,7 +767,7 @@ export default function SongList({
                               onDeleteSong?.(song.id);
                             }
                           }}
-                          className="p-0.5 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600"
+                          className="p-0.5 text-red-600 hover:bg-red-100 rounded transition-colors bg-white border border-gray-300"
                           title="削除"
                         >
                           <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -820,7 +820,7 @@ export default function SongList({
                         }}
                       >
                         <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-xs font-semibold text-blue-800 dark:text-blue-200 bg-white/80 dark:bg-slate-800/80 px-1 rounded shadow-sm">
+                          <div className="text-xs font-semibold text-blue-800 bg-white/80 px-1 rounded shadow-sm">
                             作成中... ({Math.round((currentTime - tempStartTime) * 10) / 10}s)
                           </div>
                         </div>

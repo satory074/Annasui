@@ -185,14 +185,14 @@ export default function CreateMedleyModal({
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="lg">
       <div className="p-6">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-6">
           新規メドレーを登録
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* 動画URL */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               動画URL *
             </label>
             <div className="flex gap-2">
@@ -201,7 +201,7 @@ export default function CreateMedleyModal({
                 value={formData.videoUrl}
                 onChange={(e) => handleUrlChange(e.target.value)}
                 placeholder="https://www.nicovideo.jp/watch/sm12345678"
-                className={`flex-1 px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                className={`flex-1 px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
                   errors.videoUrl ? 'border-red-500' : 'border-gray-300'
                 }`}
                 disabled={isLoading}
@@ -228,7 +228,7 @@ export default function CreateMedleyModal({
             {loadingMessage && (
               <p className="mt-1 text-sm text-blue-600">{loadingMessage}</p>
             )}
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-gray-500">
               URLを入力後、「取得」ボタンで動画情報を自動入力できます
             </p>
           </div>
@@ -236,17 +236,17 @@ export default function CreateMedleyModal({
           {/* サムネイルプレビュー */}
           {formData.thumbnailUrl && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 サムネイルプレビュー
                 {autoFetched && (
-                  <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ 自動取得済み</span>
+                  <span className="ml-2 text-xs text-green-600">✓ 自動取得済み</span>
                 )}
               </label>
               <div className="flex justify-center">
                 <img
                   src={formData.thumbnailUrl}
                   alt="動画サムネイル"
-                  className="w-80 h-45 object-cover bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded"
+                  className="w-80 h-45 object-cover bg-gray-100 border border-gray-200 rounded"
                   onError={(e) => {
                     // サムネイル読み込みエラー時は非表示にする
                     e.currentTarget.style.display = 'none';
@@ -258,7 +258,7 @@ export default function CreateMedleyModal({
 
           {/* プラットフォーム */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               プラットフォーム
             </label>
             <div className="flex space-x-4">
@@ -287,10 +287,10 @@ export default function CreateMedleyModal({
 
           {/* メドレータイトル */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               メドレータイトル *
               {autoFetched && formData.title && (
-                <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ 自動入力済み</span>
+                <span className="ml-2 text-xs text-green-600">✓ 自動入力済み</span>
               )}
             </label>
             <input
@@ -298,9 +298,9 @@ export default function CreateMedleyModal({
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="ボカロメドレー2025"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
                 errors.title ? 'border-red-500' : 
-                autoFetched && formData.title ? 'border-green-300 bg-green-50 dark:bg-green-900/20' : 
+                autoFetched && formData.title ? 'border-green-300 bg-green-50' : 
                 'border-gray-300'
               }`}
               disabled={isLoading}
@@ -312,10 +312,10 @@ export default function CreateMedleyModal({
 
           {/* 制作者名 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               制作者名 *
               {autoFetched && formData.creator && (
-                <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ 自動入力済み</span>
+                <span className="ml-2 text-xs text-green-600">✓ 自動入力済み</span>
               )}
             </label>
             <input
@@ -323,9 +323,9 @@ export default function CreateMedleyModal({
               value={formData.creator}
               onChange={(e) => setFormData(prev => ({ ...prev, creator: e.target.value }))}
               placeholder="メドレー製作者"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
                 errors.creator ? 'border-red-500' : 
-                autoFetched && formData.creator ? 'border-green-300 bg-green-50 dark:bg-green-900/20' : 
+                autoFetched && formData.creator ? 'border-green-300 bg-green-50' : 
                 'border-gray-300'
               }`}
               disabled={isLoading}
@@ -337,10 +337,10 @@ export default function CreateMedleyModal({
 
           {/* 動画の長さ */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               動画の長さ（秒） *
               {autoFetched && formData.duration && (
-                <span className="ml-2 text-xs text-green-600 dark:text-green-400">✓ 自動入力済み</span>
+                <span className="ml-2 text-xs text-green-600">✓ 自動入力済み</span>
               )}
             </label>
             <input
@@ -349,9 +349,9 @@ export default function CreateMedleyModal({
               value={formData.duration}
               onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
               placeholder="600"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
                 errors.duration ? 'border-red-500' : 
-                autoFetched && formData.duration ? 'border-green-300 bg-green-50 dark:bg-green-900/20' : 
+                autoFetched && formData.duration ? 'border-green-300 bg-green-50' : 
                 'border-gray-300'
               }`}
               disabled={isLoading}
@@ -359,7 +359,7 @@ export default function CreateMedleyModal({
             {errors.duration && (
               <p className="mt-1 text-sm text-red-600">{errors.duration}</p>
             )}
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+            <p className="mt-1 text-sm text-gray-500">
               動画の総再生時間を秒数で入力してください（例: 10分 = 600秒）
             </p>
           </div>
@@ -370,7 +370,7 @@ export default function CreateMedleyModal({
               type="button"
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 dark:bg-gray-600 dark:text-white dark:border-gray-500 dark:hover:bg-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               キャンセル
             </button>

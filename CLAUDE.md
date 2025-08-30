@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Medlean** (formerly Anasui) is a comprehensive multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, advanced editing capabilities, searchable medley database, and user authentication. Supports 4 platforms: Niconico (full integration), YouTube (embed), Spotify (thumbnails), and Apple Music (thumbnails).
 
-**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, and comprehensive annotation enhancement features. Recently cleaned and optimized codebase (2025-08-30).
+**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, and comprehensive annotation enhancement features. Dark mode functionality has been completely removed. Recently cleaned and optimized codebase (2025-08-30).
 
 ## Core Architecture
 
@@ -134,18 +134,6 @@ export type SongSection = {
 - Modals: `SongEditModal`, `SongSearchModal`, `ImportSetlistModal`, `CreateMedleyModal`
 - Authentication: `AuthProvider`, `AuthModal`, `UserProfileDropdown`, `UserAvatar`
 
-#### Dark Mode System
-**Login-Free Dark Mode Toggle** (Added 2025-08-29):
-- **DarkModeToggle Component**: Available in all page headers without login requirement
-- **LocalStorage Persistence**: Settings saved across browser sessions
-- **System Preference**: Auto-detects OS dark mode preference as initial value
-- **Visual Design**: Moon/sun icons with Vibrant Orange hover effects
-
-**Implementation:**
-- **Global Access**: Added to HomePageClient, Header (MedleyPlayer), ProfilePage, MyMedleysPage
-- **Settings Page**: Retains original toggle for logged-in users
-- **Technical**: Proper SSR handling with mounted state to prevent hydration mismatch
-
 #### Timeline System & Annotation Enhancement Features
 **Timeline Display**: Always shows full video duration with simplified position calculations
 **Edit Mode Features**: 
@@ -224,13 +212,6 @@ const sendCommand = (command) => {
 - **OAuth redirect loops**: Verify callback URL configuration in Supabase Dashboard
 - **User not appearing**: Verify UserProfileDropdown is included in header component tree
 
-### Dark Mode Issues
-- **Toggle not working**: Check DarkModeToggle component mounting state
-- **Settings not persisting**: Verify localStorage access and document.documentElement class manipulation
-- **Hydration mismatch**: Ensure proper SSR handling with mounted state
-- **Background not changing**: Ensure `.dark` class selector has `!important` flags for CSS priority
-- **Styles not applying**: Check both media query and `.dark` class implementations are present
-
 ### Thumbnail Issues
 - **Images not loading**: Verify proxy API route is working (`/api/thumbnail/niconico/[videoId]`)
 - **CORS errors**: Direct CDN access blocked - must use server-side proxy implementation
@@ -242,6 +223,8 @@ const sendCommand = (command) => {
 - **Firebase deployment**: Use `firebase deploy` instead of Netlify
 - **Next.js 15 params**: All routes must handle `params: Promise<{...}>`
 - **Authentication deployment**: Ensure database migrations are run and OAuth providers configured
+- **Unterminated string literals**: If modifying Tailwind classes (especially dark: prefixes), watch for broken template literals that need closing quotes
+- **Component prop validation**: UserAvatar component expects size props as "sm" | "md" | "lg" | "xl", not "large"
 
 ## File Organization
 
@@ -282,10 +265,11 @@ database/ - Database migrations and schema
 - `src/lib/utils/sanitize.ts` - Input sanitization utilities
 
 **UI System:**
-- `src/components/ui/DarkModeToggle.tsx` - Login-free dark mode toggle
 - `src/components/ui/modal/BaseModal.tsx` - Base modal component
 - `src/components/ui/song/SongInfoDisplay.tsx` - Unified song display with multi-platform support
 - `src/components/ui/song/MultiSegmentTimeEditor.tsx` - Multi-segment editor
+
+**Note**: Dark mode functionality (DarkModeToggle component) has been completely removed from the application as of 2025-08-30.
 
 **Authentication System:**
 - `src/contexts/AuthContext.tsx` - React context for authentication state
@@ -296,7 +280,7 @@ database/ - Database migrations and schema
 **User Profile System:**
 - `src/app/profile/page.tsx` - User profile page
 - `src/app/my-medleys/page.tsx` - User's medleys management page
-- `src/app/settings/page.tsx` - Settings page with dark mode toggle
+- `src/app/settings/page.tsx` - Settings page
 
 ## Development Workflow
 
@@ -341,6 +325,8 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 - **Secondary**: Indigo gradients (`#5b6dee → #4c63d2`) - Complementary contrast  
 - **Accent**: Mint gradients (`#00d9a3 → #06b981`) - Fresh, modern accent
 
+**Note**: Only light theme is supported. Dark mode has been completely removed from the application.
+
 ### Implementation Details
 **CSS Variables** (in `globals.css`):
 ```css
@@ -353,9 +339,6 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 - `orange-600/700` - Primary actions, main brand elements
 - `indigo-600/700` - Secondary actions, markers
 - `mint-600/700` - Success states, end time controls
-
-### Dark Mode Support
-Complete dark mode implementation with proper contrast ratios and accessibility standards maintained across both light and dark themes.
 
 ## Security & Performance
 

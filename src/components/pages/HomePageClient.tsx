@@ -11,6 +11,7 @@ import UserProfileDropdown from "@/components/features/auth/UserProfileDropdown"
 import AuthModal from "@/components/features/auth/AuthModal";
 import { useAuth } from "@/contexts/AuthContext";
 import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
+import { autoCorrectPlatform } from "@/lib/utils/platformDetection";
 import Logo from "@/components/ui/Logo";
 
 interface HomePageClientProps {
@@ -517,28 +518,39 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                         <div key={medley.videoId} className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-200">
                             <Link href={getMedleyUrl(medley)} className="block">
                                 <div className="aspect-video bg-gray-200 relative overflow-hidden">
-                                    {medley.platform === 'youtube' ? (
-                                        <img
-                                            src={getYouTubeThumbnail(medley.videoId, 'maxresdefault')}
-                                            alt={medley.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                            onError={(e) => {
-                                                const target = e.target as HTMLImageElement;
-                                                target.src = getYouTubeThumbnail(medley.videoId, 'hqdefault');
-                                            }}
-                                        />
-                                    ) : (
-                                        <img
-                                            src={getThumbnailUrl(`https://www.nicovideo.jp/watch/${medley.videoId}`) || '/default-thumbnail.svg'}
-                                            alt={medley.title}
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                            onError={(e) => {
-                                                const target = e.target as HTMLImageElement;
-                                                target.src = '/default-thumbnail.svg';
-                                                target.alt = `${medley.title} (デフォルトサムネイル)`;
-                                            }}
-                                        />
-                                    )}
+                                    {(() => {
+                                        // Auto-detect platform if there's a mismatch
+                                        const correction = autoCorrectPlatform(medley.videoId, medley.platform as 'niconico' | 'youtube' | 'spotify' | 'appleMusic');
+                                        const effectivePlatform = correction.correctedPlatform;
+                                        
+                                        if (effectivePlatform === 'youtube') {
+                                            return (
+                                                <img
+                                                    src={getYouTubeThumbnail(medley.videoId, 'maxresdefault')}
+                                                    alt={medley.title}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                    onError={(e) => {
+                                                        const target = e.target as HTMLImageElement;
+                                                        target.src = getYouTubeThumbnail(medley.videoId, 'hqdefault');
+                                                    }}
+                                                />
+                                            );
+                                        } else {
+                                            // Default to Niconico for legacy compatibility
+                                            return (
+                                                <img
+                                                    src={getThumbnailUrl(`https://www.nicovideo.jp/watch/${medley.videoId}`) || '/default-thumbnail.svg'}
+                                                    alt={medley.title}
+                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                    onError={(e) => {
+                                                        const target = e.target as HTMLImageElement;
+                                                        target.src = '/default-thumbnail.svg';
+                                                        target.alt = `${medley.title} (デフォルトサムネイル)`;
+                                                    }}
+                                                />
+                                            );
+                                        }
+                                    })()}
                                     
                                     {/* Hover Overlay */}
                                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">

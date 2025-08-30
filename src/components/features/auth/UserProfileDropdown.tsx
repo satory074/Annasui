@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import UserAvatar from '@/components/ui/user/UserAvatar'
 import AuthModal from './AuthModal'
 
-export default function UserProfileDropdown() {
+const UserProfileDropdown = React.memo(function UserProfileDropdown() {
   const { user, signOut, loading } = useAuth()
   const router = useRouter()
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
@@ -14,8 +14,7 @@ export default function UserProfileDropdown() {
   const [isSigningOut, setIsSigningOut] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Debug logging
-  console.log('🔍 UserProfileDropdown render:', { user: !!user, loading, mounted: typeof window !== 'undefined' })
+  // Debug logging (removed to prevent excessive re-render logging)
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -192,4 +191,6 @@ export default function UserProfileDropdown() {
       )}
     </div>
   )
-}
+})
+
+export default UserProfileDropdown

@@ -205,6 +205,31 @@ const sendCommand = (command) => {
 };
 ```
 
+**Debouncing Pattern**: Prevent excessive logging and warnings:
+```typescript
+const lastWarningTime = useRef<number>(0);
+const lastWarningKey = useRef<string>('');
+
+// Only warn once per unique issue per 30 seconds
+const debouncedWarn = (message: string, key: string) => {
+  const now = Date.now();
+  if (lastWarningKey.current !== key || (now - lastWarningTime.current) > 30000) {
+    logger.warn(message);
+    lastWarningTime.current = now;
+    lastWarningKey.current = key;
+  }
+};
+```
+
+**Performance Optimization Pattern**: Use React.memo for stable components:
+```typescript
+const MyComponent = React.memo(function MyComponent({ props }) {
+  // Remove debug logging in production
+  // Use logger.debug() instead of console.log()
+  return <div>{content}</div>;
+});
+```
+
 ## Common Issues and Solutions
 
 ### Player Integration
@@ -233,6 +258,16 @@ const sendCommand = (command) => {
 - **Fallback failure**: Check all 5-tier fallback hierarchy (CDN L/M/default → getthumbinfo API → legacy)
 - **404 responses**: Some video IDs may be invalid or videos deleted from platform
 - **Cache issues**: Production deployment may need cache clearing for new proxy API
+
+### Platform Validation Issues
+- **Invalid video ID warnings**: Use `platformDetection.ts` utilities to validate before processing
+- **Thumbnail loading failures**: Platform auto-correction in HomePageClient prevents mismatched platforms
+- **Data inconsistencies**: Run database migrations to fix existing platform mismatches
+
+### Performance Issues
+- **Excessive logging**: Use debouncing patterns for repetitive warnings (30s interval minimum)
+- **Component re-renders**: Apply React.memo() to stable components like UserProfileDropdown
+- **Console spam**: Remove debug logging from production components
 
 ### Build & Deployment
 - **Firebase deployment**: Use `firebase deploy` instead of Netlify
@@ -280,6 +315,11 @@ database/ - Database migrations and schema
 - `src/app/api/thumbnail/niconico/[videoId]/route.ts` - CORS proxy for Niconico thumbnails
 - `src/lib/utils/thumbnail.ts` - Multi-platform thumbnail URL generation
 - `src/components/ui/song/SongThumbnail.tsx` - Thumbnail display component with retry logic
+
+**Platform Validation System:**
+- `src/lib/utils/platformDetection.ts` - Auto-detection of platform from video ID patterns
+- Platform auto-correction in HomePageClient.tsx prevents thumbnail loading errors
+- Supports Niconico (sm + digits), YouTube (11 chars), Spotify (22 chars), Apple Music (numeric)
 
 **Security & Performance:**
 - `src/lib/utils/logger.ts` - Production-safe logging system
@@ -351,6 +391,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 1. **Database Migrations**: Run SQL files in `database/migrations/` directory in Supabase Dashboard
    - `001_create_users_table.sql` - User profiles table
    - `002_add_user_id_to_medleys.sql` - User ownership for medleys
+   - `003_fix_rick_astley_medley.sql` - Platform corrections (run after major data fixes)
 2. **OAuth Configuration**: Configure GitHub and Google providers in Supabase Auth settings
 3. **RLS Policies**: Ensure Row Level Security policies are active for user data protection
 
@@ -408,4 +449,10 @@ const sanitized = sanitizeSongSection(userInput);
 logger.debug('Operation completed', data);
 // ALWAYS validate URLs before processing  
 const validated = sanitizeUrl(userUrl);
+// ALWAYS use platform auto-detection for data integrity
+import { autoCorrectPlatform } from '@/lib/utils/platformDetection';
+const correction = autoCorrectPlatform(videoId, declaredPlatform);
+if (correction.wasCorrected) {
+  logger.warn(`Platform corrected: ${declaredPlatform} -> ${correction.correctedPlatform}`);
+}
 ```

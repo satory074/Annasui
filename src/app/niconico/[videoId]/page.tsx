@@ -111,7 +111,7 @@ export default async function MedleyPage({ params }: MedleyPageProps) {
 
     const breadcrumbItems = [
         { label: 'ホーム', href: '/' },
-        { label: 'ニコニコ動画', href: '/niconico' },
+        { label: 'ニコニコ動画', href: '/' }, // Redirect to home since /niconico alone doesn't exist
         { label: medleyData?.title || videoId }
     ];
 

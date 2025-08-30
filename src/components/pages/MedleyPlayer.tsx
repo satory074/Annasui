@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMedleyData } from "@/hooks/useMedleyData";
 import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import { useMedleyEdit } from "@/hooks/useMedleyEdit";
@@ -31,6 +31,10 @@ export default function MedleyPlayer({
 }: MedleyPlayerProps) {
     const [videoId, setVideoId] = useState<string>(initialVideoId);
     const [inputVideoId, setInputVideoId] = useState<string>(initialVideoId);
+    
+    // Debouncing for duration warning messages
+    const lastWarningTime = useRef<number>(0);
+    const lastWarningVideoId = useRef<string>('');
     
     // 編集モード関連の状態
     const [isEditMode, setIsEditMode] = useState<boolean>(false);
@@ -106,13 +110,21 @@ export default function MedleyPlayer({
         onDurationChange: (actualDuration: number) => {
             // 実際の動画長さと設定された長さを比較
             if (medleyDuration && Math.abs(actualDuration - medleyDuration) > 5) {
-                logger.warn(`動画長さ不整合を検出: 設定値=${medleyDuration}s, 実際値=${actualDuration}s`);
+                // Debouncing: Only log warning once per video per 30 seconds
+                const now = Date.now();
+                const warningKey = `${videoId}-${medleyDuration}-${actualDuration}`;
                 
-                // 自動修正を実行（ただし、実際の長さが妥当な範囲内の場合のみ）
-                if (actualDuration > 0 && actualDuration < 14400 && actualDuration !== medleyDuration) { // 4時間未満
-                    logger.info(`動画長さを自動修正します: ${medleyDuration}s → ${actualDuration}s`);
+                if (lastWarningVideoId.current !== warningKey || (now - lastWarningTime.current) > 30000) {
+                    logger.warn(`動画長さ不整合を検出: 設定値=${medleyDuration}s, 実際値=${actualDuration}s`);
+                    lastWarningTime.current = now;
+                    lastWarningVideoId.current = warningKey;
                     
-                    // Note: Database update for medley duration will be implemented when API endpoints are available
+                    // 自動修正を実行（ただし、実際の長さが妥当な範囲内の場合のみ）
+                    if (actualDuration > 0 && actualDuration < 14400 && actualDuration !== medleyDuration) { // 4時間未満
+                        logger.info(`動画長さを自動修正します: ${medleyDuration}s → ${actualDuration}s`);
+                        
+                        // Note: Database update for medley duration will be implemented when API endpoints are available
+                    }
                 }
             }
         },

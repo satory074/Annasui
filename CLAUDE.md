@@ -205,6 +205,8 @@ const sendCommand = (command) => {
 - **Toggle not working**: Check DarkModeToggle component mounting state
 - **Settings not persisting**: Verify localStorage access and document.documentElement class manipulation
 - **Hydration mismatch**: Ensure proper SSR handling with mounted state
+- **Background not changing**: Ensure `.dark` class selector has `!important` flags for CSS priority
+- **Styles not applying**: Check both media query and `.dark` class implementations are present
 
 ### Build & Deployment
 - **Firebase deployment**: Use `firebase deploy` instead of Netlify
@@ -293,17 +295,17 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 
 ## Vibrant Orange Design System
 
-### Color Palette
-- **Primary**: Orange gradients (`#ff6b35 → #ff8c42`) - Active, vibrant energy
-- **Secondary**: Indigo gradients (`#4338ca → #3730a3`) - Complementary contrast
-- **Accent**: Mint gradients (`#06d6a0 → #059669`) - Fresh, modern accent
+### Color Palette (Updated 2025-08-30)
+- **Primary**: Orange gradients (`#ff8c42 → #ffa55c`) - Active, vibrant energy
+- **Secondary**: Indigo gradients (`#5b6dee → #4c63d2`) - Complementary contrast  
+- **Accent**: Mint gradients (`#00d9a3 → #06b981`) - Fresh, modern accent
 
 ### Implementation Details
 **CSS Variables** (in `globals.css`):
 ```css
---gradient-primary: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
---gradient-secondary: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
---gradient-accent: linear-gradient(90deg, #06d6a0 0%, #059669 100%);
+--gradient-primary: linear-gradient(135deg, #ff8c42 0%, #ffa55c 100%);
+--gradient-secondary: linear-gradient(135deg, #5b6dee 0%, #4c63d2 100%);
+--gradient-accent: linear-gradient(90deg, #00d9a3 0%, #06b981 100%);
 ```
 
 **Color Mapping**:

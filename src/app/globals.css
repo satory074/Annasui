@@ -2,7 +2,7 @@
 
 :root {
   /* Legacy Color System (for compatibility) */
-  --background: #ffffff;
+  --background: #fffbf7;
   --foreground: #1a1a2e;
   --primary: #667eea;
   --primary-hover: #5a67d8;
@@ -15,30 +15,30 @@
   --text-secondary: #6b7280;
   
   /* Vibrant Orange Color System */
-  --gradient-primary: linear-gradient(135deg, #ff6b35 0%, #ff8c42 100%);
-  --gradient-secondary: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
-  --gradient-accent: linear-gradient(90deg, #06d6a0 0%, #059669 100%);
-  --gradient-music: linear-gradient(90deg, #ff6b35 0%, #ff8c42 100%);
-  --gradient-timeline: linear-gradient(90deg, #ff6b35 0%, #06d6a0 50%, #4338ca 100%);
+  --gradient-primary: linear-gradient(135deg, #ff8c42 0%, #ffa55c 100%);
+  --gradient-secondary: linear-gradient(135deg, #5b6dee 0%, #4c63d2 100%);
+  --gradient-accent: linear-gradient(90deg, #00d9a3 0%, #06b981 100%);
+  --gradient-music: linear-gradient(90deg, #ff8c42 0%, #ffa55c 100%);
+  --gradient-timeline: linear-gradient(90deg, #ff8c42 0%, #00d9a3 50%, #5b6dee 100%);
   
   /* Interactive Gradients */
-  --gradient-hover: linear-gradient(135deg, #ff8c42 0%, #ff9f66 100%);
-  --gradient-active: linear-gradient(135deg, #ff5722 0%, #ff6b35 100%);
-  --gradient-focus: linear-gradient(135deg, #ff6b35 0%, #4338ca 100%);
+  --gradient-hover: linear-gradient(135deg, #ffa55c 0%, #ffb876 100%);
+  --gradient-active: linear-gradient(135deg, #ff7728 0%, #ff8c42 100%);
+  --gradient-focus: linear-gradient(135deg, #ff8c42 0%, #5b6dee 100%);
   
   /* Solid Colors for Vibrant Orange System */
-  --color-orange-primary: #ff6b35;
-  --color-orange-secondary: #ff8c42;
-  --color-indigo-primary: #4338ca;
-  --color-indigo-secondary: #3730a3;
-  --color-mint-primary: #06d6a0;
-  --color-mint-secondary: #059669;
-  --color-vibrant-primary: #ff6b35;
-  --color-vibrant-secondary: #ff8c42;
+  --color-orange-primary: #ff8c42;
+  --color-orange-secondary: #ffa55c;
+  --color-indigo-primary: #5b6dee;
+  --color-indigo-secondary: #4c63d2;
+  --color-mint-primary: #00d9a3;
+  --color-mint-secondary: #06b981;
+  --color-vibrant-primary: #ff8c42;
+  --color-vibrant-secondary: #ffa55c;
   
   /* Background Gradients */
-  --gradient-surface: linear-gradient(180deg, #fff5f0 0%, #fef3c7 100%);
-  --gradient-card: linear-gradient(135deg, #ffffff 0%, #fff5f0 100%);
+  --gradient-surface: linear-gradient(180deg, #fff9f5 0%, #fff5eb 100%);
+  --gradient-card: linear-gradient(135deg, #fffbf7 0%, #fff5f0 100%);
 }
 
 @theme inline {
@@ -70,34 +70,64 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0f0f23;
-    --foreground: #e5e7eb;
+    --background: #242438;
+    --foreground: #f1f3f5;
     --primary: #818cf8;
     --primary-hover: #6366f1;
-    --secondary: #1f2937;
+    --secondary: #2a2a3e;
     --accent: #f472b6;
     --accent-hover: #ec4899;
     --accent-light: #831843;
-    --surface: #1a1a2e;
-    --border: #374151;
-    --text-secondary: #9ca3af;
+    --surface: #2a2a3e;
+    --border: #4a4a5e;
+    --text-secondary: #b1b5c3;
     
     /* Dark Mode Vibrant Orange Gradients */
-    --gradient-primary: linear-gradient(135deg, #ff8c42 0%, #ffb366 100%);
-    --gradient-secondary: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
-    --gradient-accent: linear-gradient(90deg, #22d3ee 0%, #10b981 100%);
-    --gradient-music: linear-gradient(90deg, #ff8c42 0%, #ffb366 100%);
-    --gradient-timeline: linear-gradient(90deg, #ff8c42 0%, #22d3ee 50%, #6366f1 100%);
+    --gradient-primary: linear-gradient(135deg, #ff9944 0%, #ffb366 100%);
+    --gradient-secondary: linear-gradient(135deg, #8a99ff 0%, #7788ee 100%);
+    --gradient-accent: linear-gradient(90deg, #00f5b0 0%, #22e595 100%);
+    --gradient-music: linear-gradient(90deg, #ff9944 0%, #ffb366 100%);
+    --gradient-timeline: linear-gradient(90deg, #ff9944 0%, #00f5b0 50%, #8a99ff 100%);
     
     /* Dark Interactive Gradients */
     --gradient-hover: linear-gradient(135deg, #ffb366 0%, #ffc999 100%);
-    --gradient-active: linear-gradient(135deg, #ff7744 0%, #ff8c42 100%);
-    --gradient-focus: linear-gradient(135deg, #ff8c42 0%, #6366f1 100%);
+    --gradient-active: linear-gradient(135deg, #ff7722 0%, #ff9944 100%);
+    --gradient-focus: linear-gradient(135deg, #ff9944 0%, #8a99ff 100%);
     
     /* Dark Background Gradients */
-    --gradient-surface: linear-gradient(180deg, #1a1a2e 0%, #2d1b16 100%);
-    --gradient-card: linear-gradient(135deg, #1f2937 0%, #3d2a1a 100%);
+    --gradient-surface: linear-gradient(180deg, #242438 0%, #3a2d2a 100%);
+    --gradient-card: linear-gradient(135deg, #2a2a3e 0%, #453530 100%);
   }
+}
+
+.dark {
+  --background: #1a1a2e !important;
+  --foreground: #f0f0f0 !important;
+  --primary: #818cf8;
+  --primary-hover: #6366f1;
+  --secondary: #1f2937 !important;
+  --accent: #f472b6;
+  --accent-hover: #ec4899;
+  --accent-light: #831843;
+  --surface: #1f2937 !important;
+  --border: #374151 !important;
+  --text-secondary: #9ca3af !important;
+  
+  /* Dark Mode Vibrant Orange Gradients */
+  --gradient-primary: linear-gradient(135deg, #ff9944 0%, #ffb366 100%);
+  --gradient-secondary: linear-gradient(135deg, #8a99ff 0%, #7788ee 100%);
+  --gradient-accent: linear-gradient(90deg, #00f5b0 0%, #22e595 100%);
+  --gradient-music: linear-gradient(90deg, #ff9944 0%, #ffb366 100%);
+  --gradient-timeline: linear-gradient(90deg, #ff9944 0%, #00f5b0 50%, #8a99ff 100%);
+  
+  /* Dark Interactive Gradients */
+  --gradient-hover: linear-gradient(135deg, #ffb366 0%, #ffc999 100%);
+  --gradient-active: linear-gradient(135deg, #ff7722 0%, #ff9944 100%);
+  --gradient-focus: linear-gradient(135deg, #ff9944 0%, #8a99ff 100%);
+  
+  /* Dark Background Gradients */
+  --gradient-surface: linear-gradient(180deg, #1a1a2e 0%, #2d2540 100%);
+  --gradient-card: linear-gradient(135deg, #1f2937 0%, #374151 100%);
 }
 
 body {

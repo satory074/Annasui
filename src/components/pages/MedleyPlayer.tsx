@@ -18,6 +18,8 @@ import { SongSection } from "@/types";
 import { SongDatabaseEntry, createSongFromDatabase, addManualSong } from "@/lib/utils/songDatabase";
 import { logger } from "@/lib/utils/logger";
 import { PlayerLoadingMessage } from "@/components/ui/loading/PlayerSkeleton";
+import { useAuth } from "@/contexts/AuthContext";
+import AuthorizationBanner from "@/components/ui/AuthorizationBanner";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -30,6 +32,7 @@ export default function MedleyPlayer({
   initialTime = 0,
   platform = 'niconico'
 }: MedleyPlayerProps) {
+    const { user, isApproved } = useAuth();
     const [videoId, setVideoId] = useState<string>(initialVideoId);
     const [inputVideoId, setInputVideoId] = useState<string>(initialVideoId);
     
@@ -699,6 +702,11 @@ export default function MedleyPlayer({
                 )}
 
 
+                {/* Authorization Banner */}
+                <div className="p-4">
+                    <AuthorizationBanner />
+                </div>
+
                 {/* 楽曲リスト（統合コントロール付き） */}
                 {!loading && displaySongs.length > 0 && (
                     <SongListGrouped
@@ -710,11 +718,11 @@ export default function MedleyPlayer({
                         currentSongs={getCurrentSongs()}
                         onTimelineClick={handleTimelineClick}
                         onSeek={seek}
-                        onEditSong={handleEditSong}
-                        onDeleteSong={deleteSong}
+                        onEditSong={user && isApproved ? handleEditSong : undefined}
+                        onDeleteSong={user && isApproved ? deleteSong : undefined}
                         onTogglePlayPause={togglePlayPause}
                         isPlaying={isPlaying}
-                        isEditMode={isEditMode}
+                        isEditMode={user && isApproved ? isEditMode : false}
                         selectedSong={selectedSong}
                         onSelectSong={setSelectedSong}
                         onSongHover={(song: SongSection, element: HTMLElement) => {
@@ -725,13 +733,13 @@ export default function MedleyPlayer({
                             });
                         }}
                         onSongHoverEnd={() => handleHoverSong(null, { x: 0, y: 0 })}
-                        onSaveChanges={handleSaveChanges}
-                        onResetChanges={() => resetChanges(medleySongs)}
+                        onSaveChanges={user && isApproved ? handleSaveChanges : undefined}
+                        onResetChanges={user && isApproved ? () => resetChanges(medleySongs) : undefined}
                         hasChanges={hasChanges}
                         isSaving={isSaving}
-                        onQuickSetStartTime={handleQuickSetStartTime}
-                        onQuickSetEndTime={handleQuickSetEndTime}
-                        onQuickAddMarker={handleQuickAddMarker}
+                        onQuickSetStartTime={user && isApproved ? handleQuickSetStartTime : undefined}
+                        onQuickSetEndTime={user && isApproved ? handleQuickSetEndTime : undefined}
+                        onQuickAddMarker={user && isApproved ? handleQuickAddMarker : undefined}
                         tempStartTime={tempStartTime}
                         medleyTitle={medleyTitle}
                         medleyCreator={medleyCreator}

@@ -5,6 +5,43 @@ import { logger } from '@/lib/utils/logger'
 type MedleyRow = Database['public']['Tables']['medleys']['Row']
 type SongRow = Database['public']['Tables']['songs']['Row']
 
+// Authorization check function
+async function checkUserApproval(): Promise<{ isApproved: boolean; user: any | null }> {
+  if (!supabase) {
+    return { isApproved: false, user: null }
+  }
+
+  try {
+    // Get current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
+      logger.warn('⚠️ User not authenticated')
+      return { isApproved: false, user: null }
+    }
+
+    // Check if user is approved
+    const { data: approvalData, error: approvalError } = await supabase
+      .from('approved_users')
+      .select('id')
+      .eq('user_id', user.id)
+      .single()
+
+    if (approvalError && approvalError.code !== 'PGRST116') {
+      logger.error('❌ Error checking user approval:', approvalError)
+      return { isApproved: false, user }
+    }
+
+    const isApproved = !!approvalData
+    logger.debug('🔐 Authorization check:', { userId: user.id, isApproved })
+    
+    return { isApproved, user }
+  } catch (error) {
+    logger.error('❌ Error in checkUserApproval:', error)
+    return { isApproved: false, user: null }
+  }
+}
+
 // Test function to verify API key
 export async function testSupabaseConnection(): Promise<{ success: boolean; error?: string }> {
   if (!supabase) {
@@ -174,6 +211,13 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
   if (!supabase) {
     return null
   }
+
+  // Check user authorization
+  const { isApproved, user } = await checkUserApproval()
+  if (!isApproved) {
+    logger.warn('❌ Unauthorized: User is not approved to create medleys')
+    throw new Error('User is not authorized to create medleys. Please contact the administrator for approval.')
+  }
   
   try {
     // Insert medley
@@ -184,7 +228,7 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
         title: medleyData.title,
         creator: medleyData.creator || null,
         duration: medleyData.duration,
-        user_id: medleyData.user_id || null,
+        user_id: user.id,
       })
       .select()
       .single()
@@ -224,6 +268,13 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
 export async function updateMedley(videoId: string, updates: Partial<Omit<MedleyData, 'videoId' | 'songs'>>): Promise<MedleyData | null> {
   if (!supabase) {
     return null
+  }
+
+  // Check user authorization
+  const { isApproved, user } = await checkUserApproval()
+  if (!isApproved) {
+    logger.warn('❌ Unauthorized: User is not approved to update medleys')
+    throw new Error('User is not authorized to update medleys. Please contact the administrator for approval.')
   }
   
   try {
@@ -314,6 +365,13 @@ export async function deleteMedley(videoId: string): Promise<boolean> {
   if (!supabase) {
     return false
   }
+
+  // Check user authorization
+  const { isApproved, user } = await checkUserApproval()
+  if (!isApproved) {
+    logger.warn('❌ Unauthorized: User is not approved to delete medleys')
+    throw new Error('User is not authorized to delete medleys. Please contact the administrator for approval.')
+  }
   
   try {
     const { error } = await supabase
@@ -328,6 +386,60 @@ export async function deleteMedley(videoId: string): Promise<boolean> {
     return true
   } catch (error) {
     logger.error('Error deleting medley:', error)
+    return false
+  }
+}
+
+// Songs management functions with authorization
+export async function saveMedleySongs(medleyId: string, songs: Omit<SongSection, 'id'>[]): Promise<boolean> {
+  if (!supabase) {
+    return false
+  }
+
+  // Check user authorization
+  const { isApproved, user } = await checkUserApproval()
+  if (!isApproved) {
+    logger.warn('❌ Unauthorized: User is not approved to modify songs')
+    throw new Error('User is not authorized to modify songs. Please contact the administrator for approval.')
+  }
+
+  try {
+    // Delete existing songs for this medley
+    const { error: deleteError } = await supabase
+      .from('songs')
+      .delete()
+      .eq('medley_id', medleyId)
+
+    if (deleteError) {
+      throw deleteError
+    }
+
+    // Insert new songs
+    if (songs.length > 0) {
+      const songsToInsert = songs.map((song, index) => ({
+        medley_id: medleyId,
+        title: song.title,
+        artist: song.artist || null,
+        start_time: song.startTime,
+        end_time: song.endTime,
+        color: song.color,
+        original_link: song.originalLink || null,
+        order_index: index + 1
+      }))
+
+      const { error: insertError } = await supabase
+        .from('songs')
+        .insert(songsToInsert)
+
+      if (insertError) {
+        throw insertError
+      }
+    }
+
+    logger.info('✅ Successfully saved medley songs')
+    return true
+  } catch (error) {
+    logger.error('❌ Error saving medley songs:', error)
     return false
   }
 }

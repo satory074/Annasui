@@ -9,7 +9,10 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  signIn: (provider: 'github' | 'google') => Promise<void>
+  isApproved: boolean
+  approvalLoading: boolean
+  checkApprovalStatus: () => Promise<void>
+  signIn: (provider: 'google') => Promise<void>
   signOut: () => Promise<void>
 }
 
@@ -32,6 +35,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
   const [mounted, setMounted] = useState(false)
+  const [isApproved, setIsApproved] = useState(false)
+  const [approvalLoading, setApprovalLoading] = useState(false)
 
   // Handle client-side mounting
   useEffect(() => {
@@ -81,7 +86,49 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => subscription.unsubscribe()
   }, [mounted])
 
-  const signIn = async (provider: 'github' | 'google') => {
+  const checkApprovalStatus = async () => {
+    if (!supabase || !user) {
+      setIsApproved(false)
+      return
+    }
+
+    try {
+      setApprovalLoading(true)
+      logger.debug('🔍 Checking user approval status for:', user.id)
+
+      const { data, error } = await supabase
+        .from('approved_users')
+        .select('id')
+        .eq('user_id', user.id)
+        .single()
+
+      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
+        logger.error('❌ Error checking approval status:', error)
+        setIsApproved(false)
+        return
+      }
+
+      const approved = !!data
+      setIsApproved(approved)
+      logger.info(approved ? '✅ User is approved' : '⏳ User is not approved')
+    } catch (error) {
+      logger.error('❌ Error in checkApprovalStatus:', error)
+      setIsApproved(false)
+    } finally {
+      setApprovalLoading(false)
+    }
+  }
+
+  // Check approval status when user changes
+  useEffect(() => {
+    if (user && !loading) {
+      checkApprovalStatus()
+    } else {
+      setIsApproved(false)
+    }
+  }, [user, loading])
+
+  const signIn = async (provider: 'google') => {
     if (!supabase) {
       logger.warn('⚠️ Authentication unavailable: Supabase client not configured')
       return
@@ -130,6 +177,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     session,
     loading,
+    isApproved,
+    approvalLoading,
+    checkApprovalStatus,
     signIn,
     signOut
   }

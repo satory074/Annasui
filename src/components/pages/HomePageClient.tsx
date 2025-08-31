@@ -20,7 +20,7 @@ interface HomePageClientProps {
 
 export default function HomePageClient({ initialMedleys }: HomePageClientProps) {
     const router = useRouter();
-    const { user } = useAuth();
+    const { user, isApproved, approvalLoading } = useAuth();
     const [medleys, setMedleys] = useState<MedleyData[]>(initialMedleys);
     const [searchTerm, setSearchTerm] = useState("");
     const [genreFilter, setGenreFilter] = useState("");
@@ -41,7 +41,14 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
             return;
         }
 
-        logger.info('🔐 Creating medley with user:', user.id, user.email);
+        // Check approval
+        if (!isApproved) {
+            logger.warn('⚠️ User not approved, cannot create medley');
+            alert('メドレーの作成には管理者の承認が必要です。承認をお待ちください。');
+            return;
+        }
+
+        logger.info('🔐 Creating medley with approved user:', user.id, user.email);
         
         try {
             // Create medley in database with user_id

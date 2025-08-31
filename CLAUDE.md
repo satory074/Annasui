@@ -38,7 +38,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - TailwindCSS 4 + Emotion for CSS-in-JS
 - **Vibrant Orange Design System** (orange-indigo-mint gradients)
 - Multi-platform video player support (Niconico postMessage API, YouTube iframe embed)
-- Supabase for database + authentication (OAuth with GitHub/Google)
+- Supabase for database + authentication (OAuth with Google only)
 - Firebase App Hosting for deployment with SSR support
 
 ### Critical Implementation Details
@@ -111,10 +111,10 @@ export type SongSection = {
 
 #### User Authentication Architecture
 **OAuth-Based Authentication System:**
-- **Supabase Auth**: Handles GitHub and Google OAuth providers
+- **Supabase Auth**: Handles Google OAuth provider only
 - **SSR-Compatible**: Uses ClientLayout wrapper for proper Next.js 15 hydration
 - **Progressive Enhancement**: App works for anonymous users, enhanced features for authenticated users
-- **User Profiles**: Automatic profile creation with avatar and metadata from OAuth providers
+- **User Profiles**: Automatic profile creation with avatar and metadata from Google OAuth
 
 **Database Schema:**
 - **Users Table**: Stores user profiles with automatic creation from OAuth metadata
@@ -466,7 +466,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
    - `002_add_user_id_to_medleys.sql` - User ownership for medleys
    - `003_fix_rick_astley_medley.sql` - Platform corrections (run after major data fixes)
    - `004_add_rick_astley_song_data.sql` - Adds proper song data for Rick Astley medley (fixes 0 songs issue)
-2. **OAuth Configuration**: Configure GitHub and Google providers in Supabase Auth settings
+2. **OAuth Configuration**: Configure Google provider in Supabase Auth settings
 3. **RLS Policies**: Ensure Row Level Security policies are active for user data protection
 
 **Current URLs:**

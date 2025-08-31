@@ -23,7 +23,7 @@ export default function AppHeader({
   onSearchSubmit,
   variant = "default"
 }: AppHeaderProps) {
-  const { user } = useAuth();
+  const { user, isApproved } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -67,6 +67,7 @@ export default function AppHeader({
         </svg>
       ),
       requiresAuth: true,
+      requiresApproval: true,
     }
   ];
 
@@ -93,6 +94,9 @@ export default function AppHeader({
               {navigationItems.map((item) => {
                 // Skip auth-required items if user is not logged in
                 if (item.requiresAuth && !user) return null;
+                
+                // Skip approval-required items if user is not approved
+                if (item.requiresApproval && !isApproved) return null;
                 
                 return (
                   <Link
@@ -234,6 +238,9 @@ export default function AppHeader({
               {navigationItems.map((item) => {
                 // Skip auth-required items if user is not logged in
                 if (item.requiresAuth && !user) return null;
+                
+                // Skip approval-required items if user is not approved
+                if (item.requiresApproval && !isApproved) return null;
                 
                 return (
                   <Link

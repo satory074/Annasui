@@ -23,7 +23,6 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     const { user, isApproved } = useAuth();
     const [medleys, setMedleys] = useState<MedleyData[]>(initialMedleys);
     const [searchTerm, setSearchTerm] = useState("");
-    const [genreFilter, setGenreFilter] = useState("");
     const [searchMode, setSearchMode] = useState<"medley" | "song">("medley");
     const [sortBy, setSortBy] = useState<"title" | "creator" | "duration" | "songCount" | "createdAt" | "updatedAt" | "viewCount" | "random">("createdAt");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -96,16 +95,14 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
             if (searchMode === "medley") {
                 const matchesSearch = medley.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                     (medley.creator || '').toLowerCase().includes(searchTerm.toLowerCase());
-                const matchesGenre = true;
-                return matchesSearch && matchesGenre;
+                return matchesSearch;
             } else {
                 // Song search mode
                 const hasMatchingSong = medley.songs.some(song => 
                     song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                     song.artist.toLowerCase().includes(searchTerm.toLowerCase())
                 );
-                const matchesGenre = true;
-                return hasMatchingSong && matchesGenre;
+                return hasMatchingSong;
             }
         })
         .sort((a, b) => {
@@ -179,10 +176,6 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
         )
     : [];
 
-    // Available genres
-    const availableGenres = Array.from(new Set(
-        []
-    )).sort();
 
     const formatTime = (seconds: number): string => {
         const minutes = Math.floor(seconds / 60);
@@ -355,25 +348,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
 
                         {/* Filter and sort controls */}
                         <div className="p-6">
-                            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        ジャンル
-                                    </label>
-                                    <select
-                                        value={genreFilter}
-                                        onChange={(e) => {
-                                            setGenreFilter(e.target.value);
-                                            setCurrentPage(1);
-                                        }}
-                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                    >
-                                        <option value="">すべてのジャンル</option>
-                                        {availableGenres.map(genre => (
-                                            <option key={genre} value={genre}>{genre}</option>
-                                        ))}
-                                    </select>
-                                </div>
+                            <div className="grid gap-4 sm:grid-cols-2">
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         並び順
@@ -462,11 +437,10 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             </div>
                         </div>
                         
-                        {(searchTerm || genreFilter) && (
+                        {searchTerm && (
                             <button
                                 onClick={() => {
                                     setSearchTerm("");
-                                    setGenreFilter("");
                                     setCurrentPage(1);
                                 }}
                                 className="flex items-center gap-2 px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
@@ -668,7 +642,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 {/* No search results */}
                 {((searchMode === "medley" && paginatedMedleys.length === 0) || 
                   (searchMode === "song" && songSearchResults.length === 0)) && 
-                 (searchTerm || genreFilter) && (
+                 searchTerm && (
                     <div className="text-center py-12">
                         <div className="text-gray-500 text-lg mb-4">
                             {searchMode === "medley" ? "検索条件に一致するメドレーが見つかりませんでした" : "検索条件に一致する楽曲が見つかりませんでした"}
@@ -676,7 +650,6 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                         <button
                             onClick={() => {
                                 setSearchTerm("");
-                                setGenreFilter("");
                                 setCurrentPage(1);
                             }}
                             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"

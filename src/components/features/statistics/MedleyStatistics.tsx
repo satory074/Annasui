@@ -22,12 +22,6 @@ export default function MedleyStatistics({ medleys }: MedleyStatisticsProps) {
         ),
     };
 
-    // ジャンル別統計（削除）
-    const genreStats = {} as Record<string, number>;
-
-    const topGenres = Object.entries(genreStats)
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 5);
 
     // アーティスト別統計
     const artistStats = medleys
@@ -106,31 +100,6 @@ export default function MedleyStatistics({ medleys }: MedleyStatisticsProps) {
                 </div>
             </div>
 
-            {/* ジャンル別統計 */}
-            {topGenres.length > 0 && (
-                <div className="bg-white rounded-lg shadow-md p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                        🎵 人気ジャンル
-                    </h3>
-                    <div className="space-y-3">
-                        {topGenres.map(([genre, count], index) => (
-                            <div key={genre} className="flex items-center justify-between">
-                                <div className="flex items-center">
-                                    <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-800 text-xs flex items-center justify-center mr-3">
-                                        {index + 1}
-                                    </span>
-                                    <span className="text-gray-900">
-                                        {genre}
-                                    </span>
-                                </div>
-                                <span className="text-gray-600">
-                                    {count}曲
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
 
             {/* アーティスト別統計 */}
             {topArtists.length > 0 && (

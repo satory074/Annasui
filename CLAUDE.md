@@ -166,6 +166,7 @@ export type SongSection = {
 - **State Management**: Search term preserved across tab switches
 - **Keyboard Support**: ESC key clears search, Enter focuses results
 - **Clear Functionality**: X button and keyboard shortcut for quick reset
+- **No Genre Filtering**: Genre functionality has been removed for simplified UI
 
 **Search Features:**
 ```typescript
@@ -362,13 +363,14 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 - **Responsive breakpoints**: Verify mobile hamburger menu toggles at correct screen size (md breakpoint)
 - **Search functionality moved**: Search is now in HomePageClient content area, not header
 
-### Search System Issues (Added 2025-08-31)
+### Search System Issues (Updated 2025-08-31)
 - **Search input missing**: Ensure search input field is present below tabs in HomePageClient.tsx
 - **Search not working**: Check searchTerm state and filtering logic in filteredAndSortedMedleys
 - **Tab switching clears search**: Verify search state is preserved when switching between medley/song modes
 - **Results not updating**: Ensure useEffect with searchTerm dependency resets pagination to page 1
 - **Keyboard shortcuts not working**: Check ESC key handler and clear button functionality
 - **Cross-medley song search fails**: Verify songSearchResults array mapping and filtering logic
+- **Genre references in legacy code**: Genre filtering has been removed - ensure no genreFilter state or UI remains
 
 ### SongEditModal Issues (Updated 2025-08-31)
 - **Missing imports after UI cleanup**: Ensure unused imports (SongInfoDisplay) are removed from SongEditModal.tsx

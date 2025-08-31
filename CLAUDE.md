@@ -19,7 +19,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 **Deployment**: 
 - Primary: `firebase deploy --only hosting` (Firebase App Hosting with SSR)
 - Build verification: `npm run build` + `npx tsc --noEmit` + `npm run lint`
-- GitHub Actions: Automatic deployment on main branch push
+- GitHub Actions: Automatic deployment on main branch push (configured via `.github/workflows/firebase-hosting-merge.yml`)
 
 ### 動作確認の重要事項
 **CRITICAL**: 機能の動作確認は必ずプロダクション環境（https://anasui-e6f49.web.app）で行うこと。
@@ -156,7 +156,27 @@ export type SongSection = {
 - Mobile-first responsive breakpoints
 - Integrated Vibrant Orange design system
 - Outside-click detection for mobile menu closure
-- **Search functionality removed**: No search features in header as of 2025-08-31
+- **Search functionality moved**: Search moved from header to homepage content area
+
+#### Search System Architecture (Updated 2025-08-31)
+**Comprehensive Search Implementation:**
+- **Dual Search Modes**: Medley search (title/creator) + Song search (title/artist)
+- **Real-time Search**: Instant filtering as user types with automatic pagination reset
+- **Search UI**: Located below tab navigation in HomePageClient
+- **State Management**: Search term preserved across tab switches
+- **Keyboard Support**: ESC key clears search, Enter focuses results
+- **Clear Functionality**: X button and keyboard shortcut for quick reset
+
+**Search Features:**
+```typescript
+// Search modes with different placeholders
+searchMode === "medley" ? "メドレー名または作者名で検索..." : "楽曲名またはアーティスト名で検索..."
+
+// Cross-medley song search results
+const songSearchResults = medleys.flatMap(medley => 
+  medley.songs.filter(song => matches(song, searchTerm))
+);
+```
 
 #### Timeline System & Annotation Enhancement Features
 **Timeline Display**: Always shows full video duration with simplified position calculations
@@ -340,7 +360,15 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 - **Missing navigation items**: Verify authenticated navigation items (e.g., "マイメドレー") appear only for logged-in users
 - **Mobile menu not closing**: Check outside-click detection and useRef implementation in AppHeader
 - **Responsive breakpoints**: Verify mobile hamburger menu toggles at correct screen size (md breakpoint)
-- **Search functionality removed**: AppHeader no longer accepts search-related props as of 2025-08-31
+- **Search functionality moved**: Search is now in HomePageClient content area, not header
+
+### Search System Issues (Added 2025-08-31)
+- **Search input missing**: Ensure search input field is present below tabs in HomePageClient.tsx
+- **Search not working**: Check searchTerm state and filtering logic in filteredAndSortedMedleys
+- **Tab switching clears search**: Verify search state is preserved when switching between medley/song modes
+- **Results not updating**: Ensure useEffect with searchTerm dependency resets pagination to page 1
+- **Keyboard shortcuts not working**: Check ESC key handler and clear button functionality
+- **Cross-medley song search fails**: Verify songSearchResults array mapping and filtering logic
 
 ### SongEditModal Issues (Updated 2025-08-31)
 - **Missing imports after UI cleanup**: Ensure unused imports (SongInfoDisplay) are removed from SongEditModal.tsx
@@ -366,14 +394,15 @@ database/ - Database migrations and schema
 
 ### Key Files
 **Core:**
-- `src/app/page.tsx` - Homepage
-- `src/app/[platform]/[videoId]/page.tsx` - Platform players
+- `src/app/page.tsx` - Homepage with SSR medley fetching
+- `src/components/pages/HomePageClient.tsx` - Client-side homepage with search functionality
+- `src/app/[platform]/[videoId]/page.tsx` - Platform players (Niconico/YouTube)
 - `src/components/pages/MedleyPlayer.tsx` - Main player component
-- `src/hooks/useNicoPlayer.ts` - Niconico integration
+- `src/hooks/useNicoPlayer.ts` - Niconico postMessage integration
 
 **Data:**
 - `src/lib/api/medleys.ts` - Database API with direct fetch implementation
-- `src/lib/utils/songDatabase.ts` - Song search and caching
+- `src/lib/utils/songDatabase.ts` - Song search and caching for cross-medley search
 - `src/lib/utils/videoMetadata.ts` - Video metadata extraction
 
 **Thumbnail System:**
@@ -402,11 +431,11 @@ database/ - Database migrations and schema
 - `src/components/ui/loading/Skeleton.tsx` - Skeleton loading components for improved UX
 - `src/components/ui/loading/PlayerSkeleton.tsx` - Player-specific loading screens and messages
 
-**Logo & Branding System:**
-- `public/logo.svg` - Main Medlean logo with wave symbols and text
-- `public/logo-icon.svg` - Icon-only version for compact spaces
+**Logo & Branding System (Updated 2025-08-31):**
+- `public/logo.svg` - Main Medlean logo with enhanced wave symbols, animation, and text
+- `public/logo-icon.svg` - Icon-only version with animated nodes for compact spaces
 - `public/favicon.ico` - Browser icon with orange branding
-- Logo Component supports sizes: sm, md, lg, xl with optional text display
+- Logo Component supports sizes: sm, md, lg, xl with optional text display and SVG animations
 
 **Note**: Dark mode functionality (DarkModeToggle component) has been completely removed from the application as of 2025-08-30.
 
@@ -483,13 +512,15 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 - **Secondary**: Indigo gradients (`#5b6dee → #4c63d2`) - Complementary contrast  
 - **Accent**: Mint gradients (`#00d9a3 → #06b981`) - Fresh, modern accent
 
-### Logo Design
+### Logo Design (Updated 2025-08-31)
 The Medlean logo features three flowing wave forms representing different songs in a medley:
-- **Orange wave**: Primary song/melody line
-- **Indigo wave**: Secondary harmony/accompaniment
-- **Mint wave**: Bass line/rhythm section
-- **Text**: Gradient from orange → indigo → mint
-- **Symbol**: Circular timeline markers at wave intersections
+- **Primary Wave (Orange)**: Flowing rhythm layer - main song/melody line with animated pulse nodes
+- **Secondary Wave (Indigo)**: Harmonic layer - accompaniment with gradient transparency (0.8 opacity)
+- **Accent Wave (Mint)**: Bass foundation - rhythm section with subtle transparency (0.7 opacity)
+- **Connection Lines**: Dashed connectors showing medley continuity between song transitions
+- **Text**: Enhanced gradient from orange → indigo → mint with improved letter spacing (-0.02em)
+- **Animation**: SVG pulse effects on timeline nodes for musical beat visualization
+- **Accessibility**: Includes aria-label for screen reader compatibility
 
 **Note**: Only light theme is supported. Dark mode has been completely removed from the application.
 

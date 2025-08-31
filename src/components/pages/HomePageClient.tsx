@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createMedley } from "@/lib/api/medleys";
@@ -20,7 +20,7 @@ interface HomePageClientProps {
 
 export default function HomePageClient({ initialMedleys }: HomePageClientProps) {
     const router = useRouter();
-    const { user, isApproved, approvalLoading } = useAuth();
+    const { user, isApproved } = useAuth();
     const [medleys, setMedleys] = useState<MedleyData[]>(initialMedleys);
     const [searchTerm, setSearchTerm] = useState("");
     const [genreFilter, setGenreFilter] = useState("");
@@ -32,6 +32,11 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     const [itemsPerPage, setItemsPerPage] = useState(8);
     const [showCreateMedleyModal, setShowCreateMedleyModal] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+
+    // Reset pagination when search term changes
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm]);
 
     const handleCreateMedley = async (medleyData: Omit<MedleyData, 'songs'>) => {
         // Check authentication
@@ -276,7 +281,6 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                 <button
                                     onClick={() => {
                                         setSearchMode("medley");
-                                        setSearchTerm("");
                                         setCurrentPage(1);
                                     }}
                                     className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -295,7 +299,6 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                 <button
                                     onClick={() => {
                                         setSearchMode("song");
-                                        setSearchTerm("");
                                         setCurrentPage(1);
                                     }}
                                     className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
@@ -312,6 +315,42 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     </div>
                                 </button>
                             </nav>
+                        </div>
+
+                        {/* Search input field */}
+                        <div className="border-b border-gray-200 px-6 pt-6 pb-4">
+                            <div className="relative max-w-md">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                    </svg>
+                                </div>
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Escape') {
+                                            setSearchTerm("");
+                                        }
+                                    }}
+                                    placeholder={searchMode === "medley" 
+                                        ? "メドレー名または作者名で検索..." 
+                                        : "楽曲名またはアーティスト名で検索..."
+                                    }
+                                    className="block w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent bg-gray-50"
+                                />
+                                {searchTerm && (
+                                    <button
+                                        onClick={() => setSearchTerm("")}
+                                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                                    >
+                                        <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Filter and sort controls */}

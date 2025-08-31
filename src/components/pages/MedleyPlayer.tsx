@@ -17,6 +17,7 @@ import ManualSongAddModal from "@/components/features/medley/ManualSongAddModal"
 import { SongSection } from "@/types";
 import { SongDatabaseEntry, createSongFromDatabase, addManualSong } from "@/lib/utils/songDatabase";
 import { logger } from "@/lib/utils/logger";
+import { PlayerLoadingMessage } from "@/components/ui/loading/PlayerSkeleton";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -627,6 +628,11 @@ export default function MedleyPlayer({
         }
     };
 
+    // Show loading screen while data is loading
+    if (loading) {
+        return <PlayerLoadingMessage />;
+    }
+
     return (
         <div className="min-h-screen bg-gray-100">
             <div className="max-w-6xl mx-auto bg-white shadow-lg">
@@ -672,10 +678,18 @@ export default function MedleyPlayer({
                     )}
                 </div>
 
-                {/* データロード状態とエラー表示 */}
-                {loading && (
-                    <div className="p-4 text-center text-gray-600">
-                        メドレーデータを読み込み中...
+                {/* エラー表示 */}
+                {error && (
+                    <div className="p-4 bg-red-50 border-l-4 border-red-400">
+                        <div className="flex">
+                            <svg className="w-5 h-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                            <div>
+                                <h3 className="text-sm font-medium text-red-800">データの読み込みエラー</h3>
+                                <p className="text-sm text-red-700 mt-1">{error}</p>
+                            </div>
+                        </div>
                     </div>
                 )}
 

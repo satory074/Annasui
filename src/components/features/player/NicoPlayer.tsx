@@ -4,6 +4,7 @@ import { useState } from "react";
 import { formatTime } from "@/lib/utils/time";
 import ErrorMessage from "@/components/ui/ErrorMessage";
 import PlayerControls from "./PlayerControls";
+import { logger } from '@/lib/utils/logger';
 
 interface NicoPlayerProps {
   playerRef: React.RefObject<HTMLIFrameElement | null>;
@@ -58,11 +59,11 @@ export default function NicoPlayer({
               allow="autoplay; fullscreen"
               className="w-full h-full border-0"
               onLoad={() => {
-                console.log("Iframe onLoad fired, URL:", embedUrl);
+                logger.debug("Iframe onLoad fired, URL:", embedUrl);
                 onIframeLoad();
               }}
               onError={(e) => {
-                console.error("Iframe loading error:", e);
+                logger.error("Iframe loading error:", e);
               }}
             ></iframe>
           </>

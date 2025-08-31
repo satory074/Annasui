@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import UserAvatar from '@/components/ui/user/UserAvatar'
 import AuthModal from './AuthModal'
+import { logger } from '@/lib/utils/logger'
 
 const UserProfileDropdown = React.memo(function UserProfileDropdown() {
   const { user, signOut, loading } = useAuth()
@@ -36,7 +37,7 @@ const UserProfileDropdown = React.memo(function UserProfileDropdown() {
       await signOut()
       setIsDropdownOpen(false)
     } catch (error) {
-      console.error('Sign out error:', error)
+      logger.error('Sign out error:', error)
     } finally {
       setIsSigningOut(false)
     }

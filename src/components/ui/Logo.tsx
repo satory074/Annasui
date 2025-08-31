@@ -15,7 +15,7 @@ const sizeMap = {
 
 export default function Logo({ size = 'md', className = '', showText = true }: LogoProps) {
   const { width, height, fontSize } = sizeMap[size];
-  const scale = width / 200; // Base size is 200x60
+  // const scale = width / 200; // Base size is 200x60
 
   return (
     <svg 

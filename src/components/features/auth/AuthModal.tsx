@@ -3,6 +3,7 @@
 import React, { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import BaseModal from '@/components/ui/modal/BaseModal'
+import { logger } from '@/lib/utils/logger'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -29,7 +30,7 @@ export default function AuthModal({
       await signIn(provider)
       // The OAuth flow will redirect, so we don't need to close the modal here
     } catch (err) {
-      console.error('Sign in error:', err)
+      logger.error('Sign in error:', err)
       setError(err instanceof Error ? err.message : '認証エラーが発生しました')
       setSigningIn(false)
     }

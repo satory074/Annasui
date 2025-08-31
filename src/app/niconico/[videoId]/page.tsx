@@ -3,6 +3,7 @@ import MedleyPageClient from "@/components/pages/MedleyPageClient";
 import { getMedleyByVideoId } from "@/lib/api/medleys";
 import { getThumbnailUrl } from "@/lib/utils/thumbnail";
 import Breadcrumb from "@/components/ui/Breadcrumb";
+import { logger } from '@/lib/utils/logger';
 
 interface MedleyPageProps {
     params: Promise<{
@@ -88,7 +89,7 @@ export async function generateMetadata({ params }: MedleyPageProps): Promise<Met
       },
     };
   } catch (error) {
-    console.error('Error generating metadata:', error);
+    logger.error('Error generating metadata:', error);
     return {
       title: `${videoId} - Medlean`,
       description: 'ニコニコ動画のメドレーアノテーションを表示',
@@ -106,7 +107,7 @@ export default async function MedleyPage({ params }: MedleyPageProps) {
     try {
       medleyData = await getMedleyByVideoId(videoId);
     } catch (error) {
-      console.error('Error fetching medley data for structured data:', error);
+      logger.error('Error fetching medley data for structured data:', error);
     }
 
     const breadcrumbItems = [

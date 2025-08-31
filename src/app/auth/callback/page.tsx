@@ -3,6 +3,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { logger } from '@/lib/utils/logger'
 
 export default function AuthCallbackPage() {
   const router = useRouter()
@@ -10,7 +11,7 @@ export default function AuthCallbackPage() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       if (!supabase) {
-        console.warn('⚠️ Supabase client not available')
+        logger.warn('⚠️ Supabase client not available')
         router.push('/')
         return
       }
@@ -20,15 +21,15 @@ export default function AuthCallbackPage() {
         const { data, error } = await supabase.auth.getSession()
         
         if (error) {
-          console.error('❌ Auth callback error:', error)
+          logger.error('❌ Auth callback error:', error)
         } else if (data.session) {
-          console.log('✅ Authentication successful:', data.session.user.email)
+          logger.info('✅ Authentication successful:', data.session.user.email)
         }
         
         // Redirect to home page
         router.push('/')
       } catch (error) {
-        console.error('Auth callback processing error:', error)
+        logger.error('Auth callback processing error:', error)
         router.push('/')
       }
     }

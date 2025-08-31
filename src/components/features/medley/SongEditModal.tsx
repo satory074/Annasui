@@ -88,7 +88,7 @@ export default function SongEditModal({
   const [isSaving, setIsSaving] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log('📋 useEffect triggered:', {
+    logger.debug('📋 useEffect triggered:', {
       isSaving,
       song: song ? `${song.title} (${song.id})` : null,
       isNew,
@@ -100,13 +100,13 @@ export default function SongEditModal({
     
     // セーブ中はセグメント状態をリセットしない
     if (isSaving) {
-      console.log('🚫 Skipping useEffect due to isSaving=true');
+      logger.debug('🚫 Skipping useEffect due to isSaving=true');
       return;
     }
     
     // モーダルが閉じているときは処理をスキップ
     if (!isOpen) {
-      console.log('🚫 Skipping useEffect due to isOpen=false');
+      logger.debug('🚫 Skipping useEffect due to isOpen=false');
       return;
     }
     
@@ -130,11 +130,11 @@ export default function SongEditModal({
             segmentNumber: index + 1,
             color: s.color
           }));
-          console.log('🔄 Setting segments from duplicates:', segmentData.length, 'segments');
+          logger.debug('🔄 Setting segments from duplicates:', segmentData.length, 'segments');
           setSegments(segmentData);
         } else {
           // 単一セグメント
-          console.log('🔄 Setting single segment for song:', song.title);
+          logger.debug('🔄 Setting single segment for song:', song.title);
           setSegments([{
             id: song.id,
             startTime: song.startTime,
@@ -145,7 +145,7 @@ export default function SongEditModal({
         }
       } else {
         // allSongsがない場合は単一セグメント
-        console.log('🔄 Setting single segment (no allSongs):', song.title);
+        logger.debug('🔄 Setting single segment (no allSongs):', song.title);
         setSegments([{
           id: song.id,
           startTime: song.startTime,

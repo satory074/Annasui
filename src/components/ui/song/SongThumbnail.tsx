@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { getThumbnailUrl, getBestThumbnailFromLinks } from "@/lib/utils/thumbnail";
 import { useState, useEffect } from "react";
 import { SkeletonThumbnail } from "@/components/ui/LoadingSkeleton";
+import { logger } from '@/lib/utils/logger';
 
 interface SongThumbnailProps {
   originalLink?: string;
@@ -63,10 +64,10 @@ export default function SongThumbnail({
           setPrimaryLink(originalLink);
         }
       } catch (error) {
-        console.error('Thumbnail loading error:', error);
+        logger.error('Thumbnail loading error:', error);
         // リトライ可能な場合はリトライ
         if (retryCount < maxRetries) {
-          console.warn(`サムネイル読み込み失敗。リトライします... (${retryCount + 1}/${maxRetries})`);
+          logger.warn(`サムネイル読み込み失敗。リトライします... (${retryCount + 1}/${maxRetries})`);
           setRetryCount(prev => prev + 1);
           setIsLoading(false);
           
@@ -77,7 +78,7 @@ export default function SongThumbnail({
           }, 1500);
           return;
         } else {
-          console.error('最大リトライ回数に達しました。サムネイル読み込みに失敗。');
+          logger.error('最大リトライ回数に達しました。サムネイル読み込みに失敗。');
           setHasError(true);
         }
       } finally {
@@ -146,9 +147,9 @@ export default function SongThumbnail({
         sizes={size === 'lg' ? '100vw' : size === 'md' ? '160px' : '128px'}
         priority={size === 'lg'}
         onError={() => {
-          console.warn(`Image load failed for: ${title}`, { url: thumbnailUrl, primaryLink });
+          logger.warn(`Image load failed for: ${title}`, { url: thumbnailUrl, primaryLink });
           if (retryCount < maxRetries) {
-            console.log(`Image error - retrying thumbnail load (${retryCount + 1}/${maxRetries})`);
+            logger.debug(`Image error - retrying thumbnail load (${retryCount + 1}/${maxRetries})`);
             setRetryCount(prev => prev + 1);
             setThumbnailUrl(null);
           } else {
@@ -157,7 +158,7 @@ export default function SongThumbnail({
         }}
         onLoad={() => {
           if (retryCount > 0) {
-            console.log(`✅ Thumbnail loaded successfully after ${retryCount} retry(s): ${title}`);
+            logger.debug(`✅ Thumbnail loaded successfully after ${retryCount} retry(s): ${title}`);
           }
         }}
       />

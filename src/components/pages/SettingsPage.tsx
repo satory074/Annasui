@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import UserAvatar from '@/components/ui/user/UserAvatar'
 import AuthModal from '@/components/features/auth/AuthModal'
+import { logger } from '@/lib/utils/logger'
 
 export default function SettingsPage() {
   const { user, loading, signOut } = useAuth()
@@ -28,7 +29,7 @@ export default function SettingsPage() {
       await signOut()
       router.push('/')
     } catch (error) {
-      console.error('Sign out error:', error)
+      logger.error('Sign out error:', error)
     } finally {
       setIsSigningOut(false)
     }

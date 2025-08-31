@@ -7,6 +7,7 @@ import { getUserMedleys } from '@/lib/api/medleys'
 import { MedleyData } from '@/types'
 import UserAvatar from '@/components/ui/user/UserAvatar'
 import AuthModal from '@/components/features/auth/AuthModal'
+import { logger } from '@/lib/utils/logger'
 
 export default function ProfilePage() {
   const { user, loading } = useAuth()
@@ -29,7 +30,7 @@ export default function ProfilePage() {
         const medleys = await getUserMedleys(user.id)
         setUserMedleys(medleys)
       } catch (error) {
-        console.error('Failed to load user medleys:', error)
+        logger.error('Failed to load user medleys:', error)
       } finally {
         setMedleysLoading(false)
       }

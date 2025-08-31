@@ -2,6 +2,7 @@ import { Metadata } from 'next'
 import MedleyPageClient from "@/components/pages/MedleyPageClient";
 import { getMedleyByVideoId } from "@/lib/api/medleys";
 import Breadcrumb from "@/components/ui/Breadcrumb";
+import { logger } from '@/lib/utils/logger';
 
 interface YouTubeMedleyPageProps {
     params: Promise<{
@@ -87,7 +88,7 @@ export async function generateMetadata({ params }: YouTubeMedleyPageProps): Prom
       },
     };
   } catch (error) {
-    console.error('Error generating metadata:', error);
+    logger.error('Error generating metadata:', error);
     return {
       title: `${videoId} - Medlean`,
       description: 'YouTubeメドレーのアノテーションを表示',
@@ -105,7 +106,7 @@ export default async function YouTubeMedleyPage({ params }: YouTubeMedleyPagePro
     try {
       medleyData = await getMedleyByVideoId(videoId);
     } catch (error) {
-      console.error('Error fetching medley data for structured data:', error);
+      logger.error('Error fetching medley data for structured data:', error);
     }
 
     const breadcrumbItems = [

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { SongSection } from "@/types";
 import { formatTime } from "@/lib/utils/time";
 import PlayPauseButton from "@/components/ui/PlayPauseButton";
+import { logger } from '@/lib/utils/logger';
 
 interface SongListProps {
   songs: SongSection[];
@@ -93,7 +94,7 @@ export default function SongListGrouped({
       return groups;
     }, {} as Record<string, SongGroup>);
     
-    console.log('🔄 SongListGrouped: groupedSongs recalculated', {
+    logger.debug('🔄 SongListGrouped: groupedSongs recalculated', {
       totalSongs: songs.length,
       totalGroups: Object.keys(grouped).length,
       groupDetails: Object.entries(grouped).map(([key, group]) => ({
@@ -229,18 +230,18 @@ export default function SongListGrouped({
   useEffect(() => {
     if (!isEditMode) return;
 
-    console.log('🔧 Setting up keyboard event listeners for edit mode');
+    logger.debug('🔧 Setting up keyboard event listeners for edit mode');
     
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.repeat) return;
-      console.log('⌨️ Key pressed:', e.key, 'edit mode:', isEditMode);
+      logger.debug('⌨️ Key pressed:', e.key, 'edit mode:', isEditMode);
 
       switch (e.key.toLowerCase()) {
         case 's':
           if (!e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             setIsPressingS(true);
-            console.log('🟦 S key pressed, calling onQuickSetStartTime');
+            logger.debug('🟦 S key pressed, calling onQuickSetStartTime');
             onQuickSetStartTime?.(currentTime);
           }
           break;
@@ -248,7 +249,7 @@ export default function SongListGrouped({
           if (!e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             setIsPressingE(true);
-            console.log('🟢 E key pressed, calling onQuickSetEndTime');
+            logger.debug('🟢 E key pressed, calling onQuickSetEndTime');
             onQuickSetEndTime?.(currentTime);
           }
           break;
@@ -256,7 +257,7 @@ export default function SongListGrouped({
           if (!e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             setIsPressingM(true);
-            console.log('🎵 M key pressed, currentTime:', currentTime, 'onQuickAddMarker:', !!onQuickAddMarker);
+            logger.debug('🎵 M key pressed, currentTime:', currentTime, 'onQuickAddMarker:', !!onQuickAddMarker);
             onQuickAddMarker?.(currentTime);
           }
           break;
@@ -287,7 +288,7 @@ export default function SongListGrouped({
     document.addEventListener('keyup', handleKeyUp);
     
     return () => {
-      console.log('🔧 Cleaning up keyboard event listeners');
+      logger.debug('🔧 Cleaning up keyboard event listeners');
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
     };

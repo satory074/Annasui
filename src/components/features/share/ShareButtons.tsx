@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { SongSection } from "@/types";
+import { logger } from "@/lib/utils/logger";
 
 interface ShareButtonsProps {
   url: string;
@@ -26,7 +27,7 @@ export default function ShareButtons({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      console.error('Failed to copy URL');
+      logger.error('Failed to copy URL');
       // フォールバック: 旧式のコピー方法
       const textArea = document.createElement('textarea');
       textArea.value = url;
@@ -71,7 +72,7 @@ export default function ShareButtons({
           url: url,
         });
       } catch {
-        console.log('Native share cancelled or failed');
+        logger.debug('Native share cancelled or failed');
       }
     }
   };

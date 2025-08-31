@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
 import { autoCorrectPlatform } from "@/lib/utils/platformDetection";
 import Logo from "@/components/ui/Logo";
+import { logger } from "@/lib/utils/logger";
 
 interface HomePageClientProps {
     initialMedleys: MedleyData[];
@@ -22,7 +23,6 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     const router = useRouter();
     const { user } = useAuth();
     const [medleys, setMedleys] = useState<MedleyData[]>(initialMedleys);
-    // Remove unused loading state as it's not currently used for homepage data loading
     const [searchTerm, setSearchTerm] = useState("");
     const [genreFilter, setGenreFilter] = useState("");
     const [searchMode, setSearchMode] = useState<"medley" | "song">("medley");
@@ -37,12 +37,12 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     const handleCreateMedley = async (medleyData: Omit<MedleyData, 'songs'>) => {
         // Check authentication
         if (!user) {
-            console.warn('⚠️ User not authenticated, cannot create medley');
+            logger.warn('⚠️ User not authenticated, cannot create medley');
             setShowAuthModal(true);
             return;
         }
 
-        console.log('🔐 Creating medley with user:', user.id, user.email);
+        logger.info('🔐 Creating medley with user:', user.id, user.email);
         
         try {
             // Create medley in database with user_id
@@ -61,12 +61,12 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 const platform = medleyData.platform || 'niconico';
                 router.push(`/${platform}/${medleyData.videoId}`);
                 
-                console.log('✅ Medley created successfully:', newMedley.id);
+                logger.info('✅ Medley created successfully:', newMedley.id);
             } else {
                 alert('メドレーの作成に失敗しました');
             }
         } catch (error) {
-            console.error('❌ Error creating medley:', error);
+            logger.error('❌ Error creating medley:', error);
             alert('メドレーの作成に失敗しました。もう一度お試しください。');
         }
     };

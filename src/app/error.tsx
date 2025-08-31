@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { logger } from "@/lib/utils/logger";
 
 export default function Error({
   error,
@@ -10,7 +11,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("App error:", error);
+    logger.error("App error:", error);
   }, [error]);
 
   return (
@@ -36,9 +37,22 @@ export default function Error({
           アプリケーションエラー
         </h2>
         
-        <p className="text-gray-600 mb-6">
+        <p className="text-gray-600 mb-4">
           申し訳ございません。予期しないエラーが発生しました。
         </p>
+        
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center mb-2">
+            <svg className="w-5 h-5 text-yellow-600 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <h3 className="text-sm font-medium text-yellow-800">アルファ版について</h3>
+          </div>
+          <p className="text-sm text-yellow-700">
+            現在このアプリケーションはアルファ版です。予期しないエラーが発生する可能性があります。
+            問題が発生した場合は、フィードバックボタンよりご報告いただけると助かります。
+          </p>
+        </div>
         
         <div className="space-y-3">
           <button
@@ -54,6 +68,18 @@ export default function Error({
           >
             ホームに戻る
           </button>
+          
+          <a
+            href="https://github.com/anthropics/claude-code/issues"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 px-4 rounded transition-colors flex items-center justify-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+            </svg>
+            バグ報告・フィードバック
+          </a>
         </div>
         
         {process.env.NODE_ENV === "development" && (

@@ -105,7 +105,7 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
       return null
     }
 
-    const medley = medleyData[0] as any;
+    const medley = medleyData[0] as Record<string, unknown>;
 
     // Get the songs for this medley using direct fetch
     const songData = await directFetch(

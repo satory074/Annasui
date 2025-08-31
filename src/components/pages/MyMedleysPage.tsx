@@ -8,6 +8,7 @@ import { getUserMedleys, deleteMedley } from '@/lib/api/medleys'
 import { MedleyData } from '@/types'
 import AuthModal from '@/components/features/auth/AuthModal'
 import CreateMedleyModal from '@/components/features/medley/CreateMedleyModal'
+import { logger } from '@/lib/utils/logger'
 
 export default function MyMedleysPage() {
   const { user, loading } = useAuth()
@@ -36,7 +37,7 @@ export default function MyMedleysPage() {
         const medleys = await getUserMedleys(user.id)
         setUserMedleys(medleys)
       } catch (error) {
-        console.error('Failed to load user medleys:', error)
+        logger.error('Failed to load user medleys:', error)
       } finally {
         setMedleysLoading(false)
       }
@@ -64,7 +65,7 @@ export default function MyMedleysPage() {
         alert('メドレーの削除に失敗しました')
       }
     } catch (error) {
-      console.error('Error deleting medley:', error)
+      logger.error('Error deleting medley:', error)
       alert('メドレーの削除に失敗しました')
     } finally {
       setDeleteLoading(false)

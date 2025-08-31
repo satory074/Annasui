@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Medlean** (formerly Anasui) is a comprehensive multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, advanced editing capabilities, searchable medley database, and user authentication. Supports 4 platforms: Niconico (full integration), YouTube (embed), Spotify (thumbnails), and Apple Music (thumbnails).
 
-**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, comprehensive annotation enhancement features, and full SEO optimization. Dark mode functionality has been completely removed. Production reliability improvements implemented (2025-08-31).
+**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, comprehensive annotation enhancement features, and full SEO optimization. Dark mode functionality has been completely removed. Production reliability improvements implemented (2025-08-31). **Alpha Version 0.1.0-alpha.1** - Ready for user testing with improved error handling, skeleton loading UI, and production-safe logging.
 
 ## Core Architecture
 
@@ -341,6 +341,8 @@ database/ - Database migrations and schema
 - `src/components/ui/song/SongInfoDisplay.tsx` - Unified song display with multi-platform support
 - `src/components/ui/song/MultiSegmentTimeEditor.tsx` - Multi-segment editor
 - `src/components/ui/Logo.tsx` - Reusable Medlean logo component with size variations
+- `src/components/ui/loading/Skeleton.tsx` - Skeleton loading components for improved UX
+- `src/components/ui/loading/PlayerSkeleton.tsx` - Player-specific loading screens and messages
 
 **Logo & Branding System:**
 - `public/logo.svg` - Main Medlean logo with wave symbols and text
@@ -403,6 +405,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
    - `001_create_users_table.sql` - User profiles table
    - `002_add_user_id_to_medleys.sql` - User ownership for medleys
    - `003_fix_rick_astley_medley.sql` - Platform corrections (run after major data fixes)
+   - `004_add_rick_astley_song_data.sql` - Adds proper song data for Rick Astley medley (fixes 0 songs issue)
 2. **OAuth Configuration**: Configure GitHub and Google providers in Supabase Auth settings
 3. **RLS Policies**: Ensure Row Level Security policies are active for user data protection
 
@@ -467,3 +470,17 @@ if (correction.wasCorrected) {
   logger.warn(`Platform corrected: ${declaredPlatform} -> ${correction.correctedPlatform}`);
 }
 ```
+
+## Alpha Version Features (v0.1.0-alpha.1)
+
+### Alpha Version Indicators
+- **Visual Badges**: "ALPHA" badges displayed in header and homepage with orange gradient styling
+- **Error Pages**: Enhanced error.tsx with alpha version warnings and bug reporting links
+- **Loading States**: Custom skeleton UI components for improved loading experience
+- **User Feedback**: Direct links to GitHub Issues for bug reporting and feedback
+
+### Production-Ready Improvements
+- **Logging System**: All console.log statements replaced with production-safe logger utility
+- **Error Boundaries**: Comprehensive error handling with user-friendly messages
+- **Loading UX**: PlayerLoadingMessage and Skeleton components for better perceived performance
+- **Build Validation**: Automated build, lint, and type checking in deployment pipeline

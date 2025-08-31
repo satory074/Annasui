@@ -5,6 +5,7 @@ import { getSongDatabase, searchSongs, SongDatabaseEntry, createSongFromDatabase
 import { SongSection } from "@/types";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import SongInfoDisplay from "@/components/ui/song/SongInfoDisplay";
+import { logger } from '@/lib/utils/logger';
 
 interface SongSearchModalProps {
   isOpen: boolean;
@@ -56,7 +57,7 @@ export default function SongSearchModal({
           const db = await getSongDatabase();
           setSongDatabase(db);
         } catch (error) {
-          console.error('Failed to load song database:', error);
+          logger.error('Failed to load song database:', error);
           setSongDatabase([]);
         }
         setIsLoading(false);

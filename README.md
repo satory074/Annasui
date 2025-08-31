@@ -15,8 +15,9 @@ Medleanは、ニコニコ動画、YouTube、Spotify、Apple Musicのメドレー
 
 - **フロントエンド**: Next.js 15.2.1, React 19.0.0, TypeScript
 - **スタイリング**: TailwindCSS 4, Emotion
-- **データベース**: Supabase (オプション、静的データにフォールバック)
-- **デプロイ**: Netlify (静的エクスポート)
+- **データベース**: Supabase PostgreSQL
+- **認証**: Supabase Auth (OAuth with GitHub/Google)
+- **デプロイ**: Firebase App Hosting (SSR対応)
 - **プレイヤー統合**: postMessage API (ニコニコ), iframe embed (YouTube)
 
 ## 開発環境のセットアップ
@@ -84,7 +85,7 @@ src/
 │   ├── layout/         # レイアウトコンポーネント
 │   ├── pages/          # ページコンポーネント
 │   └── ui/             # 汎用UIコンポーネント
-├── data/               # 静的データファイル
+├── contexts/           # React Context (認証等)
 ├── hooks/              # カスタムReactフック
 ├── lib/                # ユーティリティ・API
 └── types/              # TypeScript型定義
@@ -92,17 +93,43 @@ src/
 
 ## デプロイ
 
-### Netlifyへのデプロイ
+### Firebase App Hostingへのデプロイ
+
+#### 前提条件
+- Firebase CLIのインストール: `npm install -g firebase-tools`
+- Firebaseプロジェクトへのアクセス権限
+
+#### デプロイコマンド
 
 ```bash
-# プロダクションビルド
-npm run build
+# Firebaseログイン
+firebase login
 
-# Netlifyにデプロイ
-npx netlify deploy --prod
+# プロジェクト選択
+firebase use anasui-e6f49
+
+# プロダクションビルドチェック
+npm run build
+npx tsc --noEmit
+npm run lint
+
+# ホスティングへデプロイ (推奨)
+firebase deploy --only hosting
+
+# フルデプロイ (非推奨)
+# firebase deploy
 ```
 
-現在のプロダクション環境: https://illustrious-figolla-20f57e.netlify.app
+#### プロダクション環境
+- **メイン**: https://anasui-e6f49.web.app
+- **サブ**: https://anasui-e6f49.firebaseapp.com
+
+#### 環境変数の設定
+Firebase Consoleで以下の環境変数を設定:
+```
+NEXT_PUBLIC_SUPABASE_URL=https://dheairurkxjftugrwdjl.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
+```
 
 ## ドキュメント
 
@@ -115,7 +142,28 @@ npx netlify deploy --prod
 
 ## ライセンス
 
-このプロジェクトはプライベートプロジェクトです。
+このプロジェクトはアルファ版です。MITライセンスの下でリリースされています。
+
+## 重要な注意事項
+
+### 動作確認について
+**重要**: 機能の動作確認は必ずプロダクション環境 (https://anasui-e6f49.web.app) で行ってください。
+ローカル環境とプロダクション環境では、iframe通信やSSR等の違いにより動作が異なる場合があります。
+
+### データベース設定
+アプリケーションを正しく動作させるためには、以下のデータベースマイグレーションをSupabase Dashboardで実行してください:
+
+1. `database/migrations/001_create_users_table.sql`
+2. `database/migrations/002_add_user_id_to_medleys.sql`  
+3. `database/migrations/003_fix_rick_astley_medley.sql`
+4. `database/migrations/004_add_rick_astley_song_data.sql`
+
+OAuthプロバイダーの設定もSupabase Auth設定でGitHubとGoogleを有効化してください。
+
+### アルファ版について
+- 現在はアルファ版 (v0.1.0-alpha.1) です
+- 予期しないエラーや不安定な動作が起こる可能性があります
+- フィードバックは [GitHub Issues](https://github.com/anthropics/claude-code/issues) で受け付けています
 
 ## 貢献
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { SongSection } from "@/types";
 import { parseTimeInput, formatTimeSimple } from "@/lib/utils/time";
+import { logger } from '@/lib/utils/logger';
 
 // セグメント編集状態
 interface SegmentEditState {
@@ -289,7 +290,7 @@ export default function MultiSegmentTimeEditor({
 
   // セグメント追加
   const addSegment = () => {
-    console.log('🔄 addSegment called', { 
+    logger.debug('🔄 addSegment called', { 
       segmentsLength: segments.length,
       segments: segments.map(s => ({ id: s.id, segmentNumber: s.segmentNumber }))
     });
@@ -310,10 +311,10 @@ export default function MultiSegmentTimeEditor({
       color: `bg-blue-${400 + (maxSegmentNumber % 3) * 100}` // 色のバリエーション
     };
 
-    console.log('✅ New segment created', newSegment);
+    logger.debug('✅ New segment created', newSegment);
     const updatedSegments = [...segments, newSegment];
-    console.log('📤 Calling onChange with segments', updatedSegments.length);
-    console.log('📤 Updated segments:', updatedSegments.map(s => ({ 
+    logger.debug('📤 Calling onChange with segments', updatedSegments.length);
+    logger.debug('📤 Updated segments:', updatedSegments.map(s => ({ 
       id: s.id, 
       segmentNumber: s.segmentNumber,
       startTime: s.startTime,

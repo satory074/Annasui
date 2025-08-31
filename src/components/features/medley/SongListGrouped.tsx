@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SongSection } from "@/types";
 import { formatTime } from "@/lib/utils/time";
 import PlayPauseButton from "@/components/ui/PlayPauseButton";
@@ -35,6 +35,16 @@ interface SongListProps {
   medleyCreator?: string;
   originalVideoUrl?: string;
   onQuickAddAnnotation?: (annotation: { title: string; artist: string; startTime: number }) => void;
+  // Edit mode toggle
+  onToggleEditMode?: () => void;
+  onAddSong?: () => void;
+  onImportSetlist?: () => void;
+  canUndo?: boolean;
+  canRedo?: boolean;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  // Temporary timeline bar - for adding songs from M key long press
+  onAddSongFromTempBar?: (startTime: number, endTime: number) => void;
 }
 
 // 楽曲グループの型定義
@@ -71,6 +81,14 @@ export default function SongListGrouped({
   medleyCreator,
   originalVideoUrl,
   onQuickAddAnnotation,
+  onToggleEditMode,
+  onAddSong,
+  onImportSetlist,
+  canUndo = false,
+  canRedo = false,
+  onUndo,
+  onRedo,
+  onAddSongFromTempBar,
 }: SongListProps) {
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
   const [dragMode, setDragMode] = useState<'start' | 'end' | 'move' | null>(null);
@@ -82,7 +100,56 @@ export default function SongListGrouped({
   // クイックアノテーション機能の状態管理
   const [quickAnnotationVisible, setQuickAnnotationVisible] = useState<boolean>(false);
 
+  // 一時的なタイムラインバーの状態管理（Mキー長押し用）
+  const [tempTimelineBar, setTempTimelineBar] = useState<{
+    startTime: number;
+    endTime: number;
+    isActive: boolean;
+  } | null>(null);
+  const mKeyLongPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const tempTimelineBarRef = useRef<{ startTime: number; endTime: number; isActive: boolean; } | null>(null);
+  const [isLongPress, setIsLongPress] = useState<boolean>(false);
+  
+  // Ref を state と同期
+  useEffect(() => {
+    tempTimelineBarRef.current = tempTimelineBar;
+  }, [tempTimelineBar]);
+
   const effectiveTimelineDuration = actualPlayerDuration || duration;
+
+  // Update temporary timeline bar continuously while M key is held
+  useEffect(() => {
+    if (tempTimelineBar && tempTimelineBar.isActive) {
+      logger.debug('🎵 Setting up interval for tempTimelineBar update');
+      const interval = setInterval(() => {
+        setTempTimelineBar(prev => {
+          if (prev && prev.isActive) {
+            const updated = {
+              ...prev,
+              endTime: currentTime
+            };
+            logger.debug('🎵 Updating tempTimelineBar endTime:', updated.endTime);
+            return updated;
+          }
+          return prev;
+        });
+      }, 100); // Update every 100ms
+      
+      return () => {
+        logger.debug('🎵 Clearing interval for tempTimelineBar update');
+        clearInterval(interval);
+      };
+    }
+  }, [tempTimelineBar?.isActive, currentTime]);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (mKeyLongPressTimerRef.current) {
+        clearTimeout(mKeyLongPressTimerRef.current);
+      }
+    };
+  }, []);
 
   // 楽曲をタイトル・アーティストでグループ化
   const groupedSongs = useMemo(() => {
@@ -263,8 +330,29 @@ export default function SongListGrouped({
           if (!e.ctrlKey && !e.metaKey) {
             e.preventDefault();
             setIsPressingM(true);
-            logger.debug('🎵 M key pressed, currentTime:', currentTime, 'onQuickAddMarker:', !!onQuickAddMarker);
-            onQuickAddMarker?.(currentTime);
+            setIsLongPress(false); // リセット
+            logger.debug('🎵 M key pressed, currentTime:', currentTime);
+            
+            // 編集モードの場合のみ長押し検出を開始
+            if (isEditMode) {
+              // Clear any existing timer
+              if (mKeyLongPressTimerRef.current) {
+                clearTimeout(mKeyLongPressTimerRef.current);
+              }
+              
+              logger.debug('🎵 Setting up M key long press timer');
+              const longPressTimer = setTimeout(() => {
+                logger.debug('🎵 M key long press detected, entering long press mode at time:', currentTime);
+                setIsLongPress(true);
+                setTempTimelineBar({
+                  startTime: currentTime,
+                  endTime: currentTime,
+                  isActive: true
+                });
+              }, 500); // 500ms delay for long press
+              
+              mKeyLongPressTimerRef.current = longPressTimer;
+            }
           }
           break;
       }
@@ -285,6 +373,43 @@ export default function SongListGrouped({
         case 'm':
           if (!e.ctrlKey && !e.metaKey) {
             setIsPressingM(false);
+            
+            // Clear long press timer if still running
+            if (mKeyLongPressTimerRef.current) {
+              logger.debug('🎵 Clearing M key long press timer');
+              clearTimeout(mKeyLongPressTimerRef.current);
+              mKeyLongPressTimerRef.current = null;
+            }
+            
+            // Check if this was a long press or short press
+            if (isLongPress) {
+              // Long press: Handle temporary timeline bar completion
+              const currentTempBar = tempTimelineBarRef.current;
+              if (currentTempBar && currentTempBar.isActive) {
+                logger.debug('🎵 M key released (long press), completing temporary timeline bar', currentTempBar);
+                
+                // Only create song if the bar has meaningful duration (at least 1 second)
+                const duration = currentTempBar.endTime - currentTempBar.startTime;
+                if (duration >= 1.0 && onAddSongFromTempBar) {
+                  logger.debug('🎵 Creating song from temp bar, duration:', duration);
+                  onAddSongFromTempBar(currentTempBar.startTime, currentTempBar.endTime);
+                } else {
+                  logger.debug('🎵 Temp bar duration too short:', duration);
+                }
+                
+                // Clear temporary bar
+                setTempTimelineBar(null);
+              }
+            } else {
+              // Short press: Create default 30-second song
+              logger.debug('🎵 M key released (short press), creating default song');
+              if (isEditMode && onQuickAddMarker) {
+                onQuickAddMarker(currentTime);
+              }
+            }
+            
+            // Reset long press flag
+            setIsLongPress(false);
           }
           break;
       }
@@ -298,7 +423,7 @@ export default function SongListGrouped({
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keyup', handleKeyUp);
     };
-  }, [isEditMode, currentTime, onQuickSetStartTime, onQuickSetEndTime, onQuickAddMarker]);
+  }, [isEditMode, currentTime, onQuickSetStartTime, onQuickSetEndTime, onQuickAddMarker, onAddSongFromTempBar, isLongPress]);
 
   const currentSongs_computed = getCurrentSongs();
 
@@ -360,8 +485,76 @@ export default function SongListGrouped({
                 <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                   キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200'}`}>S</kbd>開始時刻 
                   <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-mint-600 text-white animate-pulse' : 'bg-gray-200'}`}>E</kbd>終了時刻 
-                  <kbd className={`px-1 rounded transition-all ${isPressingM ? 'bg-indigo-600 text-white animate-pulse' : 'bg-gray-200'}`}>M</kbd>マーカー追加
+                  <kbd className={`px-1 rounded transition-all ${tempTimelineBar?.isActive ? 'bg-purple-600 text-white animate-pulse' : isPressingM ? 'bg-indigo-600 text-white animate-pulse' : 'bg-gray-200'}`}>M</kbd>{tempTimelineBar?.isActive ? '空楽曲作成中' : 'マーカー追加'}
+                  {tempTimelineBar?.isActive && <span className="ml-1 text-purple-600 font-medium">（長押し中）</span>}
                 </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* セクション2: 編集コントロール */}
+        <div className="px-3 py-2 bg-gray-100">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <button
+                onClick={onToggleEditMode}
+                className={`px-3 py-1 text-xs rounded font-medium transition-colors ${
+                  isEditMode
+                    ? 'bg-orange-500 text-white hover:bg-orange-600'
+                    : 'text-white hover:shadow-lg'
+                }`}
+                style={!isEditMode ? { background: 'var(--gradient-primary)' } : {}}
+              >
+                {isEditMode ? '編集終了' : '編集モード'}
+              </button>
+              {isEditMode && (
+                <>
+                  <button
+                    onClick={onAddSong}
+                    className="px-3 py-1 text-xs bg-mint-600 text-white rounded hover:bg-mint-600"
+                  >
+                    楽曲追加
+                  </button>
+                  {onImportSetlist && (
+                    <button
+                      onClick={onImportSetlist}
+                      className="px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      title="セットリストから一括インポート"
+                    >
+                      インポート
+                    </button>
+                  )}
+                  <button
+                    onClick={onQuickAddAnnotation ? () => setQuickAnnotationVisible(!quickAnnotationVisible) : undefined}
+                    className={`px-3 py-1 text-xs rounded ${
+                      quickAnnotationVisible
+                        ? 'bg-orange-500 text-white hover:bg-orange-600'
+                        : 'bg-gray-400 text-white hover:bg-gray-500'
+                    }`}
+                    title="クイックアノテーション"
+                  >
+                    ⚡ クイック
+                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={onUndo}
+                      disabled={!canUndo}
+                      className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                      title="元に戻す (Ctrl+Z)"
+                    >
+                      ↶
+                    </button>
+                    <button
+                      onClick={onRedo}
+                      disabled={!canRedo}
+                      className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
+                      title="やり直し (Ctrl+Y)"
+                    >
+                      ↷
+                    </button>
+                  </div>
+                </>
               )}
             </div>
             {isEditMode && (
@@ -376,7 +569,8 @@ export default function SongListGrouped({
                 <button
                   onClick={onSaveChanges}
                   disabled={!hasChanges || isSaving}
-                  className="px-3 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 disabled:opacity-50"
+                  className="px-3 py-1 text-xs text-white rounded disabled:opacity-50 transition-all hover:shadow-lg"
+                  style={{ background: 'var(--gradient-primary)' }}
                 >
                   {isSaving ? '保存中...' : '変更を保存'}
                 </button>
@@ -548,6 +742,24 @@ export default function SongListGrouped({
                     >
                       <div className="absolute -top-6 left-1 text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">
                         作成中... ({Math.round((currentTime - tempStartTime) * 10) / 10}s)
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 一時的なタイムラインバー（Mキー長押し用） */}
+                  {tempTimelineBar && tempTimelineBar.isActive && (
+                    <div 
+                      className="absolute z-20 h-full bg-purple-400/60 border-2 border-purple-500 border-dashed rounded-sm animate-pulse"
+                      style={{
+                        left: `${(tempTimelineBar.startTime / effectiveTimelineDuration) * 100}%`,
+                        width: `${Math.max(0.5, ((tempTimelineBar.endTime - tempTimelineBar.startTime) / effectiveTimelineDuration) * 100)}%`
+                      }}
+                    >
+                      <div className="absolute -top-6 left-1 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">
+                        空の楽曲作成中... ({Math.round((tempTimelineBar.endTime - tempTimelineBar.startTime) * 10) / 10}s)
+                      </div>
+                      <div className="text-xs text-purple-900 font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center justify-center">
+                        空の楽曲
                       </div>
                     </div>
                   )}

@@ -543,6 +543,43 @@ export default function MedleyPlayer({
         }
     };
 
+    const handleToggleEditMode = () => {
+        if (!user || !isApproved) {
+            return; // Only approved users can toggle edit mode
+        }
+        setIsEditMode(!isEditMode);
+    };
+
+    const handleAddSongFromTempBar = (startTime: number, endTime: number) => {
+        if (!user || !isApproved) {
+            return; // Only approved users can add songs
+        }
+        
+        logger.debug('🎵 Creating song from temporary timeline bar', { startTime, endTime });
+        
+        // Create a new song with placeholder data
+        const newSong: SongSection = {
+            id: Date.now(), // Temporary ID
+            title: `空の楽曲 ${untitledSongCounter}`,
+            artist: 'アーティスト未設定',
+            startTime: Math.round(startTime * 10) / 10,
+            endTime: Math.round(endTime * 10) / 10,
+            color: '#9333ea', // Purple color to match the temporary bar
+            originalLink: undefined
+        };
+        
+        // Add the song to the medley
+        addSong(newSong);
+        
+        // Increment counter for next untitled song
+        setUntitledSongCounter(prev => prev + 1);
+        
+        // Automatically open edit modal for the new song
+        setEditingSong(newSong);
+        setIsNewSong(true);
+        setEditModalOpen(true);
+    };
+
 
 
     // ホットキー機能のハンドラー
@@ -619,21 +656,23 @@ export default function MedleyPlayer({
 
     const handleQuickAddMarker = (time: number) => {
         logger.debug('🚀 handleQuickAddMarker called with time:', time);
-        // 現在時刻にマーカーを追加（新しい楽曲を作成）
+        // 現在時刻に空の楽曲を直接追加（編集モーダルを開かない）
         const newSong: SongSection = {
             id: Date.now(),
-            title: "新しい楽曲",
-            artist: "",
+            title: `空の楽曲 ${untitledSongCounter}`,
+            artist: "アーティスト未設定",
             startTime: Math.round(time * 10) / 10,
             endTime: Math.round(time * 10) / 10 + 30, // デフォルト30秒
-            color: "bg-blue-400",
-                originalLink: ""
+            color: "#9333ea", // 紫色
+            originalLink: ""
         };
-        logger.debug('📝 New song created:', newSong);
-        setEditingSong(newSong);
-        setIsNewSong(true);
-        logger.debug('🎭 Opening edit modal');
-        setEditModalOpen(true);
+        logger.debug('📝 Empty song created and added directly to timeline:', newSong);
+        
+        // 直接楽曲を追加
+        addSong(newSong);
+        
+        // カウンターをインクリメント
+        setUntitledSongCounter(prev => prev + 1);
     };
 
     const handleQuickAddAnnotation = (annotation: { title: string; artist: string; startTime: number }) => {
@@ -818,6 +857,14 @@ export default function MedleyPlayer({
                         medleyCreator={medleyCreator}
                         originalVideoUrl={generateOriginalVideoUrl()}
                         onQuickAddAnnotation={user && isApproved ? handleQuickAddAnnotation : undefined}
+                        onToggleEditMode={user && isApproved ? handleToggleEditMode : undefined}
+                        onAddSong={user && isApproved ? handleAddSong : undefined}
+                        onImportSetlist={user && isApproved ? () => setImportModalOpen(true) : undefined}
+                        canUndo={editingSongs.length > 0}
+                        canRedo={false}
+                        onUndo={undo}
+                        onRedo={redo}
+                        onAddSongFromTempBar={user && isApproved ? handleAddSongFromTempBar : undefined}
                     />
                 )}
 

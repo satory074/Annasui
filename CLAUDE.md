@@ -198,7 +198,9 @@ const songSearchResults = medleys.flatMap(medley =>
 - **Spacebar**: Play/pause toggle (global, works outside edit mode)
 - **S key**: Set start time (edit mode only)
 - **E key**: Set end time (edit mode only)  
-- **M key**: Add marker/new song (edit mode only)
+- **M key**: Add empty song to timeline (edit mode only)
+  - **Short press (< 500ms)**: Creates 30-second empty song at current time
+  - **Long press (≥ 500ms)**: Shows real-time purple timeline bar, creates song with actual duration on release
 - **Ctrl/Cmd + Z**: Undo (edit mode only)
 - **Ctrl/Cmd + Y or Ctrl/Cmd + Shift + Z**: Redo (edit mode only)
 - **ESC key**: Clear search (search input focused)
@@ -223,6 +225,9 @@ const songSearchResults = medleys.flatMap(medley =>
 - **Continuous Input Mode**: Seamless song-to-song workflow with "Save and Next"
 - **Setlist Import**: Bulk import songs from text format with live preview
 - **Preview Playback**: Loop playback within song edit modal for range verification
+- **Smart M Key Functionality**: Dual-mode empty song creation
+  - Short press: Instantly creates 30-second empty song ("空の楽曲 1", "空の楽曲 2", etc.)
+  - Long press: Real-time timeline bar with actual duration capture (500ms threshold)
 
 #### Song Database Integration
 **Two-Step Flow**: Song selection via `SongSearchModal` → edit via `SongEditModal`
@@ -365,6 +370,43 @@ useEffect(() => {
 }, [dependencies]);
 ```
 
+**M Key Long Press Pattern**: Advanced long press detection for timeline creation:
+```typescript
+const [isLongPress, setIsLongPress] = useState<boolean>(false);
+const mKeyLongPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+// Key down - start long press timer
+case 'm':
+  setIsLongPress(false);
+  const longPressTimer = setTimeout(() => {
+    setIsLongPress(true);
+    setTempTimelineBar({
+      startTime: currentTime,
+      endTime: currentTime,
+      isActive: true
+    });
+  }, 500); // 500ms threshold
+  mKeyLongPressTimerRef.current = longPressTimer;
+  break;
+
+// Key up - handle short vs long press
+case 'm':
+  if (mKeyLongPressTimerRef.current) {
+    clearTimeout(mKeyLongPressTimerRef.current);
+  }
+  
+  if (isLongPress) {
+    // Long press: Use temp timeline bar duration
+    onAddSongFromTempBar(tempBar.startTime, tempBar.endTime);
+  } else {
+    // Short press: Create default 30s song
+    onQuickAddMarker(currentTime);
+  }
+  
+  setIsLongPress(false);
+  break;
+```
+
 ## Common Issues and Solutions
 
 ### Player Integration
@@ -384,6 +426,14 @@ useEffect(() => {
 - **Shortcuts working in wrong contexts**: Check input field focus detection (input/textarea/contenteditable)
 - **Keyboard events not cleaning up**: Ensure `removeEventListener` is called in useEffect cleanup
 - **Modal conflicts**: Verify modal state checks in keyboard handlers (`editModalOpen`, `songSearchModalOpen`, etc.)
+
+### M Key Long Press Issues
+- **Long press not triggering**: Verify `isEditMode` is true and user has edit permissions (`isApproved`)
+- **Timer getting cleared prematurely**: Check useEffect dependencies don't include timer refs
+- **Purple timeline bar not showing**: Ensure `tempTimelineBar` state is properly updated and rendered
+- **Duration calculation wrong**: Verify `currentTime` is being captured correctly in timer callback
+- **Short press creating modal**: Check that `onQuickAddMarker` creates songs directly without opening modals
+- **Empty songs not being created**: Verify `handleAddSongFromTempBar` and `addSong` functions are properly wired
 
 ### Multi-Segment Editor Issues
 - **Segments being replaced**: Check array mutation in `addSegment` - use `[...segments].sort()`

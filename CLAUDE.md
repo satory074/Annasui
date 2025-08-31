@@ -333,6 +333,14 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 - **404 responses**: Some video IDs may be invalid or videos deleted from platform
 - **Cache issues**: Production deployment may need cache clearing for new proxy API
 
+### Individual Song Thumbnail System (Updated 2025-08-31)
+- **Priority System**: Individual song thumbnails take priority over medley thumbnails in song search
+- **Data Storage**: Uses `original_link` column in songs table to store individual platform URLs
+- **Fallback Hierarchy**: Song's original_link → Medley thumbnail → Default thumbnail
+- **Platform Support**: Supports individual links for Niconico and YouTube platforms
+- **Search Enhancement**: Song search results now show unique thumbnails per song when available
+- **Database Updates**: Use scripts in `/scripts/` directory to add individual links to songs
+
 ### Platform Validation Issues
 - **Invalid video ID warnings**: Use `platformDetection.ts` utilities to validate before processing
 - **Thumbnail loading failures**: Platform auto-correction in HomePageClient prevents mismatched platforms
@@ -406,6 +414,10 @@ database/ - Database migrations and schema
 - `src/lib/api/medleys.ts` - Database API with direct fetch implementation
 - `src/lib/utils/songDatabase.ts` - Song search and caching for cross-medley search
 - `src/lib/utils/videoMetadata.ts` - Video metadata extraction
+
+**Database Management:**
+- `database/migrations/` - SQL migration files for Supabase setup
+- `scripts/` - Node.js scripts for database operations and testing
 
 **Thumbnail System:**
 - `src/app/api/thumbnail/niconico/[videoId]/route.ts` - CORS proxy for Niconico thumbnails
@@ -499,6 +511,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
    - `003_fix_rick_astley_medley.sql` - Platform corrections (run after major data fixes)
    - `004_add_rick_astley_song_data.sql` - Adds proper song data for Rick Astley medley (fixes 0 songs issue)
    - `005_create_approved_users_table.sql` - **Admin approval system** (requires admin user ID)
+   - `006_add_individual_song_links.sql` - Adds individual song links for thumbnail testing
 2. **OAuth Configuration**: Configure Google provider in Supabase Auth settings
 3. **RLS Policies**: Ensure Row Level Security policies are active for user data protection
 4. **Admin Setup**: Replace `REPLACE_WITH_ADMIN_USER_ID` in migration 005 with actual admin user ID

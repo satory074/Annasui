@@ -574,10 +574,7 @@ export default function MedleyPlayer({
         // Increment counter for next untitled song
         setUntitledSongCounter(prev => prev + 1);
         
-        // Automatically open edit modal for the new song
-        setEditingSong(newSong);
-        setIsNewSong(true);
-        setEditModalOpen(true);
+        // Do not open edit modal - allow continuous addition of empty songs
     };
 
 

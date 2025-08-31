@@ -630,9 +630,12 @@ export default function SongListGrouped({
                       <div
                         key={song.id}
                         className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 ${
-                          isBeyondActualDuration 
-                            ? 'bg-red-400 opacity-50' 
-                            : 'bg-orange-600'
+                          // 空の楽曲のビジュアル強調
+                          (song.title?.startsWith('空の楽曲') || song.artist === 'アーティスト未設定')
+                            ? 'bg-yellow-400 border-2 border-orange-500 shadow-lg ring-1 ring-orange-300'
+                            : isBeyondActualDuration 
+                              ? 'bg-red-400 opacity-50' 
+                              : 'bg-orange-600'
                         } ${
                           hasOverlap ? 'opacity-80' : ''
                         } ${
@@ -655,13 +658,31 @@ export default function SongListGrouped({
                         onMouseLeave={handleSongLeave}
                         title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで再生'}`}
                       >
-                        <div className="text-xs text-gray-800 font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1"
+                        <div className={`text-xs font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1 ${
+                          // 空の楽曲のテキストカラー調整
+                          (song.title?.startsWith('空の楽曲') || song.artist === 'アーティスト未設定')
+                            ? 'text-orange-900'
+                            : 'text-gray-800'
+                        }`}
                              style={{
                                overflow: 'visible',
                                position: 'relative'
                              }}>
                           {/* 最初のセグメントのみタイトル表示、それ以外は番号のみ */}
-                          {segmentIndex === 0 ? song.title : ''}
+                          {segmentIndex === 0 ? (
+                            <span className="flex items-center gap-1">
+                              {song.title}
+                              {/* 空の楽曲の警告アイコン */}
+                              {(song.title?.startsWith('空の楽曲') || song.artist === 'アーティスト未設定') && (
+                                <span 
+                                  className="text-orange-600 text-sm font-bold"
+                                  title="未入力項目があります"
+                                >
+                                  ⚠️
+                                </span>
+                              )}
+                            </span>
+                          ) : ''}
                           {(() => {
                             const duplicateInfo = getDuplicateInfo(song, songs);
                             if (duplicateInfo) {

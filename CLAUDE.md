@@ -228,6 +228,15 @@ const songSearchResults = medleys.flatMap(medley =>
 - **Smart M Key Functionality**: Dual-mode empty song creation
   - Short press: Instantly creates 30-second empty song ("空の楽曲 1", "空の楽曲 2", etc.)
   - Long press: Real-time timeline bar with actual duration capture (500ms threshold)
+  - No modal interruption - allows continuous empty song creation workflow
+- **Empty Song Visual System**: 
+  - Yellow background (`bg-yellow-400`) with orange borders for immediate recognition
+  - Warning icons (⚠️) for songs with missing required fields
+  - Enhanced text contrast with `text-orange-900` for empty songs
+- **Batch Validation on Save**: Comprehensive pre-save validation with detailed error messages
+  - Checks for empty titles (including "空の楽曲" prefixed songs)
+  - Validates artist fields (including "アーティスト未設定" default values)
+  - Displays up to 10 specific validation errors with timestamps
 
 #### Song Database Integration
 **Two-Step Flow**: Song selection via `SongSearchModal` → edit via `SongEditModal`
@@ -434,6 +443,9 @@ case 'm':
 - **Duration calculation wrong**: Verify `currentTime` is being captured correctly in timer callback
 - **Short press creating modal**: Check that `onQuickAddMarker` creates songs directly without opening modals
 - **Empty songs not being created**: Verify `handleAddSongFromTempBar` and `addSong` functions are properly wired
+- **Empty songs not visually highlighted**: Ensure visual emphasis system is applied in `SongListGrouped.tsx:634-638`
+- **Batch validation not working**: Check `useMedleyEdit.ts:182-208` for proper validation logic implementation
+- **Continuous workflow interrupted**: Verify no modal opening calls remain in M key handlers
 
 ### Multi-Segment Editor Issues
 - **Segments being replaced**: Check array mutation in `addSegment` - use `[...segments].sort()`

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { SongSection, MedleyData } from '@/types';
 import { updateMedley, createMedley } from '@/lib/api/medleys';
 import { logger } from '@/lib/utils/logger';
+import { formatTime } from '@/lib/utils/time';
 
 interface UseMedleyEditReturn {
   editingSongs: SongSection[];
@@ -176,6 +177,35 @@ export function useMedleyEdit(
       }
 
       // Database-only mode: no static data fallback needed
+      
+      // 保存前に必須項目を一括チェック
+      const invalidSongs = editingSongs.filter(song => {
+        const isTitleEmpty = !song.title || song.title.trim() === '' || song.title.startsWith('空の楽曲');
+        const isArtistEmpty = !song.artist || song.artist.trim() === '' || song.artist === 'アーティスト未設定';
+        return isTitleEmpty || isArtistEmpty;
+      });
+
+      if (invalidSongs.length > 0) {
+        logger.warn('Validation failed: found songs with missing required fields', invalidSongs.length);
+        
+        // 詳細なエラーメッセージを生成
+        const errorMessages = invalidSongs.map((song) => {
+          const issues = [];
+          if (!song.title || song.title.trim() === '' || song.title.startsWith('空の楽曲')) {
+            issues.push('タイトル');
+          }
+          if (!song.artist || song.artist.trim() === '' || song.artist === 'アーティスト未設定') {
+            issues.push('アーティスト');
+          }
+          return `• ${formatTime(song.startTime)}〜${formatTime(song.endTime)}: ${issues.join('と')}が未設定`;
+        }).slice(0, 10); // 最大10件まで表示
+
+        const remainingCount = invalidSongs.length - errorMessages.length;
+        const moreMessage = remainingCount > 0 ? `\n\n他 ${remainingCount} 件の楽曲にも未設定項目があります。` : '';
+        
+        alert(`以下の楽曲に必須項目が設定されていません：\n\n${errorMessages.join('\n')}${moreMessage}\n\n保存前に全ての楽曲情報を入力してください。`);
+        return false;
+      }
       
       // 楽曲データの準備（IDを除く）
       const songsToSave = editingSongs.map((song, index) => ({

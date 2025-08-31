@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Medlean** (formerly Anasui) is a comprehensive multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, advanced editing capabilities, searchable medley database, and user authentication. Supports 4 platforms: Niconico (full integration), YouTube (embed), Spotify (thumbnails), and Apple Music (thumbnails).
 
-**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, comprehensive annotation enhancement features, and full SEO optimization. Dark mode functionality has been completely removed. Production reliability improvements implemented (2025-08-31). **Alpha Version 0.1.0-alpha.1** - Ready for user testing with improved error handling, skeleton loading UI, and production-safe logging.
+**Current Status**: Complete medley annotation platform with full user authentication system, **admin-approval based authorization system**, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, comprehensive annotation enhancement features, and full SEO optimization. Dark mode functionality has been completely removed. Production reliability improvements implemented (2025-08-31). **Alpha Version 0.1.0-alpha.1** - Ready for user testing with improved error handling, skeleton loading UI, production-safe logging, and secure admin-controlled user permissions.
 
 ## Core Architecture
 
@@ -109,17 +109,25 @@ export type SongSection = {
 - No changes needed in existing thumbnail display components
 - Automatic fallback to `/default-thumbnail.svg` on complete failure
 
-#### User Authentication Architecture
-**OAuth-Based Authentication System:**
+#### User Authentication & Authorization Architecture
+**OAuth-Based Authentication System with Admin Approval:**
 - **Supabase Auth**: Handles Google OAuth provider only
 - **SSR-Compatible**: Uses ClientLayout wrapper for proper Next.js 15 hydration
 - **Progressive Enhancement**: App works for anonymous users, enhanced features for authenticated users
 - **User Profiles**: Automatic profile creation with avatar and metadata from Google OAuth
+- **Admin Authorization**: Two-tier system - authentication (login) + approval (admin permission)
+
+**Authorization Flow:**
+1. **Anonymous Users**: Read-only access to all medleys
+2. **Authenticated Users**: Can login but cannot edit until approved by admin
+3. **Approved Users**: Full CRUD access to create/edit/delete their own medleys
+4. **Admin Users**: All approved user permissions + user management capabilities
 
 **Database Schema:**
 - **Users Table**: Stores user profiles with automatic creation from OAuth metadata
+- **Approved Users Table**: Controls who can edit data (admin-managed)
 - **Medleys Extension**: Added `user_id` foreign key for ownership tracking
-- **Row Level Security**: Users can only edit their own medleys, public read access maintained
+- **Row Level Security**: Only approved users can edit, admin can manage approvals
 
 #### Data Flow Architecture
 **Database-Only Mode:**
@@ -133,6 +141,7 @@ export type SongSection = {
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
 - Modals: `SongEditModal` (simplified UI as of 2025-08-31), `SongSearchModal`, `ImportSetlistModal`, `CreateMedleyModal`
 - Authentication: `AuthProvider`, `AuthModal`, `UserProfileDropdown`, `UserAvatar`
+- Authorization: `AuthorizationBanner`, `AdminPage` (user approval management)
 
 #### Header Architecture (Updated 2025-08-31)
 **Unified AppHeader System:**
@@ -302,10 +311,13 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 - **Timeline preview not showing**: Verify segment mapping and positioning calculations
 - **State reset issues**: Remove problematic dependencies from useEffect arrays
 
-### Authentication Issues
+### Authentication & Authorization Issues
 - **AuthProvider not rendering**: Check ClientLayout wrapper and SSR hydration
 - **OAuth redirect loops**: Verify callback URL configuration in Supabase Dashboard
 - **User not appearing**: Verify UserProfileDropdown is included in header component tree
+- **Edit buttons not showing**: Check if user is both authenticated AND approved
+- **Admin page access denied**: Verify user has admin permissions in `approved_users` table
+- **Authorization banner showing for admin**: Check `isApproved` state in AuthContext
 
 ### Thumbnail Issues
 - **Images not loading**: Verify proxy API route is working (`/api/thumbnail/niconico/[videoId]`)
@@ -412,11 +424,14 @@ database/ - Database migrations and schema
 
 **Note**: Dark mode functionality (DarkModeToggle component) has been completely removed from the application as of 2025-08-30.
 
-**Authentication System:**
-- `src/contexts/AuthContext.tsx` - React context for authentication state
+**Authentication & Authorization System:**
+- `src/contexts/AuthContext.tsx` - React context for authentication + approval state
 - `src/components/features/auth/AuthModal.tsx` - OAuth login modal
 - `src/components/features/auth/UserProfileDropdown.tsx` - User profile menu
 - `src/app/auth/callback/page.tsx` - OAuth callback handler
+- `src/app/admin/page.tsx` - Admin dashboard route
+- `src/components/pages/AdminPage.tsx` - Admin user management interface
+- `src/components/ui/AuthorizationBanner.tsx` - Warning banner for unapproved users
 
 **User Profile System:**
 - `src/app/profile/page.tsx` - User profile page
@@ -466,8 +481,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
    - `002_add_user_id_to_medleys.sql` - User ownership for medleys
    - `003_fix_rick_astley_medley.sql` - Platform corrections (run after major data fixes)
    - `004_add_rick_astley_song_data.sql` - Adds proper song data for Rick Astley medley (fixes 0 songs issue)
+   - `005_create_approved_users_table.sql` - **Admin approval system** (requires admin user ID)
 2. **OAuth Configuration**: Configure Google provider in Supabase Auth settings
 3. **RLS Policies**: Ensure Row Level Security policies are active for user data protection
+4. **Admin Setup**: Replace `REPLACE_WITH_ADMIN_USER_ID` in migration 005 with actual admin user ID
 
 **Current URLs:**
 - **Primary**: https://anasui-e6f49.web.app
@@ -515,6 +532,25 @@ The Medlean logo features three flowing wave forms representing different songs 
 - **Usage Pattern**: Always sanitize before saving user input
 - **URL Validation**: Strict domain whitelisting for platform URLs only
 
+### Admin Approval System
+**Purpose**: Prevent unauthorized database modifications by requiring admin approval for all edit operations.
+
+**Key Components:**
+- **AuthContext**: Extended with `isApproved` state and `checkApprovalStatus()` function
+- **API Layer**: All CRUD operations (`createMedley`, `updateMedley`, `deleteMedley`, `saveMedleySongs`) check approval
+- **UI Layer**: Edit buttons/modals only shown to approved users, AuthorizationBanner for unapproved users
+- **Admin Interface**: `/admin` page for managing user approvals
+
+**Admin Setup Process:**
+1. Run `005_create_approved_users_table.sql` migration with admin user ID
+2. Admin user gets automatic approval and can access `/admin` page
+3. Admin approves/revokes other users via the admin interface
+
+**Database Policies:**
+- `approved_users` table: Only admin can INSERT/UPDATE/DELETE, users can view their own status
+- `medleys` table: Only approved users can INSERT/UPDATE/DELETE their own records
+- `songs` table: Only approved users can manage songs for their own medleys
+
 ### Critical Security Patterns
 ```typescript
 // ALWAYS sanitize user input before saving
@@ -528,6 +564,12 @@ import { autoCorrectPlatform } from '@/lib/utils/platformDetection';
 const correction = autoCorrectPlatform(videoId, declaredPlatform);
 if (correction.wasCorrected) {
   logger.warn(`Platform corrected: ${declaredPlatform} -> ${correction.correctedPlatform}`);
+}
+// ALWAYS check user approval for edit operations
+const { user, isApproved } = useAuth();
+if (editOperation && (!user || !isApproved)) {
+  logger.warn('Edit operation blocked: user not approved');
+  return; // or show approval message
 }
 ```
 
@@ -544,3 +586,5 @@ if (correction.wasCorrected) {
 - **Error Boundaries**: Comprehensive error handling with user-friendly messages
 - **Loading UX**: PlayerLoadingMessage and Skeleton components for better perceived performance
 - **Build Validation**: Automated build, lint, and type checking in deployment pipeline
+- **Admin Authorization**: Complete user approval system with secure database policies
+- **Security**: Row Level Security (RLS) prevents unauthorized data access

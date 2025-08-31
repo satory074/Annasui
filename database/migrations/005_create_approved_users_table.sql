@@ -10,10 +10,10 @@ CREATE TABLE IF NOT EXISTS approved_users (
     UNIQUE(user_id)
 );
 
--- Create trigger to automatically update updated_at
-CREATE TRIGGER update_approved_users_updated_at 
-    BEFORE UPDATE ON approved_users 
-    FOR EACH ROW 
+-- Create trigger to automatally update updated_at
+CREATE TRIGGER update_approved_users_updated_at
+    BEFORE UPDATE ON approved_users
+    FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
 -- Enable Row Level Security
@@ -35,7 +35,7 @@ CREATE OR REPLACE FUNCTION public.is_user_approved(user_id uuid)
 RETURNS boolean AS $$
 BEGIN
     RETURN EXISTS (
-        SELECT 1 FROM public.approved_users 
+        SELECT 1 FROM public.approved_users
         WHERE approved_users.user_id = is_user_approved.user_id
     );
 END;
@@ -49,19 +49,19 @@ DROP POLICY IF EXISTS "Users can delete their own medleys" ON medleys;
 -- New policies that require user approval
 CREATE POLICY "Approved users can insert medleys" ON medleys
     FOR INSERT WITH CHECK (
-        auth.uid() = user_id AND 
+        auth.uid() = user_id AND
         public.is_user_approved(auth.uid())
     );
 
 CREATE POLICY "Approved users can update their own medleys" ON medleys
     FOR UPDATE USING (
-        auth.uid() = user_id AND 
+        auth.uid() = user_id AND
         public.is_user_approved(auth.uid())
     );
 
 CREATE POLICY "Approved users can delete their own medleys" ON medleys
     FOR DELETE USING (
-        auth.uid() = user_id AND 
+        auth.uid() = user_id AND
         public.is_user_approved(auth.uid())
     );
 
@@ -72,15 +72,15 @@ DROP POLICY IF EXISTS "Users can manage songs for their medleys" ON songs;
 CREATE POLICY "Approved users can manage songs for their medleys" ON songs
     FOR ALL USING (
         EXISTS (
-            SELECT 1 FROM medleys 
-            WHERE medleys.id = songs.medley_id 
+            SELECT 1 FROM medleys
+            WHERE medleys.id = songs.medley_id
             AND medleys.user_id = auth.uid()
             AND public.is_user_approved(auth.uid())
         )
     ) WITH CHECK (
         EXISTS (
-            SELECT 1 FROM medleys 
-            WHERE medleys.id = songs.medley_id 
+            SELECT 1 FROM medleys
+            WHERE medleys.id = songs.medley_id
             AND medleys.user_id = auth.uid()
             AND public.is_user_approved(auth.uid())
         )
@@ -95,7 +95,7 @@ CREATE INDEX IF NOT EXISTS approved_users_approved_at_idx ON approved_users(appr
 -- IMPORTANT: Update this query with your actual admin user ID before running
 -- You can get your user ID from the Supabase auth dashboard or by running:
 -- SELECT id FROM auth.users WHERE email = 'your@email.com';
--- 
+--
 -- Example (REPLACE THIS):
--- INSERT INTO approved_users (user_id, approved_by, notes) 
+-- INSERT INTO approved_users (user_id, approved_by, notes)
 -- VALUES ('YOUR_ADMIN_USER_ID', 'YOUR_ADMIN_USER_ID', 'Initial admin user');

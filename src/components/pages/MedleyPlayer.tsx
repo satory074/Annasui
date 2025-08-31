@@ -14,6 +14,7 @@ import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
 import SongSearchModal from "@/components/features/medley/SongSearchModal";
 import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
 import ManualSongAddModal from "@/components/features/medley/ManualSongAddModal";
+import ContributorsDisplay from "@/components/features/medley/ContributorsDisplay";
 import { SongSection } from "@/types";
 import { SongDatabaseEntry, createSongFromDatabase, addManualSong } from "@/lib/utils/songDatabase";
 import { logger } from "@/lib/utils/logger";
@@ -73,7 +74,7 @@ export default function MedleyPlayer({
     const [untitledSongCounter, setUntitledSongCounter] = useState<number>(1);
 
     // メドレーデータの取得
-    const { medleySongs, medleyTitle, medleyCreator, medleyDuration, loading, error } = useMedleyData(videoId);
+    const { medleySongs, medleyTitle, medleyCreator, medleyDuration, medleyData, loading, error } = useMedleyData(videoId);
     
     // 編集機能
     const {
@@ -747,6 +748,16 @@ export default function MedleyPlayer({
                     />
                 )}
 
+                {/* Contributors Display */}
+                {!loading && !error && displaySongs.length > 0 && medleyData?.contributors && (
+                    <div className="p-6">
+                        <ContributorsDisplay 
+                            contributors={medleyData.contributors}
+                            lastUpdated={medleyData.updatedAt}
+                            compact={false}
+                        />
+                    </div>
+                )}
 
                 {/* メドレーデータがない場合の表示 */}
                 {!loading && !error && medleySongs.length === 0 && (

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { SongSection } from '@/types'
+import { SongSection, MedleyData } from '@/types'
 import { getMedleyByVideoId } from '@/lib/api/medleys'
 
 interface UseMedleyDataApiReturn {
@@ -7,6 +7,7 @@ interface UseMedleyDataApiReturn {
   medleyTitle: string
   medleyCreator: string
   medleyDuration: number
+  medleyData: MedleyData | null
   loading: boolean
   error: string | null
 }
@@ -16,6 +17,7 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
   const [medleyTitle, setMedleyTitle] = useState<string>('')
   const [medleyCreator, setMedleyCreator] = useState<string>('')
   const [medleyDuration, setMedleyDuration] = useState<number>(0)
+  const [medleyData, setMedleyData] = useState<MedleyData | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -28,6 +30,7 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
         setMedleyTitle('')
         setMedleyCreator('')
         setMedleyDuration(0)
+        setMedleyData(null)
         setLoading(false)
         setError(null)
         return
@@ -46,12 +49,14 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
           setMedleyDuration(medleyData.duration)
           setMedleyTitle(medleyData.title)
           setMedleyCreator(medleyData.creator || '')
+          setMedleyData(medleyData)
         } else {
           // メドレーデータがない場合は空の配列にする
           setMedleySongs([])
           setMedleyTitle('')
           setMedleyCreator('')
           setMedleyDuration(0)
+          setMedleyData(null)
           setError(`メドレーデータが見つかりませんでした: ${videoId}`)
         }
       } catch (err) {
@@ -63,6 +68,7 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
         setMedleyTitle('')
         setMedleyCreator('')
         setMedleyDuration(0)
+        setMedleyData(null)
       } finally {
         if (!isCancelled) {
           setLoading(false)
@@ -82,6 +88,7 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
     medleyTitle,
     medleyCreator,
     medleyDuration,
+    medleyData,
     loading,
     error,
   }

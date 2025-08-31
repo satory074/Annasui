@@ -1,5 +1,5 @@
 import { supabase, type Database } from '@/lib/supabase'
-import type { MedleyData, SongSection } from '@/types'
+import type { MedleyData, SongSection, MedleyContributor } from '@/types'
 import { logger } from '@/lib/utils/logger'
 
 type MedleyRow = Database['public']['Tables']['medleys']['Row']
@@ -127,6 +127,40 @@ async function directFetch(url: string): Promise<unknown> {
   return response.json();
 }
 
+// Fetch contributors for a medley
+export async function getMedleyContributors(medleyId: string): Promise<MedleyContributor[]> {
+  try {
+    logger.debug('🔍 Fetching contributors for medley:', medleyId)
+
+    const contributorsData = await directFetch(
+      `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/medley_contributors?select=*&medley_id=eq.${medleyId}`
+    ) as any[];
+
+    if (!contributorsData || contributorsData.length === 0) {
+      logger.debug('No contributors found for medley:', medleyId)
+      return []
+    }
+
+    // Convert database rows to MedleyContributor objects
+    const contributors: MedleyContributor[] = contributorsData.map((contributor) => ({
+      userId: contributor.user_id,
+      name: contributor.name || contributor.email?.split('@')[0] || 'Anonymous',
+      email: contributor.email,
+      avatarUrl: contributor.avatar_url,
+      editCount: contributor.edit_count,
+      firstContribution: contributor.first_contribution,
+      lastContribution: contributor.last_contribution,
+      isCreator: contributor.is_creator
+    }));
+
+    logger.debug(`✅ Found ${contributors.length} contributors for medley:`, medleyId)
+    return contributors
+  } catch (error) {
+    logger.error('❌ Error fetching contributors:', error)
+    return []
+  }
+}
+
 // API functions
 export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | null> {
   try {
@@ -154,7 +188,16 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
       songCount: songData.length
     })
 
-    return convertDbRowToMedleyData(medley as MedleyRow, (songData || []) as SongRow[])
+    // Convert medley data
+    const medleyResult = convertDbRowToMedleyData(medley as MedleyRow, (songData || []) as SongRow[])
+    
+    // Fetch contributors if medley has an ID
+    if (medley.id) {
+      const contributors = await getMedleyContributors(medley.id as string)
+      medleyResult.contributors = contributors
+    }
+
+    return medleyResult
   } catch (error) {
     logger.error('❌ Error in getMedleyByVideoId:', error)
     return null

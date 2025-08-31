@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 import UserProfileDropdown from "@/components/features/auth/UserProfileDropdown";
-import { useAuth } from "@/contexts/AuthContext";
 
 interface AppHeaderProps {
   showSearch?: boolean;
@@ -23,7 +22,6 @@ export default function AppHeader({
   onSearchSubmit,
   variant = "default"
 }: AppHeaderProps) {
-  const { user, isApproved } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -57,17 +55,6 @@ export default function AppHeader({
           <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
         </svg>
       ),
-    },
-    {
-      href: "/my-medleys",
-      label: "マイメドレー",
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-        </svg>
-      ),
-      requiresAuth: true,
-      requiresApproval: true,
     }
   ];
 
@@ -91,28 +78,20 @@ export default function AppHeader({
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
-              {navigationItems.map((item) => {
-                // Skip auth-required items if user is not logged in
-                if (item.requiresAuth && !user) return null;
-                
-                // Skip approval-required items if user is not approved
-                if (item.requiresApproval && !isApproved) return null;
-                
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      variant === "home"
-                        ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
-                        : "text-gray-300 hover:text-white hover:bg-gray-700"
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    variant === "home"
+                      ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
+                      : "text-gray-300 hover:text-white hover:bg-gray-700"
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </Link>
+              ))}
             </nav>
           </div>
 
@@ -235,29 +214,21 @@ export default function AppHeader({
         {isMobileMenuOpen && (
           <div ref={mobileMenuRef} className={`md:hidden border-t ${variant === "home" ? "border-gray-200" : "border-gray-700"}`}>
             <div className="px-2 py-3 space-y-1">
-              {navigationItems.map((item) => {
-                // Skip auth-required items if user is not logged in
-                if (item.requiresAuth && !user) return null;
-                
-                // Skip approval-required items if user is not approved
-                if (item.requiresApproval && !isApproved) return null;
-                
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
-                      variant === "home"
-                        ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
-                        : "text-gray-300 hover:text-white hover:bg-gray-700"
-                    }`}
-                  >
-                    {item.icon}
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
+                    variant === "home"
+                      ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
+                      : "text-gray-300 hover:text-white hover:bg-gray-700"
+                  }`}
+                >
+                  {item.icon}
+                  <span>{item.label}</span>
+                </Link>
+              ))}
               
               {/* Mobile Feedback Link */}
               <a

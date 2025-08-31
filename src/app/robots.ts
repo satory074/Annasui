@@ -10,7 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         '/auth/callback',
         '/_next/',
         '/settings',
-        '/my-medleys',
         '/profile'
       ],
     },

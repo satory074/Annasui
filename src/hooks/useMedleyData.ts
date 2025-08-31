@@ -1,4 +1,4 @@
-import { SongSection } from '@/types';
+import { SongSection, MedleyData } from '@/types';
 import { useMedleyDataApi } from './useMedleyDataApi';
 
 interface UseMedleyDataReturn {
@@ -6,6 +6,7 @@ interface UseMedleyDataReturn {
     medleyTitle: string
     medleyCreator: string
     medleyDuration: number
+    medleyData: MedleyData | null
     loading?: boolean
     error?: string | null
 }
@@ -19,6 +20,7 @@ export function useMedleyData(videoId: string): UseMedleyDataReturn {
         medleyTitle: apiResult.medleyTitle,
         medleyCreator: apiResult.medleyCreator,
         medleyDuration: apiResult.medleyDuration,
+        medleyData: apiResult.medleyData,
         loading: apiResult.loading,
         error: apiResult.error,
     };

@@ -42,17 +42,6 @@ export default function ProfilePage() {
 
   const displayName = user?.user_metadata?.name || user?.user_metadata?.full_name || user?.email?.split('@')[0]
 
-  const formatDuration = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60)
-    const remainingSeconds = Math.floor(seconds % 60)
-    return `${minutes}分${remainingSeconds}秒`
-  }
-
-  const getMedleyUrl = (medley: MedleyData) => {
-    const platform = medley.platform || 'niconico'
-    return `/${platform}/${medley.videoId}`
-  }
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -170,96 +159,19 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* My Medleys Section */}
+        {/* Contributions Section */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-gray-900">
-              マイメドレー
-            </h3>
-            <button
-              onClick={() => router.push('/my-medleys')}
-              className="text-orange-600 hover:text-orange-700 text-sm font-medium transition-colors"
-            >
-              すべて表示 →
-            </button>
+          <h3 className="text-xl font-semibold text-gray-900 mb-6">
+            コントリビューション
+          </h3>
+          <div className="text-center py-12">
+            <div className="text-gray-500 mb-4">
+              メドレーへの貢献履歴が表示されます
+            </div>
+            <p className="text-sm text-gray-400">
+              メドレーの編集・作成を行うと、ここに表示されるようになります
+            </p>
           </div>
-
-          {medleysLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
-            </div>
-          ) : userMedleys.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-gray-500 mb-4">
-                まだメドレーを作成していません
-              </div>
-              <button
-                onClick={() => router.push('/')}
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
-              >
-                メドレーを作成する
-              </button>
-            </div>
-          ) : (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {userMedleys.slice(0, 6).map((medley) => (
-                <div
-                  key={medley.id}
-                  className="group bg-gray-50 rounded-lg overflow-hidden hover:shadow-md transition-all duration-200"
-                >
-                  <a href={getMedleyUrl(medley)} className="block">
-                    <div className="aspect-video bg-gray-200 relative overflow-hidden">
-                      {medley.platform === 'youtube' ? (
-                        <img
-                          src={`https://img.youtube.com/vi/${medley.videoId}/maxresdefault.jpg`}
-                          alt={medley.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.src = `https://img.youtube.com/vi/${medley.videoId}/hqdefault.jpg`
-                          }}
-                        />
-                      ) : (
-                        <img
-                          src={`https://tn.smilevideo.jp/smile?i=${medley.videoId.replace('sm', '')}`}
-                          alt={medley.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.src = '/default-thumbnail.svg'
-                            target.alt = `${medley.title} (デフォルトサムネイル)`
-                          }}
-                        />
-                      )}
-                      
-                      <div className="absolute top-2 left-2">
-                        <span className={`px-2 py-1 text-xs font-medium rounded text-white ${
-                          medley.platform === 'youtube' 
-                            ? 'bg-red-600/90' 
-                            : 'bg-orange-600/90'
-                        } backdrop-blur-sm`}>
-                          {medley.platform === 'youtube' ? 'YouTube' : 'ニコニコ'}
-                        </span>
-                      </div>
-                      
-                      <div className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded font-medium">
-                        {formatDuration(medley.duration)}
-                      </div>
-                    </div>
-                    
-                    <div className="p-3">
-                      <h4 className="font-medium text-gray-900 text-sm line-clamp-2 group-hover:text-orange-600 transition-colors">
-                        {medley.title}
-                      </h4>
-                      <p className="text-xs text-gray-600 mt-1">
-                        {medley.songs.length}曲 • {formatDuration(medley.duration)}
-                      </p>
-                    </div>
-                  </a>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
       </div>
     </div>

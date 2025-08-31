@@ -82,6 +82,15 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; erro
 
 // Database row to app type conversion
 function convertDbRowToSongSection(song: SongRow): SongSection {
+  // Parse links JSON field if it exists
+  let links;
+  try {
+    links = song.links ? JSON.parse(song.links as string) : undefined;
+  } catch (error) {
+    logger.warn('Failed to parse song links JSON:', error);
+    links = undefined;
+  }
+
   return {
     id: song.order_index, // Use order_index as the legacy id field
     title: song.title,
@@ -89,7 +98,8 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
     startTime: song.start_time,
     endTime: song.end_time,
     color: song.color,
-    originalLink: song.original_link || undefined
+    originalLink: song.original_link || undefined,
+    links: links
   }
 }
 

@@ -38,37 +38,101 @@ export default function ImportSetlistModal({
     return 0;
   };
 
-  // セットリストテキストをパース
+  // 秒数を時間文字列に変換（例: 83 -> "1:23"）
+  const formatSecondsToTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // セットリストテキストをパース（拡張版）
   const parseSetlist = (text: string): ParsedSetlistEntry[] => {
     const lines = text.trim().split('\n').filter(line => line.trim());
     const entries: ParsedSetlistEntry[] = [];
     
     for (const line of lines) {
-      // サポートする形式:
-      // 1. "00:00 曲名 / アーティスト名"
-      // 2. "00:00 曲名"
-      // 3. "1:23 曲名 - アーティスト名"
-      const timeMatch = line.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+(.+)$/);
+      // 不要な文字を除去（Unicode 制御文字、特殊な空白など）
+      const cleanLine = line.replace(/[\u200B-\u200D\uFEFF]/g, '').trim();
+      if (!cleanLine) continue;
+
+      let timeMatch;
+      let timeStr = "";
+      let titlePart = "";
+      let startTime = 0;
+
+      // サポートする形式を拡張:
+      // 1. "00:00 曲名 / アーティスト名" (基本形式)
+      // 2. "00:00 曲名 - アーティスト名" (ハイフン区切り)
+      // 3. "00:00 曲名" (アーティスト名なし)
+      // 4. "【00:00】曲名" (YouTube風)
+      // 5. "(00:00) 曲名" (括弧付き)
+      // 6. "00:00～ 曲名" (チルダ付き)
+      // 7. "0:00 曲名" (秒の先頭0なし)
+      // 8. "1. 00:00 曲名" (番号付き)
+      // 9. "♪ 00:00 曲名" (記号付き)
+      // 10. "曲名 00:00" (時刻が後ろ)
+      
+      // パターン1-3: 基本形式
+      timeMatch = cleanLine.match(/^(\d{1,2}:\d{2}(?::\d{2})?)\s+(.+)$/);
       if (timeMatch) {
-        const timeStr = timeMatch[1];
-        const titlePart = timeMatch[2];
-        const startTime = parseTimeToSeconds(timeStr);
+        timeStr = timeMatch[1];
+        titlePart = timeMatch[2];
+      }
+      // パターン4: 【時刻】形式
+      else if (timeMatch = cleanLine.match(/^【(\d{1,2}:\d{2}(?::\d{2})?)】\s*(.+)$/)) {
+        timeStr = timeMatch[1];
+        titlePart = timeMatch[2];
+      }
+      // パターン5: (時刻) 形式
+      else if (timeMatch = cleanLine.match(/^\((\d{1,2}:\d{2}(?::\d{2})?)\)\s*(.+)$/)) {
+        timeStr = timeMatch[1];
+        titlePart = timeMatch[2];
+      }
+      // パターン6: 時刻～ 形式
+      else if (timeMatch = cleanLine.match(/^(\d{1,2}:\d{2}(?::\d{2})?)～\s*(.+)$/)) {
+        timeStr = timeMatch[1];
+        titlePart = timeMatch[2];
+      }
+      // パターン7-9: 番号や記号付き
+      else if (timeMatch = cleanLine.match(/^(?:\d+\.\s*|[♪♬🎵🎶]\s*)?(\d{1,2}:\d{2}(?::\d{2})?)\s+(.+)$/)) {
+        timeStr = timeMatch[1];
+        titlePart = timeMatch[2];
+      }
+      // パターン10: 曲名 時刻 (逆順)
+      else if (timeMatch = cleanLine.match(/^(.+?)\s+(\d{1,2}:\d{2}(?::\d{2})?)$/)) {
+        titlePart = timeMatch[1];
+        timeStr = timeMatch[2];
+      }
+      // 時刻なしの行（楽曲名のみ）
+      else if (cleanLine.match(/^(?:\d+\.\s*|[♪♬🎵🎶]\s*)?(.+)$/) && !cleanLine.includes(':')) {
+        // 前の楽曲から推定した時刻を使用（30秒後）
+        const lastStartTime = entries.length > 0 ? entries[entries.length - 1].startTime : 0;
+        timeStr = formatSecondsToTime(lastStartTime + 30);
+        titlePart = cleanLine.replace(/^(?:\d+\.\s*|[♪♬🎵🎶]\s*)/, '');
+        startTime = lastStartTime + 30;
+      }
+      
+      if (timeStr && titlePart) {
+        if (startTime === 0) {
+          startTime = parseTimeToSeconds(timeStr);
+        }
         
-        // アーティスト名の分離を試行
+        // タイトルから不要な文字を除去
+        titlePart = titlePart.replace(/[【】()（）]/g, '').trim();
+        
+        // アーティスト名の分離を試行（複数のパターンに対応）
         let title = titlePart;
         let artist = "";
         
-        // " / " で分割
-        if (titlePart.includes(' / ')) {
-          const parts = titlePart.split(' / ');
-          title = parts[0].trim();
-          artist = parts.slice(1).join(' / ').trim();
-        }
-        // " - " で分割
-        else if (titlePart.includes(' - ')) {
-          const parts = titlePart.split(' - ');
-          title = parts[0].trim();
-          artist = parts.slice(1).join(' - ').trim();
+        // " / ", " - ", " by ", "・" などで分割
+        const separators = [' / ', ' - ', ' by ', '・', ' × ', ' feat. ', ' ft. '];
+        for (const separator of separators) {
+          if (titlePart.includes(separator)) {
+            const parts = titlePart.split(separator);
+            title = parts[0].trim();
+            artist = parts.slice(1).join(separator).trim();
+            break;
+          }
         }
         
         entries.push({
@@ -79,18 +143,23 @@ export default function ImportSetlistModal({
         });
       }
     }
+
+    // 重複除去（同じタイトル・開始時刻の組み合わせ）
+    const uniqueEntries = entries.filter((entry, index, arr) => 
+      arr.findIndex(e => e.title === entry.title && e.startTime === entry.startTime) === index
+    );
     
     // 終了時間を自動計算（次の楽曲の開始時間まで）
-    for (let i = 0; i < entries.length; i++) {
-      if (i < entries.length - 1) {
-        entries[i].endTime = entries[i + 1].startTime;
+    for (let i = 0; i < uniqueEntries.length; i++) {
+      if (i < uniqueEntries.length - 1) {
+        uniqueEntries[i].endTime = uniqueEntries[i + 1].startTime;
       } else {
         // 最後の楽曲はデフォルト30秒
-        entries[i].endTime = entries[i].startTime + 30;
+        uniqueEntries[i].endTime = uniqueEntries[i].startTime + 30;
       }
     }
     
-    return entries;
+    return uniqueEntries;
   };
 
   // プレビューを更新
@@ -135,11 +204,14 @@ export default function ImportSetlistModal({
     setParseError("");
   };
 
-  // サンプルテキスト
+  // サンプルテキスト（拡張版）
   const sampleText = `00:00 楽曲1 / アーティスト1
-01:30 楽曲2 / アーティスト2
-03:15 楽曲3 - アーティスト3
-04:45 楽曲4`;
+01:30 楽曲2 - アーティスト2
+【02:45】楽曲3・アーティスト3
+(03:20) 楽曲4 by アーティスト4
+04:15～ 楽曲5
+♪ 05:00 楽曲6 feat. アーティスト6
+楽曲7のみ（時刻なし）`;
 
   return (
     <BaseModal isOpen={isOpen} onClose={handleClose} maxWidth="lg">
@@ -148,14 +220,38 @@ export default function ImportSetlistModal({
       </h2>
       
       <div className="space-y-4">
-        {/* 説明 */}
+        {/* 説明（拡張版） */}
         <div className="p-3 bg-blue-50 rounded-md">
-          <h3 className="font-medium text-blue-900 mb-2">サポートする形式:</h3>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• <code>MM:SS 楽曲名 / アーティスト名</code></li>
-            <li>• <code>MM:SS 楽曲名 - アーティスト名</code></li>
-            <li>• <code>MM:SS 楽曲名</code></li>
-          </ul>
+          <h3 className="font-medium text-blue-900 mb-2">サポートする形式（拡張版）:</h3>
+          <div className="text-sm text-blue-800 space-y-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div>
+                <p className="font-medium mb-1">基本形式:</p>
+                <ul className="space-y-0.5 ml-2">
+                  <li>• <code>MM:SS 楽曲名</code></li>
+                  <li>• <code>MM:SS 楽曲名 / アーティスト名</code></li>
+                  <li>• <code>MM:SS 楽曲名 - アーティスト名</code></li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-medium mb-1">YouTube・SNS形式:</p>
+                <ul className="space-y-0.5 ml-2">
+                  <li>• <code>【MM:SS】楽曲名</code></li>
+                  <li>• <code>(MM:SS) 楽曲名</code></li>
+                  <li>• <code>MM:SS～ 楽曲名</code></li>
+                  <li>• <code>♪ MM:SS 楽曲名</code></li>
+                </ul>
+              </div>
+            </div>
+            <div className="mt-2 pt-2 border-t border-blue-200">
+              <p className="text-xs">
+                <strong>アーティスト名の分離:</strong> &quot; / &quot;, &quot; - &quot;, &quot; by &quot;, &quot;・&quot;, &quot; × &quot;, &quot; feat. &quot;, &quot; ft. &quot; で自動分離
+              </p>
+              <p className="text-xs mt-1">
+                <strong>柔軟な対応:</strong> 時刻なしの楽曲名のみでも自動推定、番号付きリスト対応
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* テキストエリア */}

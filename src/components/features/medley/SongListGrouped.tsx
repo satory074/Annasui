@@ -34,6 +34,7 @@ interface SongListProps {
   medleyTitle?: string;
   medleyCreator?: string;
   originalVideoUrl?: string;
+  onQuickAddAnnotation?: (annotation: { title: string; artist: string; startTime: number }) => void;
 }
 
 // 楽曲グループの型定義
@@ -68,7 +69,8 @@ export default function SongListGrouped({
   tempStartTime = null,
   medleyTitle,
   medleyCreator,
-  originalVideoUrl
+  originalVideoUrl,
+  onQuickAddAnnotation,
 }: SongListProps) {
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
   const [dragMode, setDragMode] = useState<'start' | 'end' | 'move' | null>(null);
@@ -76,6 +78,9 @@ export default function SongListGrouped({
   const [isPressingS, setIsPressingS] = useState(false);
   const [isPressingE, setIsPressingE] = useState(false);  
   const [isPressingM, setIsPressingM] = useState(false);
+  
+  // クイックアノテーション機能の状態管理
+  const [quickAnnotationVisible, setQuickAnnotationVisible] = useState<boolean>(false);
 
   const effectiveTimelineDuration = actualPlayerDuration || duration;
 
@@ -177,6 +182,7 @@ export default function SongListGrouped({
   const handleSongLeave = () => {
     onSongHoverEnd?.();
   };
+
 
   // ドラッグ処理（簡略化）
   const handleMouseDown = (e: React.MouseEvent, song: SongSection, timelineElement: HTMLElement) => {

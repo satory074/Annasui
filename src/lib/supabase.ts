@@ -109,6 +109,7 @@ export type Database = {
           color: string
           genre: string | null
           original_link: string | null
+          links: string | null
           order_index: number
           created_at: string
           updated_at: string
@@ -123,6 +124,7 @@ export type Database = {
           color: string
           genre?: string | null
           original_link?: string | null
+          links?: string | null
           order_index: number
           created_at?: string
           updated_at?: string
@@ -137,6 +139,7 @@ export type Database = {
           color?: string
           genre?: string | null
           original_link?: string | null
+          links?: string | null
           order_index?: number
           created_at?: string
           updated_at?: string

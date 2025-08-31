@@ -636,6 +636,53 @@ export default function MedleyPlayer({
         setEditModalOpen(true);
     };
 
+    const handleQuickAddAnnotation = (annotation: { title: string; artist: string; startTime: number }) => {
+        logger.debug('⚡ Quick annotation added:', annotation);
+        
+        // 終了時刻を推定（次の楽曲の開始時刻または30秒後）
+        const nextSong = displaySongs.find(song => song.startTime > annotation.startTime);
+        const endTime = nextSong ? nextSong.startTime : annotation.startTime + 30;
+        
+        const newSong: SongSection = {
+            id: Date.now(),
+            title: annotation.title,
+            artist: annotation.artist,
+            startTime: Math.round(annotation.startTime * 10) / 10,
+            endTime: Math.round(endTime * 10) / 10,
+            color: "bg-orange-400", // クイックアノテーションは橙色
+            originalLink: ""
+        };
+        
+        addSong(newSong);
+        logger.info(`⚡ クイックアノテーション追加: "${annotation.title}" (${formatTime(annotation.startTime)} - ${formatTime(endTime)})`);
+    };
+
+    // 時間フォーマットヘルパー
+    const formatTime = (time: number): string => {
+        const minutes = Math.floor(time / 60);
+        const seconds = Math.floor(time % 60);
+        return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    };
+
+    // 一括編集機能のハンドラ
+    const handleBulkUpdate = (updatedSongs: SongSection[]) => {
+        logger.info(`📝 一括更新: ${updatedSongs.length}曲の情報を更新`);
+        
+        // 各楽曲を個別に更新
+        updatedSongs.forEach(song => {
+            updateSong(song);
+        });
+    };
+
+    const handleBulkDelete = (songIds: number[]) => {
+        logger.info(`🗑️ 一括削除: ${songIds.length}曲を削除`);
+        
+        // 各楽曲を個別に削除
+        songIds.forEach(songId => {
+            deleteSong(songId);
+        });
+    };
+
     // 動画IDが変更されたときの処理
     const handleVideoIdSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -770,6 +817,7 @@ export default function MedleyPlayer({
                         medleyTitle={medleyTitle}
                         medleyCreator={medleyCreator}
                         originalVideoUrl={generateOriginalVideoUrl()}
+                        onQuickAddAnnotation={user && isApproved ? handleQuickAddAnnotation : undefined}
                     />
                 )}
 

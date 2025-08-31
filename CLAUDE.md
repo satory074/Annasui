@@ -193,6 +193,48 @@ const songSearchResults = medleys.flatMap(medley =>
 );
 ```
 
+#### Medley Deletion System (Added 2025-08-31)
+**Homepage Deletion Functionality:**
+- **Deletion Buttons**: Red trash icon buttons displayed on each medley card's top-right corner
+- **Authorization Required**: Only approved users (`isApproved`) can see and use deletion buttons
+- **Comprehensive Confirmation**: Detailed confirmation dialog showing medley name, creator, song count, and warning
+- **Real-time Updates**: Immediate removal from UI after successful deletion without page reload
+- **Loading States**: Delete button shows spinner during deletion process
+- **Success/Error Handling**: User feedback through alert dialogs
+
+**Deletion Flow:**
+1. User clicks delete button (prevents event propagation to card link)
+2. Confirmation dialog displays: `「${medley.title}」を完全に削除しますか？\n\n作成者: ${medley.creator}\n楽曲数: ${medley.songs.length}曲\n\nこの操作は取り消せません。`
+3. If confirmed, `deleteMedley` API called with loading state management
+4. Success: Remove from local state + success message, Error: Error message displayed
+5. Loading states cleared regardless of outcome
+
+**Implementation Pattern:**
+```typescript
+const handleDeleteMedley = async (medley: MedleyData) => {
+  if (!user || !isApproved) {
+    setShowAuthModal(true);
+    return;
+  }
+
+  const confirmMessage = `「${medley.title}」を完全に削除しますか？\n\n作成者: ${medley.creator}\n楽曲数: ${medley.songs.length}曲\n\nこの操作は取り消せません。`;
+  if (!confirm(confirmMessage)) return;
+
+  try {
+    setDeletingMedleyId(medley.videoId);
+    const success = await deleteMedley(medley.videoId);
+    if (success) {
+      setMedleys(prev => prev.filter(m => m.videoId !== medley.videoId));
+      alert(`「${medley.title}」を削除しました`);
+    }
+  } catch (error) {
+    // Error handling
+  } finally {
+    setDeletingMedleyId(null);
+  }
+};
+```
+
 #### Timeline System & Annotation Enhancement Features
 **Timeline Display**: Always shows full video duration with simplified position calculations
 **Edit Mode Features**: 
@@ -537,6 +579,16 @@ case 'm':
 - **Styling issues**: Verify orange hover effects and 5-second numeric indicators display correctly
 - **Wrong location**: Song list controls are in SongListGrouped, not PlayerControls component
 
+### Medley Deletion Issues (Added 2025-08-31)
+- **Delete buttons not showing**: Verify user is both authenticated (`user`) and approved (`isApproved`)
+- **Delete button clicks navigating**: Ensure `e.preventDefault()` and `e.stopPropagation()` are called in onClick handler
+- **Confirmation dialog not appearing**: Check browser popup blockers aren't interfering with `confirm()` dialogs
+- **Deletion failing silently**: Verify `deleteMedley` API function is properly imported and returns boolean success
+- **UI not updating after deletion**: Ensure `setMedleys(prev => prev.filter(...))` properly updates local state
+- **Loading state stuck**: Verify `finally` block always clears `deletingMedleyId` state
+- **Authorization bypass**: Check both frontend and backend enforce admin approval for deletion operations
+- **Database constraints**: Ensure foreign key relationships allow cascading deletes or proper cleanup
+
 ## File Organization
 
 ```
@@ -563,7 +615,7 @@ database/ - Database migrations and schema
 - `src/hooks/useNicoPlayer.ts` - Niconico postMessage integration
 
 **Data:**
-- `src/lib/api/medleys.ts` - Database API with direct fetch implementation
+- `src/lib/api/medleys.ts` - Database API with direct fetch implementation (includes `deleteMedley` function)
 - `src/lib/utils/songDatabase.ts` - Song search and caching for cross-medley search
 - `src/lib/utils/videoMetadata.ts` - Video metadata extraction
 
@@ -722,7 +774,7 @@ The Medlean logo features three flowing wave forms representing different songs 
 **Key Components:**
 - **AuthContext**: Extended with `isApproved` state and `checkApprovalStatus()` function
 - **API Layer**: All CRUD operations (`createMedley`, `updateMedley`, `deleteMedley`, `saveMedleySongs`) check approval
-- **UI Layer**: Edit buttons/modals only shown to approved users, AuthorizationBanner for unapproved users
+- **UI Layer**: Edit buttons/modals and deletion buttons only shown to approved users, AuthorizationBanner for unapproved users
 - **Admin Interface**: `/admin` page for managing user approvals
 
 **Admin Setup Process:**

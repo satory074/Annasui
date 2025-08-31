@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { createMedley } from "@/lib/api/medleys";
+import { createMedley, deleteMedley } from "@/lib/api/medleys";
 import { MedleyData, SongSection } from "@/types";
 import MedleyStatistics from "@/components/features/statistics/MedleyStatistics";
 import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
@@ -31,6 +31,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     const [itemsPerPage, setItemsPerPage] = useState(8);
     const [showCreateMedleyModal, setShowCreateMedleyModal] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
+    const [deletingMedleyId, setDeletingMedleyId] = useState<string | null>(null);
 
     // Reset pagination when search term changes
     useEffect(() => {
@@ -87,6 +88,43 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
             return;
         }
         setShowCreateMedleyModal(true);
+    };
+
+    const handleDeleteMedley = async (medley: MedleyData) => {
+        // Check authentication and approval
+        if (!user || !isApproved) {
+            logger.warn('⚠️ User not authenticated or approved, cannot delete medley');
+            setShowAuthModal(true);
+            return;
+        }
+
+        // Confirmation dialog
+        const confirmMessage = `「${medley.title}」を完全に削除しますか？\n\n作成者: ${medley.creator}\n楽曲数: ${medley.songs.length}曲\n\nこの操作は取り消せません。`;
+        if (!confirm(confirmMessage)) {
+            return;
+        }
+
+        try {
+            setDeletingMedleyId(medley.videoId);
+            
+            const success = await deleteMedley(medley.videoId);
+            
+            if (success) {
+                // Remove from local state
+                setMedleys(prev => prev.filter(m => m.videoId !== medley.videoId));
+                logger.info('✅ Medley deleted successfully:', medley.videoId);
+                
+                // Show success message
+                alert(`「${medley.title}」を削除しました`);
+            } else {
+                alert('メドレーの削除に失敗しました');
+            }
+        } catch (error) {
+            logger.error('❌ Error deleting medley:', error);
+            alert('メドレーの削除に失敗しました。もう一度お試しください。');
+        } finally {
+            setDeletingMedleyId(null);
+        }
     };
 
     // Filtering and sorting logic
@@ -626,6 +664,28 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                             {medley.platform === 'youtube' ? 'YouTube' : 'ニコニコ'}
                                         </span>
                                     </div>
+
+                                    {/* Delete button - only show to approved users */}
+                                    {user && isApproved && (
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                handleDeleteMedley(medley);
+                                            }}
+                                            disabled={deletingMedleyId === medley.videoId}
+                                            className="absolute top-3 right-3 p-2 bg-red-600/90 backdrop-blur-sm text-white rounded-full hover:bg-red-700/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                            title="メドレーを削除"
+                                        >
+                                            {deletingMedleyId === medley.videoId ? (
+                                                <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                            ) : (
+                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                    )}
                                     
                                     <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md font-medium">
                                         {formatDuration(medley.duration)}

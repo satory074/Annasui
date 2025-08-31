@@ -197,6 +197,38 @@ export default function MedleyPlayer({
         };
     }, [isEditMode, undo, redo]);
 
+    // スペースキーで再生/一時停止
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // スペースキーの場合
+            if (e.key === ' ') {
+                // テキスト入力中やモーダル表示中は無効化
+                const activeElement = document.activeElement;
+                const isInputFocused = activeElement && (
+                    activeElement.tagName === 'INPUT' ||
+                    activeElement.tagName === 'TEXTAREA' ||
+                    activeElement.getAttribute('contenteditable') === 'true'
+                );
+                
+                // モーダルが開いている場合は無効化
+                const isModalOpen = editModalOpen || songSearchModalOpen || importModalOpen || manualAddModalOpen;
+                
+                // プレイヤーが準備完了していない場合は無効化
+                if (isInputFocused || isModalOpen || !playerReady) {
+                    return;
+                }
+                
+                e.preventDefault();
+                togglePlayPause();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [editModalOpen, songSearchModalOpen, importModalOpen, manualAddModalOpen, playerReady, togglePlayPause]);
+
     // コンポーネントのアンマウント時にタイムアウトをクリーンアップ
     useEffect(() => {
         return () => {

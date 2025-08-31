@@ -194,6 +194,21 @@ const songSearchResults = medleys.flatMap(medley =>
 - Real-time song bar creation with elapsed time display
 - Adjacent song time alignment buttons
 
+**Keyboard Shortcuts System:**
+- **Spacebar**: Play/pause toggle (global, works outside edit mode)
+- **S key**: Set start time (edit mode only)
+- **E key**: Set end time (edit mode only)  
+- **M key**: Add marker/new song (edit mode only)
+- **Ctrl/Cmd + Z**: Undo (edit mode only)
+- **Ctrl/Cmd + Y or Ctrl/Cmd + Shift + Z**: Redo (edit mode only)
+- **ESC key**: Clear search (search input focused)
+
+**Keyboard Event Handling:**
+- Spacebar automatically disabled when input fields are focused or modals are open
+- Edit mode shortcuts (S/E/M) only active when `isEditMode` is true
+- All keyboard events use `document.addEventListener` with proper cleanup
+- Input field detection prevents conflicts with typing
+
 **Multi-Segment Support**: Songs can have multiple appearance segments within a single medley
 
 **Timeline UI Compactification (Updated 2025-08-31)**:
@@ -319,6 +334,37 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 <div className="sticky top-16 z-50 bg-white">
 ```
 
+**Keyboard Event Handling Pattern**: Proper keyboard shortcut implementation:
+```typescript
+useEffect(() => {
+  const handleKeyDown = (e: KeyboardEvent) => {
+    // Check for specific key
+    if (e.key === ' ') {
+      // Prevent conflicts with input fields
+      const activeElement = document.activeElement;
+      const isInputFocused = activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.getAttribute('contenteditable') === 'true'
+      );
+      
+      // Check for modal states
+      const isModalOpen = editModalOpen || searchModalOpen;
+      
+      if (isInputFocused || isModalOpen || !playerReady) {
+        return;
+      }
+      
+      e.preventDefault();
+      togglePlayPause();
+    }
+  };
+
+  document.addEventListener('keydown', handleKeyDown);
+  return () => document.removeEventListener('keydown', handleKeyDown);
+}, [dependencies]);
+```
+
 ## Common Issues and Solutions
 
 ### Player Integration
@@ -330,6 +376,14 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 - **Undo/Redo not working**: Check keyboard listeners in edit mode
 - **Timeline duration mismatch**: Songs beyond actual video length show red styling
 - **Hotkeys not working**: Ensure edit mode is active and keyboard event listeners attached
+
+### Keyboard Shortcuts Issues
+- **Spacebar not working**: Check if player is ready (`playerReady` state) and no modals are open
+- **Spacebar scrolling page**: Ensure `e.preventDefault()` is called in spacebar handler
+- **Edit shortcuts not responding**: Verify `isEditMode` is true and event listeners are attached
+- **Shortcuts working in wrong contexts**: Check input field focus detection (input/textarea/contenteditable)
+- **Keyboard events not cleaning up**: Ensure `removeEventListener` is called in useEffect cleanup
+- **Modal conflicts**: Verify modal state checks in keyboard handlers (`editModalOpen`, `songSearchModalOpen`, etc.)
 
 ### Multi-Segment Editor Issues
 - **Segments being replaced**: Check array mutation in `addSegment` - use `[...segments].sort()`

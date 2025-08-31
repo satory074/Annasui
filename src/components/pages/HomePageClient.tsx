@@ -159,22 +159,34 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     );
 
     // Song search results (cross-medley search)
-    const songSearchResults = searchMode === "song" && searchTerm ? 
-        medleys.flatMap(medley => 
-            medley.songs
-                .filter(song => 
-                    song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    song.artist.toLowerCase().includes(searchTerm.toLowerCase())
-                )
-                .map(song => ({
-                    ...song,
-                    medleyTitle: medley.title,
-                    medleyCreator: medley.creator,
-                    videoId: medley.videoId,
-                    platform: medley.platform || 'niconico'
-                }))
-        )
+    const allSongs = medleys.flatMap(medley => 
+        medley.songs.map(song => ({
+            ...song,
+            medleyTitle: medley.title,
+            medleyCreator: medley.creator,
+            videoId: medley.videoId,
+            platform: medley.platform || 'niconico',
+            thumbnailUrl: medley.platform === 'youtube' 
+                ? getYouTubeThumbnail(medley.videoId, 'default')
+                : getThumbnailUrl(`https://www.nicovideo.jp/watch/${medley.videoId}`) || '/default-thumbnail.svg'
+        }))
+    );
+
+    const filteredSongs = searchMode === "song" ? 
+        (searchTerm ? 
+            allSongs.filter(song => 
+                song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                song.artist.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+        : allSongs)
     : [];
+
+    // Pagination for songs
+    const totalSongPages = Math.ceil(filteredSongs.length / itemsPerPage);
+    const paginatedSongs = filteredSongs.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+    );
 
 
     const formatTime = (seconds: number): string => {
@@ -424,12 +436,17 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                 ) : (
                                     <div className="flex items-center gap-2">
                                         <span className="font-medium text-gray-900">
-                                            {songSearchResults.length}件
+                                            {filteredSongs.length}件
                                         </span>
                                         <span>の楽曲が見つかりました</span>
-                                        {filteredAndSortedMedleys.length > 0 && (
+                                        {medleys.length > 0 && (
                                             <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                                                {filteredAndSortedMedleys.length}メドレー中
+                                                {medleys.length}メドレー中
+                                            </span>
+                                        )}
+                                        {totalSongPages > 1 && (
+                                            <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                                                {currentPage}/{totalSongPages}ページ
                                             </span>
                                         )}
                                     </div>
@@ -455,39 +472,57 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 </div>
 
                 {/* Song search results */}
-                {searchMode === "song" && songSearchResults.length > 0 && (
+                {searchMode === "song" && paginatedSongs.length > 0 && (
                     <div className="mb-8">
-                        <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                            楽曲検索結果
-                        </h2>
-                        <div className="bg-white rounded-lg shadow-md overflow-hidden">
-                            <div className="max-h-96 overflow-y-auto">
-                                {songSearchResults.map((song, index) => (
-                                    <div key={`${song.videoId}-${song.id}`} className={`p-4 border-b border-gray-200 hover:bg-gray-50 ${index === songSearchResults.length - 1 ? 'border-b-0' : ''}`}>
-                                        <Link 
-                                            href={getSongUrl(song)}
-                                            className="block"
-                                        >
-                                            <div className="flex justify-between items-start">
-                                                <div className="flex-1">
-                                                    <h3 className="font-medium text-gray-900">
-                                                        {song.title}
-                                                    </h3>
-                                                    <p className="text-sm text-gray-600">
-                                                        {song.artist}
-                                                    </p>
-                                                    <p className="text-xs text-gray-500 mt-1">
-                                                        収録: {song.medleyTitle} ({song.medleyCreator})
-                                                    </p>
-                                                </div>
-                                                <div className="text-right text-sm text-gray-500">
-                                                    <div>{formatTime(song.startTime)} ~ {formatTime(song.endTime)}</div>
+                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                            {paginatedSongs.map((song) => (
+                                <div key={`${song.videoId}-${song.id}-${song.startTime}`} className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-200">
+                                    <Link href={getSongUrl(song)} className="block">
+                                        <div className="aspect-video bg-gray-200 relative overflow-hidden">
+                                            <img
+                                                src={song.thumbnailUrl}
+                                                alt={song.title}
+                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                onError={(e) => {
+                                                    const target = e.target as HTMLImageElement;
+                                                    target.src = '/default-thumbnail.svg';
+                                                }}
+                                            />
+                                            
+                                            {/* Hover Overlay */}
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                                                <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                                                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path d="M8 5v10l8-5-8-5z" />
+                                                    </svg>
                                                 </div>
                                             </div>
-                                        </Link>
-                                    </div>
-                                ))}
-                            </div>
+
+                                            {/* Time Badge */}
+                                            <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md font-medium">
+                                                {formatTime(song.startTime)} - {formatTime(song.endTime)}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="p-4">
+                                            <h3 className="font-semibold text-gray-900 line-clamp-1 group-hover:text-orange-600 transition-colors">
+                                                {song.title}
+                                            </h3>
+                                            <p className="text-sm text-gray-600 mt-1 line-clamp-1">
+                                                {song.artist}
+                                            </p>
+                                            <div className="mt-3 pt-3 border-t border-gray-100">
+                                                <p className="text-xs text-gray-500 line-clamp-1">
+                                                    <span className="font-medium">{song.medleyTitle}</span>
+                                                </p>
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                    {song.medleyCreator}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}
@@ -590,7 +625,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 )}
 
                 {/* Pagination */}
-                {searchMode === "medley" && totalPages > 1 && (
+                {((searchMode === "medley" && totalPages > 1) || (searchMode === "song" && totalSongPages > 1)) && (
                     <div className="mt-8 flex justify-center">
                         <div className="flex items-center gap-2">
                             <button
@@ -602,7 +637,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             </button>
                             
                             <div className="flex items-center gap-1">
-                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                {Array.from({ length: searchMode === "medley" ? totalPages : totalSongPages }, (_, i) => i + 1)
                                     .filter(page => 
                                         page === 1 || 
                                         page === totalPages || 
@@ -629,8 +664,8 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             </div>
                             
                             <button
-                                onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                                disabled={currentPage === totalPages}
+                                onClick={() => setCurrentPage(Math.min(searchMode === "medley" ? totalPages : totalSongPages, currentPage + 1))}
+                                disabled={currentPage === (searchMode === "medley" ? totalPages : totalSongPages)}
                                 className="px-3 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 次 →
@@ -641,7 +676,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
 
                 {/* No search results */}
                 {((searchMode === "medley" && paginatedMedleys.length === 0) || 
-                  (searchMode === "song" && songSearchResults.length === 0)) && 
+                  (searchMode === "song" && filteredSongs.length === 0)) && 
                  searchTerm && (
                     <div className="text-center py-12">
                         <div className="text-gray-500 text-lg mb-4">

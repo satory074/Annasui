@@ -392,7 +392,7 @@ export default function MultiSegmentTimeEditor({
       {maxDuration > 0 && (
         <div className="p-3 bg-white border border-gray-200 rounded-md">
           <h4 className="text-sm font-medium text-gray-700 mb-3">タイムラインプレビュー</h4>
-          <div className="relative w-full h-12 bg-gray-100 rounded-sm overflow-hidden">
+          <div className="relative w-full h-8 bg-gray-100 rounded-sm overflow-hidden">
             {/* 既存の他の楽曲（薄いグレー） */}
             {allSongs
               .filter(song => song.title !== currentSongTitle || song.artist !== currentSongArtist)

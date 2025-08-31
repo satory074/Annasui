@@ -635,7 +635,7 @@ export default function SongList({
       <div className="p-2">
 
       <div>
-        <div className="space-y-0.5">
+        <div className="space-y-0">
             {songs.map((song) => {
               const { hasOverlap, overlappingSongs } = detectOverlaps(song);
               const isCurrentlyPlaying = currentSongs.some(s => s.id === song.id);
@@ -644,7 +644,7 @@ export default function SongList({
               return (
                 <div
                   key={song.id}
-                  className={`relative p-1 rounded-lg border transition-all ${
+                  className={`relative p-0.5 rounded-lg border transition-all ${
                     isBeyondActualDuration
                       ? "bg-red-50 border-red-200 opacity-60"
                       : isCurrentlyPlaying
@@ -655,7 +655,7 @@ export default function SongList({
 
                   {/* タイムライン */}
                   <div 
-                    className={`timeline-container relative w-full h-8 ml-0 transition-colors ${
+                    className={`timeline-container relative w-full h-6 ml-0 transition-colors ${
                       false
                         ? 'bg-blue-100 shadow-inner'
                         : 'bg-blue-50'
@@ -675,7 +675,7 @@ export default function SongList({
                     
                     {/* 楽曲タイムラインバー */}
                     <div
-                      className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 ${
+                      className={`absolute h-4 top-1 transition-all hover:h-5 hover:top-0.5 ${
                         isBeyondActualDuration 
                           ? 'bg-red-400 opacity-50' 
                           : 'bg-gradient-to-r from-orange-600 to-indigo-600'
@@ -701,7 +701,7 @@ export default function SongList({
                       onMouseLeave={handleSongLeave}
                       title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで再生'}`}
                     >
-                      <div className="text-xs text-gray-800 font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1"
+                      <div className="text-[10px] text-gray-800 font-medium px-2 leading-4 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1"
                            style={{
                              // タイトルをバーの幅を超えても表示（オーバーフロー許可）
                              overflow: 'visible',
@@ -748,14 +748,14 @@ export default function SongList({
                       {/* 編集ボタン（常時表示） */}
                       <button
                         onClick={() => onEditSong?.(song)}
-                        className={`p-0.5 rounded transition-colors bg-white border border-gray-300 ${
+                        className={`p-0 rounded transition-colors bg-white border border-gray-300 ${
                           isEditMode 
                             ? 'text-orange-600 hover:bg-purple-50' 
                             : 'text-gray-600 hover:bg-gray-100'
                         }`}
                         title="楽曲を編集"
                       >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                       </button>
@@ -767,10 +767,10 @@ export default function SongList({
                               onDeleteSong?.(song.id);
                             }
                           }}
-                          className="p-0.5 text-red-600 hover:bg-red-100 rounded transition-colors bg-white border border-gray-300"
+                          className="p-0 text-red-600 hover:bg-red-100 rounded transition-colors bg-white border border-gray-300"
                           title="削除"
                         >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                           </svg>
                         </button>

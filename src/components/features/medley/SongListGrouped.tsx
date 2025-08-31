@@ -403,55 +403,6 @@ export default function SongListGrouped({
                     : "bg-white border-gray-200 hover:bg-gray-50"
                 }`}
               >
-                {/* 楽曲情報ヘッダー */}
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-medium text-gray-900">
-                      {group.title}
-                    </h3>
-                    <span className="text-sm text-gray-600">-</span>
-                    <span className="text-sm text-gray-600">
-                      {group.artist}
-                    </span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                      {group.segments.length}区間
-                    </span>
-                  </div>
-                  <div className="flex gap-1">
-                    {/* 編集ボタン */}
-                    <button
-                      onClick={() => onEditSong?.(group.segments[0])}
-                      className={`p-1.5 rounded transition-colors ${
-                        isEditMode 
-                          ? 'text-orange-600 hover:bg-orange-50' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                      title={`${group.title}を編集 (${group.segments.length}区間)`}
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
-                    {/* 削除ボタン（編集モード時のみ表示） */}
-                    {isEditMode && (
-                      <button
-                        onClick={() => {
-                          if (confirm(`「${group.title}」の全${group.segments.length}区間を削除しますか？`)) {
-                            group.segments.forEach(song => {
-                              onDeleteSong?.(song.id);
-                            });
-                          }
-                        }}
-                        className="p-1.5 text-red-600 hover:bg-red-100 rounded transition-colors"
-                        title="全区間削除"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </div>
                 
                 {/* タイムライン */}
                 <div 
@@ -594,6 +545,42 @@ export default function SongListGrouped({
                       </div>
                     </div>
                   )}
+                  
+                  {/* 編集・削除ボタン（タイムライン右端に配置） */}
+                  <div className="absolute right-2 top-1 flex gap-1 z-40">
+                    {/* 編集ボタン */}
+                    <button
+                      onClick={() => onEditSong?.(group.segments[0])}
+                      className={`p-0 rounded transition-colors bg-white border border-gray-300 ${
+                        isEditMode 
+                          ? 'text-orange-600 hover:bg-orange-50' 
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                      title={`${group.title}を編集 (${group.segments.length}区間)`}
+                    >
+                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </button>
+                    {/* 削除ボタン（編集モード時のみ表示） */}
+                    {isEditMode && (
+                      <button
+                        onClick={() => {
+                          if (confirm(`「${group.title}」の全${group.segments.length}区間を削除しますか？`)) {
+                            group.segments.forEach(song => {
+                              onDeleteSong?.(song.id);
+                            });
+                          }
+                        }}
+                        className="p-0 text-red-600 hover:bg-red-100 rounded transition-colors bg-white border border-gray-300"
+                        title="全区間削除"
+                      >
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );

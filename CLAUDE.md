@@ -161,6 +161,14 @@ export type SongSection = {
 
 **Multi-Segment Support**: Songs can have multiple appearance segments within a single medley
 
+**Timeline UI Compactification (Updated 2025-08-31)**:
+- Main timeline container: 32px → 24px height (25% reduction)
+- Timeline bars: 24px → 16px height (33% reduction) 
+- MultiSegment preview: 48px → 32px height (33% reduction)
+- Removed song title headers from SongListGrouped - titles only shown within timeline bars
+- Edit/delete buttons relocated to timeline right side with compact sizing
+- Eliminated spacing between song rows for maximum density
+
 **Enhancement Features:**
 - **Continuous Input Mode**: Seamless song-to-song workflow with "Save and Next"
 - **Setlist Import**: Bulk import songs from text format with live preview

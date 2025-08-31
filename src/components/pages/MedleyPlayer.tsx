@@ -762,8 +762,6 @@ export default function MedleyPlayer({
                 onTogglePlayPause={togglePlayPause}
                 // 隣接する楽曲との時刻合わせ用
                 {...(editingSong && !isNewSong ? findAdjacentSongs(editingSong) : {})}
-                // 楽曲選択用
-                onSelectSong={handleSelectSongFromEditModal}
                 // 重複処理用
                 allSongs={displaySongs}
                 onBatchUpdate={handleBatchUpdate}

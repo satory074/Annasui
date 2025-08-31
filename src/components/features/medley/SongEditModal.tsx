@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { SongSection } from "@/types";
 import BaseModal from "@/components/ui/modal/BaseModal";
-import SongInfoDisplay from "@/components/ui/song/SongInfoDisplay";
 import MultiSegmentTimeEditor, { TimeSegment } from "@/components/ui/song/MultiSegmentTimeEditor";
 import { getDuplicateInfo } from "@/lib/utils/duplicateSongs";
 import { sanitizeSongSection } from "@/lib/utils/sanitize";
@@ -27,8 +26,6 @@ interface SongEditModalProps {
   onSeek?: (time: number) => void;
   isPlaying?: boolean;
   onTogglePlayPause?: () => void;
-  // 楽曲選択用
-  onSelectSong?: () => void;
   // 重複処理用
   allSongs?: SongSection[];
   onBatchUpdate?: (songs: SongSection[]) => void;
@@ -50,7 +47,6 @@ export default function SongEditModal({
   onSeek,
   isPlaying = false,
   onTogglePlayPause,
-  onSelectSong,
   allSongs = [],
   onBatchUpdate
 }: SongEditModalProps) {
@@ -335,33 +331,7 @@ export default function SongEditModal({
           {isNew ? (isFromDatabase ? "楽曲DBから追加" : "楽曲を追加") : "楽曲を編集"}
         </h2>
         
-        {/* 楽曲情報をカード形式で表示（楽曲DBから選択 または 既存楽曲の編集）*/}
-        {(isFromDatabase || !isNew) && (
-          <div className="mb-6">
-            <div 
-              onClick={onSelectSong}
-              className={`${onSelectSong ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
-              title={onSelectSong ? "クリックして楽曲を変更" : undefined}
-            >
-              <SongInfoDisplay
-                song={formData}
-                variant="card"
-                showTimeCodes={false}
-              />
-            </div>
-            <p className="text-sm text-blue-800 mt-2 text-center">
-              {isFromDatabase && isNew 
-                ? "楽曲データベースから選択されました。開始時間と終了時間を設定してください。"
-                : "楽曲情報を確認し、開始時間と終了時間を編集してください。"
-              }
-              {onSelectSong && (
-                <span className="block text-xs text-gray-600 mt-1">
-                  💡 楽曲情報をクリックして楽曲を変更できます
-                </span>
-              )}
-            </p>
-          </div>
-        )}
+        {/* 楽曲情報表示を削除 - 冗長な情報のため */}
 
         <div className="space-y-4">
           {/* 楽曲名・アーティスト名（新規楽曲の手動追加時のみ表示） */}

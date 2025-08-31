@@ -17,7 +17,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Production: https://anasui-e6f49.web.app (Firebase App Hosting)
 
 **Deployment**: 
-- Primary: `firebase deploy` (Firebase App Hosting with SSR)
+- Primary: `firebase deploy --only hosting` (Firebase App Hosting with SSR)
 - Build verification: `npm run build` + `npx tsc --noEmit` + `npm run lint`
 - GitHub Actions: Automatic deployment on main branch push
 
@@ -29,7 +29,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Medlean** (formerly Anasui) is a comprehensive multi-platform medley annotation platform built with Next.js. Provides interactive video medleys with synchronized song timelines, advanced editing capabilities, searchable medley database, and user authentication. Supports 4 platforms: Niconico (full integration), YouTube (embed), Spotify (thumbnails), and Apple Music (thumbnails).
 
-**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, comprehensive annotation enhancement features, and full SEO optimization. Dark mode functionality has been completely removed. SEO implementation completed (2025-08-30).
+**Current Status**: Complete medley annotation platform with full user authentication system, multi-platform support, advanced timeline editing with multi-segment support, Vibrant Orange design system, comprehensive annotation enhancement features, and full SEO optimization. Dark mode functionality has been completely removed. Production reliability improvements implemented (2025-08-31).
 
 ## Core Architecture
 
@@ -131,7 +131,7 @@ export type SongSection = {
 - `MedleyPlayer` - Core reusable player with platform detection
 - `SongList` - Unified timeline with editing and interaction
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
-- Modals: `SongEditModal`, `SongSearchModal`, `ImportSetlistModal`, `CreateMedleyModal`
+- Modals: `SongEditModal` (simplified UI as of 2025-08-31), `SongSearchModal`, `ImportSetlistModal`, `CreateMedleyModal`
 - Authentication: `AuthProvider`, `AuthModal`, `UserProfileDropdown`, `UserAvatar`
 
 #### Timeline System & Annotation Enhancement Features
@@ -155,6 +155,12 @@ export type SongSection = {
 - Real-time search across titles/artists with inline editing capabilities
 - Database built from all medley data with deduplication
 - Multi-platform URL editing for all songs
+
+#### SongEditModal UI Simplification (Updated 2025-08-31)
+**Recent Change**: Removed redundant song header display showing song name, artist, and segment count
+- **Previous**: Showed "楽曲名 - アーティスト名 区間数" at top of modal
+- **Current**: Clean interface with only modal title and timeline editor
+- **Components**: Only essential editing elements remain (timeline, segment bars, form fields)
 
 #### SEO Architecture (Added 2025-08-30)
 **Comprehensive SEO Implementation:**
@@ -270,7 +276,7 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 - **Console spam**: Remove debug logging from production components
 
 ### Build & Deployment
-- **Firebase deployment**: Use `firebase deploy` instead of Netlify
+- **Firebase deployment**: Use `firebase deploy --only hosting` instead of `firebase deploy`
 - **Next.js 15 params**: All routes must handle `params: Promise<{...}>`
 - **Authentication deployment**: Ensure database migrations are run and OAuth providers configured
 - **Unterminated string literals**: If modifying Tailwind classes (especially dark: prefixes), watch for broken template literals that need closing quotes
@@ -281,6 +287,11 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 - **Function timeout**: Cloud Functions may timeout during first deploy - retry after a few minutes
 - **Cache issues**: Production deployment may need cache clearing for logo/favicon updates
 - **Logo not displaying**: Check that HomePageClient.tsx uses Logo component, not plain text
+
+### SongEditModal Issues (Updated 2025-08-31)
+- **Missing imports after UI cleanup**: Ensure unused imports (SongInfoDisplay) are removed from SongEditModal.tsx
+- **Unused props errors**: Remove onSelectSong prop references after header simplification
+- **Component reference errors**: Update MedleyPlayer.tsx to remove references to removed props
 
 ## File Organization
 
@@ -379,7 +390,7 @@ Always verify features work in production environment - SSR behavior, CORS polic
 **Commands:**
 - `firebase login` - Authenticate with Google account
 - `firebase use anasui-e6f49` - Select Firebase project
-- `firebase deploy` - Deploy to production
+- `firebase deploy --only hosting` - Deploy to production (recommended over full deploy)
 
 **Environment Variables**: Set in Firebase Console
 ```

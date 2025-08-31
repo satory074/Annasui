@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `npm run dev` - Start development server on http://localhost:3000 (or next available port)
 - `npm run build` - Build the production application
+- `npm run start` - Start production server (after build)
 - `npm run lint` - Run ESLint code quality checks
 - `npx tsc --noEmit` - Run TypeScript type checking without building
 
@@ -18,8 +19,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Deployment**: 
 - Primary: `firebase deploy --only hosting` (Firebase App Hosting with SSR)
+- Alternative: `firebase deploy` (deploys all Firebase services, may cause timeout)
 - Build verification: `npm run build` + `npx tsc --noEmit` + `npm run lint`
 - GitHub Actions: Automatic deployment on main branch push (configured via `.github/workflows/firebase-hosting-merge.yml`)
+- **Prerequisites**: Firebase CLI (`npm install -g firebase-tools`) and authentication (`firebase login`)
 
 ### 動作確認の重要事項
 **CRITICAL**: 機能の動作確認は必ずプロダクション環境（https://anasui-e6f49.web.app）で行うこと。

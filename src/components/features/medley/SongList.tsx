@@ -451,7 +451,7 @@ export default function SongList({
   return (
     <div className="bg-gray-50">
       {/* 統一スティッキーコントロールヘッダー */}
-      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+      <div className="sticky top-16 z-50 bg-white border-b border-gray-200 shadow-sm">
         {/* セクション1: 再生ステータス + 共有エリア */}
         <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
           {/* メドレータイトルと制作者 */}

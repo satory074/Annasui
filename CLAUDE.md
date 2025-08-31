@@ -151,8 +151,14 @@ export type SongSection = {
 - **Authentication Integration**: UserProfileDropdown with login/logout flows
 - **Navigation Items**: Auto-filtered based on authentication state
 
+**Sticky Header Implementation:**
+- **Main Header**: Fixed positioning with `z-[100]` to ensure top priority layering
+- **Song List Headers**: Sticky positioning with `top-16` and `z-50` to stick below main header
+- **Height Accounting**: All page containers use `pt-16` to prevent content overlap
+- **Dual-Level Sticking**: Main header stays at viewport top, title/creator area sticks below it
+
 **Key Features:**
-- Sticky positioning with proper z-index management
+- Fixed positioning with proper z-index hierarchy (main header z-[100] > song headers z-50)
 - Mobile-first responsive breakpoints
 - Integrated Vibrant Orange design system
 - Outside-click detection for mobile menu closure
@@ -301,6 +307,18 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 <AppHeader variant="default" />
 ```
 
+**Sticky Header Pattern**: Maintain proper header hierarchy:
+```typescript
+// Main AppHeader - Fixed at top with highest z-index
+<header className="fixed top-0 left-0 right-0 z-[100] w-full">
+
+// Page container - Account for fixed header height
+<div className="min-h-screen pt-16">
+
+// Song list headers - Sticky below main header
+<div className="sticky top-16 z-50 bg-white">
+```
+
 ## Common Issues and Solutions
 
 ### Player Integration
@@ -370,6 +388,9 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 - **Mobile menu not closing**: Check outside-click detection and useRef implementation in AppHeader
 - **Responsive breakpoints**: Verify mobile hamburger menu toggles at correct screen size (md breakpoint)
 - **Search functionality moved**: Search is now in HomePageClient content area, not header
+- **Header not sticking**: Ensure main header uses `fixed` positioning with `z-[100]` and all pages have `pt-16` padding
+- **Title area hidden**: Song list headers should use `sticky top-16 z-50` to position below main header
+- **Z-index conflicts**: Main header (z-[100]) must have higher priority than song list headers (z-50)
 
 ### Search System Issues (Updated 2025-08-31)
 - **Search input missing**: Ensure search input field is present below tabs in HomePageClient.tsx

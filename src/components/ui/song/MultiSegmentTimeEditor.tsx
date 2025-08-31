@@ -94,7 +94,7 @@ function SegmentList({
                     onChange={(e) => setTempTimeValue(e.target.value)}
                     onBlur={finishEditing}
                     onKeyDown={handleKeyDown}
-                    className={`w-16 px-1 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-orange-600 ${
+                    className={`w-20 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
                       segmentErrors.startTime ? 'border-red-500' : 'border-gray-300'
                     } bg-white text-gray-900`}
                     autoFocus
@@ -102,8 +102,8 @@ function SegmentList({
                 ) : (
                   <button
                     onClick={() => startEditing(segment.id, 'startTime', segment.startTime)}
-                    className={`text-xs px-1 py-0.5 rounded hover:bg-white ${
-                      segmentErrors.startTime ? 'text-red-500 bg-red-50' : 'text-gray-700'
+                    className={`text-sm px-2 py-1 rounded-md hover:bg-white hover:shadow-sm transition-all ${
+                      segmentErrors.startTime ? 'text-red-500 bg-red-50' : 'text-gray-700 hover:text-orange-600'
                     }`}
                     title="クリックして編集"
                   >
@@ -121,7 +121,7 @@ function SegmentList({
                     onChange={(e) => setTempTimeValue(e.target.value)}
                     onBlur={finishEditing}
                     onKeyDown={handleKeyDown}
-                    className={`w-16 px-1 py-0.5 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-orange-600 ${
+                    className={`w-20 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
                       segmentErrors.endTime ? 'border-red-500' : 'border-gray-300'
                     } bg-white text-gray-900`}
                     autoFocus
@@ -129,8 +129,8 @@ function SegmentList({
                 ) : (
                   <button
                     onClick={() => startEditing(segment.id, 'endTime', segment.endTime)}
-                    className={`text-xs px-1 py-0.5 rounded hover:bg-white ${
-                      segmentErrors.endTime ? 'text-red-500 bg-red-50' : 'text-gray-700'
+                    className={`text-sm px-2 py-1 rounded-md hover:bg-white hover:shadow-sm transition-all ${
+                      segmentErrors.endTime ? 'text-red-500 bg-red-50' : 'text-gray-700 hover:text-orange-600'
                     }`}
                     title="クリックして編集"
                   >
@@ -390,9 +390,9 @@ export default function MultiSegmentTimeEditor({
     <div className="space-y-4">
       {/* タイムラインプレビューを上部に移動 */}
       {maxDuration > 0 && (
-        <div className="p-3 bg-white border border-gray-200 rounded-md">
-          <h4 className="text-sm font-medium text-gray-700 mb-3">タイムラインプレビュー</h4>
-          <div className="relative w-full h-8 bg-gray-100 rounded-sm overflow-hidden">
+        <div className="p-4 bg-white border border-gray-200 rounded-md">
+          <h4 className="text-base font-medium text-gray-700 mb-4">タイムラインプレビュー</h4>
+          <div className="relative w-full h-12 bg-gray-100 rounded-md overflow-hidden shadow-inner">
             {/* 既存の他の楽曲（薄いグレー） */}
             {allSongs
               .filter(song => song.title !== currentSongTitle || song.artist !== currentSongArtist)
@@ -412,9 +412,9 @@ export default function MultiSegmentTimeEditor({
             {[...segments].sort((a, b) => a.startTime - b.startTime).map(segment => (
               <div
                 key={segment.id}
-                className={`absolute h-full bg-orange-500 border border-orange-600 ${
-                  previewingSegmentId === segment.id ? 'ring-2 ring-blue-400' : ''
-                }`}
+                className={`absolute h-full bg-orange-500 border-2 border-orange-600 rounded-sm ${
+                  previewingSegmentId === segment.id ? 'ring-2 ring-blue-400 z-10' : ''
+                } hover:bg-orange-600 transition-colors cursor-pointer`}
                 style={{
                   left: `${(segment.startTime / maxDuration) * 100}%`,
                   width: `${((segment.endTime - segment.startTime) / maxDuration) * 100}%`
@@ -422,7 +422,7 @@ export default function MultiSegmentTimeEditor({
                 title={`区間${segment.segmentNumber}: ${Math.floor(segment.startTime / 60)}:${String(Math.floor(segment.startTime % 60)).padStart(2, '0')} - ${Math.floor(segment.endTime / 60)}:${String(Math.floor(segment.endTime % 60)).padStart(2, '0')}`}
               >
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-sm font-bold text-white drop-shadow-md">
+                  <span className="text-base font-bold text-white drop-shadow-lg">
                     {segment.segmentNumber}
                   </span>
                 </div>
@@ -431,7 +431,7 @@ export default function MultiSegmentTimeEditor({
             
             {/* 現在時刻インジケーター */}
             <div
-              className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
+              className="absolute top-0 bottom-0 w-1 bg-red-500 z-20 rounded-full shadow-lg"
               style={{ left: `${(currentTime / maxDuration) * 100}%` }}
               title={`現在時刻: ${Math.floor(currentTime / 60)}:${String(Math.floor(currentTime % 60)).padStart(2, '0')}`}
             />
@@ -450,9 +450,9 @@ export default function MultiSegmentTimeEditor({
         </h3>
         <button
           onClick={addSegment}
-          className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600"
+          className="flex items-center gap-2 px-4 py-2 text-sm bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all hover:shadow-lg"
         >
-          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
           区間を追加

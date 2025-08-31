@@ -51,6 +51,7 @@ export default function MedleyPlayer({
     // 楽曲検索モーダル関連の状態
     const [songSearchModalOpen, setSongSearchModalOpen] = useState<boolean>(false);
     const [selectedDatabaseSong, setSelectedDatabaseSong] = useState<SongDatabaseEntry | null>(null);
+    const [isChangingSong, setIsChangingSong] = useState<boolean>(false); // 楽曲変更モードかどうか
     
     // セットリストインポートモーダル関連の状態
     const [importModalOpen, setImportModalOpen] = useState<boolean>(false);
@@ -317,7 +318,7 @@ export default function MedleyPlayer({
         setEditModalOpen(true);
     };
 
-    const handleAddSong = () => { // eslint-disable-line @typescript-eslint/no-unused-vars
+    const handleAddSong = () => {
         setSelectedDatabaseSong(null);
         setSongSearchModalOpen(true);
     };
@@ -330,7 +331,17 @@ export default function MedleyPlayer({
         // 楽曲DBから基本情報を取得
         const songTemplate = createSongFromDatabase(dbSong, 0, 0);
         
-        if (editModalOpen && editingSong) {
+        if (isChangingSong && editModalOpen && editingSong) {
+            // 楽曲変更モードの場合は、時間情報を保持したまま楽曲情報を更新
+            setEditingSong({
+                ...editingSong,
+                title: songTemplate.title,
+                artist: songTemplate.artist,
+                originalLink: songTemplate.originalLink,
+                links: songTemplate.links
+            });
+            setIsChangingSong(false);
+        } else if (editModalOpen && editingSong) {
             // 編集モーダルが既に開いている場合は、現在の楽曲情報を更新
             setEditingSong({
                 ...editingSong,
@@ -371,6 +382,12 @@ export default function MedleyPlayer({
         }
     };
 
+
+    // 楽曲変更の開始
+    const handleChangeSong = () => {
+        setIsChangingSong(true);
+        setSongSearchModalOpen(true);
+    };
 
     // 楽曲検索モーダルから楽曲を編集
     const handleEditSongFromDatabase = (updatedSong: SongDatabaseEntry) => {
@@ -700,27 +717,8 @@ export default function MedleyPlayer({
         return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
     };
 
-    // 一括編集機能のハンドラ
-    const handleBulkUpdate = (updatedSongs: SongSection[]) => {
-        logger.info(`📝 一括更新: ${updatedSongs.length}曲の情報を更新`);
-        
-        // 各楽曲を個別に更新
-        updatedSongs.forEach(song => {
-            updateSong(song);
-        });
-    };
-
-    const handleBulkDelete = (songIds: number[]) => {
-        logger.info(`🗑️ 一括削除: ${songIds.length}曲を削除`);
-        
-        // 各楽曲を個別に削除
-        songIds.forEach(songId => {
-            deleteSong(songId);
-        });
-    };
-
-    // 動画IDが変更されたときの処理
-    const handleVideoIdSubmit = (e: React.FormEvent) => {
+    // 動画IDが変更されたときの処理  
+    const handleVideoIdSubmit = (e: React.FormEvent) => { // eslint-disable-line @typescript-eslint/no-unused-vars
         e.preventDefault();
         logger.info("Loading video:", inputVideoId);
         
@@ -893,6 +891,7 @@ export default function MedleyPlayer({
                     setEditModalOpen(false);
                     setSelectedDatabaseSong(null);
                     setContinuousInputMode(false); // モーダルを閉じる時は連続モードもリセット
+                    setIsChangingSong(false); // 楽曲変更モードもリセット
                 }}
                 song={editingSong}
                 onSave={handleSaveSong}
@@ -901,6 +900,8 @@ export default function MedleyPlayer({
                 maxDuration={effectiveDuration}
                 currentTime={currentTime}
                 isFromDatabase={selectedDatabaseSong !== null}
+                // 楽曲変更用
+                onChangeSong={handleChangeSong}
                 // 連続入力モード用
                 continuousMode={continuousInputMode}
                 onSaveAndNext={handleSaveAndNext}
@@ -919,7 +920,10 @@ export default function MedleyPlayer({
             {/* 楽曲検索モーダル */}
             <SongSearchModal
                 isOpen={songSearchModalOpen}
-                onClose={() => setSongSearchModalOpen(false)}
+                onClose={() => {
+                    setSongSearchModalOpen(false);
+                    setIsChangingSong(false); // 楽曲変更モードをリセット
+                }}
                 onSelectSong={handleSelectSongFromDatabase}
                 onManualAdd={handleManualAddSong}
                 onEditSong={handleEditSongFromDatabase}

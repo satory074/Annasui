@@ -147,12 +147,18 @@ export type SongSection = {
 - **Critical**: Never use static data files - all data operations must use Supabase database
 
 #### Component Architecture
-- `MedleyPlayer` - Core reusable player with platform detection
+- `MedleyPlayer` - Core reusable player with platform detection and song change state management
 - `SongList` - Unified timeline with editing and interaction
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
-- Modals: `SongEditModal` (simplified UI as of 2025-08-31), `SongSearchModal`, `ImportSetlistModal`, `CreateMedleyModal`
+- Modals: `SongEditModal` (with song change feature), `SongSearchModal` (supports change mode), `ImportSetlistModal`, `CreateMedleyModal`
 - Authentication: `AuthProvider`, `AuthModal`, `UserProfileDropdown`, `UserAvatar`
 - Authorization: `AuthorizationBanner`, `AdminPage` (user approval management)
+
+**Modal Interaction Flow:**
+- Timeline click → `SongEditModal` opens
+- "楽曲を変更" button → `SongSearchModal` opens in change mode (`isChangingSong: true`)
+- Song selection → Updates `editingSong` state with new song data, preserving time segments
+- Modal closes → Returns to `SongEditModal` with updated song information
 
 #### Header Architecture (Updated 2025-08-31)
 **Unified AppHeader System:**
@@ -246,6 +252,7 @@ const handleDeleteMedley = async (medley: MedleyData) => {
 - Keyboard shortcuts (S/E/M keys) with comprehensive visual feedback
 - Real-time song bar creation with elapsed time display
 - Adjacent song time alignment buttons
+- **Song Change**: Double-click song segment → Edit modal → "楽曲を変更" button → Select new song while preserving time segments
 
 **Keyboard Shortcuts System:**
 - **Spacebar**: Play/pause toggle (global, works outside edit mode)
@@ -297,11 +304,34 @@ const handleDeleteMedley = async (medley: MedleyData) => {
 - Database built from all medley data with deduplication
 - Multi-platform URL editing for all songs
 
-#### SongEditModal UI Simplification (Updated 2025-08-31)
-**Recent Change**: Removed redundant song header display showing song name, artist, and segment count
-- **Previous**: Showed "楽曲名 - アーティスト名 区間数" at top of modal
-- **Current**: Clean interface with only modal title and timeline editor
-- **Components**: Only essential editing elements remain (timeline, segment bars, form fields)
+#### SongEditModal with Song Change Feature (Updated 2025-08-31)
+**Song Change Functionality**: Users can now change the song itself from within the edit modal
+- **Song Info Display**: Shows current song information with "楽曲を変更" button for existing songs
+- **Song Change Flow**: Button opens SongSearchModal in change mode, preserving time segments
+- **Time Preservation**: Start/end times are maintained when changing to a different song
+- **Modal Integration**: Seamless flow between SongEditModal and SongSearchModal
+- **Authorization**: Only available for existing songs (not during new song creation)
+
+**Implementation Pattern:**
+```typescript
+// In MedleyPlayer.tsx
+const handleChangeSong = () => {
+  setIsChangingSong(true);
+  setSongSearchModalOpen(true);
+};
+
+// Song selection preserves timing
+if (isChangingSong && editModalOpen && editingSong) {
+  setEditingSong({
+    ...editingSong,
+    title: songTemplate.title,
+    artist: songTemplate.artist,
+    originalLink: songTemplate.originalLink,
+    links: songTemplate.links
+    // startTime and endTime preserved
+  });
+}
+```
 
 #### SEO Architecture (Added 2025-08-30)
 **Comprehensive SEO Implementation:**
@@ -574,6 +604,10 @@ case 'm':
 - **Missing imports after UI cleanup**: Ensure unused imports (SongInfoDisplay) are removed from SongEditModal.tsx
 - **Unused props errors**: Remove onSelectSong prop references after header simplification
 - **Component reference errors**: Update MedleyPlayer.tsx to remove references to removed props
+- **Song change button not appearing**: Verify `onChangeSong` prop is passed to SongEditModal and user is editing existing song (not new)
+- **Song change not preserving times**: Check `isChangingSong` flag is properly set in `handleSelectSongFromDatabase`
+- **Modal state conflicts**: Ensure `isChangingSong` flag is reset when modals are closed
+- **Song info not updating**: Verify `setEditingSong` is called with updated song data after selection
 
 ### Playback Controls Issues (Updated 2025-08-31)
 - **Controls not displaying**: Verify both `onTogglePlayPause` and `onSeek` props are passed to SongListGrouped

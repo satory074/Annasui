@@ -186,24 +186,28 @@ export function useMedleyEdit(
       });
 
       if (invalidSongs.length > 0) {
-        logger.warn('Validation failed: found songs with missing required fields', invalidSongs.length);
+        logger.warn(`Validation failed: ${invalidSongs.length} songs have missing required fields`);
         
-        // 詳細なエラーメッセージを生成
+        // ユーザーフレンドリーなエラーメッセージを生成
         const errorMessages = invalidSongs.map((song) => {
           const issues = [];
           if (!song.title || song.title.trim() === '' || song.title.startsWith('空の楽曲')) {
-            issues.push('タイトル');
+            issues.push('楽曲名');
           }
           if (!song.artist || song.artist.trim() === '' || song.artist === 'アーティスト未設定') {
-            issues.push('アーティスト');
+            issues.push('アーティスト名');
           }
-          return `• ${formatTime(song.startTime)}〜${formatTime(song.endTime)}: ${issues.join('と')}が未設定`;
-        }).slice(0, 10); // 最大10件まで表示
+          return `• ${formatTime(song.startTime)} ～ ${formatTime(song.endTime)}: ${issues.join('と')}を入力してください`;
+        }).slice(0, 8); // 最大8件まで表示
 
         const remainingCount = invalidSongs.length - errorMessages.length;
-        const moreMessage = remainingCount > 0 ? `\n\n他 ${remainingCount} 件の楽曲にも未設定項目があります。` : '';
+        const moreMessage = remainingCount > 0 ? `\n\n他にも ${remainingCount} 件の楽曲で情報が不完全です。` : '';
         
-        alert(`以下の楽曲に必須項目が設定されていません：\n\n${errorMessages.join('\n')}${moreMessage}\n\n保存前に全ての楽曲情報を入力してください。`);
+        const title = '📝 楽曲情報が不完全です';
+        const instruction = '以下の楽曲を編集して情報を完成させてください：';
+        const helpText = '\n💡 ヒント: 編集ボタンをクリックして情報を入力できます。';
+        
+        alert(`${title}\n\n${instruction}\n\n${errorMessages.join('\n')}${moreMessage}${helpText}`);
         return false;
       }
       

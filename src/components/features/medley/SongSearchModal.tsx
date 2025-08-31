@@ -25,6 +25,8 @@ export default function SongSearchModal({
   const [searchTerm, setSearchTerm] = useState("");
   const [songDatabase, setSongDatabase] = useState<SongDatabaseEntry[]>([]);
   const [, setIsLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<{
     title: string;
@@ -38,15 +40,25 @@ export default function SongSearchModal({
     };
   } | null>(null);
 
-  // 検索結果
-  const searchResults = useMemo(() => {
-    return searchSongs(songDatabase, searchTerm);
-  }, [songDatabase, searchTerm]);
+  // 検索結果とページネーション
+  const { searchResults, totalPages, paginatedResults } = useMemo(() => {
+    const results = searchSongs(songDatabase, searchTerm);
+    const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const paginatedResults = results.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    
+    return {
+      searchResults: results,
+      totalPages,
+      paginatedResults
+    };
+  }, [songDatabase, searchTerm, currentPage]);
 
   // モーダルが開かれたときに検索フィールドをクリアし、データベースを読み込む
   useEffect(() => {
     if (isOpen) {
       setSearchTerm("");
+      setCurrentPage(1);
       setEditingEntryId(null);
       setEditFormData(null);
       
@@ -66,6 +78,11 @@ export default function SongSearchModal({
       loadSongDatabase();
     }
   }, [isOpen]);
+
+  // 検索語が変わったときは最初のページに戻る
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
   // 編集開始ハンドラ
   const handleStartEdit = (song: SongDatabaseEntry) => {
@@ -166,15 +183,29 @@ export default function SongSearchModal({
           </svg>
         </div>
         
-        {/* 結果件数 */}
-        <p className="text-sm text-gray-600 mb-4">
-          {searchResults.length}件の楽曲が見つかりました
-        </p>
+        {/* 結果件数とページネーション情報 */}
+        <div className="flex justify-between items-center mb-4">
+          <p className="text-sm text-gray-600">
+            {searchResults.length}件の楽曲が見つかりました
+            {totalPages > 1 && (
+              <span className="ml-2 text-gray-500">
+                （{currentPage}/{totalPages}ページ）
+              </span>
+            )}
+          </p>
+          
+          {/* ページサイズ変更 */}
+          {searchResults.length > 10 && (
+            <div className="text-sm text-gray-600">
+              1ページに{ITEMS_PER_PAGE}件表示
+            </div>
+          )}
+        </div>
 
         {/* 検索結果リスト */}
-        <div className="flex-1 overflow-y-auto max-h-[60vh]">
+        <div className="flex-1 overflow-y-auto max-h-[50vh]">
           <div className="space-y-3">
-            {searchResults.map((song) => {
+            {paginatedResults.map((song) => {
               const songSection = convertToSongSection(song);
               const isEditing = editingEntryId === song.id;
               
@@ -344,11 +375,68 @@ export default function SongSearchModal({
                 </button>
               </div>
             )}
+            
+            {/* ページ内検索結果がない場合（全体では結果がある） */}
+            {paginatedResults.length === 0 && searchResults.length > 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <p>このページには表示する楽曲がありません</p>
+              </div>
+            )}
           </div>
         </div>
+        
+        {/* ページネーション */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center gap-2 py-4 border-t border-gray-200">
+            <button
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-2 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              ← 前
+            </button>
+            
+            <div className="flex gap-1">
+              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                let pageNum;
+                if (totalPages <= 5) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 3) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 2) {
+                  pageNum = totalPages - 4 + i;
+                } else {
+                  pageNum = currentPage - 2 + i;
+                }
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`px-3 py-2 text-sm border rounded ${
+                      currentPage === pageNum
+                        ? 'bg-orange-600 text-white border-orange-600'
+                        : 'border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <button
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-2 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+            >
+              次 →
+            </button>
+          </div>
+        )}
 
         {/* フッター */}
-        <div className="border-t border-gray-200 pt-4 mt-4 flex justify-between">
+        <div className="border-t border-gray-200 pt-4 flex justify-between">
           <button
             onClick={onManualAdd}
             className="px-4 py-2 bg-mint-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-2 focus:ring-mint-600"

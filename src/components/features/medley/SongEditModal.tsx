@@ -29,6 +29,8 @@ interface SongEditModalProps {
   // 重複処理用
   allSongs?: SongSection[];
   onBatchUpdate?: (songs: SongSection[]) => void;
+  // 楽曲変更用
+  onChangeSong?: () => void;
 }
 
 export default function SongEditModal({
@@ -48,7 +50,8 @@ export default function SongEditModal({
   isPlaying = false,
   onTogglePlayPause,
   allSongs = [],
-  onBatchUpdate
+  onBatchUpdate,
+  onChangeSong
 }: SongEditModalProps) {
   const [formData, setFormData] = useState<SongSection>({
     id: 0,
@@ -68,17 +71,19 @@ export default function SongEditModal({
 
   const [segments, setSegments] = useState<TimeSegment[]>([]);
 
-  // segments状態変更をログ
+  // segments状態変更をログ（デバッグ用）
   useEffect(() => {
-    logger.debug('🔄 SongEditModal: segments state changed', {
-      segmentsLength: segments.length,
-      segments: segments.map(s => ({ 
-        id: s.id, 
-        segmentNumber: s.segmentNumber,
-        startTime: s.startTime,
-        endTime: s.endTime 
-      }))
-    });
+    if (process.env.NODE_ENV === 'development') {
+      logger.debug('🔄 SongEditModal: segments state changed', {
+        segmentsLength: segments.length,
+        segments: segments.map(s => ({ 
+          id: s.id, 
+          segmentNumber: s.segmentNumber,
+          startTime: s.startTime,
+          endTime: s.endTime 
+        }))
+      });
+    }
   }, [segments]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -180,7 +185,7 @@ export default function SongEditModal({
       }]);
     }
     setErrors({});
-  }, [song, isNew, isOpen, maxDuration]);
+  }, [song, isNew, isOpen, maxDuration, currentTime]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -334,6 +339,35 @@ export default function SongEditModal({
         {/* 楽曲情報表示を削除 - 冗長な情報のため */}
 
         <div className="space-y-4">
+          {/* 楽曲情報表示（既存楽曲の編集時）*/}
+          {!isNew && song && (
+            <div className="p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-lg font-medium text-gray-900">
+                  楽曲情報
+                </h3>
+                {onChangeSong && (
+                  <button
+                    onClick={onChangeSong}
+                    className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-colors"
+                  >
+                    楽曲を変更
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-gray-600">楽曲名:</span>
+                  <div className="font-medium text-gray-900">{formData.title || "未設定"}</div>
+                </div>
+                <div>
+                  <span className="text-gray-600">アーティスト:</span>
+                  <div className="font-medium text-gray-900">{formData.artist || "未設定"}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 楽曲名・アーティスト名（新規楽曲の手動追加時のみ表示） */}
           {isNew && !isFromDatabase && (
             <>

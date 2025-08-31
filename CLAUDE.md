@@ -148,7 +148,6 @@ export type SongSection = {
 - **AppHeader.tsx**: New unified header component replacing legacy Header.tsx
 - **Responsive Design**: Desktop navigation + mobile hamburger menu
 - **Variant Support**: `"home"` (light), `"player"` (dark), `"default"` (neutral)
-- **Integrated Search**: Page-specific search functionality with customizable placeholders
 - **Authentication Integration**: UserProfileDropdown with login/logout flows
 - **Navigation Items**: Auto-filtered based on authentication state
 
@@ -156,8 +155,8 @@ export type SongSection = {
 - Sticky positioning with proper z-index management
 - Mobile-first responsive breakpoints
 - Integrated Vibrant Orange design system
-- Search toggle for mobile layouts
 - Outside-click detection for mobile menu closure
+- **Search functionality removed**: No search features in header as of 2025-08-31
 
 #### Timeline System & Annotation Enhancement Features
 **Timeline Display**: Always shows full video duration with simplified position calculations
@@ -271,24 +270,11 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 
 **AppHeader Usage Pattern**: Always use AppHeader with appropriate variant:
 ```typescript
-// Home page - light theme with search
-<AppHeader 
-  variant="home" 
-  showSearch={true}
-  searchPlaceholder="メドレー名、作者名で検索..."
-  searchValue={searchTerm}
-  onSearchChange={setSearchTerm}
-/>
+// Home page - light theme
+<AppHeader variant="home" />
 
-// Player page - dark theme with video ID search
-<AppHeader 
-  variant="player"
-  showSearch={true}
-  searchPlaceholder="動画ID (例: sm500873)"
-  searchValue={inputVideoId}
-  onSearchChange={setInputVideoId}
-  onSearchSubmit={handleVideoIdSubmit}
-/>
+// Player page - dark theme
+<AppHeader variant="player" />
 
 // Other pages - default neutral theme
 <AppHeader variant="default" />
@@ -353,8 +339,8 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 - **Double header display**: Ensure legacy Header.tsx is replaced with AppHeader.tsx on all pages
 - **Missing navigation items**: Verify authenticated navigation items (e.g., "マイメドレー") appear only for logged-in users
 - **Mobile menu not closing**: Check outside-click detection and useRef implementation in AppHeader
-- **Search functionality**: Ensure search props (searchValue, onSearchChange) are properly connected
 - **Responsive breakpoints**: Verify mobile hamburger menu toggles at correct screen size (md breakpoint)
+- **Search functionality removed**: AppHeader no longer accepts search-related props as of 2025-08-31
 
 ### SongEditModal Issues (Updated 2025-08-31)
 - **Missing imports after UI cleanup**: Ensure unused imports (SongInfoDisplay) are removed from SongEditModal.tsx

@@ -636,14 +636,7 @@ export default function MedleyPlayer({
     return (
         <div className="min-h-screen bg-gray-100">
             {/* App Header */}
-            <AppHeader 
-                variant="player"
-                showSearch={true}
-                searchPlaceholder="動画ID (例: sm500873)"
-                searchValue={inputVideoId}
-                onSearchChange={setInputVideoId}
-                onSearchSubmit={handleVideoIdSubmit}
-            />
+            <AppHeader variant="player" />
             
             <div className="max-w-6xl mx-auto bg-white shadow-lg">
 

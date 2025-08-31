@@ -204,20 +204,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     return (
         <div className="min-h-screen bg-gray-50">
             {/* New App Header */}
-            <AppHeader 
-                variant="home" 
-                showSearch={true}
-                searchPlaceholder={searchMode === "medley" ? "メドレー名、作者名で検索..." : "楽曲名、アーティスト名で検索..."}
-                searchValue={searchTerm}
-                onSearchChange={(value) => {
-                    setSearchTerm(value);
-                    setCurrentPage(1);
-                }}
-                onSearchSubmit={(e) => {
-                    e.preventDefault();
-                    // Search is handled by searchTerm state change
-                }}
-            />
+            <AppHeader variant="home" />
 
             <div className="max-w-6xl mx-auto py-8 px-4">
                 {/* Page Title and Actions */}

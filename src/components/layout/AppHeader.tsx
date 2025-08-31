@@ -6,24 +6,13 @@ import Logo from "@/components/ui/Logo";
 import UserProfileDropdown from "@/components/features/auth/UserProfileDropdown";
 
 interface AppHeaderProps {
-  showSearch?: boolean;
-  searchPlaceholder?: string;
-  searchValue?: string;
-  onSearchChange?: (value: string) => void;
-  onSearchSubmit?: (e: React.FormEvent) => void;
   variant?: "home" | "player" | "default";
 }
 
 export default function AppHeader({
-  showSearch = false,
-  searchPlaceholder = "検索...",
-  searchValue = "",
-  onSearchChange,
-  onSearchSubmit,
   variant = "default"
 }: AppHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Close mobile menu when clicking outside
@@ -38,13 +27,6 @@ export default function AppHeader({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (onSearchSubmit) {
-      onSearchSubmit(e);
-    }
-    setIsSearchOpen(false);
-  };
 
   const navigationItems = [
     {
@@ -95,53 +77,8 @@ export default function AppHeader({
             </nav>
           </div>
 
-          {/* Right side - Search, Actions, User Profile */}
+          {/* Right side - Actions, User Profile */}
           <div className="flex items-center space-x-3">
-            {/* Search Toggle (Mobile) */}
-            {showSearch && (
-              <button
-                onClick={() => setIsSearchOpen(!isSearchOpen)}
-                className={`md:hidden p-2 rounded-lg transition-colors ${
-                  variant === "home"
-                    ? "text-gray-600 hover:text-orange-600 hover:bg-orange-50"
-                    : "text-gray-300 hover:text-white hover:bg-gray-700"
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            )}
-
-            {/* Desktop Search */}
-            {showSearch && (
-              <form 
-                onSubmit={handleSearchSubmit} 
-                className="hidden md:flex items-center space-x-2"
-              >
-                <div className="relative">
-                  <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
-                  </svg>
-                  <input
-                    type="text"
-                    value={searchValue}
-                    onChange={(e) => onSearchChange?.(e.target.value)}
-                    placeholder={searchPlaceholder}
-                    className="pl-10 pr-4 py-2 w-64 text-gray-900 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-                <button 
-                  type="submit" 
-                  className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-medium flex items-center space-x-2"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <span>検索</span>
-                </button>
-              </form>
-            )}
 
             {/* Feedback Button */}
             <a
@@ -184,31 +121,6 @@ export default function AppHeader({
           </div>
         </div>
 
-        {/* Mobile Search Bar */}
-        {showSearch && isSearchOpen && (
-          <div className="md:hidden border-t border-gray-200 px-4 py-3">
-            <form onSubmit={handleSearchSubmit} className="flex space-x-2">
-              <div className="flex-1 relative">
-                <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd"/>
-                </svg>
-                <input
-                  type="text"
-                  value={searchValue}
-                  onChange={(e) => onSearchChange?.(e.target.value)}
-                  placeholder={searchPlaceholder}
-                  className="w-full pl-10 pr-4 py-2 text-gray-900 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                />
-              </div>
-              <button 
-                type="submit" 
-                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
-              >
-                検索
-              </button>
-            </form>
-          </div>
-        )}
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (

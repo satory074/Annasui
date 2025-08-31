@@ -45,7 +45,7 @@ export default function AppHeader({
     : "bg-gradient-to-r from-gray-800 to-gray-900 text-white";
 
   return (
-    <header className={`${headerBg} shadow-sm sticky top-0 z-40`}>
+    <header className={`${headerBg} shadow-sm fixed top-0 left-0 right-0 z-[100] w-full`}>
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Left side - Logo and Navigation */}

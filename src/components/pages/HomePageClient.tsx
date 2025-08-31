@@ -4,13 +4,13 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createMedley } from "@/lib/api/medleys";
-import { MedleyData } from "@/types";
+import { MedleyData, SongSection } from "@/types";
 import MedleyStatistics from "@/components/features/statistics/MedleyStatistics";
 import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
 import AuthModal from "@/components/features/auth/AuthModal";
 import AppHeader from "@/components/layout/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
-import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
+import { getThumbnailUrl, getYouTubeThumbnail, getBestThumbnailFromLinks } from "@/lib/utils/thumbnail";
 import { autoCorrectPlatform } from "@/lib/utils/platformDetection";
 import { logger } from "@/lib/utils/logger";
 
@@ -158,6 +158,47 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
         currentPage * itemsPerPage
     );
 
+    // Helper function to get thumbnail URL for individual songs
+    const getSongThumbnailUrl = (song: SongSection, medley: MedleyData): string => {
+        // Priority 1: Try to get thumbnail from song's own links first
+        if (song.links) {
+            // Use the priority system: niconico > youtube > spotify > appleMusic
+            if (song.links.niconico) {
+                const thumbnailUrl = getThumbnailUrl(song.links.niconico);
+                if (thumbnailUrl) return thumbnailUrl;
+            }
+            if (song.links.youtube) {
+                const thumbnailUrl = getThumbnailUrl(song.links.youtube);
+                if (thumbnailUrl) return thumbnailUrl;
+            }
+            if (song.links.spotify) {
+                // For Spotify, use placeholder for now (could be enhanced with async call later)
+                return getThumbnailUrl(song.links.spotify) || '/default-thumbnail.svg';
+            }
+            if (song.links.appleMusic) {
+                // For Apple Music, use placeholder for now (could be enhanced with async call later)
+                return getThumbnailUrl(song.links.appleMusic) || '/default-thumbnail.svg';
+            }
+        }
+        
+        // Priority 2: Fallback to originalLink if links are not available
+        if (song.originalLink) {
+            const thumbnailUrl = getThumbnailUrl(song.originalLink);
+            if (thumbnailUrl) return thumbnailUrl;
+        }
+        
+        // Priority 3: Fallback to medley's thumbnail
+        if (medley.platform === 'youtube') {
+            return getYouTubeThumbnail(medley.videoId, 'default');
+        } else {
+            const medleyThumbnail = getThumbnailUrl(`https://www.nicovideo.jp/watch/${medley.videoId}`);
+            if (medleyThumbnail) return medleyThumbnail;
+        }
+        
+        // Final fallback to default thumbnail
+        return '/default-thumbnail.svg';
+    };
+
     // Song search results (cross-medley search)
     const allSongs = medleys.flatMap(medley => 
         medley.songs.map(song => ({
@@ -166,9 +207,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
             medleyCreator: medley.creator,
             videoId: medley.videoId,
             platform: medley.platform || 'niconico',
-            thumbnailUrl: medley.platform === 'youtube' 
-                ? getYouTubeThumbnail(medley.videoId, 'default')
-                : getThumbnailUrl(`https://www.nicovideo.jp/watch/${medley.videoId}`) || '/default-thumbnail.svg'
+            thumbnailUrl: getSongThumbnailUrl(song, medley)
         }))
     );
 
@@ -212,7 +251,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     };
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gray-50 pt-16">
             {/* New App Header */}
             <AppHeader variant="home" />
 

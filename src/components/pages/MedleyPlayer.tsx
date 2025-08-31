@@ -634,7 +634,7 @@ export default function MedleyPlayer({
     }
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-100 pt-16">
             {/* App Header */}
             <AppHeader variant="player" />
             

@@ -80,7 +80,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-gray-100 pt-16">
       <AppHeader variant="default" />
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}

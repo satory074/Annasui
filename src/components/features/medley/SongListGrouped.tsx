@@ -60,6 +60,7 @@ export default function SongListGrouped({
   actualPlayerDuration,
   currentTime,
   onTimelineClick,
+  onSeek,
   onEditSong,
   onDeleteSong,
   onTogglePlayPause,
@@ -466,7 +467,76 @@ export default function SongListGrouped({
           <div className="flex justify-between items-center">
             {/* 左側: 再生コントロール */}
             <div className="flex items-center gap-4">
-              {onTogglePlayPause && (
+              {onTogglePlayPause && onSeek && (
+                <div className="flex items-center gap-1">
+                  {/* 最初からボタン */}
+                  <button
+                    onClick={() => onSeek(0)}
+                    className="text-gray-600 hover:text-orange-500 transition-all p-1 rounded-full hover:bg-gray-100"
+                    aria-label="最初から再生"
+                    title="最初から"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                    </svg>
+                  </button>
+
+                  {/* 5秒戻るボタン */}
+                  <button
+                    onClick={() => onSeek(Math.max(0, currentTime - 5))}
+                    className="text-gray-600 hover:text-orange-500 transition-all p-1 rounded-full hover:bg-gray-100 relative"
+                    aria-label="5秒戻る"
+                    title="5秒戻る"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="11 17 6 12 11 7" />
+                      <polyline points="18 17 13 12 18 7" />
+                    </svg>
+                    <span className="absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 text-xs text-orange-500 font-bold">5</span>
+                  </button>
+
+                  {/* 再生/一時停止ボタン */}
+                  <PlayPauseButton 
+                    isPlaying={isPlaying || false} 
+                    onClick={onTogglePlayPause}
+                    size="sm"
+                  />
+
+                  {/* 5秒進むボタン */}
+                  <button
+                    onClick={() => onSeek(Math.min(duration, currentTime + 5))}
+                    className="text-gray-600 hover:text-orange-500 transition-all p-1 rounded-full hover:bg-gray-100 relative"
+                    aria-label="5秒進む"
+                    title="5秒進む"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <polyline points="13 17 18 12 13 7" />
+                      <polyline points="6 17 11 12 6 7" />
+                    </svg>
+                    <span className="absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 text-xs text-orange-500 font-bold">5</span>
+                  </button>
+                </div>
+              )}
+              {onTogglePlayPause && !onSeek && (
                 <PlayPauseButton 
                   isPlaying={isPlaying || false} 
                   onClick={onTogglePlayPause}

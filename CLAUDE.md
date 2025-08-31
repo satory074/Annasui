@@ -86,6 +86,14 @@ export type SongSection = {
 
 **Thumbnail Priority System**: Automatic selection based on priority (Niconico > YouTube > Spotify > Apple Music)
 
+#### Playback Controls System (Updated 2025-08-31)
+**Song List Playback Controls**: Enhanced playback control buttons in the song list section:
+- **Location**: Found in SongListGrouped component, below the "楽曲一覧" header
+- **Controls**: [最初から] [5秒戻る] [再生/一時停止] [5秒進む] buttons arranged horizontally
+- **Functionality**: Direct playback control from the song list area using existing `onSeek` prop
+- **Styling**: Small buttons with orange hover effects, 5-second buttons include numeric indicators
+- **Conditional Display**: Only appears when both `onTogglePlayPause` and `onSeek` props are available
+
 #### Thumbnail API Architecture (Added 2025-08-30)
 **Critical**: CORS restrictions prevent direct access to Niconico thumbnail APIs from browsers.
 
@@ -521,6 +529,13 @@ case 'm':
 - **Missing imports after UI cleanup**: Ensure unused imports (SongInfoDisplay) are removed from SongEditModal.tsx
 - **Unused props errors**: Remove onSelectSong prop references after header simplification
 - **Component reference errors**: Update MedleyPlayer.tsx to remove references to removed props
+
+### Playback Controls Issues (Updated 2025-08-31)
+- **Controls not displaying**: Verify both `onTogglePlayPause` and `onSeek` props are passed to SongListGrouped
+- **onSeek parameter missing**: Ensure `onSeek` is destructured in SongListGrouped component parameters
+- **Buttons not functional**: Check that `seek` function is properly passed from MedleyPlayer to SongListGrouped
+- **Styling issues**: Verify orange hover effects and 5-second numeric indicators display correctly
+- **Wrong location**: Song list controls are in SongListGrouped, not PlayerControls component
 
 ## File Organization
 

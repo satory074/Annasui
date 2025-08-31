@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import UserAvatar from '@/components/ui/user/UserAvatar'
 import AuthModal from '@/components/features/auth/AuthModal'
+import AppHeader from '@/components/layout/AppHeader'
 import { logger } from '@/lib/utils/logger'
 
 export default function SettingsPage() {
@@ -87,6 +88,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      <AppHeader variant="default" />
       <div className="max-w-4xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-8">

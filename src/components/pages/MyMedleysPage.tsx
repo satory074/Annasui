@@ -8,6 +8,7 @@ import { getUserMedleys, deleteMedley } from '@/lib/api/medleys'
 import { MedleyData } from '@/types'
 import AuthModal from '@/components/features/auth/AuthModal'
 import CreateMedleyModal from '@/components/features/medley/CreateMedleyModal'
+import AppHeader from '@/components/layout/AppHeader'
 import { logger } from '@/lib/utils/logger'
 
 export default function MyMedleysPage() {
@@ -171,6 +172,13 @@ export default function MyMedleysPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      <AppHeader 
+        variant="default" 
+        showSearch={true}
+        searchPlaceholder="マイメドレーを検索..."
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+      />
       <div className="max-w-6xl mx-auto py-8 px-4">
         {/* Header */}
         <div className="mb-8">

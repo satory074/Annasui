@@ -7,12 +7,11 @@ import { createMedley } from "@/lib/api/medleys";
 import { MedleyData } from "@/types";
 import MedleyStatistics from "@/components/features/statistics/MedleyStatistics";
 import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
-import UserProfileDropdown from "@/components/features/auth/UserProfileDropdown";
 import AuthModal from "@/components/features/auth/AuthModal";
+import AppHeader from "@/components/layout/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
 import { autoCorrectPlatform } from "@/lib/utils/platformDetection";
-import Logo from "@/components/ui/Logo";
 import { logger } from "@/lib/utils/logger";
 
 interface HomePageClientProps {
@@ -196,40 +195,36 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     };
 
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-gray-50">
+            {/* New App Header */}
+            <AppHeader 
+                variant="home" 
+                showSearch={true}
+                searchPlaceholder={searchMode === "medley" ? "メドレー名、作者名で検索..." : "楽曲名、アーティスト名で検索..."}
+                searchValue={searchTerm}
+                onSearchChange={(value) => {
+                    setSearchTerm(value);
+                    setCurrentPage(1);
+                }}
+                onSearchSubmit={(e) => {
+                    e.preventDefault();
+                    // Search is handled by searchTerm state change
+                }}
+            />
+
             <div className="max-w-6xl mx-auto py-8 px-4">
-                {/* Header */}
+                {/* Page Title and Actions */}
                 <div className="mb-8">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
+                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">
                         <div>
-                            <div className="flex items-center gap-3 mb-2">
-                                <Logo size="xl" />
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border border-orange-200">
-                                    ALPHA
-                                </span>
-                            </div>
+                            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                                メドレー一覧
+                            </h1>
                             <p className="text-lg text-gray-600">
                                 メドレー楽曲の詳細なアノテーション・検索プラットフォーム
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            {/* User profile dropdown */}
-                            <UserProfileDropdown />
-
-                            {/* Feedback button */}
-                            <a
-                                href="https://github.com/anthropics/claude-code/issues"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                                title="フィードバック・バグ報告"
-                            >
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                                </svg>
-                                <span className="hidden sm:inline">フィードバック</span>
-                            </a>
-
                             {/* Statistics button */}
                             <button
                                 onClick={() => setShowStatistics(!showStatistics)}
@@ -277,29 +272,8 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                     <MedleyStatistics medleys={medleys} />
                 )}
 
-                {/* Search and filter UI */}
+                {/* Filter UI */}
                 <div className="mb-8">
-                    {/* Search bar */}
-                    <div className="mb-6">
-                        <div className="relative max-w-2xl mx-auto">
-                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                            </div>
-                            <input
-                                type="text"
-                                placeholder={searchMode === "medley" ? "メドレー名、作者名で検索..." : "楽曲名、アーティスト名で検索..."}
-                                value={searchTerm}
-                                onChange={(e) => {
-                                    setSearchTerm(e.target.value);
-                                    setCurrentPage(1);
-                                }}
-                                className="w-full pl-12 pr-4 py-4 text-lg bg-white border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 shadow-sm"
-                            />
-                        </div>
-                    </div>
-
                     {/* Tabs and filters */}
                     <div className="bg-white rounded-xl border border-gray-200 shadow-sm">
                         {/* Tab switching */}

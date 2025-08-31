@@ -134,6 +134,22 @@ export type SongSection = {
 - Modals: `SongEditModal` (simplified UI as of 2025-08-31), `SongSearchModal`, `ImportSetlistModal`, `CreateMedleyModal`
 - Authentication: `AuthProvider`, `AuthModal`, `UserProfileDropdown`, `UserAvatar`
 
+#### Header Architecture (Updated 2025-08-31)
+**Unified AppHeader System:**
+- **AppHeader.tsx**: New unified header component replacing legacy Header.tsx
+- **Responsive Design**: Desktop navigation + mobile hamburger menu
+- **Variant Support**: `"home"` (light), `"player"` (dark), `"default"` (neutral)
+- **Integrated Search**: Page-specific search functionality with customizable placeholders
+- **Authentication Integration**: UserProfileDropdown with login/logout flows
+- **Navigation Items**: Auto-filtered based on authentication state
+
+**Key Features:**
+- Sticky positioning with proper z-index management
+- Mobile-first responsive breakpoints
+- Integrated Vibrant Orange design system
+- Search toggle for mobile layouts
+- Outside-click detection for mobile menu closure
+
 #### Timeline System & Annotation Enhancement Features
 **Timeline Display**: Always shows full video duration with simplified position calculations
 **Edit Mode Features**: 
@@ -236,6 +252,31 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 });
 ```
 
+**AppHeader Usage Pattern**: Always use AppHeader with appropriate variant:
+```typescript
+// Home page - light theme with search
+<AppHeader 
+  variant="home" 
+  showSearch={true}
+  searchPlaceholder="メドレー名、作者名で検索..."
+  searchValue={searchTerm}
+  onSearchChange={setSearchTerm}
+/>
+
+// Player page - dark theme with video ID search
+<AppHeader 
+  variant="player"
+  showSearch={true}
+  searchPlaceholder="動画ID (例: sm500873)"
+  searchValue={inputVideoId}
+  onSearchChange={setInputVideoId}
+  onSearchSubmit={handleVideoIdSubmit}
+/>
+
+// Other pages - default neutral theme
+<AppHeader variant="default" />
+```
+
 ## Common Issues and Solutions
 
 ### Player Integration
@@ -288,6 +329,13 @@ const MyComponent = React.memo(function MyComponent({ props }) {
 - **Cache issues**: Production deployment may need cache clearing for logo/favicon updates
 - **Logo not displaying**: Check that HomePageClient.tsx uses Logo component, not plain text
 
+### Header System Issues (Updated 2025-08-31)
+- **Double header display**: Ensure legacy Header.tsx is replaced with AppHeader.tsx on all pages
+- **Missing navigation items**: Verify authenticated navigation items (e.g., "マイメドレー") appear only for logged-in users
+- **Mobile menu not closing**: Check outside-click detection and useRef implementation in AppHeader
+- **Search functionality**: Ensure search props (searchValue, onSearchChange) are properly connected
+- **Responsive breakpoints**: Verify mobile hamburger menu toggles at correct screen size (md breakpoint)
+
 ### SongEditModal Issues (Updated 2025-08-31)
 - **Missing imports after UI cleanup**: Ensure unused imports (SongInfoDisplay) are removed from SongEditModal.tsx
 - **Unused props errors**: Remove onSelectSong prop references after header simplification
@@ -335,6 +383,10 @@ database/ - Database migrations and schema
 **Security & Performance:**
 - `src/lib/utils/logger.ts` - Production-safe logging system
 - `src/lib/utils/sanitize.ts` - Input sanitization utilities
+
+**Header System:**
+- `src/components/layout/AppHeader.tsx` - New unified header component (2025-08-31)
+- `src/components/layout/Header.tsx` - Legacy header (being phased out)
 
 **UI System:**
 - `src/components/ui/modal/BaseModal.tsx` - Base modal component

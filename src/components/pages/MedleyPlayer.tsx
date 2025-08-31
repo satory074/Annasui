@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useMedleyData } from "@/hooks/useMedleyData";
 import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import { useMedleyEdit } from "@/hooks/useMedleyEdit";
-import Header from "@/components/layout/Header";
+import AppHeader from "@/components/layout/AppHeader";
 import NicoPlayer from "@/components/features/player/NicoPlayer";
 import YouTubePlayer from "@/components/features/player/YouTubePlayer";
 import { useNicoPlayer } from "@/hooks/useNicoPlayer";
@@ -335,10 +335,6 @@ export default function MedleyPlayer({
         }
     };
 
-    // 楽曲編集中に楽曲選択モーダルを開く
-    const handleSelectSongFromEditModal = () => {
-        setSongSearchModalOpen(true);
-    };
 
     // 楽曲検索モーダルから楽曲を編集
     const handleEditSongFromDatabase = (updatedSong: SongDatabaseEntry) => {
@@ -635,14 +631,17 @@ export default function MedleyPlayer({
 
     return (
         <div className="min-h-screen bg-gray-100">
+            {/* App Header */}
+            <AppHeader 
+                variant="player"
+                showSearch={true}
+                searchPlaceholder="動画ID (例: sm500873)"
+                searchValue={inputVideoId}
+                onSearchChange={setInputVideoId}
+                onSearchSubmit={handleVideoIdSubmit}
+            />
+            
             <div className="max-w-6xl mx-auto bg-white shadow-lg">
-                {/* ヘッダー */}
-                <Header
-                    inputVideoId={inputVideoId}
-                    onInputVideoIdChange={setInputVideoId}
-                    onVideoIdSubmit={handleVideoIdSubmit}
-                    showSearch={false}
-                />
 
                 {/* プレイヤーコンテナ */}
                 <div className="relative">

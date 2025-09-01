@@ -12,7 +12,6 @@ import SongListGrouped from "@/components/features/medley/SongListGrouped";
 import SongEditModal from "@/components/features/medley/SongEditModal";
 import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
 import SongSearchModal from "@/components/features/medley/SongSearchModal";
-import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
 import ManualSongAddModal from "@/components/features/medley/ManualSongAddModal";
 import ContributorsDisplay from "@/components/features/medley/ContributorsDisplay";
 import { SongSection } from "@/types";
@@ -53,8 +52,6 @@ export default function MedleyPlayer({
     const [selectedDatabaseSong, setSelectedDatabaseSong] = useState<SongDatabaseEntry | null>(null);
     const [isChangingSong, setIsChangingSong] = useState<boolean>(false); // 楽曲変更モードかどうか
     
-    // セットリストインポートモーダル関連の状態
-    const [importModalOpen, setImportModalOpen] = useState<boolean>(false);
     
     // 手動楽曲追加モーダル関連の状態
     const [manualAddModalOpen, setManualAddModalOpen] = useState<boolean>(false);
@@ -212,7 +209,7 @@ export default function MedleyPlayer({
                 );
                 
                 // モーダルが開いている場合は無効化
-                const isModalOpen = editModalOpen || songSearchModalOpen || importModalOpen || manualAddModalOpen;
+                const isModalOpen = editModalOpen || songSearchModalOpen || manualAddModalOpen;
                 
                 // プレイヤーが準備完了していない場合は無効化
                 if (isInputFocused || isModalOpen || !playerReady) {
@@ -228,7 +225,7 @@ export default function MedleyPlayer({
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [editModalOpen, songSearchModalOpen, importModalOpen, manualAddModalOpen, playerReady, togglePlayPause]);
+    }, [editModalOpen, songSearchModalOpen, manualAddModalOpen, playerReady, togglePlayPause]);
 
     // コンポーネントのアンマウント時にタイムアウトをクリーンアップ
     useEffect(() => {
@@ -318,10 +315,6 @@ export default function MedleyPlayer({
         setEditModalOpen(true);
     };
 
-    const handleAddSong = () => {
-        setSelectedDatabaseSong(null);
-        setSongSearchModalOpen(true);
-    };
     
     // 楽曲DB検索モーダルのハンドラ
     const handleSelectSongFromDatabase = (dbSong: SongDatabaseEntry) => {
@@ -489,15 +482,6 @@ export default function MedleyPlayer({
         setEditModalOpen(false);
     };
 
-    // セットリストインポートのハンドラー
-    const handleImportSetlist = (songs: SongSection[]) => {
-        // インポートした楽曲を一括で追加
-        songs.forEach(song => {
-            addSong(song);
-        });
-        
-        logger.info(`セットリストから${songs.length}曲をインポートしました`);
-    };
 
 
     
@@ -689,33 +673,7 @@ export default function MedleyPlayer({
         setUntitledSongCounter(prev => prev + 1);
     };
 
-    const handleQuickAddAnnotation = (annotation: { title: string; artist: string; startTime: number }) => {
-        logger.debug('⚡ Quick annotation added:', annotation);
-        
-        // 終了時刻を推定（次の楽曲の開始時刻または30秒後）
-        const nextSong = displaySongs.find(song => song.startTime > annotation.startTime);
-        const endTime = nextSong ? nextSong.startTime : annotation.startTime + 30;
-        
-        const newSong: SongSection = {
-            id: Date.now(),
-            title: annotation.title,
-            artist: annotation.artist,
-            startTime: Math.round(annotation.startTime * 10) / 10,
-            endTime: Math.round(endTime * 10) / 10,
-            color: "bg-orange-400", // クイックアノテーションは橙色
-            originalLink: ""
-        };
-        
-        addSong(newSong);
-        logger.info(`⚡ クイックアノテーション追加: "${annotation.title}" (${formatTime(annotation.startTime)} - ${formatTime(endTime)})`);
-    };
 
-    // 時間フォーマットヘルパー
-    const formatTime = (time: number): string => {
-        const minutes = Math.floor(time / 60);
-        const seconds = Math.floor(time % 60);
-        return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-    };
 
     // 動画IDが変更されたときの処理  
     const handleVideoIdSubmit = (e: React.FormEvent) => { // eslint-disable-line @typescript-eslint/no-unused-vars
@@ -851,10 +809,7 @@ export default function MedleyPlayer({
                         medleyTitle={medleyTitle}
                         medleyCreator={medleyCreator}
                         originalVideoUrl={generateOriginalVideoUrl()}
-                        onQuickAddAnnotation={user && isApproved ? handleQuickAddAnnotation : undefined}
                         onToggleEditMode={user && isApproved ? handleToggleEditMode : undefined}
-                        onAddSong={user && isApproved ? handleAddSong : undefined}
-                        onImportSetlist={user && isApproved ? () => setImportModalOpen(true) : undefined}
                         canUndo={editingSongs.length > 0}
                         canRedo={false}
                         onUndo={undo}
@@ -895,7 +850,7 @@ export default function MedleyPlayer({
                 }}
                 song={editingSong}
                 onSave={handleSaveSong}
-                onDelete={deleteSong}
+                onDelete={isEditMode ? deleteSong : undefined}
                 isNew={isNewSong}
                 maxDuration={effectiveDuration}
                 currentTime={currentTime}
@@ -929,12 +884,6 @@ export default function MedleyPlayer({
                 onEditSong={handleEditSongFromDatabase}
             />
 
-            {/* セットリストインポートモーダル */}
-            <ImportSetlistModal
-                isOpen={importModalOpen}
-                onClose={() => setImportModalOpen(false)}
-                onImport={handleImportSetlist}
-            />
 
             {/* 手動楽曲追加モーダル */}
             <ManualSongAddModal

@@ -34,11 +34,8 @@ interface SongListProps {
   medleyTitle?: string;
   medleyCreator?: string;
   originalVideoUrl?: string;
-  onQuickAddAnnotation?: (annotation: { title: string; artist: string; startTime: number }) => void;
   // Edit mode toggle
   onToggleEditMode?: () => void;
-  onAddSong?: () => void;
-  onImportSetlist?: () => void;
   canUndo?: boolean;
   canRedo?: boolean;
   onUndo?: () => void;
@@ -81,10 +78,7 @@ export default function SongListGrouped({
   medleyTitle,
   medleyCreator,
   originalVideoUrl,
-  onQuickAddAnnotation,
   onToggleEditMode,
-  onAddSong,
-  onImportSetlist,
   canUndo = false,
   canRedo = false,
   onUndo,
@@ -98,8 +92,6 @@ export default function SongListGrouped({
   const [isPressingE, setIsPressingE] = useState(false);  
   const [isPressingM, setIsPressingM] = useState(false);
   
-  // クイックアノテーション機能の状態管理
-  const [quickAnnotationVisible, setQuickAnnotationVisible] = useState<boolean>(false);
 
   // 一時的なタイムラインバーの状態管理（Mキー長押し用）
   const [tempTimelineBar, setTempTimelineBar] = useState<{
@@ -580,32 +572,6 @@ export default function SongListGrouped({
               </button>
               {isEditMode && (
                 <>
-                  <button
-                    onClick={onAddSong}
-                    className="px-3 py-1 text-xs bg-mint-600 text-white rounded hover:bg-mint-600"
-                  >
-                    楽曲追加
-                  </button>
-                  {onImportSetlist && (
-                    <button
-                      onClick={onImportSetlist}
-                      className="px-3 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
-                      title="セットリストから一括インポート"
-                    >
-                      インポート
-                    </button>
-                  )}
-                  <button
-                    onClick={onQuickAddAnnotation ? () => setQuickAnnotationVisible(!quickAnnotationVisible) : undefined}
-                    className={`px-3 py-1 text-xs rounded ${
-                      quickAnnotationVisible
-                        ? 'bg-orange-500 text-white hover:bg-orange-600'
-                        : 'bg-gray-400 text-white hover:bg-gray-500'
-                    }`}
-                    title="クイックアノテーション"
-                  >
-                    ⚡ クイック
-                  </button>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={onUndo}

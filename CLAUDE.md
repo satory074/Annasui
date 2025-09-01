@@ -150,7 +150,7 @@ export type SongSection = {
 - `MedleyPlayer` - Core reusable player with platform detection and song change state management
 - `SongList` - Unified timeline with editing and interaction
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
-- Modals: `SongEditModal` (with song change feature), `SongSearchModal` (supports change mode), `ImportSetlistModal`, `CreateMedleyModal`
+- Modals: `SongEditModal` (with song change feature), `SongSearchModal` (supports change mode), `CreateMedleyModal`
 - Authentication: `AuthProvider`, `AuthModal`, `UserProfileDropdown`, `UserAvatar`
 - Authorization: `AuthorizationBanner`, `AdminPage` (user approval management)
 
@@ -244,7 +244,7 @@ const handleDeleteMedley = async (medley: MedleyData) => {
 };
 ```
 
-#### Timeline System & Annotation Enhancement Features
+#### Timeline System & Annotation Enhancement Features (Updated 2025-09-01)
 **Timeline Display**: Always shows full video duration with simplified position calculations
 **Edit Mode Features**: 
 - Drag-and-drop editing (0.1s precision)
@@ -253,6 +253,11 @@ const handleDeleteMedley = async (medley: MedleyData) => {
 - Real-time song bar creation with elapsed time display
 - Adjacent song time alignment buttons
 - **Song Change**: Double-click song segment → Edit modal → "楽曲を変更" button → Select new song while preserving time segments
+
+**Simplified Edit Interface (Updated 2025-09-01):**
+- **Removed buttons**: "楽曲追加" (Add Song), "インポート" (Import), and "クイック" (Quick) buttons have been removed from the edit interface
+- **Remaining edit controls**: Edit mode toggle, Undo/Redo buttons only
+- **Focused workflow**: Editing now primarily relies on timeline interaction (double-click to edit) and keyboard shortcuts
 
 **Keyboard Shortcuts System:**
 - **Spacebar**: Play/pause toggle (global, works outside edit mode)
@@ -283,7 +288,6 @@ const handleDeleteMedley = async (medley: MedleyData) => {
 
 **Enhancement Features:**
 - **Continuous Input Mode**: Seamless song-to-song workflow with "Save and Next"
-- **Setlist Import**: Bulk import songs from text format with live preview
 - **Preview Playback**: Loop playback within song edit modal for range verification
 - **Smart M Key Functionality**: Dual-mode empty song creation
   - Short press: Instantly creates 30-second empty song ("空の楽曲 1", "空の楽曲 2", etc.)
@@ -510,6 +514,7 @@ case 'm':
 - **Undo/Redo not working**: Check keyboard listeners in edit mode
 - **Timeline duration mismatch**: Songs beyond actual video length show red styling
 - **Hotkeys not working**: Ensure edit mode is active and keyboard event listeners attached
+- **Edit interface simplification**: As of 2025-09-01, edit interface only shows Edit Mode toggle and Undo/Redo buttons. Song addition is done via timeline double-click or keyboard shortcuts (M key)
 
 ### Keyboard Shortcuts Issues
 - **Spacebar not working**: Check if player is ready (`playerReady` state) and no modals are open

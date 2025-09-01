@@ -308,13 +308,15 @@ const handleDeleteMedley = async (medley: MedleyData) => {
 - Database built from all medley data with deduplication
 - Multi-platform URL editing for all songs
 
-#### SongEditModal with Song Change Feature (Updated 2025-08-31)
-**Song Change Functionality**: Users can now change the song itself from within the edit modal
-- **Song Info Display**: Shows current song information with "楽曲を変更" button for existing songs
+#### SongEditModal with Song Change Feature (Updated 2025-09-01)
+**Simplified Song Editing Interface**: Streamlined modal interface that guides users to the song database
+- **New Song Addition**: Only shows "楽曲データベースから選択" button (manual input fields removed)
+- **Existing Song Editing**: Shows read-only song information with "楽曲を変更" button
+- **Empty Song Handling**: Displays warning message and directs users to select from database
 - **Song Change Flow**: Button opens SongSearchModal in change mode, preserving time segments
 - **Time Preservation**: Start/end times are maintained when changing to a different song
 - **Modal Integration**: Seamless flow between SongEditModal and SongSearchModal
-- **Authorization**: Only available for existing songs (not during new song creation)
+- **Redundant Field Removal**: Manual input fields, hint sections, and platform URL inputs removed for cleaner interface
 
 **Implementation Pattern:**
 ```typescript
@@ -605,14 +607,15 @@ case 'm':
 - **Cross-medley song search fails**: Verify songSearchResults array mapping and filtering logic
 - **Genre references in legacy code**: Genre filtering has been removed - ensure no genreFilter state or UI remains
 
-### SongEditModal Issues (Updated 2025-08-31)
-- **Missing imports after UI cleanup**: Ensure unused imports (SongInfoDisplay) are removed from SongEditModal.tsx
-- **Unused props errors**: Remove onSelectSong prop references after header simplification
-- **Component reference errors**: Update MedleyPlayer.tsx to remove references to removed props
+### SongEditModal Issues (Updated 2025-09-01)
+- **Simplified interface issues**: Modal now only shows "楽曲データベースから選択" button for new songs - no manual input fields
+- **Empty song warnings**: Ensure empty songs show appropriate warning messages directing users to database selection
 - **Song change button not appearing**: Verify `onChangeSong` prop is passed to SongEditModal and user is editing existing song (not new)
 - **Song change not preserving times**: Check `isChangingSong` flag is properly set in `handleSelectSongFromDatabase`
 - **Modal state conflicts**: Ensure `isChangingSong` flag is reset when modals are closed
 - **Song info not updating**: Verify `setEditingSong` is called with updated song data after selection
+- **Platform URL fields removed**: Manual platform URL inputs have been removed - songs from database include this information
+- **Hint sections removed**: All hint/help sections removed as interface now guides users directly to database selection
 
 ### Playback Controls Issues (Updated 2025-08-31)
 - **Controls not displaying**: Verify both `onTogglePlayPause` and `onSeek` props are passed to SongListGrouped

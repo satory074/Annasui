@@ -8,6 +8,25 @@ import { getDuplicateInfo } from "@/lib/utils/duplicateSongs";
 import { sanitizeSongSection } from "@/lib/utils/sanitize";
 import { logger } from "@/lib/utils/logger";
 
+// 空の楽曲かどうかを判定するヘルパー関数
+const isEmptySong = (song: SongSection | null): boolean => {
+  if (!song) return false;
+  
+  const hasEmptyTitle = !song.title || 
+    song.title.trim() === '' || 
+    song.title.startsWith('空の楽曲') ||
+    song.title.startsWith('区間') ||
+    /^区間\d+$/.test(song.title) ||  // 区間1, 区間2, ... パターン
+    song.title === '未設定の楽曲' ||
+    song.title.startsWith('未設定の楽曲');
+  
+  const hasEmptyArtist = !song.artist || 
+    song.artist.trim() === '' || 
+    song.artist === 'アーティスト未設定';
+  
+  return hasEmptyTitle || hasEmptyArtist;
+};
+
 interface SongEditModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -185,7 +204,7 @@ export default function SongEditModal({
       }]);
     }
     setErrors({});
-  }, [song, isNew, isOpen, maxDuration, currentTime]);
+  }, [song, isNew, isOpen, maxDuration, currentTime, allSongs, isSaving]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -339,71 +358,66 @@ export default function SongEditModal({
         {/* 楽曲情報表示を削除 - 冗長な情報のため */}
 
         <div className="space-y-4">
-          {/* 楽曲情報表示（既存楽曲の編集時）*/}
+          {/* 楽曲情報表示・編集（既存楽曲の編集時）*/}
           {!isNew && song && (
             <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-medium text-gray-900">
                   楽曲情報
                 </h3>
-                {onChangeSong && (
+              </div>
+              
+              {/* 楽曲データベースから選択ボタン（すべての既存楽曲で常に表示） */}
+              {onChangeSong && (
+                <div className="text-center mb-4">
                   <button
                     onClick={onChangeSong}
-                    className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 transition-colors"
+                    className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-colors font-medium"
                   >
-                    楽曲を変更
+                    🎵 楽曲データベースから選択
                   </button>
+                </div>
+              )}
+              
+              {/* 既存楽曲の場合は読み取り専用で表示（空の楽曲も含む） */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-gray-600">楽曲名:</span>
+                    <div className="font-medium text-gray-900">{formData.title || "未設定"}</div>
+                  </div>
+                  <div>
+                    <span className="text-gray-600">アーティスト:</span>
+                    <div className="font-medium text-gray-900">{formData.artist || "未設定"}</div>
+                  </div>
+                </div>
+                {isEmptySong(song) && (
+                  <div className="text-sm text-orange-700 bg-orange-50 p-3 rounded-md border-l-4 border-orange-400">
+                    ⚠️ この楽曲には情報が不足しています。楽曲データベースから選択して情報を更新してください。
+                  </div>
                 )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">楽曲名:</span>
-                  <div className="font-medium text-gray-900">{formData.title || "未設定"}</div>
-                </div>
-                <div>
-                  <span className="text-gray-600">アーティスト:</span>
-                  <div className="font-medium text-gray-900">{formData.artist || "未設定"}</div>
-                </div>
               </div>
             </div>
           )}
 
-          {/* 楽曲名・アーティスト名（新規楽曲の手動追加時のみ表示） */}
+          {/* 新規楽曲追加時は楽曲データベースから選択のみ */}
           {isNew && !isFromDatabase && (
-            <>
-              {/* 楽曲名 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  楽曲名 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
-                    errors.title ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="楽曲名を入力"
-                />
-                {errors.title && (
-                  <p className="text-red-500 text-sm mt-1">{errors.title}</p>
-                )}
-              </div>
-
-              {/* アーティスト名 */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  アーティスト名
-                </label>
-                <input
-                  type="text"
-                  value={formData.artist}
-                  onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
-                  placeholder="アーティスト名を入力"
-                />
-              </div>
-            </>
+            <div className="space-y-4">
+              {/* 楽曲データベースから選択ボタン（新規追加時） */}
+              {onChangeSong && (
+                <div className="text-center">
+                  <button
+                    onClick={onChangeSong}
+                    className="px-6 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-colors font-medium text-lg"
+                  >
+                    🎵 楽曲データベースから選択
+                  </button>
+                  <p className="text-sm text-gray-600 mt-3">
+                    楽曲データベースから選択して楽曲を追加してください
+                  </p>
+                </div>
+              )}
+            </div>
           )}
 
           {/* 登場区間エディター */}
@@ -427,97 +441,6 @@ export default function SongEditModal({
 
 
 
-          {/* 元動画リンク（新規楽曲の手動追加時のみ表示） */}
-          {isNew && !isFromDatabase && (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  配信プラットフォーム
-                </label>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      🎬 ニコニコ動画
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.links?.niconico || ""}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        links: { ...formData.links, niconico: e.target.value }
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
-                      placeholder="https://www.nicovideo.jp/watch/sm..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      📺 YouTube
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.links?.youtube || ""}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        links: { ...formData.links, youtube: e.target.value }
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
-                      placeholder="https://www.youtube.com/watch?v=..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      🎵 Spotify
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.links?.spotify || ""}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        links: { ...formData.links, spotify: e.target.value }
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
-                      placeholder="https://open.spotify.com/track/..."
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs font-medium text-gray-600 mb-1">
-                      🍎 Apple Music
-                    </label>
-                    <input
-                      type="url"
-                      value={formData.links?.appleMusic || ""}
-                      onChange={(e) => setFormData({ 
-                        ...formData, 
-                        links: { ...formData.links, appleMusic: e.target.value }
-                      })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
-                      placeholder="https://music.apple.com/..."
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              {/* 後方互換性のための元動画リンク（非表示にしても内部で使用） */}
-              {formData.originalLink && !formData.links?.niconico && !formData.links?.youtube && !formData.links?.spotify && !formData.links?.appleMusic && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    元動画リンク（従来）
-                  </label>
-                  <input
-                    type="url"
-                    value={formData.originalLink || ""}
-                    onChange={(e) => setFormData({ ...formData, originalLink: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
-                    placeholder="https://..."
-                  />
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
         {/* 連続入力モードトグル（新規追加時のみ） */}

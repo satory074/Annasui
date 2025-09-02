@@ -92,6 +92,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
       return
     }
 
+    // テストモードのチェック（開発環境のみ）
+    const isTestMode = process.env.NEXT_PUBLIC_TEST_MODE === 'true' && process.env.NODE_ENV === 'development'
+    if (isTestMode) {
+      logger.debug('🧪 Test mode enabled - automatically approving user')
+      setIsApproved(true)
+      return
+    }
+
     try {
       setApprovalLoading(true)
       logger.debug('🔍 Checking user approval status for:', user.id)

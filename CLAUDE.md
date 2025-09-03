@@ -938,10 +938,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
    - `003_fix_rick_astley_medley.sql` - Platform corrections (run after major data fixes)
    - `004_add_rick_astley_song_data.sql` - Adds proper song data for Rick Astley medley (fixes 0 songs issue)
    - `005_create_approved_users_table.sql` - **Admin approval system** (requires admin user ID)
+   - `006_create_medley_edit_history.sql` - Edit history tracking and contributors view
    - `006_add_individual_song_links.sql` - Adds individual song links for thumbnail testing
+   - `007_setup_admin_user.sql` - **Admin user setup** (replace YOUR_ADMIN_USER_ID with actual admin UUID)
+   - `008_ensure_medley_contributors_view.sql` - Ensures contributors view exists and works properly
 2. **OAuth Configuration**: Configure Google provider in Supabase Auth settings
 3. **RLS Policies**: Ensure Row Level Security policies are active for user data protection
-4. **Admin Setup**: Replace `REPLACE_WITH_ADMIN_USER_ID` in migration 005 with actual admin user ID
+4. **Admin Setup**: 
+   - Get your admin user ID from Supabase Dashboard > Authentication > Users after OAuth login
+   - Edit `007_setup_admin_user.sql` and replace `YOUR_ADMIN_USER_ID` with your actual UUID
+   - Run the migration in Supabase Dashboard > SQL Editor to set up admin permissions
 
 **Current URLs:**
 - **Primary**: https://anasui-e6f49.web.app

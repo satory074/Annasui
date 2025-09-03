@@ -517,11 +517,19 @@ export default function MedleyPlayer({
             setIsHoveringSong(false);
             
             // タイムアウトを設定して遅延後に非表示
+            // 状態更新が非同期なので、現在の状態ではなく false を直接使用
             const timeout = setTimeout(() => {
-                if (!isHoveringTooltip && !isHoveringSong) {
-                    setIsTooltipVisible(false);
-                    setTooltipSong(null);
-                }
+                // isHoveringTooltip の現在の値を確認してから非表示にする
+                setIsHoveringSong(currentHoveringSong => {
+                    setIsHoveringTooltip(currentHoveringTooltip => {
+                        if (!currentHoveringTooltip && !currentHoveringSong) {
+                            setIsTooltipVisible(false);
+                            setTooltipSong(null);
+                        }
+                        return currentHoveringTooltip;
+                    });
+                    return currentHoveringSong;
+                });
             }, 200); // 200ms の遅延
             
             setHideTooltipTimeout(timeout);
@@ -542,10 +550,17 @@ export default function MedleyPlayer({
         
         // タイムアウトを設定して遅延後に非表示
         const timeout = setTimeout(() => {
-            if (!isHoveringTooltip && !isHoveringSong) {
-                setIsTooltipVisible(false);
-                setTooltipSong(null);
-            }
+            // 状態更新が非同期なので、現在の状態値を正確に取得
+            setIsHoveringTooltip(currentHoveringTooltip => {
+                setIsHoveringSong(currentHoveringSong => {
+                    if (!currentHoveringTooltip && !currentHoveringSong) {
+                        setIsTooltipVisible(false);
+                        setTooltipSong(null);
+                    }
+                    return currentHoveringSong;
+                });
+                return currentHoveringTooltip;
+            });
         }, 200); // 200ms の遅延
         
         setHideTooltipTimeout(timeout);

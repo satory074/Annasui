@@ -620,6 +620,30 @@ if (!MyComponent) {
 return <MyComponent {...props} />;
 ```
 
+**Tooltip State Management Pattern**: Handle async state updates in timeouts to prevent stale closures:
+```typescript
+// Correct: Use state setter function to get current values
+const handleTooltipMouseLeave = () => {
+  setIsHoveringTooltip(false);
+  
+  const timeout = setTimeout(() => {
+    // State updates are async - use setter callbacks to get current values
+    setIsHoveringTooltip(currentHoveringTooltip => {
+      setIsHoveringSong(currentHoveringSong => {
+        if (!currentHoveringTooltip && !currentHoveringSong) {
+          setIsTooltipVisible(false);
+          setTooltipSong(null);
+        }
+        return currentHoveringSong;
+      });
+      return currentHoveringTooltip;
+    });
+  }, 200);
+  
+  setHideTooltipTimeout(timeout);
+};
+```
+
 ## Common Issues and Solutions
 
 ### Player Integration
@@ -778,6 +802,13 @@ return <MyComponent {...props} />;
 - **MultiSegmentTimeEditor timing conflicts**: Increase setTimeout delay from 50ms to 200ms for better state synchronization
 - **Edit buttons non-functional for unauthorized users**: Implement conditional rendering based on `onEditSong` prop availability with clear user feedback messages
 - **State overwrites during editing**: Use minimal dependency arrays in useEffect to prevent editing state resets
+
+### Tooltip System Issues (Added 2025-09-03)
+- **Tooltip not disappearing on hover exit**: Use state setter callback functions in setTimeout to get current state values instead of relying on closure values
+- **Tooltip state race conditions**: Ensure timeout clearing logic properly handles multiple rapid hover events
+- **Stale state in tooltip handlers**: Implement the Tooltip State Management Pattern for proper async state handling
+- **Tooltip flickering**: Check that mouse events are properly debounced and timeout values are appropriate (200ms recommended)
+- **Tooltip positioning issues**: Verify BaseTooltip component handles viewport bounds and collision detection correctly
 
 ## File Organization
 

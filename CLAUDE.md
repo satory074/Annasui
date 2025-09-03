@@ -153,6 +153,7 @@ export type SongSection = {
 - Modals: `SongEditModal` (with song change feature), `SongSearchModal` (supports change mode), `CreateMedleyModal`
 - Authentication: `AuthProvider`, `AuthModal`, `UserProfileDropdown`, `UserAvatar`
 - Authorization: `AuthorizationBanner`, `AdminPage` (user approval management)
+- `ActiveSongPopup` - Real-time song display popup that appears during playback (Updated 2025-09-03)
 
 **Modal Interaction Flow:**
 - Timeline click → `SongEditModal` opens
@@ -339,6 +340,48 @@ if (isChangingSong && editModalOpen && editingSong) {
 }
 ```
 
+#### ActiveSongPopup Architecture (Added 2025-09-03)
+**Real-time Song Display System**: Popup component that shows currently playing songs during video playback.
+
+**Key Features:**
+- **Fixed Positioning**: Right-side overlay with `z-index: 1000` to appear above all content
+- **Song Detection**: Automatically detects active songs based on `currentTime` and song time ranges
+- **Animation System**: Slide-in animations for new songs, smooth transitions between songs
+- **Multi-Song Support**: Can display multiple simultaneous songs with stacked layout
+- **Debug Mode**: Comprehensive debug panel available with `?debug=true` URL parameter
+- **Production Logging**: Enhanced logging system for production troubleshooting
+
+**Critical Implementation Requirements:**
+```typescript
+// Tree-shaking prevention pattern - essential for production builds
+if (typeof window !== 'undefined') {
+  console.log('🔥 ActiveSongPopup: Module loaded in production', {
+    timestamp: new Date().toISOString(),
+    url: window.location.href
+  });
+}
+
+// Component must have displayName for production builds
+ActiveSongPopup.displayName = 'ActiveSongPopup';
+```
+
+**Integration Pattern with MedleyPlayer:**
+```typescript
+// Runtime component validation to prevent silent failures
+if (!ActiveSongPopup) {
+  console.error('🚨 CRITICAL: ActiveSongPopup component is undefined!');
+  return <ErrorComponent />;
+}
+
+return <ActiveSongPopup currentTime={currentTime} songs={songs} isVisible={isVisible} />;
+```
+
+**Time-based Song Detection Algorithm:**
+- Uses boundary-tolerant checking: `currentTime >= startTime && currentTime < endTime + 0.1`
+- Handles multiple segments of same song with unique identifiers
+- Deduplicates identical songs appearing in multiple segments
+- Updates in real-time with currentTime changes from video player
+
 #### SEO Architecture (Added 2025-08-30)
 **Comprehensive SEO Implementation:**
 - **Dynamic Sitemap**: Auto-generated `/sitemap.xml` with all pages
@@ -505,6 +548,49 @@ case 'm':
   break;
 ```
 
+**Tree-Shaking Prevention Pattern**: Essential for components that may be removed in production builds:
+```typescript
+// Module-level initialization - prevents tree-shaking removal
+if (typeof window !== 'undefined') {
+  console.log('🔥 ComponentName: Module loaded in production', {
+    timestamp: new Date().toISOString(),
+    url: window.location.href
+  });
+}
+
+export const MyComponent = React.FC<Props> = (props) => {
+  // Component implementation
+  return <div>Content</div>;
+};
+
+// Component displayName - helps with production debugging
+MyComponent.displayName = 'MyComponent';
+
+// Export verification - ensures bundler includes component
+if (typeof window !== 'undefined') {
+  console.log('🔥 ComponentName: Component definition exported', {
+    displayName: MyComponent.displayName,
+    timestamp: new Date().toISOString()
+  });
+}
+```
+
+**Component Existence Validation Pattern**: Runtime checks to prevent silent failures:
+```typescript
+// In parent component - validate component exists before rendering
+if (!MyComponent) {
+  console.error('🚨 CRITICAL: MyComponent is undefined!');
+  return <div style={{ 
+    position: 'fixed', top: '6rem', right: '1rem', zIndex: 1000,
+    background: 'red', color: 'white', padding: '1rem' 
+  }}>
+    ERROR: MyComponent not loaded
+  </div>;
+}
+
+return <MyComponent {...props} />;
+```
+
 ## Common Issues and Solutions
 
 ### Player Integration
@@ -634,6 +720,17 @@ case 'm':
 - **Authorization bypass**: Check both frontend and backend enforce admin approval for deletion operations
 - **Database constraints**: Ensure foreign key relationships allow cascading deletes or proper cleanup
 
+### ActiveSongPopup Issues (Added 2025-09-03)
+- **Component not appearing in production**: Check that module-level logging appears (`🔥 ActiveSongPopup: Module loaded`)
+- **Tree-shaking removal**: Ensure displayName is set and module-level initialization code is present
+- **Silent component failures**: Add runtime component validation before rendering in parent component
+- **No debug information**: Verify `?debug=true` URL parameter shows debug panel
+- **Song detection not working**: Check `currentTime` is updating and songs array has proper time ranges
+- **Multiple songs not stacking**: Ensure unique keys for each ActiveSong and proper z-index layering
+- **Animation not triggering**: Verify `isNewSong` detection logic compares against `prevActiveSongs`
+- **Popup positioning wrong**: Confirm fixed positioning with `top: 6rem, right: 1rem, zIndex: 1000`
+- **Production logging missing**: Use both `console.log()` and `logger.info()` for production visibility
+
 ## File Organization
 
 ```
@@ -690,6 +787,7 @@ database/ - Database migrations and schema
 - `src/components/ui/modal/BaseModal.tsx` - Base modal component
 - `src/components/ui/song/SongInfoDisplay.tsx` - Unified song display with multi-platform support
 - `src/components/ui/song/MultiSegmentTimeEditor.tsx` - Multi-segment editor
+- `src/components/ui/song/ActiveSongPopup.tsx` - Real-time current song popup (Added 2025-09-03)
 - `src/components/ui/Logo.tsx` - Reusable Medlean logo component with size variations
 - `src/components/ui/loading/Skeleton.tsx` - Skeleton loading components for improved UX
 - `src/components/ui/loading/PlayerSkeleton.tsx` - Player-specific loading screens and messages

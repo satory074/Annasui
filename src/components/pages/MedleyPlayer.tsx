@@ -20,6 +20,8 @@ import { logger } from "@/lib/utils/logger";
 import { PlayerLoadingMessage } from "@/components/ui/loading/PlayerSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthorizationBanner from "@/components/ui/AuthorizationBanner";
+import { ActiveSongPopup } from "@/components/ui/song/ActiveSongPopup";
+import { ActiveSongDebugPanel } from "@/components/ui/debug/ActiveSongDebugPanel";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -902,6 +904,73 @@ export default function MedleyPlayer({
                 onSeek={seek}
                 onMouseEnter={handleTooltipMouseEnter}
                 onMouseLeave={handleTooltipMouseLeave}
+            />
+
+            {/* 現在再生中の楽曲ポップアップ */}
+            {(() => {
+                // Runtime component detection for production debugging
+                const isVisibleCondition = playerReady && !editModalOpen;
+                
+                // Enhanced production logging
+                console.log('🔥 MedleyPlayer: Rendering ActiveSongPopup', {
+                    playerReady,
+                    editModalOpen,
+                    songSearchModalOpen,
+                    manualAddModalOpen,
+                    isVisible: isVisibleCondition,
+                    currentTime,
+                    songsCount: displaySongs.length,
+                    timestamp: new Date().toISOString(),
+                    componentExists: !!ActiveSongPopup,
+                    componentName: ActiveSongPopup?.displayName || 'undefined'
+                });
+                logger.info('🔥 MedleyPlayer: Rendering ActiveSongPopup', {
+                    playerReady,
+                    editModalOpen,
+                    songSearchModalOpen,
+                    manualAddModalOpen,
+                    isVisible: isVisibleCondition,
+                    currentTime,
+                    songsCount: displaySongs.length
+                });
+
+                // Ensure component exists before rendering
+                if (!ActiveSongPopup) {
+                    console.error('🚨 CRITICAL: ActiveSongPopup component is undefined!');
+                    return <div style={{ 
+                        position: 'fixed', 
+                        top: '6rem', 
+                        right: '1rem', 
+                        zIndex: 1000,
+                        background: 'red',
+                        color: 'white',
+                        padding: '1rem' 
+                    }}>
+                        ERROR: ActiveSongPopup not loaded
+                    </div>;
+                }
+
+                return (
+                    <ActiveSongPopup
+                        currentTime={currentTime}
+                        songs={displaySongs}
+                        isVisible={isVisibleCondition}
+                    />
+                );
+            })()}
+
+            {/* デバッグパネル */}
+            <ActiveSongDebugPanel
+                currentTime={currentTime}
+                songs={displaySongs}
+                isVisible={playerReady && !editModalOpen}
+                playerReady={playerReady}
+                editModalOpen={editModalOpen}
+                songSearchModalOpen={songSearchModalOpen}
+                manualAddModalOpen={manualAddModalOpen}
+                activeSongs={displaySongs.filter(song => 
+                    currentTime >= song.startTime && currentTime < song.endTime + 0.1
+                )}
             />
         </div>
     );

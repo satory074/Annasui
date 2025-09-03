@@ -120,21 +120,59 @@ function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyDa
   }
 }
 
-// Direct fetch implementation to bypass Supabase client issues
+// Direct fetch implementation using environment variables
 async function directFetch(url: string): Promise<unknown> {
-  const response = await fetch(url, {
-    headers: {
-      'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZWFpcnVya3hqZnR1Z3J3ZGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyODI3OTEsImV4cCI6MjA3MTg1ODc5MX0.7VSQnn4HdWrMf3qgdPkB2bSyjSH1nuJhH1DR8m4Y4h8',
-      'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZWFpcnVya3hqZnR1Z3J3ZGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyODI3OTEsImV4cCI6MjA3MTg1ODc5MX0.7VSQnn4HdWrMf3qgdPkB2bSyjSH1nuJhH1DR8m4Y4h8',
-      'Content-Type': 'application/json'
-    }
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dheairurkxjftugrwdjl.supabase.co';
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZWFpcnVya3hqZnR1Z3J3ZGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyODI3OTEsImV4cCI6MjA3MTg1ODc5MX0.7VSQnn4HdWrMf3qgdPkB2bSyjSH1nuJhH1DR8m4Y4h8';
+  
+  logger.debug('🔍 DirectFetch environment check:', {
+    hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+    hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    urlLength: supabaseUrl.length,
+    keyLength: supabaseAnonKey.length,
+    isProduction: process.env.NODE_ENV === 'production'
   });
-  
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+  // プロダクション環境でのネットワークタイムアウト対策（短縮）
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => {
+    console.warn('⚠️ DirectFetch request timed out after 8 seconds:', url);
+    controller.abort();
+  }, 8000); // 8秒でタイムアウト（短縮）
+
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'apikey': supabaseAnonKey,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      logger.error(`❌ DirectFetch failed: HTTP ${response.status}: ${response.statusText}`, {
+        url,
+        status: response.status,
+        statusText: response.statusText
+      });
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return response.json();
+  } catch (error) {
+    clearTimeout(timeoutId);
+    
+    if (error instanceof Error && error.name === 'AbortError') {
+      logger.error(`❌ DirectFetch timeout: ${url}`, { timeout: '12s' });
+      throw new Error(`Request timeout: ${url}`);
+    }
+    
+    logger.error(`❌ DirectFetch error: ${url}`, error);
+    throw error;
   }
-  
-  return response.json();
 }
 
 // Fetch contributors for a medley
@@ -166,6 +204,11 @@ export async function getMedleyContributors(medleyId: string): Promise<MedleyCon
     logger.debug(`✅ Found ${contributors.length} contributors for medley:`, medleyId)
     return contributors
   } catch (error) {
+    // If the contributors table doesn't exist (404), that's expected behavior
+    if (error instanceof Error && error.message.includes('HTTP 404')) {
+      logger.debug('Contributors table not found, returning empty array')
+      return []
+    }
     logger.error('❌ Error fetching contributors:', error)
     return []
   }
@@ -176,8 +219,58 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
   try {
     logger.debug('🔍 Fetching medley data for:', videoId)
 
-    // Get the medley using direct fetch
-    const medleyData = await directFetch(
+    let medleyData: unknown[];
+    let songData: unknown[];
+
+    // Try Supabase client first, fallback to direct fetch
+    if (supabase) {
+      try {
+        logger.debug('🔧 Using Supabase client for medley fetch')
+        const { data: medleys, error: medleyError } = await supabase
+          .from('medleys')
+          .select('*')
+          .eq('video_id', videoId);
+
+        if (medleyError) throw medleyError;
+        
+        if (!medleys || medleys.length === 0) {
+          logger.debug('No medley found for video ID:', videoId)
+          return null
+        }
+
+        const medley = medleys[0];
+        
+        const { data: songs, error: songsError } = await supabase
+          .from('songs')
+          .select('*')
+          .eq('medley_id', medley.id as string)
+          .order('order_index', { ascending: true });
+
+        if (songsError) throw songsError;
+
+        logger.debug('✅ Successfully fetched medley data via Supabase client:', {
+          title: medley.title,
+          songCount: songs?.length || 0
+        })
+
+        // Convert medley data
+        const medleyResult = convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[])
+        
+        // Fetch contributors if medley has an ID
+        if (medley.id) {
+          const contributors = await getMedleyContributors(medley.id as string)
+          medleyResult.contributors = contributors
+        }
+
+        return medleyResult
+      } catch (supabaseError) {
+        logger.warn('⚠️ Supabase client failed, falling back to direct fetch:', supabaseError)
+      }
+    }
+
+    // Fallback to direct fetch
+    logger.debug('🔧 Using direct fetch for medley data')
+    medleyData = await directFetch(
       `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/medleys?select=*&video_id=eq.${videoId}`
     ) as unknown[];
 
@@ -189,11 +282,11 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
     const medley = medleyData[0] as Record<string, unknown>;
 
     // Get the songs for this medley using direct fetch
-    const songData = await directFetch(
+    songData = await directFetch(
       `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/songs?select=*&medley_id=eq.${medley.id}&order=order_index`
     ) as unknown[];
 
-    logger.debug('✅ Successfully fetched medley data:', {
+    logger.debug('✅ Successfully fetched medley data via direct fetch:', {
       title: medley.title,
       songCount: songData.length
     })

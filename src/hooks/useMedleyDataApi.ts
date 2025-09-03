@@ -23,6 +23,7 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
 
   useEffect(() => {
     let isCancelled = false
+    let timeoutId: NodeJS.Timeout
 
     async function fetchMedleyData() {
       if (!videoId) {
@@ -39,8 +40,19 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
       setLoading(true)
       setError(null)
 
+      // プロダクション環境での無限ローディング防止のためタイムアウトを設定（短縮）
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          console.warn('⚠️ Medley data request timed out after 10 seconds')
+          reject(new Error('リクエストがタイムアウトしました。ネットワーク接続を確認してください。'))
+        }, 10000) // 10秒でタイムアウト（短縮）
+      })
+
       try {
-        const medleyData = await getMedleyByVideoId(videoId)
+        const medleyData = await Promise.race([
+          getMedleyByVideoId(videoId),
+          timeoutPromise
+        ])
         
         if (isCancelled) return
 
@@ -62,14 +74,38 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
       } catch (err) {
         if (isCancelled) return
         
-        console.error('Error fetching medley data:', err)
-        setError('メドレーデータの取得中にエラーが発生しました')
+        console.error('❌ Error fetching medley data:', err)
+        console.info('🔍 Error details for debugging:', {
+          errorType: err?.constructor?.name,
+          errorMessage: (err as Error)?.message || String(err),
+          videoId,
+          timestamp: new Date().toISOString()
+        })
+        
+        // より詳細なエラーメッセージを提供
+        let errorMessage = 'メドレーデータの取得中にエラーが発生しました'
+        if (err instanceof Error) {
+          if (err.message.includes('タイムアウト')) {
+            errorMessage = 'データの読み込みに時間がかかっています。ページを再読み込みしてください。'
+          } else if (err.message.includes('Failed to fetch')) {
+            errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。'
+          } else {
+            errorMessage = `エラー: ${err.message}`
+          }
+        }
+        
+        setError(errorMessage)
         setMedleySongs([])
         setMedleyTitle('')
         setMedleyCreator('')
         setMedleyDuration(0)
         setMedleyData(null)
       } finally {
+        // タイムアウトをクリア
+        if (timeoutId) {
+          clearTimeout(timeoutId)
+        }
+        
         if (!isCancelled) {
           setLoading(false)
         }
@@ -80,6 +116,9 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
 
     return () => {
       isCancelled = true
+      if (timeoutId) {
+        clearTimeout(timeoutId)
+      }
     }
   }, [videoId])
 

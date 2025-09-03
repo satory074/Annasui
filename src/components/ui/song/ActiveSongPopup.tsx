@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, RefObject } from 'react';
 import { SongSection } from '@/types';
 import SongThumbnail from './SongThumbnail';
 import { logger } from '@/lib/utils/logger';
+import { usePlayerPosition } from '@/hooks/usePlayerPosition';
 
 // Explicit production build marker - prevents tree-shaking removal
 if (typeof window !== 'undefined') {
@@ -17,6 +18,7 @@ interface ActiveSongPopupProps {
   currentTime: number;
   songs: SongSection[];
   isVisible: boolean;
+  playerContainerRef?: RefObject<HTMLElement | null>;
 }
 
 interface ActiveSong extends SongSection {
@@ -26,10 +28,14 @@ interface ActiveSong extends SongSection {
 export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
   currentTime,
   songs,
-  isVisible
+  isVisible,
+  playerContainerRef
 }) => {
   const [activeSongs, setActiveSongs] = useState<ActiveSong[]>([]);
   const [prevActiveSongs, setPrevActiveSongs] = useState<ActiveSong[]>([]);
+  
+  // プレイヤー位置を監視して最適なポップアップ位置を決定
+  const { playerPosition, popupPosition, shouldHidePopup } = usePlayerPosition(playerContainerRef || { current: null });
 
   // 初期マウント時のログ（プロダクション環境対応）
   useEffect(() => {
@@ -127,36 +133,85 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
   const showDebug = typeof window !== 'undefined' && 
     (window.location.search.includes('debug=true') || window.location.hostname === 'localhost');
 
-  if (!isVisible || activeSongs.length === 0) {
+  // ポップアップの位置スタイルを計算
+  const getPopupStyle = () => {
+    const baseStyle = {
+      position: 'fixed' as const,
+      zIndex: 1000,
+      pointerEvents: 'none' as const,
+      transition: 'all 0.3s ease-in-out'
+    };
+
+    if (popupPosition === 'right') {
+      return {
+        ...baseStyle,
+        top: '6rem',
+        right: '1rem',
+        left: 'auto'
+      };
+    } else {
+      return {
+        ...baseStyle,
+        top: '6rem',
+        left: '1rem',
+        right: 'auto'
+      };
+    }
+  };
+
+  if (!isVisible || activeSongs.length === 0 || shouldHidePopup) {
     console.log('🎵 ActiveSongPopup: Not rendering', { 
       isVisible, 
       activeSongsLength: activeSongs.length,
+      shouldHidePopup,
       showDebug,
       currentTime 
     });
     logger.info('🎵 ActiveSongPopup: Not rendering', { 
       isVisible, 
-      activeSongsLength: activeSongs.length 
+      activeSongsLength: activeSongs.length,
+      shouldHidePopup
     });
 
     // デバッグモード時は状態を表示
     if (showDebug) {
       return (
         <div 
-          className="fixed top-24 left-4 bg-red-100 border-2 border-red-300 rounded-lg p-3 max-w-xs"
-          style={{
-            position: 'fixed',
-            top: '6rem',
-            left: '1rem',
-            zIndex: 1000,
-            pointerEvents: 'auto'
-          }}
+          className="fixed bg-red-100 border-2 border-red-300 rounded-lg p-3 max-w-xs"
+          style={getPopupStyle()}
         >
-          <div className="text-red-700 text-xs font-mono">
+          <div className="text-red-700 text-xs font-mono" style={{ pointerEvents: 'auto' }}>
             <div>🐛 ActiveSongPopup Debug</div>
             <div>isVisible: {isVisible ? '✓' : '✗'}</div>
             <div>activeSongs: {activeSongs.length}</div>
+            <div>shouldHide: {shouldHidePopup ? '✓' : '✗'}</div>
             <div>currentTime: {currentTime.toFixed(1)}s</div>
+            <div className="border-t border-red-300 mt-2 pt-2">
+              <div className="font-bold">位置情報:</div>
+              <div>position: {popupPosition}</div>
+              <div>playerVisible: {playerPosition.isVisible ? '✓' : '✗'}</div>
+              <div>playerInUpper: {playerPosition.isInUpperArea ? '✓' : '✗'}</div>
+              <div>scrollY: {Math.round(playerPosition.scrollY)}px</div>
+              <div>windowHeight: {typeof window !== 'undefined' ? window.innerHeight : 0}px</div>
+              <div>windowWidth: {typeof window !== 'undefined' ? window.innerWidth : 0}px</div>
+              {playerPosition.rect && (
+                <div className="mt-1">
+                  <div className="font-bold">プレイヤー境界:</div>
+                  <div>top: {Math.round(playerPosition.rect.top)}px</div>
+                  <div>bottom: {Math.round(playerPosition.rect.bottom)}px</div>
+                  <div>left: {Math.round(playerPosition.rect.left)}px</div>
+                  <div>right: {Math.round(playerPosition.rect.right)}px</div>
+                  <div>width: {Math.round(playerPosition.rect.width)}px</div>
+                  <div>height: {Math.round(playerPosition.rect.height)}px</div>
+                </div>
+              )}
+              <div className="mt-1">
+                <div className="font-bold">判定条件:</div>
+                <div>upperThreshold: 200px</div>
+                <div>isMobile: {typeof window !== 'undefined' && window.innerWidth < 768 ? '✓' : '✗'}</div>
+                <div>hasPlayerRef: {playerContainerRef?.current ? '✓' : '✗'}</div>
+              </div>
+            </div>
           </div>
         </div>
       );
@@ -178,22 +233,21 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
 
   return (
     <div 
-      className="fixed top-24 left-4 space-y-2"
-      style={{
-        position: 'fixed',
-        top: '6rem',
-        left: '1rem',
-        zIndex: 1000,
-        pointerEvents: 'none'
-      }}
+      className={`fixed space-y-2 transition-all duration-300 ease-in-out`}
+      style={getPopupStyle()}
     >
       {/* デバッグモードでテスト表示 */}
       {showDebug && activeSongs.length === 0 && (
         <div className="bg-yellow-100 border-2 border-yellow-300 rounded-lg p-3 max-w-xs">
-          <div className="text-yellow-800 text-xs">
-            <div>🎵 テスト表示</div>
+          <div className="text-yellow-800 text-xs" style={{ pointerEvents: 'auto' }}>
+            <div>🎵 テスト表示 ({popupPosition})</div>
             <div>時刻: {currentTime.toFixed(1)}s</div>
             <div>楽曲待機中...</div>
+            <div>プレイヤー位置: {playerPosition.isInUpperArea ? '上部' : '下部/非表示'}</div>
+            {playerPosition.rect && (
+              <div>プレイヤーtop: {Math.round(playerPosition.rect.top)}px</div>
+            )}
+            <div>スクロール: {Math.round(playerPosition.scrollY)}px</div>
           </div>
         </div>
       )}

@@ -53,6 +53,9 @@ export default function MedleyPlayer({
     const lastWarningTime = useRef<number>(0);
     const lastWarningVideoId = useRef<string>('');
     
+    // プレイヤーコンテナの参照（ActiveSongPopupの位置調整用）
+    const playerContainerRef = useRef<HTMLDivElement>(null);
+    
     // 編集モード関連の状態
     const [isEditMode, setIsEditMode] = useState<boolean>(false);
     const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
@@ -725,7 +728,7 @@ export default function MedleyPlayer({
             <div className="max-w-6xl mx-auto bg-white shadow-lg">
 
                 {/* プレイヤーコンテナ */}
-                <div className="relative">
+                <div className="relative" ref={playerContainerRef}>
                     {platform === 'youtube' ? (
                         <YouTubePlayer
                             videoId={videoId}
@@ -966,6 +969,7 @@ export default function MedleyPlayer({
                         currentTime={currentTime}
                         songs={displaySongs}
                         isVisible={isVisibleCondition}
+                        playerContainerRef={playerContainerRef}
                     />
                 );
             })()}

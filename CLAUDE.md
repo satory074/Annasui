@@ -342,16 +342,25 @@ if (isChangingSong && editModalOpen && editingSong) {
 }
 ```
 
-#### ActiveSongPopup Architecture (Added 2025-09-03)
-**Real-time Song Display System**: Popup component that shows currently playing songs during video playback.
+#### ActiveSongPopup Architecture (Updated 2025-09-03)
+**Real-time Song Display System**: Popup component that shows currently playing songs during video playback with intelligent positioning to avoid overlap.
 
 **Key Features:**
-- **Fixed Positioning**: Left-side overlay with `z-index: 1000` to appear above all content
+- **Dynamic Positioning**: Automatically positions left/right based on player location and screen size
+- **Overlap Prevention**: Hides completely when popup would interfere with video viewing
 - **Song Detection**: Automatically detects active songs based on `currentTime` and song time ranges
 - **Animation System**: Slide-in animations for new songs, smooth transitions between songs
 - **Multi-Song Support**: Can display multiple simultaneous songs with stacked layout
 - **Debug Mode**: Comprehensive debug panel available with `?debug=true` URL parameter
 - **Production Logging**: Enhanced logging system for production troubleshooting
+
+**Position Logic (`usePlayerPosition` hook):**
+- **Desktop**: Right-side default, switches to left when player in center area (30%-70% of viewport)
+- **Mobile**: Always left-side for consistent touch interaction
+- **Hide Conditions**: Popup hidden when player occupies large areas:
+  - Height > 60% of viewport
+  - Width > 80% of viewport  
+  - Large center area (20%-80% vertical + height > 30% viewport)
 
 **Critical Implementation Requirements:**
 ```typescript
@@ -722,7 +731,7 @@ return <MyComponent {...props} />;
 - **Authorization bypass**: Check both frontend and backend enforce admin approval for deletion operations
 - **Database constraints**: Ensure foreign key relationships allow cascading deletes or proper cleanup
 
-### ActiveSongPopup Issues (Added 2025-09-03)
+### ActiveSongPopup Issues (Updated 2025-09-03)
 - **Component not appearing in production**: Check that module-level logging appears (`🔥 ActiveSongPopup: Module loaded`)
 - **Tree-shaking removal**: Ensure displayName is set and module-level initialization code is present
 - **Silent component failures**: Add runtime component validation before rendering in parent component
@@ -730,8 +739,12 @@ return <MyComponent {...props} />;
 - **Song detection not working**: Check `currentTime` is updating and songs array has proper time ranges
 - **Multiple songs not stacking**: Ensure unique keys for each ActiveSong and proper z-index layering
 - **Animation not triggering**: Verify `isNewSong` detection logic compares against `prevActiveSongs`
-- **Popup positioning wrong**: Confirm fixed positioning with `top: 6rem, left: 1rem, zIndex: 1000`
 - **Production logging missing**: Use both `console.log()` and `logger.info()` for production visibility
+- **Popup overlapping video**: Check `usePlayerPosition` hook is properly detecting player position and setting `shouldHidePopup`
+- **Position not updating on scroll**: Verify `playerContainerRef` is passed and scroll/resize event listeners are active
+- **Hide logic too aggressive**: Adjust thresholds in hide conditions (currently 60% height, 80% width, 30% center area)
+- **Mobile positioning issues**: Ensure mobile detection (`window.innerWidth < 768`) forces left positioning
+- **Debug panel not showing position data**: Confirm `playerPosition.rect` is being populated with player boundaries
 
 ### Song Segment Time Editing Issues (Added 2025-09-03)
 - **Time values reverting to original**: Check useEffect dependencies in SongEditModal - avoid including `currentTime`, `maxDuration`, `allSongs` that can cause race conditions
@@ -763,6 +776,7 @@ database/ - Database migrations and schema
 - `src/app/[platform]/[videoId]/page.tsx` - Platform players (Niconico/YouTube)
 - `src/components/pages/MedleyPlayer.tsx` - Main player component
 - `src/hooks/useNicoPlayer.ts` - Niconico postMessage integration
+- `src/hooks/usePlayerPosition.ts` - ActiveSongPopup positioning and overlap detection
 
 **Data:**
 - `src/lib/api/medleys.ts` - Database API with direct fetch implementation (includes `deleteMedley` function)

@@ -255,8 +255,10 @@ const handleDeleteMedley = async (medley: MedleyData) => {
 - Adjacent song time alignment buttons
 - **Song Change**: Double-click song segment → Edit modal → "楽曲を変更" button → Select new song while preserving time segments
 
-**Simplified Edit Interface (Updated 2025-09-01):**
+**Simplified Edit Interface (Updated 2025-09-03):**
 - **Removed buttons**: "楽曲追加" (Add Song), "インポート" (Import), and "クイック" (Quick) buttons have been removed from the edit interface
+- **UI Simplification**: "変更を保存" (Save Changes) and "リセット" (Reset) buttons removed - editing now auto-saves via timeline interactions
+- **Icon Removal**: Individual song edit/delete icon buttons removed to reduce UI clutter
 - **Remaining edit controls**: Edit mode toggle, Undo/Redo buttons only
 - **Focused workflow**: Editing now primarily relies on timeline interaction (double-click to edit) and keyboard shortcuts
 
@@ -602,7 +604,7 @@ return <MyComponent {...props} />;
 - **Undo/Redo not working**: Check keyboard listeners in edit mode
 - **Timeline duration mismatch**: Songs beyond actual video length show red styling
 - **Hotkeys not working**: Ensure edit mode is active and keyboard event listeners attached
-- **Edit interface simplification**: As of 2025-09-01, edit interface only shows Edit Mode toggle and Undo/Redo buttons. Song addition is done via timeline double-click or keyboard shortcuts (M key)
+- **Edit interface simplification**: As of 2025-09-03, edit interface only shows Edit Mode toggle and Undo/Redo buttons. Song addition is done via timeline double-click or keyboard shortcuts (M key). Manual save/reset buttons and individual song edit/delete icons have been removed for streamlined auto-save workflow
 
 ### Keyboard Shortcuts Issues
 - **Spacebar not working**: Check if player is ready (`playerReady` state) and no modals are open

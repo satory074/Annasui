@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef, RefObject, useCallback } from 'react';
 import { logger } from '@/lib/utils/logger';
+import { useMousePosition } from './useMousePosition';
 
 export interface PlayerPosition {
   isVisible: boolean;
@@ -14,11 +15,13 @@ export interface UsePlayerPositionReturn {
   playerPosition: PlayerPosition;
   popupPosition: 'left' | 'right';
   shouldHidePopup: boolean;
+  isMouseNearPopup: boolean;
+  mouseAvoidanceActive: boolean;
 }
 
 /**
  * プレイヤーの位置とスクロール状態を監視し、
- * ポップアップの最適な位置を決定するカスタムフック
+ * マウス位置も考慮してポップアップの最適な位置を決定するカスタムフック
  */
 export function usePlayerPosition(
   playerContainerRef: RefObject<HTMLElement | null>
@@ -32,8 +35,14 @@ export function usePlayerPosition(
 
   const [popupPosition, setPopupPosition] = useState<'left' | 'right'>('left');
   const [shouldHidePopup, setShouldHidePopup] = useState<boolean>(false);
+  const [isMouseNearPopup, setIsMouseNearPopup] = useState<boolean>(false);
+  const [mouseAvoidanceActive, setMouseAvoidanceActive] = useState<boolean>(false);
+  
   const lastUpdateTime = useRef<number>(0);
   const requestRef = useRef<number | null>(null);
+  
+  // マウス位置を監視（画面端から150px以内を検出）
+  const mousePosition = useMousePosition(150);
 
   const updatePlayerPosition = useCallback(() => {
     const now = performance.now();
@@ -74,7 +83,7 @@ export function usePlayerPosition(
 
     setPlayerPosition(newPlayerPosition);
 
-    // ポップアップの位置と表示/非表示を決定（改良版）
+    // ポップアップの位置と表示/非表示を決定（マウス回避機能付き改良版）
     const isMobile = window.innerWidth < 768; // md breakpoint
     const viewportHeight = window.innerHeight;
     const playerCenterY = rect.top + rect.height / 2;
@@ -91,28 +100,99 @@ export function usePlayerPosition(
       playerCenterY < viewportHeight * 0.8 && 
       rect.height > viewportHeight * 0.3;
     
+    // マウス位置に基づく衝突検出と回避ロジック
+    const popupWidth = 320; // ポップアップの幅（推定値）
+    const popupHeight = 100; // ポップアップの高さ（推定値）
+    const popupTop = 96; // top: 6rem = 96px
+    const popupLeft = 16; // left: 1rem = 16px
+    const popupRight = 16; // right: 1rem = 16px
+    
+    // 現在のポップアップ位置での矩形を計算
+    const leftPopupRect = {
+      left: popupLeft,
+      right: popupLeft + popupWidth,
+      top: popupTop,
+      bottom: popupTop + popupHeight
+    };
+    
+    const rightPopupRect = {
+      left: window.innerWidth - popupRight - popupWidth,
+      right: window.innerWidth - popupRight,
+      top: popupTop,
+      bottom: popupTop + popupHeight
+    };
+    
+    // マウスがポップアップ領域に近いかチェック（マージン100px）
+    const mouseBuffer = 100;
+    const isMouseNearLeftPopup = mousePosition.x >= (leftPopupRect.left - mouseBuffer) && 
+                                 mousePosition.x <= (leftPopupRect.right + mouseBuffer) &&
+                                 mousePosition.y >= (leftPopupRect.top - mouseBuffer) &&
+                                 mousePosition.y <= (leftPopupRect.bottom + mouseBuffer);
+                                 
+    const isMouseNearRightPopup = mousePosition.x >= (rightPopupRect.left - mouseBuffer) && 
+                                  mousePosition.x <= (rightPopupRect.right + mouseBuffer) &&
+                                  mousePosition.y >= (rightPopupRect.top - mouseBuffer) &&
+                                  mousePosition.y <= (rightPopupRect.bottom + mouseBuffer);
+    
     if (playerOccupiesLargeArea || playerOccupiesWideArea || playerInLargeCenterArea) {
       // プレイヤーが大きすぎる、または中央の広範囲を占める場合は非表示
       setShouldHidePopup(true);
       setPopupPosition('right'); // デフォルト位置は保持
+      setIsMouseNearPopup(false);
+      setMouseAvoidanceActive(false);
     } else {
       setShouldHidePopup(false);
       
+      // マウス衝突状態を更新
+      const currentMouseNear = isMouseNearLeftPopup || isMouseNearRightPopup;
+      setIsMouseNearPopup(currentMouseNear);
+      
       if (isMobile) {
-        // モバイルでは常に左側に固定
-        setPopupPosition('left');
+        // モバイルでは基本的に左側だが、マウスが被る場合は右側に移動
+        if (isMouseNearLeftPopup) {
+          setPopupPosition('right');
+          setMouseAvoidanceActive(true);
+        } else {
+          setPopupPosition('left');
+          setMouseAvoidanceActive(isMouseNearRightPopup);
+        }
       } else {
-        // デスクトップでは基本的に右側を使用
-        // プレイヤーが画面中央付近（上から30%-70%の範囲）にある場合のみ左側に移動
+        // デスクトップでのポジション決定ロジック
         const playerInCenterArea = playerCenterY > viewportHeight * 0.3 && playerCenterY < viewportHeight * 0.7;
         
+        // 基本のポジション（プレイヤー位置ベース）
+        let basePosition: 'left' | 'right';
         if (isVisible && playerInCenterArea && !playerInLargeCenterArea) {
-          // プレイヤーが画面中央付近にあるが、大きすぎない場合は左側に表示
-          setPopupPosition('left');
+          basePosition = 'left';
         } else {
-          // プレイヤーが上部、下部、または非表示の場合は右側に表示
-          setPopupPosition('right');
+          basePosition = 'right';
         }
+        
+        // マウス回避ロジックを適用
+        let finalPosition = basePosition;
+        let avoidanceActive = false;
+        
+        if (basePosition === 'left' && isMouseNearLeftPopup) {
+          // 左側にいるがマウスが被る場合、右側に移動
+          finalPosition = 'right';
+          avoidanceActive = true;
+        } else if (basePosition === 'right' && isMouseNearRightPopup) {
+          // 右側にいるがマウスが被る場合、左側に移動
+          finalPosition = 'left';
+          avoidanceActive = true;
+        }
+        
+        // マウスが画面端にいる場合の強制回避
+        if (mousePosition.isNearLeftEdge && (finalPosition === 'left' || isMouseNearLeftPopup)) {
+          finalPosition = 'right';
+          avoidanceActive = true;
+        } else if (mousePosition.isNearRightEdge && (finalPosition === 'right' || isMouseNearRightPopup)) {
+          finalPosition = 'left';
+          avoidanceActive = true;
+        }
+        
+        setPopupPosition(finalPosition);
+        setMouseAvoidanceActive(avoidanceActive);
       }
     }
 
@@ -136,11 +216,10 @@ export function usePlayerPosition(
       }
     });
 
-    // プロダクション環境でも位置情報をコンソールに出力（非表示判定追加版）
+    // プロダクション環境でも位置情報をコンソールに出力（マウス回避機能追加版）
     const playerInCenterArea = playerCenterY > viewportHeight * 0.3 && playerCenterY < viewportHeight * 0.7;
-    const finalPosition = isMobile ? 'left (mobile)' : (isVisible && playerInCenterArea && !playerInLargeCenterArea ? 'left' : 'right');
     
-    console.log('🎯 Player Position Debug:', {
+    console.log('🎯 Player Position Debug (with Mouse Avoidance):', {
       isVisible,
       isInUpperArea,
       playerInCenterArea,
@@ -148,7 +227,17 @@ export function usePlayerPosition(
       playerOccupiesLargeArea,
       playerOccupiesWideArea,
       shouldHidePopup: playerOccupiesLargeArea || playerOccupiesWideArea || playerInLargeCenterArea,
-      finalPosition,
+      popupPosition: popupPosition,
+      mouseAvoidanceActive: mouseAvoidanceActive,
+      isMouseNearPopup: isMouseNearLeftPopup || isMouseNearRightPopup,
+      mousePosition: {
+        x: Math.round(mousePosition.x),
+        y: Math.round(mousePosition.y),
+        isNearLeftEdge: mousePosition.isNearLeftEdge,
+        isNearRightEdge: mousePosition.isNearRightEdge
+      },
+      isMouseNearLeftPopup,
+      isMouseNearRightPopup,
       playerTop: Math.round(rect.top),
       playerCenterY: Math.round(playerCenterY),
       playerSize: `${Math.round(rect.width)}x${Math.round(rect.height)}`,
@@ -157,7 +246,7 @@ export function usePlayerPosition(
       windowSize: `${window.innerWidth}x${window.innerHeight}`,
       isMobile
     });
-  }, [playerContainerRef]);
+  }, [playerContainerRef, mousePosition, mouseAvoidanceActive, popupPosition]);
 
   useEffect(() => {
     // 初回実行
@@ -197,6 +286,8 @@ export function usePlayerPosition(
   return {
     playerPosition,
     popupPosition,
-    shouldHidePopup
+    shouldHidePopup,
+    isMouseNearPopup,
+    mouseAvoidanceActive
   };
 }

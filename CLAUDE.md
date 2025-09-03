@@ -343,20 +343,30 @@ if (isChangingSong && editModalOpen && editingSong) {
 ```
 
 #### ActiveSongPopup Architecture (Updated 2025-09-03)
-**Real-time Song Display System**: Popup component that shows currently playing songs during video playback with intelligent positioning to avoid overlap.
+**Real-time Song Display System**: Popup component that shows currently playing songs during video playback with intelligent positioning to avoid overlap and mouse interference.
 
 **Key Features:**
 - **Dynamic Positioning**: Automatically positions left/right based on player location and screen size
+- **Mouse Avoidance System**: Real-time mouse tracking that moves popup away from cursor to prevent UI interference
 - **Overlap Prevention**: Hides completely when popup would interfere with video viewing
 - **Song Detection**: Automatically detects active songs based on `currentTime` and song time ranges
-- **Animation System**: Slide-in animations for new songs, smooth transitions between songs
+- **Animation System**: Slide-in animations for new songs, smooth transitions between songs with mouse avoidance feedback
 - **Multi-Song Support**: Can display multiple simultaneous songs with stacked layout
 - **Debug Mode**: Comprehensive debug panel available with `?debug=true` URL parameter
 - **Production Logging**: Enhanced logging system for production troubleshooting
 
+**Mouse Avoidance System (`useMousePosition` + `usePlayerPosition`):**
+- **Real-time Tracking**: Monitors mouse position with 16ms debounced updates for optimal performance
+- **Edge Detection**: Automatically detects when mouse approaches screen edges (150px threshold)
+- **Collision Avoidance**: Moves popup away when mouse enters 100px buffer zone around popup area
+- **Visual Feedback**: Shows orange shadow and subtle scale animation during avoidance
+- **Smart Positioning**: Prioritizes player position → mouse avoidance → edge avoidance
+- **Smooth Transitions**: 0.3s CSS transitions for natural movement
+
 **Position Logic (`usePlayerPosition` hook):**
 - **Desktop**: Right-side default, switches to left when player in center area (30%-70% of viewport)
 - **Mobile**: Always left-side for consistent touch interaction
+- **Mouse Override**: Position changes dynamically based on cursor proximity
 - **Hide Conditions**: Popup hidden when player occupies large areas:
   - Height > 60% of viewport
   - Width > 80% of viewport  

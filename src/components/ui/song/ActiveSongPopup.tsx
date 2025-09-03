@@ -10,7 +10,10 @@ import { usePlayerPosition } from '@/hooks/usePlayerPosition';
 if (typeof window !== 'undefined') {
   console.log('🔥 ActiveSongPopup: Module loaded in production', {
     timestamp: new Date().toISOString(),
-    url: window.location.href
+    url: window.location.href,
+    userAgent: navigator.userAgent,
+    isProduction: process.env.NODE_ENV === 'production',
+    windowSize: `${window.innerWidth}x${window.innerHeight}`
   });
 }
 
@@ -34,8 +37,20 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
   const [activeSongs, setActiveSongs] = useState<ActiveSong[]>([]);
   const [prevActiveSongs, setPrevActiveSongs] = useState<ActiveSong[]>([]);
   
-  // プレイヤー位置を監視して最適なポップアップ位置を決定
-  const { playerPosition, popupPosition, shouldHidePopup } = usePlayerPosition(playerContainerRef || { current: null });
+  // プレイヤー位置とマウス位置を監視して最適なポップアップ位置を決定
+  const { playerPosition, popupPosition, shouldHidePopup, isMouseNearPopup, mouseAvoidanceActive } = usePlayerPosition(playerContainerRef || { current: null });
+
+  // プロダクション環境でのマウス回避機能状態ログ
+  useEffect(() => {
+    console.log('🖱️ ActiveSongPopup: Mouse avoidance state update', {
+      popupPosition,
+      isMouseNearPopup,
+      mouseAvoidanceActive,
+      shouldHidePopup,
+      playerVisible: playerPosition.isVisible,
+      timestamp: new Date().toISOString()
+    });
+  }, [popupPosition, isMouseNearPopup, mouseAvoidanceActive, shouldHidePopup, playerPosition.isVisible]);
 
   // 初期マウント時のログ（プロダクション環境対応）
   useEffect(() => {
@@ -133,7 +148,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
   const showDebug = typeof window !== 'undefined' && 
     (window.location.search.includes('debug=true') || window.location.hostname === 'localhost');
 
-  // ポップアップの位置スタイルを計算
+  // ポップアップの位置スタイルを計算（マウス回避機能付き）
   const getPopupStyle = () => {
     const baseStyle = {
       position: 'fixed' as const,
@@ -142,9 +157,16 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
       transition: 'all 0.3s ease-in-out'
     };
 
+    // マウス回避アニメーションのための追加スタイル
+    const avoidanceStyle = mouseAvoidanceActive ? {
+      transform: 'scale(0.98)',
+      boxShadow: '0 8px 25px rgba(255, 140, 66, 0.3)'
+    } : {};
+
     if (popupPosition === 'right') {
       return {
         ...baseStyle,
+        ...avoidanceStyle,
         top: '6rem',
         right: '1rem',
         left: 'auto'
@@ -152,6 +174,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
     } else {
       return {
         ...baseStyle,
+        ...avoidanceStyle,
         top: '6rem',
         left: '1rem',
         right: 'auto'
@@ -181,11 +204,16 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
           style={getPopupStyle()}
         >
           <div className="text-red-700 text-xs font-mono" style={{ pointerEvents: 'auto' }}>
-            <div>🐛 ActiveSongPopup Debug</div>
+            <div>🐛 ActiveSongPopup Debug (with Mouse Avoidance)</div>
             <div>isVisible: {isVisible ? '✓' : '✗'}</div>
             <div>activeSongs: {activeSongs.length}</div>
             <div>shouldHide: {shouldHidePopup ? '✓' : '✗'}</div>
             <div>currentTime: {currentTime.toFixed(1)}s</div>
+            <div className="border-t border-red-300 mt-1 pt-1">
+              <div className="font-bold">マウス回避:</div>
+              <div>mouseNear: {isMouseNearPopup ? '✓' : '✗'}</div>
+              <div>avoidance: {mouseAvoidanceActive ? '✓' : '✗'}</div>
+            </div>
             <div className="border-t border-red-300 mt-2 pt-2">
               <div className="font-bold">位置情報:</div>
               <div>position: {popupPosition}</div>
@@ -259,14 +287,19 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
           <div
             key={song.uniqueId}
             className={`
-              bg-white rounded-lg shadow-lg border-2 border-orange-200 p-3 max-w-xs
+              bg-white rounded-lg shadow-lg border-2 p-3 max-w-xs
               transform transition-all duration-300 ease-out
               ${isNewSong ? 'animate-slide-in' : 'translate-x-0 opacity-100'}
+              ${mouseAvoidanceActive ? 'border-orange-300 shadow-orange-200/50' : 'border-orange-200'}
             `}
             style={{
               animationDelay: isNewSong ? `${index * 100}ms` : '0ms',
               animationFillMode: 'forwards',
-              pointerEvents: 'auto'
+              pointerEvents: 'auto',
+              ...(mouseAvoidanceActive ? {
+                transform: 'scale(0.98)',
+                boxShadow: '0 8px 25px rgba(255, 140, 66, 0.3)'
+              } : {})
             }}
           >
             <div className="flex items-center space-x-3">

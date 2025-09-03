@@ -38,7 +38,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
   const [prevActiveSongs, setPrevActiveSongs] = useState<ActiveSong[]>([]);
   
   // プレイヤー位置とマウス位置を監視して最適なポップアップ位置を決定
-  const { playerPosition, popupPosition, shouldHidePopup, isMouseNearPopup, mouseAvoidanceActive } = usePlayerPosition(playerContainerRef || { current: null });
+  const { playerPosition, popupPosition, shouldHidePopup, isMouseNearPopup, mouseAvoidanceActive, isPositionFixed } = usePlayerPosition(playerContainerRef || { current: null });
 
   // プロダクション環境でのマウス回避機能状態ログ
   useEffect(() => {
@@ -204,15 +204,16 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
           style={getPopupStyle()}
         >
           <div className="text-red-700 text-xs font-mono" style={{ pointerEvents: 'auto' }}>
-            <div>🐛 ActiveSongPopup Debug (with Mouse Avoidance)</div>
+            <div>🐛 ActiveSongPopup Debug (with Position Fixing)</div>
             <div>isVisible: {isVisible ? '✓' : '✗'}</div>
             <div>activeSongs: {activeSongs.length}</div>
             <div>shouldHide: {shouldHidePopup ? '✓' : '✗'}</div>
             <div>currentTime: {currentTime.toFixed(1)}s</div>
             <div className="border-t border-red-300 mt-1 pt-1">
-              <div className="font-bold">マウス回避:</div>
+              <div className="font-bold">位置制御:</div>
               <div>mouseNear: {isMouseNearPopup ? '✓' : '✗'}</div>
               <div>avoidance: {mouseAvoidanceActive ? '✓' : '✗'}</div>
+              <div>positionFixed: {isPositionFixed ? '✓' : '✗'}</div>
             </div>
             <div className="border-t border-red-300 mt-2 pt-2">
               <div className="font-bold">位置情報:</div>
@@ -290,13 +291,24 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
               bg-white rounded-lg shadow-lg border-2 p-3 max-w-xs
               transform transition-all duration-300 ease-out
               ${isNewSong ? 'animate-slide-in' : 'translate-x-0 opacity-100'}
-              ${mouseAvoidanceActive ? 'border-orange-300 shadow-orange-200/50' : 'border-orange-200'}
+              ${isPositionFixed 
+                ? 'border-orange-400 shadow-orange-200/60' 
+                : mouseAvoidanceActive 
+                  ? 'border-orange-300 shadow-orange-200/50' 
+                  : 'border-orange-200'
+              }
             `}
             style={{
               animationDelay: isNewSong ? `${index * 100}ms` : '0ms',
               animationFillMode: 'forwards',
               pointerEvents: 'auto',
-              ...(mouseAvoidanceActive ? {
+              ...(isPositionFixed ? {
+                transform: 'scale(0.99)',
+                filter: 'saturate(1.1)',
+                boxShadow: mouseAvoidanceActive 
+                  ? '0 8px 25px rgba(255, 140, 66, 0.3)' 
+                  : '0 6px 20px rgba(255, 140, 66, 0.15)'
+              } : mouseAvoidanceActive ? {
                 transform: 'scale(0.98)',
                 boxShadow: '0 8px 25px rgba(255, 140, 66, 0.3)'
               } : {})
@@ -321,9 +333,13 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
                   {song.artist}
                 </p>
                 <div className="flex items-center space-x-1 mt-1">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-orange-600 font-medium">
-                    再生中
+                  <div className={`w-2 h-2 rounded-full animate-pulse ${
+                    isPositionFixed ? 'bg-orange-600' : 'bg-orange-500'
+                  }`}></div>
+                  <span className={`text-xs font-medium ${
+                    isPositionFixed ? 'text-orange-700' : 'text-orange-600'
+                  }`}>
+                    再生中{isPositionFixed ? ' (位置固定)' : ''}
                   </span>
                 </div>
               </div>

@@ -17,11 +17,17 @@ export interface UsePlayerPositionReturn {
   shouldHidePopup: boolean;
   isMouseNearPopup: boolean;
   mouseAvoidanceActive: boolean;
+  isPositionFixed: boolean;
 }
+
+// Position fixing constants
+const POSITION_FIX_DURATION = 4000; // 4 seconds
+const SIGNIFICANT_SCROLL_THRESHOLD = 100; // pixels
 
 /**
  * プレイヤーの位置とスクロール状態を監視し、
  * マウス位置も考慮してポップアップの最適な位置を決定するカスタムフック
+ * マウス回避後は一定時間位置を固定する機能付き
  */
 export function usePlayerPosition(
   playerContainerRef: RefObject<HTMLElement | null>
@@ -37,6 +43,11 @@ export function usePlayerPosition(
   const [shouldHidePopup, setShouldHidePopup] = useState<boolean>(false);
   const [isMouseNearPopup, setIsMouseNearPopup] = useState<boolean>(false);
   const [mouseAvoidanceActive, setMouseAvoidanceActive] = useState<boolean>(false);
+  
+  // Position fixing state
+  const [fixedPosition, setFixedPosition] = useState<'left' | 'right' | null>(null);
+  const [positionFixedUntil, setPositionFixedUntil] = useState<number>(0);
+  const [lastScrollY, setLastScrollY] = useState<number>(0);
   
   const lastUpdateTime = useRef<number>(0);
   const requestRef = useRef<number | null>(null);
@@ -83,7 +94,19 @@ export function usePlayerPosition(
 
     setPlayerPosition(newPlayerPosition);
 
-    // ポップアップの位置と表示/非表示を決定（マウス回避機能付き改良版）
+    // Check if user scrolled significantly (clear position fixing)
+    const scrollDelta = Math.abs(scrollY - lastScrollY);
+    if (scrollDelta > SIGNIFICANT_SCROLL_THRESHOLD) {
+      setFixedPosition(null);
+      setPositionFixedUntil(0);
+    }
+    setLastScrollY(scrollY);
+
+    // Check if position fix has expired
+    const currentTime = Date.now();
+    const isPositionFixed = fixedPosition !== null && currentTime < positionFixedUntil;
+
+    // ポップアップの位置と表示/非表示を決定（位置固定機能付きマウス回避）
     const isMobile = window.innerWidth < 768; // md breakpoint
     const viewportHeight = window.innerHeight;
     const playerCenterY = rect.top + rect.height / 2;
@@ -147,14 +170,32 @@ export function usePlayerPosition(
       const currentMouseNear = isMouseNearLeftPopup || isMouseNearRightPopup;
       setIsMouseNearPopup(currentMouseNear);
       
-      if (isMobile) {
+      // If position is currently fixed, use the fixed position
+      if (isPositionFixed && fixedPosition) {
+        setPopupPosition(fixedPosition);
+        // Check if we should still show avoidance styling
+        const isCurrentPositionBeingAvoided = 
+          (fixedPosition === 'left' && isMouseNearLeftPopup) ||
+          (fixedPosition === 'right' && isMouseNearRightPopup);
+        setMouseAvoidanceActive(isCurrentPositionBeingAvoided);
+      } else if (isMobile) {
         // モバイルでは基本的に左側だが、マウスが被る場合は右側に移動
         if (isMouseNearLeftPopup) {
-          setPopupPosition('right');
+          const newPosition = 'right';
+          setPopupPosition(newPosition);
           setMouseAvoidanceActive(true);
+          // Set position fixing when avoiding mouse
+          setFixedPosition(newPosition);
+          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         } else {
-          setPopupPosition('left');
+          const newPosition = 'left';
+          setPopupPosition(newPosition);
           setMouseAvoidanceActive(isMouseNearRightPopup);
+          // Set position fixing if avoiding mouse on right
+          if (isMouseNearRightPopup) {
+            setFixedPosition(newPosition);
+            setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
+          }
         }
       } else {
         // デスクトップでのポジション決定ロジック
@@ -176,19 +217,31 @@ export function usePlayerPosition(
           // 左側にいるがマウスが被る場合、右側に移動
           finalPosition = 'right';
           avoidanceActive = true;
+          // Set position fixing when avoiding mouse
+          setFixedPosition(finalPosition);
+          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         } else if (basePosition === 'right' && isMouseNearRightPopup) {
           // 右側にいるがマウスが被る場合、左側に移動
           finalPosition = 'left';
           avoidanceActive = true;
+          // Set position fixing when avoiding mouse
+          setFixedPosition(finalPosition);
+          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         }
         
         // マウスが画面端にいる場合の強制回避
         if (mousePosition.isNearLeftEdge && (finalPosition === 'left' || isMouseNearLeftPopup)) {
           finalPosition = 'right';
           avoidanceActive = true;
+          // Set position fixing for edge avoidance
+          setFixedPosition(finalPosition);
+          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         } else if (mousePosition.isNearRightEdge && (finalPosition === 'right' || isMouseNearRightPopup)) {
           finalPosition = 'left';
           avoidanceActive = true;
+          // Set position fixing for edge avoidance
+          setFixedPosition(finalPosition);
+          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         }
         
         setPopupPosition(finalPosition);
@@ -216,10 +269,10 @@ export function usePlayerPosition(
       }
     });
 
-    // プロダクション環境でも位置情報をコンソールに出力（マウス回避機能追加版）
+    // プロダクション環境でも位置情報をコンソールに出力（位置固定機能追加版）
     const playerInCenterArea = playerCenterY > viewportHeight * 0.3 && playerCenterY < viewportHeight * 0.7;
     
-    console.log('🎯 Player Position Debug (with Mouse Avoidance):', {
+    console.log('🎯 Player Position Debug (with Position Fixing):', {
       isVisible,
       isInUpperArea,
       playerInCenterArea,
@@ -230,6 +283,10 @@ export function usePlayerPosition(
       popupPosition: popupPosition,
       mouseAvoidanceActive: mouseAvoidanceActive,
       isMouseNearPopup: isMouseNearLeftPopup || isMouseNearRightPopup,
+      isPositionFixed: isPositionFixed,
+      fixedPosition: fixedPosition,
+      positionFixedUntil: positionFixedUntil > 0 ? new Date(positionFixedUntil).toLocaleTimeString() : 'none',
+      timeUntilFixExpires: positionFixedUntil > 0 ? Math.max(0, Math.round((positionFixedUntil - currentTime) / 1000)) + 's' : 'none',
       mousePosition: {
         x: Math.round(mousePosition.x),
         y: Math.round(mousePosition.y),
@@ -246,7 +303,7 @@ export function usePlayerPosition(
       windowSize: `${window.innerWidth}x${window.innerHeight}`,
       isMobile
     });
-  }, [playerContainerRef, mousePosition, mouseAvoidanceActive, popupPosition]);
+  }, [playerContainerRef, mousePosition, mouseAvoidanceActive, popupPosition, fixedPosition, lastScrollY, positionFixedUntil]);
 
   useEffect(() => {
     // 初回実行
@@ -288,6 +345,7 @@ export function usePlayerPosition(
     popupPosition,
     shouldHidePopup,
     isMouseNearPopup,
-    mouseAvoidanceActive
+    mouseAvoidanceActive,
+    isPositionFixed: fixedPosition !== null && Date.now() < positionFixedUntil
   };
 }

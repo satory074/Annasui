@@ -359,8 +359,9 @@ if (isChangingSong && editModalOpen && editingSong) {
 - **Real-time Tracking**: Monitors mouse position with 16ms debounced updates for optimal performance
 - **Edge Detection**: Automatically detects when mouse approaches screen edges (150px threshold)
 - **Collision Avoidance**: Moves popup away when mouse enters 100px buffer zone around popup area
-- **Visual Feedback**: Shows orange shadow and subtle scale animation during avoidance
-- **Smart Positioning**: Prioritizes player position → mouse avoidance → edge avoidance
+- **Position Fixing (Updated 2025-09-03)**: After mouse avoidance, popup stays in new position for 4 seconds
+- **Visual Feedback**: Shows enhanced orange shadow and scale animation during position fixing
+- **Smart Positioning**: Prioritizes player position → mouse avoidance → position fixing → edge avoidance
 - **Smooth Transitions**: 0.3s CSS transitions for natural movement
 
 **Position Logic (`usePlayerPosition` hook):**
@@ -371,6 +372,13 @@ if (isChangingSong && editModalOpen && editingSong) {
   - Height > 60% of viewport
   - Width > 80% of viewport  
   - Large center area (20%-80% vertical + height > 30% viewport)
+
+**Position Fixing System (Added 2025-09-03):**
+- **Duration**: 4 seconds (configurable via `POSITION_FIX_DURATION` constant)
+- **Trigger**: Automatically activated when mouse avoidance occurs
+- **Clearing Conditions**: Position fix clears when user scrolls >100px or timer expires
+- **Visual State**: Enhanced orange borders, shadows, and "(位置固定)" status text
+- **Debug Support**: Real-time countdown and state displayed in debug mode (`?debug=true`)
 
 **Critical Implementation Requirements:**
 ```typescript
@@ -755,6 +763,15 @@ return <MyComponent {...props} />;
 - **Hide logic too aggressive**: Adjust thresholds in hide conditions (currently 60% height, 80% width, 30% center area)
 - **Mobile positioning issues**: Ensure mobile detection (`window.innerWidth < 768`) forces left positioning
 - **Debug panel not showing position data**: Confirm `playerPosition.rect` is being populated with player boundaries
+
+### Position Fixing Issues (Added 2025-09-03)
+- **Position not staying fixed**: Verify `isPositionFixed` flag is properly destructured in ActiveSongPopup component
+- **Timer not working**: Check `currentTime` variable name conflicts - use unique names in `usePlayerPosition`
+- **Position clearing too early**: Ensure scroll threshold (100px) is appropriate for user interaction
+- **Visual feedback missing**: Confirm orange styling and "(位置固定)" text appear during position fixing
+- **Debug countdown not showing**: Verify debug panel displays `timeUntilFixExpires` with real-time countdown
+- **Mouse avoidance not triggering fix**: Check that position fixing state is set when avoidance occurs
+- **Scroll clearing not working**: Ensure `lastScrollY` state and `scrollDelta` calculation work correctly
 
 ### Song Segment Time Editing Issues (Added 2025-09-03)
 - **Time values reverting to original**: Check useEffect dependencies in SongEditModal - avoid including `currentTime`, `maxDuration`, `allSongs` that can cause race conditions

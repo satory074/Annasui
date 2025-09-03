@@ -143,11 +143,11 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
     if (showDebug) {
       return (
         <div 
-          className="fixed top-24 right-4 bg-red-100 border-2 border-red-300 rounded-lg p-3 max-w-xs"
+          className="fixed top-24 left-4 bg-red-100 border-2 border-red-300 rounded-lg p-3 max-w-xs"
           style={{
             position: 'fixed',
             top: '6rem',
-            right: '1rem',
+            left: '1rem',
             zIndex: 1000,
             pointerEvents: 'auto'
           }}
@@ -178,11 +178,11 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
 
   return (
     <div 
-      className="fixed top-24 right-4 space-y-2"
+      className="fixed top-24 left-4 space-y-2"
       style={{
         position: 'fixed',
         top: '6rem',
-        right: '1rem',
+        left: '1rem',
         zIndex: 1000,
         pointerEvents: 'none'
       }}

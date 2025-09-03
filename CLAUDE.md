@@ -346,7 +346,7 @@ if (isChangingSong && editModalOpen && editingSong) {
 **Real-time Song Display System**: Popup component that shows currently playing songs during video playback.
 
 **Key Features:**
-- **Fixed Positioning**: Right-side overlay with `z-index: 1000` to appear above all content
+- **Fixed Positioning**: Left-side overlay with `z-index: 1000` to appear above all content
 - **Song Detection**: Automatically detects active songs based on `currentTime` and song time ranges
 - **Animation System**: Slide-in animations for new songs, smooth transitions between songs
 - **Multi-Song Support**: Can display multiple simultaneous songs with stacked layout
@@ -583,7 +583,7 @@ if (typeof window !== 'undefined') {
 if (!MyComponent) {
   console.error('🚨 CRITICAL: MyComponent is undefined!');
   return <div style={{ 
-    position: 'fixed', top: '6rem', right: '1rem', zIndex: 1000,
+    position: 'fixed', top: '6rem', left: '1rem', zIndex: 1000,
     background: 'red', color: 'white', padding: '1rem' 
   }}>
     ERROR: MyComponent not loaded
@@ -730,7 +730,7 @@ return <MyComponent {...props} />;
 - **Song detection not working**: Check `currentTime` is updating and songs array has proper time ranges
 - **Multiple songs not stacking**: Ensure unique keys for each ActiveSong and proper z-index layering
 - **Animation not triggering**: Verify `isNewSong` detection logic compares against `prevActiveSongs`
-- **Popup positioning wrong**: Confirm fixed positioning with `top: 6rem, right: 1rem, zIndex: 1000`
+- **Popup positioning wrong**: Confirm fixed positioning with `top: 6rem, left: 1rem, zIndex: 1000`
 - **Production logging missing**: Use both `console.log()` and `logger.info()` for production visibility
 
 ### Song Segment Time Editing Issues (Added 2025-09-03)

@@ -533,11 +533,6 @@ export default function SongListGrouped({
               <h3 className="text-xs font-medium text-gray-700">
                 楽曲一覧 ({Object.keys(groupedSongs).length}楽曲, {songs.length}区間)
               </h3>
-              {hasChanges && (
-                <span className="text-xs text-orange-600 bg-orange-50 px-2 py-1 rounded">
-                  未保存の変更があります
-                </span>
-              )}
               {isEditMode && (
                 <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                   キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200'}`}>S</kbd>開始時刻 

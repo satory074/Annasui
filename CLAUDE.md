@@ -731,6 +731,12 @@ return <MyComponent {...props} />;
 - **Popup positioning wrong**: Confirm fixed positioning with `top: 6rem, right: 1rem, zIndex: 1000`
 - **Production logging missing**: Use both `console.log()` and `logger.info()` for production visibility
 
+### Song Segment Time Editing Issues (Added 2025-09-03)
+- **Time values reverting to original**: Check useEffect dependencies in SongEditModal - avoid including `currentTime`, `maxDuration`, `allSongs` that can cause race conditions
+- **MultiSegmentTimeEditor timing conflicts**: Increase setTimeout delay from 50ms to 200ms for better state synchronization
+- **Edit buttons non-functional for unauthorized users**: Implement conditional rendering based on `onEditSong` prop availability with clear user feedback messages
+- **State overwrites during editing**: Use minimal dependency arrays in useEffect to prevent editing state resets
+
 ## File Organization
 
 ```

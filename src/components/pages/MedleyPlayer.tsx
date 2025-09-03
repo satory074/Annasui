@@ -35,6 +35,17 @@ export default function MedleyPlayer({
   platform = 'niconico'
 }: MedleyPlayerProps) {
     const { user, isApproved } = useAuth();
+    
+    // 認証・承認状態のデバッグログ（プロダクション環境での問題調査用）
+    logger.info('🔐 MedleyPlayer: Auth state', {
+        user: user ? {
+            id: user.id,
+            email: user.email
+        } : null,
+        isApproved,
+        hasEditPermission: !!(user && isApproved)
+    });
+    
     const [videoId, setVideoId] = useState<string>(initialVideoId);
     const [inputVideoId, setInputVideoId] = useState<string>(initialVideoId);
     

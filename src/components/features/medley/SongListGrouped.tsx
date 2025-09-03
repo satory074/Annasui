@@ -823,20 +823,36 @@ export default function SongListGrouped({
                   
                   {/* 編集・削除ボタン（タイムライン右端に配置） */}
                   <div className="absolute right-2 top-1 flex gap-1 z-40">
-                    {/* 編集ボタン */}
-                    <button
-                      onClick={() => onEditSong?.(group.segments[0])}
-                      className={`p-0 rounded transition-colors bg-white border border-gray-300 ${
-                        isEditMode 
-                          ? 'text-orange-600 hover:bg-orange-50' 
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                      title={`${group.title}を編集 (${group.segments.length}区間)`}
-                    >
-                      <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                      </svg>
-                    </button>
+                    {/* 編集ボタン（権限がある場合のみ表示） */}
+                    {onEditSong && (
+                      <button
+                        onClick={() => onEditSong(group.segments[0])}
+                        className={`p-0 rounded transition-colors bg-white border border-gray-300 ${
+                          isEditMode 
+                            ? 'text-orange-600 hover:bg-orange-50' 
+                            : 'text-gray-600 hover:bg-gray-100'
+                        }`}
+                        title={`${group.title}を編集 (${group.segments.length}区間)`}
+                      >
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                      </button>
+                    )}
+                    {/* 権限がない場合はログインボタンを表示 */}
+                    {!onEditSong && (
+                      <button
+                        onClick={() => {
+                          alert('楽曲を編集するにはログインと管理者承認が必要です。');
+                        }}
+                        className="p-0 rounded transition-colors bg-gray-100 border border-gray-300 text-gray-400 cursor-not-allowed"
+                        title="編集するにはログインが必要です"
+                      >
+                        <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                      </button>
+                    )}
                     {/* 削除ボタン（編集モード時のみ表示） */}
                     {isEditMode && (
                       <button

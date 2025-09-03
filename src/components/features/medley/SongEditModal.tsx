@@ -116,10 +116,7 @@ export default function SongEditModal({
       isSaving,
       song: song ? `${song.title} (${song.id})` : null,
       isNew,
-      isOpen,
-      currentTime,
-      maxDuration,
-      allSongsLength: allSongs.length
+      isOpen
     });
     
     // セーブ中はセグメント状態をリセットしない
@@ -204,7 +201,7 @@ export default function SongEditModal({
       }]);
     }
     setErrors({});
-  }, [song, isNew, isOpen, maxDuration, currentTime, allSongs, isSaving]);
+  }, [song, isNew, isOpen, isSaving]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};

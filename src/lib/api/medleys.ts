@@ -411,7 +411,7 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
   }
 }
 
-export async function updateMedley(videoId: string, updates: Partial<Omit<MedleyData, 'videoId' | 'songs'>>): Promise<MedleyData | null> {
+export async function updateMedley(videoId: string, updates: Partial<Omit<MedleyData, 'videoId' | 'songs'>> & { songs?: Omit<SongSection, 'id'>[] }): Promise<MedleyData | null> {
   if (!supabase) {
     return null
   }
@@ -439,6 +439,15 @@ export async function updateMedley(videoId: string, updates: Partial<Omit<Medley
       throw error
     }
 
+    // Update songs if provided
+    if (updates.songs) {
+      const success = await saveMedleySongs(medley.id as string, updates.songs);
+      if (!success) {
+        logger.error('Failed to update songs for medley:', medley.id);
+        throw new Error('Failed to update songs');
+      }
+      logger.info('Successfully updated songs for medley:', medley.id);
+    }
 
     // Get updated data
     const songsResult = await supabase

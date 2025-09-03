@@ -226,7 +226,8 @@ export function useMedleyEdit(
       let result = await updateMedley(videoId, {
         title: medleyTitle,
         creator: medleyCreator,
-        duration: duration
+        duration: duration,
+        songs: songsToSave
       });
       
       if (!result) {

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>メドレータイムライン サムネイル表示案</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f3f4f6;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #111;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
+        h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .badge {
+            background: linear-gradient(135deg, #ff8c42 0%, #ffa55c 100%);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: normal;
+        }
+        
+        .description {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        /* 共通スタイル */
+        .timeline-container {
+            position: relative;
+            width: 100%;
+            background: #eff6ff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        .timeline-bar {
+            position: absolute;
+            background: #ff8c42;
+            display: flex;
+            align-items: center;
+            border-radius: 3px;
+            transition: all 0.2s;
+            overflow: hidden;
+        }
+        
+        .timeline-bar:hover {
+            filter: brightness(1.1);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        .current-position {
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: #ef4444;
+            left: 35%;
+            z-index: 10;
+        }
+        
+        .song-title {
+            color: white;
+            font-size: 12px;
+            font-weight: 500;
+            white-space: nowrap;
+            padding: 0 8px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .thumbnail {
+            background-size: cover;
+            background-position: center;
+            border: 1px solid rgba(255,255,255,0.3);
+            flex-shrink: 0;
+        }
+        
+        .controls {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .timeline-bar:hover .controls {
+            opacity: 1;
+        }
+        
+        .btn {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        
+        /* 案1: ホバー時ポップアップ */
+        .option1 .timeline-container {
+            height: 32px;
+            margin-bottom: 40px;
+        }
+        
+        .option1 .timeline-bar {
+            height: 24px;
+            top: 4px;
+        }
+        
+        .option1 .popup {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 4px;
+            margin-bottom: 8px;
+            display: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+        
+        .option1 .timeline-bar:hover .popup {
+            display: block;
+        }
+        
+        .option1 .popup img {
+            width: 120px;
+            height: 67px;
+            border-radius: 3px;
+            display: block;
+        }
+        
+        .option1 .popup-arrow {
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-right: 1px solid #ddd;
+            border-bottom: 1px solid #ddd;
+            transform: translateX(-50%) rotate(45deg);
+        }
+        
+        /* 案2: タイムライン内ミニサムネイル */
+        .option2 .timeline-container {
+            height: 40px;
+        }
+        
+        .option2 .timeline-bar {
+            height: 32px;
+            top: 4px;
+            padding-left: 4px;
+            gap: 6px;
+        }
+        
+        .option2 .thumbnail {
+            width: 24px;
+            height: 24px;
+            border-radius: 2px;
+        }
+        
+        /* 案3: 二段式レイアウト */
+        .option3 .song-group {
+            margin-bottom: 8px;
+        }
+        
+        .option3 .thumbnail-track {
+            height: 30px;
+            position: relative;
+            margin-bottom: 2px;
+        }
+        
+        .option3 .thumbnail-bar {
+            position: absolute;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            padding: 2px;
+        }
+        
+        .option3 .thumbnail-bar img {
+            height: 26px;
+            width: auto;
+            border-radius: 2px;
+            border: 1px solid rgba(255,255,255,0.5);
+        }
+        
+        .option3 .timeline-container {
+            height: 24px;
+        }
+        
+        .option3 .timeline-bar {
+            height: 20px;
+            top: 2px;
+        }
+        
+        /* 案4: DAW風サムネイルトラック */
+        .option4 .timeline-wrapper {
+            border: 1px solid #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .option4 .main-timeline {
+            height: 32px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .option4 .main-timeline .timeline-bar {
+            height: 24px;
+            top: 4px;
+        }
+        
+        .option4 .thumbnail-track {
+            height: 45px;
+            background: #f9fafb;
+            position: relative;
+        }
+        
+        .option4 .thumbnail-item {
+            position: absolute;
+            height: 40px;
+            top: 2.5px;
+            border: 2px solid #ff8c42;
+            border-radius: 3px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 2px;
+        }
+        
+        .option4 .thumbnail-item img {
+            height: 32px;
+            width: auto;
+            margin-right: 4px;
+        }
+        
+        .option4 .thumbnail-label {
+            font-size: 10px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            padding-right: 4px;
+        }
+        
+        /* 案5: サイドパネル式 */
+        .option5 {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 10px;
+        }
+        
+        .option5 .thumbnail-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        
+        .option5 .thumbnail-card {
+            position: relative;
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .option5 .thumbnail-card:hover {
+            transform: scale(1.05);
+        }
+        
+        .option5 .thumbnail-card img {
+            width: 100%;
+            height: 84px;
+            object-fit: cover;
+        }
+        
+        .option5 .thumbnail-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+            color: white;
+            padding: 4px 6px;
+            font-size: 11px;
+        }
+        
+        .option5 .timeline-container {
+            height: 32px;
+        }
+        
+        .option5 .timeline-bar {
+            height: 24px;
+            top: 4px;
+        }
+        
+        .option5 .timeline-bar.active {
+            background: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+        }
+        
+        /* プロコン表示 */
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+            font-size: 13px;
+        }
+        
+        .pros, .cons {
+            padding: 10px;
+            border-radius: 4px;
+        }
+        
+        .pros {
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+        }
+        
+        .cons {
+            background: #fef2f2;
+            border: 1px solid #fca5a5;
+        }
+        
+        .pros h3, .cons h3 {
+            font-size: 12px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .pros h3 {
+            color: #16a34a;
+        }
+        
+        .cons h3 {
+            color: #dc2626;
+        }
+        
+        .pros ul, .cons ul {
+            margin-left: 15px;
+            color: #555;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 メドレータイムライン サムネイル表示案</h1>
+        
+        <!-- 現在の実装 -->
+        <div class="section">
+            <h2>現在の実装（参考）</h2>
+            <div class="description">
+                高さ32px（バー24px）のコンパクトなタイムライン。タイトルはバー内に表示。
+            </div>
+            <div class="timeline-container" style="height: 32px;">
+                <div class="timeline-bar" style="left: 10%; width: 20%; height: 24px; top: 4px;">
+                    <span class="song-title">千本桜</span>
+                </div>
+                <div class="timeline-bar" style="left: 35%; width: 15%; height: 24px; top: 4px; background: #5b6dee;">
+                    <span class="song-title">ロキ</span>
+                </div>
+                <div class="timeline-bar" style="left: 55%; width: 25%; height: 24px; top: 4px; background: #00d9a3;">
+                    <span class="song-title">シャルル</span>
+                </div>
+                <div class="current-position"></div>
+            </div>
+        </div>
+        
+        <!-- 案1: ホバー時ポップアップ -->
+        <div class="section option1">
+            <h2>案1: ホバー時ポップアップ表示</h2>
+            <div class="description">
+                タイムラインは現状維持。マウスホバー時にサムネイルをポップアップ表示。
+                バーにホバーしてみてください。
+            </div>
+            <div class="timeline-container">
+                <div class="timeline-bar" style="left: 10%; width: 20%;">
+                    <span class="song-title">千本桜</span>
+                    <div class="popup">
+                        <img src="https://img.youtube.com/vi/shs0KM2ga-c/mqdefault.jpg" alt="千本桜">
+                        <div class="popup-arrow"></div>
+                    </div>
+                </div>
+                <div class="timeline-bar" style="left: 35%; width: 15%; background: #5b6dee;">
+                    <span class="song-title">ロキ</span>
+                    <div class="popup">
+                        <img src="https://img.youtube.com/vi/Xg-qfsKN2_E/mqdefault.jpg" alt="ロキ">
+                        <div class="popup-arrow"></div>
+                    </div>
+                </div>
+                <div class="timeline-bar" style="left: 55%; width: 25%; background: #00d9a3;">
+                    <span class="song-title">シャルル</span>
+                    <div class="popup">
+                        <img src="https://img.youtube.com/vi/TA5OFS_xX0c/mqdefault.jpg" alt="シャルル">
+                        <div class="popup-arrow"></div>
+                    </div>
+                </div>
+                <div class="current-position"></div>
+            </div>
+            <div class="pros-cons">
+                <div class="pros">
+                    <h3>✓ メリット</h3>
+                    <ul>
+                        <li>現在のコンパクトさを維持</li>
+                        <li>必要な時だけサムネイル表示</li>
+                        <li>実装が簡単</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h3>✗ デメリット</h3>
+                    <ul>
+                        <li>モバイルでは機能しない</li>
+                        <li>常時表示ではないため視認性低</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 案2: タイムライン内ミニサムネイル -->
+        <div class="section option2">
+            <h2>案2: タイムライン内ミニサムネイル <span class="badge">推奨</span></h2>
+            <div class="description">
+                タイムラインバーを40pxに拡張し、左端に小さなサムネイルを配置。
+            </div>
+            <div class="timeline-container">
+                <div class="timeline-bar" style="left: 10%; width: 20%;">
+                    <div class="thumbnail" style="background-image: url('https://img.youtube.com/vi/shs0KM2ga-c/mqdefault.jpg');"></div>
+                    <span class="song-title">千本桜</span>
+                    <div class="controls">
+                        <div class="btn">✏️</div>
+                        <div class="btn">🗑</div>
+                    </div>
+                </div>
+                <div class="timeline-bar" style="left: 35%; width: 15%; background: #5b6dee;">
+                    <div class="thumbnail" style="background-image: url('https://img.youtube.com/vi/Xg-qfsKN2_E/mqdefault.jpg');"></div>
+                    <span class="song-title">ロキ</span>
+                    <div class="controls">
+                        <div class="btn">✏️</div>
+                        <div class="btn">🗑</div>
+                    </div>
+                </div>
+                <div class="timeline-bar" style="left: 55%; width: 25%; background: #00d9a3;">
+                    <div class="thumbnail" style="background-image: url('https://img.youtube.com/vi/TA5OFS_xX0c/mqdefault.jpg');"></div>
+                    <span class="song-title">シャルル</span>
+                    <div class="controls">
+                        <div class="btn">✏️</div>
+                        <div class="btn">🗑</div>
+                    </div>
+                </div>
+                <div class="current-position"></div>
+            </div>
+            <div class="pros-cons">
+                <div class="pros">
+                    <h3>✓ メリット</h3>
+                    <ul>
+                        <li>常時表示で楽曲を視覚的に識別</li>
+                        <li>コンパクトさをある程度維持</li>
+                        <li>モバイルでも機能</li>
+                        <li>実装の複雑度が低い</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h3>✗ デメリット</h3>
+                    <ul>
+                        <li>高さが8px増加（32→40px）</li>
+                        <li>サムネイルが小さく詳細不明</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 案3: 二段式レイアウト -->
+        <div class="section option3">
+            <h2>案3: 二段式レイアウト</h2>
+            <div class="description">
+                サムネイル用トラックとタイムラインバーを上下に配置。視覚的にリッチ。
+            </div>
+            <div class="song-group">
+                <div class="thumbnail-track">
+                    <div class="thumbnail-bar" style="left: 10%; width: 20%;">
+                        <img src="https://img.youtube.com/vi/shs0KM2ga-c/mqdefault.jpg" alt="千本桜">
+                    </div>
+                    <div class="thumbnail-bar" style="left: 35%; width: 15%;">
+                        <img src="https://img.youtube.com/vi/Xg-qfsKN2_E/mqdefault.jpg" alt="ロキ">
+                    </div>
+                    <div class="thumbnail-bar" style="left: 55%; width: 25%;">
+                        <img src="https://img.youtube.com/vi/TA5OFS_xX0c/mqdefault.jpg" alt="シャルル">
+                    </div>
+                </div>
+                <div class="timeline-container">
+                    <div class="timeline-bar" style="left: 10%; width: 20%;">
+                        <span class="song-title">千本桜</span>
+                    </div>
+                    <div class="timeline-bar" style="left: 35%; width: 15%; background: #5b6dee;">
+                        <span class="song-title">ロキ</span>
+                    </div>
+                    <div class="timeline-bar" style="left: 55%; width: 25%; background: #00d9a3;">
+                        <span class="song-title">シャルル</span>
+                    </div>
+                    <div class="current-position"></div>
+                </div>
+            </div>
+            <div class="pros-cons">
+                <div class="pros">
+                    <h3>✓ メリット</h3>
+                    <ul>
+                        <li>サムネイルが見やすい</li>
+                        <li>視覚的に豊かで楽しい</li>
+                        <li>楽曲の識別が容易</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h3>✗ デメリット</h3>
+                    <ul>
+                        <li>全体の高さが約2倍（54px）</li>
+                        <li>画面占有面積が大きい</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 案4: DAW風サムネイルトラック -->
+        <div class="section option4">
+            <h2>案4: DAW風サムネイルトラック</h2>
+            <div class="description">
+                プロのDAWソフトのような独立したサムネイルトラック。タイムラインと同期。
+            </div>
+            <div class="timeline-wrapper">
+                <div class="main-timeline timeline-container">
+                    <div class="timeline-bar" style="left: 10%; width: 20%;">
+                        <span class="song-title">千本桜</span>
+                    </div>
+                    <div class="timeline-bar" style="left: 35%; width: 15%; background: #5b6dee;">
+                        <span class="song-title">ロキ</span>
+                    </div>
+                    <div class="timeline-bar" style="left: 55%; width: 25%; background: #00d9a3;">
+                        <span class="song-title">シャルル</span>
+                    </div>
+                    <div class="current-position"></div>
+                </div>
+                <div class="thumbnail-track">
+                    <div class="thumbnail-item" style="left: 10%; width: 20%;">
+                        <img src="https://img.youtube.com/vi/shs0KM2ga-c/mqdefault.jpg" alt="">
+                        <span class="thumbnail-label">千本桜 - 黒うさP feat. 初音ミク</span>
+                    </div>
+                    <div class="thumbnail-item" style="left: 35%; width: 15%;">
+                        <img src="https://img.youtube.com/vi/Xg-qfsKN2_E/mqdefault.jpg" alt="">
+                        <span class="thumbnail-label">ロキ - みきとP</span>
+                    </div>
+                    <div class="thumbnail-item" style="left: 55%; width: 25%;">
+                        <img src="https://img.youtube.com/vi/TA5OFS_xX0c/mqdefault.jpg" alt="">
+                        <span class="thumbnail-label">シャルル - バルーン</span>
+                    </div>
+                    <div class="current-position"></div>
+                </div>
+            </div>
+            <div class="pros-cons">
+                <div class="pros">
+                    <h3>✓ メリット</h3>
+                    <ul>
+                        <li>DAWライクで直感的</li>
+                        <li>サムネイルの表示/非表示切替可能</li>
+                        <li>プロフェッショナルな見た目</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h3>✗ デメリット</h3>
+                    <ul>
+                        <li>全体の高さが77pxと大きい</li>
+                        <li>実装がやや複雑</li>
+                        <li>モバイルでは見づらい可能性</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 案5: サイドパネル式 -->
+        <div class="section">
+            <h2>案5: サイドパネル式（実験的）</h2>
+            <div class="description">
+                左側にサムネイルパネル、右側にタイムライン。ホバーでタイムラインがハイライト。
+            </div>
+            <div class="option5">
+                <div class="thumbnail-panel">
+                    <div class="thumbnail-card">
+                        <img src="https://img.youtube.com/vi/shs0KM2ga-c/mqdefault.jpg" alt="">
+                        <div class="thumbnail-overlay">千本桜</div>
+                    </div>
+                    <div class="thumbnail-card">
+                        <img src="https://img.youtube.com/vi/Xg-qfsKN2_E/mqdefault.jpg" alt="">
+                        <div class="thumbnail-overlay">ロキ</div>
+                    </div>
+                    <div class="thumbnail-card">
+                        <img src="https://img.youtube.com/vi/TA5OFS_xX0c/mqdefault.jpg" alt="">
+                        <div class="thumbnail-overlay">シャルル</div>
+                    </div>
+                </div>
+                <div>
+                    <div class="timeline-container">
+                        <div class="timeline-bar" style="left: 10%; width: 20%;">
+                            <span class="song-title">千本桜</span>
+                        </div>
+                        <div class="timeline-bar active" style="left: 35%; width: 15%; background: #5b6dee;">
+                            <span class="song-title">ロキ</span>
+                        </div>
+                        <div class="timeline-bar" style="left: 55%; width: 25%; background: #00d9a3;">
+                            <span class="song-title">シャルル</span>
+                        </div>
+                        <div class="current-position"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="pros-cons">
+                <div class="pros">
+                    <h3>✓ メリット</h3>
+                    <ul>
+                        <li>サムネイルが大きく見やすい</li>
+                        <li>楽曲リストとしても機能</li>
+                        <li>ユニークなレイアウト</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h3>✗ デメリット</h3>
+                    <ul>
+                        <li>横幅を大きく消費</li>
+                        <li>モバイル対応が困難</li>
+                        <li>従来のUIと大きく異なる</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- まとめ -->
+        <div class="section" style="background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border: 2px solid #ff8c42;">
+            <h2 style="color: #ff8c42;">💡 推奨案</h2>
+            <p style="line-height: 1.6;">
+                <strong>案2（タイムライン内ミニサムネイル）</strong>が最もバランスが良いと考えられます。<br>
+                理由：
+            </p>
+            <ul style="margin-left: 20px; line-height: 1.6; margin-top: 10px;">
+                <li>現在のコンパクトなデザインを大きく損なわない（高さ+8pxのみ）</li>
+                <li>常時サムネイルが表示され、視覚的な楽曲識別が可能</li>
+                <li>モバイルデバイスでも問題なく動作</li>
+                <li>実装の複雑度が低く、パフォーマンスへの影響も最小限</li>
+            </ul>
+            <p style="margin-top: 15px; color: #666; font-size: 14px;">
+                ※ より視覚的なリッチさを求める場合は案3か案4も検討の価値があります。
+            </p>
+        </div>
+    </div>
+</body>
+</html>

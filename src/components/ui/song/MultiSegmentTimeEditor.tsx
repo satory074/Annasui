@@ -16,9 +16,13 @@ interface SegmentListProps {
   segments: TimeSegment[];
   errors: Record<number, { startTime?: string; endTime?: string }>;
   previewingSegmentId: number | null;
-  onUpdateSegment: (segmentId: number, field: 'startTime' | 'endTime', value: number) => void;
+  editingSegment: SegmentEditState;
+  tempTimeValue: string;
   onTogglePreview: (segmentId: number) => void;
   onRemoveSegment: (segmentId: number) => void;
+  onStartEditing: (segmentId: number, field: 'startTime' | 'endTime', currentValue: number) => void;
+  onFinishEditing: () => void;
+  onSetTempTimeValue: (value: string) => void;
   onSeek?: (time: number) => void;
   onTogglePlayPause?: () => void;
 }
@@ -27,38 +31,23 @@ function SegmentList({
   segments,
   errors,
   previewingSegmentId,
-  onUpdateSegment,
+  editingSegment,
+  tempTimeValue,
   onTogglePreview,
   onRemoveSegment,
+  onStartEditing,
+  onFinishEditing,
+  onSetTempTimeValue,
   onSeek,
   onTogglePlayPause
 }: SegmentListProps) {
-  const [editingSegment, setEditingSegment] = useState<SegmentEditState>({ segmentId: null, field: null });
-  const [tempTimeValue, setTempTimeValue] = useState('');
-
-  // セグメント編集の開始
-  const startEditing = (segmentId: number, field: 'startTime' | 'endTime', currentValue: number) => {
-    setEditingSegment({ segmentId, field });
-    setTempTimeValue(formatTimeSimple(currentValue));
-  };
-
-  // セグメント編集の終了
-  const finishEditing = () => {
-    if (editingSegment.segmentId && editingSegment.field) {
-      const timeValue = parseTimeInput(tempTimeValue);
-      onUpdateSegment(editingSegment.segmentId, editingSegment.field, timeValue);
-    }
-    setEditingSegment({ segmentId: null, field: null });
-    setTempTimeValue('');
-  };
 
   // キーボード処理
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      finishEditing();
+      onFinishEditing();
     } else if (e.key === 'Escape') {
-      setEditingSegment({ segmentId: null, field: null });
-      setTempTimeValue('');
+      onFinishEditing();
     }
   };
 
@@ -91,8 +80,8 @@ function SegmentList({
                   <input
                     type="text"
                     value={tempTimeValue}
-                    onChange={(e) => setTempTimeValue(e.target.value)}
-                    onBlur={finishEditing}
+                    onChange={(e) => onSetTempTimeValue(e.target.value)}
+                    onBlur={onFinishEditing}
                     onKeyDown={handleKeyDown}
                     className={`w-20 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
                       segmentErrors.startTime ? 'border-red-500' : 'border-gray-300'
@@ -101,7 +90,7 @@ function SegmentList({
                   />
                 ) : (
                   <button
-                    onClick={() => startEditing(segment.id, 'startTime', segment.startTime)}
+                    onClick={() => onStartEditing(segment.id, 'startTime', segment.startTime)}
                     className={`text-sm px-2 py-1 rounded-md hover:bg-white hover:shadow-sm transition-all ${
                       segmentErrors.startTime ? 'text-red-500 bg-red-50' : 'text-gray-700 hover:text-orange-600'
                     }`}
@@ -118,8 +107,8 @@ function SegmentList({
                   <input
                     type="text"
                     value={tempTimeValue}
-                    onChange={(e) => setTempTimeValue(e.target.value)}
-                    onBlur={finishEditing}
+                    onChange={(e) => onSetTempTimeValue(e.target.value)}
+                    onBlur={onFinishEditing}
                     onKeyDown={handleKeyDown}
                     className={`w-20 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
                       segmentErrors.endTime ? 'border-red-500' : 'border-gray-300'
@@ -128,7 +117,7 @@ function SegmentList({
                   />
                 ) : (
                   <button
-                    onClick={() => startEditing(segment.id, 'endTime', segment.endTime)}
+                    onClick={() => onStartEditing(segment.id, 'endTime', segment.endTime)}
                     className={`text-sm px-2 py-1 rounded-md hover:bg-white hover:shadow-sm transition-all ${
                       segmentErrors.endTime ? 'text-red-500 bg-red-50' : 'text-gray-700 hover:text-orange-600'
                     }`}
@@ -248,6 +237,8 @@ export default function MultiSegmentTimeEditor({
   const [errors, setErrors] = useState<Record<number, { startTime?: string; endTime?: string }>>({});
   const [previewingSegmentId, setPreviewingSegmentId] = useState<number | null>(null);
   const [previewInterval, setPreviewInterval] = useState<NodeJS.Timeout | null>(null);
+  const [editingSegment, setEditingSegment] = useState<SegmentEditState>({ segmentId: null, field: null });
+  const [tempTimeValue, setTempTimeValue] = useState('');
 
   // セグメントの検証
   const validateSegments = useCallback((newSegments: TimeSegment[]) => {
@@ -279,6 +270,29 @@ export default function MultiSegmentTimeEditor({
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }, [maxDuration]);
+
+  // セグメント編集の開始
+  const startEditing = (segmentId: number, field: 'startTime' | 'endTime', currentValue: number) => {
+    setEditingSegment({ segmentId, field });
+    setTempTimeValue(formatTimeSimple(currentValue));
+  };
+
+  // セグメント編集の終了
+  const finishEditing = () => {
+    if (editingSegment.segmentId && editingSegment.field) {
+      const timeValue = parseTimeInput(tempTimeValue);
+      updateSegment(editingSegment.segmentId, editingSegment.field, timeValue);
+      
+      // 状態クリアを遅延させて更新が完了するのを待つ
+      setTimeout(() => {
+        setEditingSegment({ segmentId: null, field: null });
+        setTempTimeValue('');
+      }, 200);
+    } else {
+      setEditingSegment({ segmentId: null, field: null });
+      setTempTimeValue('');
+    }
+  };
 
   // セグメント更新
   const updateSegment = (segmentId: number, field: 'startTime' | 'endTime', value: number) => {
@@ -380,10 +394,12 @@ export default function MultiSegmentTimeEditor({
 
   // セグメント検証（segments変更時）
   useEffect(() => {
-    if (segments.length > 0) {
+    // 編集中は検証をスキップして競合を防ぐ
+    // また、tempTimeValueが設定されている間も検証をスキップ
+    if (segments.length > 0 && !editingSegment.segmentId && !tempTimeValue) {
       validateSegments(segments);
     }
-  }, [segments, allSongs, currentSongTitle, currentSongArtist, maxDuration, validateSegments]);
+  }, [segments, editingSegment.segmentId, tempTimeValue, validateSegments]);
 
 
   return (
@@ -464,9 +480,13 @@ export default function MultiSegmentTimeEditor({
         segments={segments} 
         errors={errors}
         previewingSegmentId={previewingSegmentId}
-        onUpdateSegment={updateSegment}
+        editingSegment={editingSegment}
+        tempTimeValue={tempTimeValue}
         onTogglePreview={toggleSegmentPreview}
         onRemoveSegment={removeSegment}
+        onStartEditing={startEditing}
+        onFinishEditing={finishEditing}
+        onSetTempTimeValue={setTempTimeValue}
         onSeek={onSeek}
         onTogglePlayPause={onTogglePlayPause}
       />

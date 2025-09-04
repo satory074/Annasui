@@ -131,6 +131,18 @@ NEXT_PUBLIC_SUPABASE_URL=https://dheairurkxjftugrwdjl.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 ```
 
+## バージョン履歴
+
+### v0.1.0-alpha.1 (2025-09-04)
+- **初回アルファ版リリース**
+- マルチプラットフォーム対応 (ニコニコ動画、YouTube、Spotify、Apple Music)
+- インタラクティブタイムライン編集機能
+- ユーザー認証・管理者承認システム
+- リアルタイム楽曲表示機能
+- レスポンシブデザイン対応
+
+詳細な変更履歴は [CHANGELOG.md](./CHANGELOG.md) を参照してください。
+
 ## ドキュメント
 
 詳細なドキュメントは [docs/](./docs/) ディレクトリを参照してください：
@@ -139,6 +151,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 - [API統合](./docs/api-integration.md)
 - [要件仕様](./docs/requirements.md)
 - [コントリビューションガイド](./docs/contributing.md)
+- [変更履歴](./CHANGELOG.md)
 
 ## ライセンス
 

@@ -154,6 +154,7 @@ export type SongSection = {
 - Authentication: `AuthProvider`, `AuthModal`, `UserProfileDropdown`, `UserAvatar`
 - Authorization: `AuthorizationBanner`, `AdminPage` (user approval management)
 - `ActiveSongPopup` - Real-time song display popup that appears during playback (Updated 2025-09-03)
+- Version Management: `VersionPage`, `VersionInfoModal` (dual-access version system)
 
 **Modal Interaction Flow:**
 - Timeline click → `SongEditModal` opens
@@ -181,6 +182,38 @@ export type SongSection = {
 - Integrated Vibrant Orange design system
 - Outside-click detection for mobile menu closure
 - **Search functionality moved**: Search moved from header to homepage content area
+
+#### Version Management Architecture (Added 2025-09-04)
+**Dual-Access Version Information System:**
+- **Primary Access**: ALPHA badge in AppHeader opens VersionInfoModal (reliable, route-independent)
+- **Secondary Access**: Direct `/version` route with Firebase hosting rewrite fallback
+- **Keep a Changelog**: CHANGELOG.md follows standard format for version tracking
+- **Firebase Integration**: Static route rewrites in firebase.json for routing resilience
+
+**Version Modal Features:**
+- Complete v0.1.0-alpha.1 release information display
+- Detailed technical stack, security features, and change history
+- External links to production environment and feedback channels
+- Vibrant Orange design system integration with gradient styling
+- No routing dependencies - always accessible via ALPHA badge click
+
+**Implementation Pattern:**
+```typescript
+// AppHeader integration - ALPHA badge click handler
+<button 
+  onClick={() => setIsVersionModalOpen(true)}
+  className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-orange-400 to-orange-500 text-white"
+>
+  ALPHA
+</button>
+
+// VersionInfoModal displays comprehensive release information
+const packageInfo = {
+  name: "medlean",
+  version: "0.1.0-alpha.1",
+  description: "メドレー楽曲アノテーション プラットフォーム"
+};
+```
 
 #### Search System Architecture (Updated 2025-08-31)
 **Comprehensive Search Implementation:**
@@ -835,6 +868,13 @@ database/ - Database migrations and schema
 - `src/components/pages/MedleyPlayer.tsx` - Main player component
 - `src/hooks/useNicoPlayer.ts` - Niconico postMessage integration
 - `src/hooks/usePlayerPosition.ts` - ActiveSongPopup positioning and overlap detection
+
+**Version Management System:**
+- `src/app/version/page.tsx` - Version information page route
+- `src/components/pages/VersionPage.tsx` - Version page component with comprehensive release information
+- `src/components/ui/VersionInfoModal.tsx` - Modal component for reliable version access (primary method)
+- `CHANGELOG.md` - Keep a Changelog format version tracking with detailed release notes
+- Firebase hosting rewrites in `firebase.json` for `/version` route static serving
 
 **Data:**
 - `src/lib/api/medleys.ts` - Database API with direct fetch implementation (includes `deleteMedley` function)

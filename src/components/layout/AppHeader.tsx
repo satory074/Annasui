@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 import UserProfileDropdown from "@/components/features/auth/UserProfileDropdown";
+import VersionInfoModal from "@/components/ui/VersionInfoModal";
 
 interface AppHeaderProps {
   variant?: "home" | "player" | "default";
@@ -13,6 +14,7 @@ export default function AppHeader({
   variant = "default"
 }: AppHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
 
   // Close mobile menu when clicking outside
@@ -51,12 +53,18 @@ export default function AppHeader({
           {/* Left side - Logo and Navigation */}
           <div className="flex items-center space-x-6">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-              <Logo size="md" />
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-sm">
+            <div className="flex items-center space-x-3">
+              <Link href="/" className="hover:opacity-80 transition-opacity">
+                <Logo size="md" />
+              </Link>
+              <button 
+                onClick={() => setIsVersionModalOpen(true)}
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-orange-400 to-orange-500 text-white shadow-sm hover:shadow-md transition-all hover:scale-105 cursor-pointer"
+                title="バージョン情報を表示"
+              >
                 ALPHA
-              </span>
-            </Link>
+              </button>
+            </div>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
@@ -162,6 +170,11 @@ export default function AppHeader({
           </div>
         )}
       </div>
+      
+      <VersionInfoModal 
+        isOpen={isVersionModalOpen}
+        onClose={() => setIsVersionModalOpen(false)}
+      />
     </header>
   );
 }

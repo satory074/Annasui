@@ -201,7 +201,7 @@ export default function CreateMedleyModal({
                 value={formData.videoUrl}
                 onChange={(e) => handleUrlChange(e.target.value)}
                 placeholder="https://www.nicovideo.jp/watch/sm12345678"
-                className={`flex-1 px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
+                className={`flex-1 px-3 py-2 border rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
                   errors.videoUrl ? 'border-red-500' : 'border-gray-300'
                 }`}
                 disabled={isLoading}
@@ -298,7 +298,7 @@ export default function CreateMedleyModal({
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="ボカロメドレー2025"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
                 errors.title ? 'border-red-500' : 
                 autoFetched && formData.title ? 'border-green-300 bg-green-50' : 
                 'border-gray-300'
@@ -323,7 +323,7 @@ export default function CreateMedleyModal({
               value={formData.creator}
               onChange={(e) => setFormData(prev => ({ ...prev, creator: e.target.value }))}
               placeholder="メドレー製作者"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
                 errors.creator ? 'border-red-500' : 
                 autoFetched && formData.creator ? 'border-green-300 bg-green-50' : 
                 'border-gray-300'
@@ -349,7 +349,7 @@ export default function CreateMedleyModal({
               value={formData.duration}
               onChange={(e) => setFormData(prev => ({ ...prev, duration: e.target.value }))}
               placeholder="600"
-              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
+              className={`w-full px-3 py-2 border rounded-md shadow-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-orange-600 ${
                 errors.duration ? 'border-red-500' : 
                 autoFetched && formData.duration ? 'border-green-300 bg-green-50' : 
                 'border-gray-300'

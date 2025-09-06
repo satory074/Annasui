@@ -167,6 +167,13 @@ interface NiconicoMetadataResponse {
 - **User Profiles**: Automatic profile creation with avatar and metadata from Google OAuth
 - **Admin Authorization**: Two-tier system - authentication (login) + approval (admin permission)
 
+**Secure Profile Auto-Creation System (Added 2025-09-06):**
+- **Automatic Profile Creation**: `checkUserApproval()` function creates user profiles on-demand when missing
+- **Security Separation**: Profile creation ≠ approval (maintains strict authorization control)
+- **Foreign Key Resolution**: Prevents external key constraint errors during medley creation
+- **Defensive Programming**: Handles edge cases where OAuth succeeds but profile creation fails
+- **Production Safety**: Comprehensive error handling with proper logging
+
 **Authorization Flow:**
 1. **Anonymous Users**: Read-only access to all medleys
 2. **Authenticated Users**: Can login but cannot edit until approved by admin
@@ -178,6 +185,41 @@ interface NiconicoMetadataResponse {
 - **Approved Users Table**: Controls who can edit data (admin-managed)
 - **Medleys Extension**: Added `user_id` foreign key for ownership tracking
 - **Row Level Security**: Only approved users can edit, admin can manage approvals
+
+**Critical Implementation Pattern:**
+```typescript
+// checkUserApproval with secure profile auto-creation
+async function checkUserApproval(): Promise<{ isApproved: boolean; user: User | null }> {
+  // 1. Get authenticated user
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  // 2. Check if profile exists in users table
+  const { data: userProfile, error: profileError } = await supabase
+    .from('users')
+    .select('id')
+    .eq('id', user.id)
+    .single()
+  
+  // 3. Auto-create profile if missing (but don't auto-approve)
+  if (!userProfile && profileError?.code === 'PGRST116') {
+    await supabase.from('users').insert({
+      id: user.id,
+      email: user.email,
+      name: user.user_metadata?.name || user.user_metadata?.full_name || null,
+      avatar_url: user.user_metadata?.avatar_url || null
+    })
+  }
+  
+  // 4. Check approval status separately (security maintained)
+  const { data: approval } = await supabase
+    .from('approved_users')
+    .select('id')
+    .eq('user_id', user.id)
+    .single()
+    
+  return { isApproved: !!approval, user }
+}
+```
 
 #### Data Flow Architecture
 **Database-Only Mode:**
@@ -760,6 +802,12 @@ const handleTooltipMouseLeave = () => {
 - **Edit buttons not showing**: Check if user is both authenticated AND approved
 - **Admin page access denied**: Verify user has admin permissions in `approved_users` table
 - **Authorization banner showing for admin**: Check `isApproved` state in AuthContext
+
+#### Medley Creation Errors (Fixed 2025-09-06)
+- **"Key is not present in table 'users'" error**: Fixed by secure profile auto-creation system
+- **Foreign key constraint violations**: Resolved by `checkUserApproval()` automatically creating missing user profiles
+- **OAuth success but creation fails**: System now handles edge cases where authentication succeeds but profile creation initially fails
+- **Security concerns**: Profile auto-creation maintains strict separation from approval process - no unauthorized access granted
 
 ### API Proxy Issues
 #### Thumbnail Issues

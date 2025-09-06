@@ -1,12 +1,13 @@
 import { supabase, type Database } from '@/lib/supabase'
 import type { MedleyData, SongSection, MedleyContributor } from '@/types'
 import { logger } from '@/lib/utils/logger'
+import type { User } from '@supabase/supabase-js'
 
 type MedleyRow = Database['public']['Tables']['medleys']['Row']
 type SongRow = Database['public']['Tables']['songs']['Row']
 
-// Authorization check function
-async function checkUserApproval(): Promise<{ isApproved: boolean; user: any | null }> {
+// Authorization check function with secure profile auto-creation
+async function checkUserApproval(): Promise<{ isApproved: boolean; user: User | null }> {
   if (!supabase) {
     return { isApproved: false, user: null }
   }
@@ -20,7 +21,38 @@ async function checkUserApproval(): Promise<{ isApproved: boolean; user: any | n
       return { isApproved: false, user: null }
     }
 
-    // Check if user is approved
+    // Check if user profile exists in users table
+    const { data: userProfile, error: profileError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .single()
+
+    // If profile doesn't exist, create it (but don't auto-approve)
+    if (!userProfile && profileError?.code === 'PGRST116') {
+      logger.info('📝 Creating user profile for authenticated user:', user.id)
+      
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id: user.id,
+          email: user.email,
+          name: user.user_metadata?.name || user.user_metadata?.full_name || null,
+          avatar_url: user.user_metadata?.avatar_url || null
+        })
+
+      if (insertError) {
+        logger.error('❌ Error creating user profile:', insertError)
+        return { isApproved: false, user }
+      }
+      
+      logger.info('✅ User profile created successfully for:', user.email)
+    } else if (profileError && profileError.code !== 'PGRST116') {
+      logger.error('❌ Error checking user profile:', profileError)
+      return { isApproved: false, user }
+    }
+
+    // Check if user is approved (separate from profile creation)
     const { data: approvalData, error: approvalError } = await supabase
       .from('approved_users')
       .select('id')
@@ -33,7 +65,7 @@ async function checkUserApproval(): Promise<{ isApproved: boolean; user: any | n
     }
 
     const isApproved = !!approvalData
-    logger.debug('🔐 Authorization check:', { userId: user.id, isApproved })
+    logger.debug('🔐 Authorization check:', { userId: user.id, isApproved, profileExists: !!userProfile })
     
     return { isApproved, user }
   } catch (error) {
@@ -360,7 +392,7 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
 
   // Check user authorization
   const { isApproved, user } = await checkUserApproval()
-  if (!isApproved) {
+  if (!isApproved || !user) {
     logger.warn('❌ Unauthorized: User is not approved to create medleys')
     throw new Error('User is not authorized to create medleys. Please contact the administrator for approval.')
   }
@@ -418,7 +450,7 @@ export async function updateMedley(videoId: string, updates: Partial<Omit<Medley
 
   // Check user authorization
   const { isApproved, user } = await checkUserApproval()
-  if (!isApproved) {
+  if (!isApproved || !user) {
     logger.warn('❌ Unauthorized: User is not approved to update medleys')
     throw new Error('User is not authorized to update medleys. Please contact the administrator for approval.')
   }
@@ -523,7 +555,7 @@ export async function deleteMedley(videoId: string): Promise<boolean> {
 
   // Check user authorization
   const { isApproved, user } = await checkUserApproval()
-  if (!isApproved) {
+  if (!isApproved || !user) {
     logger.warn('❌ Unauthorized: User is not approved to delete medleys')
     throw new Error('User is not authorized to delete medleys. Please contact the administrator for approval.')
   }
@@ -553,7 +585,7 @@ export async function saveMedleySongs(medleyId: string, songs: Omit<SongSection,
 
   // Check user authorization
   const { isApproved, user } = await checkUserApproval()
-  if (!isApproved) {
+  if (!isApproved || !user) {
     logger.warn('❌ Unauthorized: User is not approved to modify songs')
     throw new Error('User is not authorized to modify songs. Please contact the administrator for approval.')
   }

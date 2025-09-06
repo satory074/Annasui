@@ -3,6 +3,7 @@
  */
 
 import { extractVideoId, getYouTubeThumbnail } from './thumbnail';
+import { logger } from './logger';
 
 export interface VideoMetadata {
   title: string;
@@ -11,75 +12,133 @@ export interface VideoMetadata {
   thumbnail?: string; // サムネイル画像URL
   success: boolean;
   error?: string;
+  debugInfo?: {
+    apiUrl?: string;
+    responseStatus?: number;
+    responseText?: string;
+    errorDetails?: unknown;
+    corsError?: boolean;
+  };
 }
 
 /**
- * ニコニコ動画のメタデータをgetthumbinfo APIから取得
+ * ニコニコ動画のメタデータをプロキシAPI経由で取得
  */
 export async function getNiconicoVideoMetadata(videoId: string): Promise<VideoMetadata> {
+  // プロキシAPI経由でアクセス（CORS制限を回避）
+  const apiUrl = `/api/metadata/niconico/${videoId}`;
+  logger.debug('🎬 Fetching Niconico metadata via proxy:', { videoId, apiUrl });
+  
   try {
-    const response = await fetch(`https://ext.nicovideo.jp/api/getthumbinfo/${videoId}`, {
-      mode: 'cors'
+    const response = await fetch(apiUrl);
+    
+    logger.debug('📡 Niconico API response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      headers: Object.fromEntries(response.headers.entries())
     });
     
     if (!response.ok) {
-      return {
-        title: '',
-        creator: '',
-        thumbnail: undefined,
-        success: false,
-        error: 'ニコニコ動画APIからの取得に失敗しました'
-      };
-    }
-    
-    const xmlText = await response.text();
-    const parser = new DOMParser();
-    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-    
-    // エラーチェック
-    const errorElement = xmlDoc.querySelector('error');
-    if (errorElement) {
-      const errorCode = errorElement.getAttribute('code');
-      return {
-        title: '',
-        creator: '',
-        thumbnail: undefined,
-        success: false,
-        error: `動画が見つかりません（エラーコード: ${errorCode}）`
-      };
-    }
-    
-    // データ抽出
-    const title = xmlDoc.querySelector('title')?.textContent || '';
-    const creator = xmlDoc.querySelector('user_nickname')?.textContent || '';
-    const lengthStr = xmlDoc.querySelector('length')?.textContent || '';
-    const thumbnail = xmlDoc.querySelector('thumbnail_url')?.textContent || '';
-    
-    // 長さをmm:ss形式から秒数に変換
-    let duration: number | undefined;
-    if (lengthStr) {
-      const [minutes, seconds] = lengthStr.split(':').map(Number);
-      if (!isNaN(minutes) && !isNaN(seconds)) {
-        duration = minutes * 60 + seconds;
+      const responseText = await response.text().catch(() => 'テキスト取得失敗');
+      
+      // プロキシAPIからのエラーレスポンス（JSONフォーマット）を解析
+      let parsedError;
+      try {
+        parsedError = JSON.parse(responseText);
+      } catch {
+        parsedError = { error: responseText };
       }
+      
+      const errorResult = {
+        title: '',
+        creator: '',
+        thumbnail: undefined,
+        success: false,
+        error: parsedError.error || `プロキシAPI経由での取得に失敗しました (HTTP ${response.status})`,
+        debugInfo: {
+          ...parsedError.debugInfo,
+          proxyApiUrl: apiUrl,
+          proxyResponseStatus: response.status
+        }
+      };
+      logger.error('❌ Niconico proxy API HTTP error:', errorResult.debugInfo);
+      return errorResult;
     }
     
-    return {
-      title,
-      creator,
-      duration,
-      thumbnail: thumbnail || undefined,
-      success: true
+    // プロキシAPIからのJSONレスポンスを解析
+    const data = await response.json();
+    logger.debug('📊 Niconico proxy API JSON response:', data);
+    
+    // プロキシAPIが失敗を返した場合
+    if (!data.success) {
+      const errorResult = {
+        title: '',
+        creator: '',
+        thumbnail: undefined,
+        success: false,
+        error: data.error || 'プロキシAPI経由でのデータ取得に失敗しました',
+        debugInfo: {
+          ...data.debugInfo,
+          proxyApiUrl: apiUrl,
+          proxyResponseStatus: response.status,
+          usingProxy: true
+        }
+      };
+      logger.error('❌ Niconico proxy API returned error:', errorResult.debugInfo);
+      return errorResult;
+    }
+    
+    // 成功した場合、プロキシAPIから取得したデータをそのまま使用
+    const result = {
+      title: data.title || '',
+      creator: data.creator || '',
+      duration: data.duration,
+      thumbnail: data.thumbnail || undefined,
+      success: true,
+      debugInfo: {
+        ...data.debugInfo,
+        proxyApiUrl: apiUrl,
+        proxyResponseStatus: response.status,
+        usingProxy: true
+      }
     };
+    
+    logger.info('✅ Niconico metadata fetched successfully via proxy:', { 
+      videoId, 
+      title: result.title, 
+      creator: result.creator, 
+      duration: result.duration 
+    });
+    return result;
   } catch (error) {
-    console.warn('Failed to fetch Niconico video metadata:', error);
-    return {
+    // プロキシAPI経由でのネットワークエラー
+    const isNetworkError = error instanceof TypeError && error.message.includes('Failed to fetch');
+    
+    const errorResult = {
       title: '',
       creator: '',
       thumbnail: undefined,
       success: false,
-      error: 'ニコニコ動画の情報取得中にエラーが発生しました'
+      error: isNetworkError 
+        ? 'プロキシサーバーへの接続に失敗しました' 
+        : 'ニコニコ動画の情報取得中にエラーが発生しました',
+      debugInfo: {
+        proxyApiUrl: apiUrl,
+        responseStatus: undefined,
+        responseText: undefined,
+        errorDetails: {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : 'Unknown'
+        },
+        usingProxy: true,
+        corsError: false // プロキシ経由なのでCORSエラーではない
+      }
     };
+    
+    logger.error('❌ Failed to fetch Niconico video metadata via proxy:', errorResult.debugInfo);
+    return errorResult;
   }
 }
 
@@ -88,43 +147,85 @@ export async function getNiconicoVideoMetadata(videoId: string): Promise<VideoMe
  * 注意: oEmbedには動画長の情報が含まれないため、durationは未設定
  */
 export async function getYouTubeVideoMetadata(videoId: string): Promise<VideoMetadata> {
+  const apiUrl = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`;
+  logger.debug('🎬 Fetching YouTube metadata:', { videoId, apiUrl });
+  
   try {
-    const response = await fetch(
-      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`
-    );
+    const response = await fetch(apiUrl);
+    
+    logger.debug('📡 YouTube API response:', {
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok
+    });
     
     if (!response.ok) {
-      return {
+      const errorResult = {
         title: '',
         creator: '',
         thumbnail: undefined,
         success: false,
-        error: 'YouTube APIからの取得に失敗しました'
+        error: `YouTube APIからの取得に失敗しました (HTTP ${response.status})`,
+        debugInfo: {
+          apiUrl,
+          responseStatus: response.status,
+          responseText: await response.text().catch(() => 'テキスト取得失敗'),
+          corsError: false
+        }
       };
+      logger.error('❌ YouTube API HTTP error:', errorResult.debugInfo);
+      return errorResult;
     }
     
     const data = await response.json();
+    logger.debug('📊 YouTube API JSON response:', data);
     
     // サムネイルURLを生成（oEmbedのthumbnail_urlまたは標準的なYouTubeサムネイルURLを使用）
     const thumbnail = data.thumbnail_url || getYouTubeThumbnail(videoId);
     
-    return {
+    const result = {
       title: data.title || '',
       creator: data.author_name || '',
       // oEmbedには動画長の情報が含まれない
       duration: undefined,
       thumbnail: thumbnail || undefined,
-      success: true
+      success: true,
+      debugInfo: {
+        apiUrl,
+        responseStatus: response.status,
+        responseText: JSON.stringify(data),
+        corsError: false
+      }
     };
+    
+    logger.info('✅ YouTube metadata fetched successfully:', { videoId, title: result.title, creator: result.creator });
+    return result;
   } catch (error) {
-    console.warn('Failed to fetch YouTube video metadata:', error);
-    return {
+    const isCorsError = error instanceof TypeError && error.message.includes('Failed to fetch');
+    
+    const errorResult = {
       title: '',
       creator: '',
       thumbnail: undefined,
       success: false,
-      error: 'YouTube動画の情報取得中にエラーが発生しました'
+      error: isCorsError 
+        ? 'CORS制限によりYouTube動画情報を取得できません' 
+        : 'YouTube動画の情報取得中にエラーが発生しました',
+      debugInfo: {
+        apiUrl,
+        responseStatus: undefined,
+        responseText: undefined,
+        errorDetails: {
+          message: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+          name: error instanceof Error ? error.name : 'Unknown'
+        },
+        corsError: isCorsError
+      }
     };
+    
+    logger.error('❌ Failed to fetch YouTube video metadata:', errorResult.debugInfo);
+    return errorResult;
   }
 }
 
@@ -132,16 +233,28 @@ export async function getYouTubeVideoMetadata(videoId: string): Promise<VideoMet
  * 動画URLからメタデータを自動取得
  */
 export async function getVideoMetadata(url: string): Promise<VideoMetadata> {
+  logger.debug('🔍 Getting video metadata:', { url });
+  
   const { platform, id } = extractVideoId(url);
+  logger.debug('🎯 Extracted video info:', { platform, id });
   
   if (!platform || !id) {
-    return {
+    const errorResult = {
       title: '',
       creator: '',
       thumbnail: undefined,
       success: false,
-      error: '有効な動画URLではありません'
+      error: '有効な動画URLではありません',
+      debugInfo: {
+        apiUrl: undefined,
+        responseStatus: undefined,
+        responseText: undefined,
+        errorDetails: { url, extractedPlatform: platform, extractedId: id },
+        corsError: false
+      }
     };
+    logger.error('❌ Invalid video URL:', errorResult.debugInfo);
+    return errorResult;
   }
   
   switch (platform) {
@@ -150,13 +263,22 @@ export async function getVideoMetadata(url: string): Promise<VideoMetadata> {
     case 'youtube':
       return getYouTubeVideoMetadata(id);
     default:
-      return {
+      const errorResult = {
         title: '',
         creator: '',
         thumbnail: undefined,
         success: false,
-        error: `${platform}はサポートされていません`
+        error: `${platform}はサポートされていません`,
+        debugInfo: {
+          apiUrl: undefined,
+          responseStatus: undefined,
+          responseText: undefined,
+          errorDetails: { unsupportedPlatform: platform },
+          corsError: false
+        }
       };
+      logger.error('❌ Unsupported platform:', errorResult.debugInfo);
+      return errorResult;
   }
 }
 

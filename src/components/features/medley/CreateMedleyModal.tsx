@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import { MedleyData } from "@/types";
-import { getVideoMetadata } from "@/lib/utils/videoMetadata";
+import { getVideoMetadata, VideoMetadata } from "@/lib/utils/videoMetadata";
+import { CreateMedleyDebugPanel } from "@/components/ui/debug/CreateMedleyDebugPanel";
+import { extractVideoId } from "@/lib/utils/thumbnail";
+import { logger } from "@/lib/utils/logger";
 
 interface CreateMedleyModalProps {
   isOpen: boolean;
@@ -28,6 +31,17 @@ export default function CreateMedleyModal({
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [autoFetched, setAutoFetched] = useState(false);
+  
+  // デバッグ用の状態
+  const [debugInfo, setDebugInfo] = useState({
+    lastMetadataResponse: undefined as VideoMetadata | undefined,
+    lastError: undefined as string | undefined,
+    networkTest: undefined as {
+      timestamp: string;
+      passed: boolean;
+      details: string;
+    } | undefined
+  });
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -44,6 +58,13 @@ export default function CreateMedleyModal({
       setIsLoading(false);
       setLoadingMessage("");
       setAutoFetched(false);
+      
+      // デバッグ情報もリセット
+      setDebugInfo({
+        lastMetadataResponse: undefined,
+        lastError: undefined,
+        networkTest: undefined
+      });
     }
   }, [isOpen]);
 
@@ -84,18 +105,68 @@ export default function CreateMedleyModal({
     setErrors({});
   };
 
+  // ネットワークテスト機能
+  const runNetworkTest = async () => {
+    const timestamp = new Date().toISOString();
+    logger.debug('🧪 Running network test');
+    
+    try {
+      // 簡単な接続テスト
+      await fetch('https://httpbin.org/status/200', {
+        method: 'HEAD',
+        mode: 'no-cors'
+      });
+      
+      setDebugInfo(prev => ({
+        ...prev,
+        networkTest: {
+          timestamp,
+          passed: true,
+          details: 'インターネット接続は正常です'
+        }
+      }));
+      
+      logger.info('✅ Network test passed');
+    } catch (error) {
+      setDebugInfo(prev => ({
+        ...prev,
+        networkTest: {
+          timestamp,
+          passed: false,
+          details: `ネットワークエラー: ${error instanceof Error ? error.message : 'Unknown error'}`
+        }
+      }));
+      
+      logger.error('❌ Network test failed:', error);
+    }
+  };
+
   const handleFetchMetadata = async () => {
     if (!formData.videoUrl.trim()) {
-      setErrors({ videoUrl: "動画URLを入力してください" });
+      const errorMsg = "動画URLを入力してください";
+      setErrors({ videoUrl: errorMsg });
+      setDebugInfo(prev => ({ ...prev, lastError: errorMsg }));
       return;
     }
+
+    // ネットワークテストを実行
+    await runNetworkTest();
 
     setIsLoading(true);
     setErrors({});
     setLoadingMessage("動画情報を取得中...");
+    setDebugInfo(prev => ({ ...prev, lastError: undefined }));
+
+    logger.info('🚀 Starting metadata fetch:', { url: formData.videoUrl });
 
     try {
       const metadata = await getVideoMetadata(formData.videoUrl);
+      
+      // デバッグ情報を保存
+      setDebugInfo(prev => ({
+        ...prev,
+        lastMetadataResponse: metadata
+      }));
       
       if (metadata.success) {
         setFormData(prev => ({
@@ -112,11 +183,31 @@ export default function CreateMedleyModal({
         } else {
           setLoadingMessage("");
         }
+        
+        logger.info('✅ Metadata fetch successful:', {
+          title: metadata.title,
+          creator: metadata.creator,
+          duration: metadata.duration
+        });
       } else {
-        setErrors({ videoUrl: metadata.error || "動画情報の取得に失敗しました" });
+        const errorMsg = metadata.error || "動画情報の取得に失敗しました";
+        setErrors({ videoUrl: errorMsg });
+        setDebugInfo(prev => ({ ...prev, lastError: errorMsg }));
+        
+        logger.error('❌ Metadata fetch failed:', {
+          error: metadata.error,
+          debugInfo: metadata.debugInfo
+        });
       }
-    } catch {
-      setErrors({ videoUrl: "動画情報の取得中にエラーが発生しました" });
+    } catch (error) {
+      const errorMsg = "動画情報の取得中にエラーが発生しました";
+      setErrors({ videoUrl: errorMsg });
+      setDebugInfo(prev => ({
+        ...prev,
+        lastError: `${errorMsg}: ${error instanceof Error ? error.message : String(error)}`
+      }));
+      
+      logger.error('💥 Unexpected error during metadata fetch:', error);
     } finally {
       setIsLoading(false);
     }
@@ -182,9 +273,24 @@ export default function CreateMedleyModal({
     onCreateMedley(medleyData);
   };
 
+  // URL解析情報を取得
+  const { platform: detectedPlatform, id: extractedVideoId } = extractVideoId(formData.videoUrl);
+
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="lg">
-      <div className="p-6">
+    <>
+      <CreateMedleyDebugPanel
+        isVisible={isOpen}
+        currentUrl={formData.videoUrl}
+        detectedPlatform={detectedPlatform || ''}
+        extractedVideoId={extractedVideoId}
+        isLoading={isLoading}
+        loadingMessage={loadingMessage}
+        lastMetadataResponse={debugInfo.lastMetadataResponse}
+        lastError={debugInfo.lastError}
+        networkTest={debugInfo.networkTest}
+      />
+      <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="lg">
+        <div className="p-6">
         <h2 className="text-xl font-bold text-gray-900 mb-6">
           新規メドレーを登録
         </h2>
@@ -383,7 +489,8 @@ export default function CreateMedleyModal({
             </button>
           </div>
         </form>
-      </div>
-    </BaseModal>
+        </div>
+      </BaseModal>
+    </>
   );
 }

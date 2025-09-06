@@ -97,9 +97,10 @@ export type SongSection = {
 - **Styling**: Small buttons with orange hover effects, 5-second buttons include numeric indicators
 - **Conditional Display**: Only appears when both `onTogglePlayPause` and `onSeek` props are available
 
-#### Thumbnail API Architecture (Added 2025-08-30)
-**Critical**: CORS restrictions prevent direct access to Niconico thumbnail APIs from browsers.
+#### Proxy API Architecture (Added 2025-08-30, Updated 2025-09-05)
+**Critical**: CORS restrictions prevent direct access to Niconico APIs from browsers.
 
+##### Thumbnail API
 **Proxy Server Implementation:**
 - **API Route**: `/api/thumbnail/niconico/[videoId]/route.ts` 
 - **Multi-Source Fallback**: CDN URLs → getthumbinfo API → legacy APIs
@@ -119,6 +120,44 @@ export type SongSection = {
 - `getThumbnailUrl()` automatically routes Niconico URLs through proxy
 - No changes needed in existing thumbnail display components
 - Automatic fallback to `/default-thumbnail.svg` on complete failure
+
+##### Metadata API (Added 2025-09-05)
+**Video Metadata Extraction System:**
+- **API Route**: `/api/metadata/niconico/[videoId]/route.ts`
+- **Server-Side XML Parsing**: Uses regex-based extraction (Node.js compatible, no DOMParser)
+- **Cache Strategy**: 30min browser cache, 1hr CDN cache for successful responses
+- **Error Handling**: 5min cache for errors with detailed debug information
+- **URL Pattern**: `/api/metadata/niconico/sm500873` returns JSON metadata
+
+**Metadata Response Format:**
+```typescript
+interface NiconicoMetadataResponse {
+  success: boolean;
+  title?: string;
+  creator?: string;
+  duration?: number; // seconds
+  thumbnail?: string;
+  error?: string;
+  debugInfo?: {
+    apiUrl: string;
+    responseStatus: number;
+    responseText?: string;
+    errorDetails?: unknown;
+    corsError: boolean;
+  };
+}
+```
+
+**Critical Implementation Details:**
+- **XML Parsing**: Uses regex patterns instead of DOMParser for Node.js compatibility
+- **User-Agent**: Required for successful API calls to Niconico
+- **Error Classification**: Distinguishes between network, API, and parsing errors
+- **Debug Integration**: Comprehensive debug information for troubleshooting
+
+**Usage in Components:**
+- `getNiconicoVideoMetadata()` in `videoMetadata.ts` automatically uses proxy
+- Powers the "取得" (Retrieve) button in `CreateMedleyModal`
+- Seamless fallback from CORS errors to proxy server
 
 #### User Authentication & Authorization Architecture
 **OAuth-Based Authentication System with Admin Approval:**
@@ -722,12 +761,22 @@ const handleTooltipMouseLeave = () => {
 - **Admin page access denied**: Verify user has admin permissions in `approved_users` table
 - **Authorization banner showing for admin**: Check `isApproved` state in AuthContext
 
-### Thumbnail Issues
+### API Proxy Issues
+#### Thumbnail Issues
 - **Images not loading**: Verify proxy API route is working (`/api/thumbnail/niconico/[videoId]`)
 - **CORS errors**: Direct CDN access blocked - must use server-side proxy implementation
 - **Fallback failure**: Check all 5-tier fallback hierarchy (CDN L/M/default → getthumbinfo API → legacy)
 - **404 responses**: Some video IDs may be invalid or videos deleted from platform
 - **Cache issues**: Production deployment may need cache clearing for new proxy API
+
+#### Metadata API Issues (Added 2025-09-05)
+- **"取得" button fails**: Check `/api/metadata/niconico/[videoId]` proxy API is working
+- **DOMParser errors in production**: Server-side code must use regex-based XML parsing, not DOMParser
+- **CORS errors in browser**: Metadata fetching must go through proxy server, not direct API calls
+- **XML parsing failures**: Check regex patterns match Niconico's getthumbinfo XML response format
+- **Missing User-Agent**: Niconico API requires proper User-Agent header for successful requests
+- **Debug panel not showing**: Ensure `?debug=create` parameter enables CreateMedleyDebugPanel
+- **Cache issues**: Metadata cache is 30min for success, 5min for errors - may need cache clearing
 
 ### Individual Song Thumbnail System (Updated 2025-08-31)
 - **Priority System**: Individual song thumbnails take priority over medley thumbnails in song search
@@ -885,10 +934,13 @@ database/ - Database migrations and schema
 - `database/migrations/` - SQL migration files for Supabase setup
 - `scripts/` - Node.js scripts for database operations and testing
 
-**Thumbnail System:**
+**API Proxy System:**
 - `src/app/api/thumbnail/niconico/[videoId]/route.ts` - CORS proxy for Niconico thumbnails
+- `src/app/api/metadata/niconico/[videoId]/route.ts` - CORS proxy for Niconico video metadata (Added 2025-09-05)
 - `src/lib/utils/thumbnail.ts` - Multi-platform thumbnail URL generation
+- `src/lib/utils/videoMetadata.ts` - Video metadata extraction with proxy integration
 - `src/components/ui/song/SongThumbnail.tsx` - Thumbnail display component with retry logic
+- `src/components/ui/debug/CreateMedleyDebugPanel.tsx` - Debug panel for metadata API troubleshooting
 
 **Platform Validation System:**
 - `src/lib/utils/platformDetection.ts` - Auto-detection of platform from video ID patterns

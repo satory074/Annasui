@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { SongSection } from "@/types";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import MultiSegmentTimeEditor, { TimeSegment } from "@/components/ui/song/MultiSegmentTimeEditor";
@@ -52,6 +52,13 @@ interface SongEditModalProps {
   onChangeSong?: () => void;
   // 楽曲変更フラグ（置換判定用）
   isChangingSong?: boolean;
+  // 自動保存機能用
+  autoSave?: boolean;
+  onAutoSave?: (videoId: string, title: string, creator: string, duration: number) => Promise<boolean>;
+  videoId?: string;
+  medleyTitle?: string;
+  medleyCreator?: string;
+  medleyDuration?: number;
 }
 
 export default function SongEditModal({
@@ -73,7 +80,13 @@ export default function SongEditModal({
   allSongs = [],
   onBatchUpdate,
   onChangeSong,
-  isChangingSong = false
+  isChangingSong = false,
+  autoSave = false,
+  onAutoSave,
+  videoId = '',
+  medleyTitle = '',
+  medleyCreator = '',
+  medleyDuration = 0
 }: SongEditModalProps) {
   const [formData, setFormData] = useState<SongSection>({
     id: 0,
@@ -93,7 +106,7 @@ export default function SongEditModal({
 
   const [segments, setSegments] = useState<TimeSegment[]>([]);
 
-  // segments状態変更をログ（デバッグ用）
+  // segments状態変更をログ（デバッグ用）と自動保存のトリガー
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       logger.debug('🔄 SongEditModal: segments state changed', {
@@ -106,6 +119,7 @@ export default function SongEditModal({
         }))
       });
     }
+    
   }, [segments]);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -113,6 +127,90 @@ export default function SongEditModal({
   const [previewInterval, setPreviewInterval] = useState<NodeJS.Timeout | null>(null);
   const [applyToAllInstances, setApplyToAllInstances] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
+  const [lastAutoSaveTime, setLastAutoSaveTime] = useState<number>(0);
+
+  // 自動保存機能（関数の定義を最初に移動）
+  const performAutoSave = useCallback(async () => {
+    if (!autoSave || !onAutoSave || isAutoSaving || !videoId) {
+      return;
+    }
+
+    // 楽曲情報が不完全な場合は自動保存しない
+    if (!formData.title.trim() || formData.title.startsWith('空の楽曲') || 
+        !formData.artist.trim() || formData.artist === 'アーティスト未設定') {
+      logger.debug('🔄 Skipping auto-save: incomplete song data', {
+        title: formData.title,
+        artist: formData.artist
+      });
+      return;
+    }
+
+    // 最後の自動保存から十分な時間が経過していない場合はスキップ
+    const now = Date.now();
+    if (now - lastAutoSaveTime < 2000) { // 2秒のデバウンス
+      return;
+    }
+
+    try {
+      setIsAutoSaving(true);
+      logger.info('🔄 Auto-saving song changes...', {
+        songTitle: formData.title,
+        songArtist: formData.artist,
+        segmentsCount: segments.length
+      });
+
+      // 楽曲データを保存（内部的にupdateSongやaddSongを呼び出す）
+      const songsToSave: SongSection[] = segments.map(segment => {
+        const songData = {
+          title: formData.title,
+          artist: formData.artist,
+          startTime: segment.startTime,
+          endTime: segment.endTime,
+          originalLink: formData.originalLink,
+          color: segment.color || formData.color
+        };
+        
+        const sanitized = sanitizeSongSection(songData);
+        
+        return {
+          id: segment.id === formData.id ? formData.id : (Date.now() + Math.random()),
+          ...sanitized,
+          color: sanitized.color || "bg-blue-400",
+          links: formData.links
+        };
+      });
+
+      // 楽曲データを更新
+      if (applyToAllInstances && onBatchUpdate && song) {
+        onBatchUpdate(songsToSave);
+      } else if ((segments.length === 1 && !isNew && song) || isChangingSong) {
+        const singleSong = songsToSave[0];
+        onSave(singleSong);
+      } else if ((segments.length > 1 || isNew) && onBatchUpdate) {
+        onBatchUpdate(songsToSave);
+      } else if (segments.length === 1) {
+        const singleSong = songsToSave[0];
+        onSave(singleSong);
+      }
+
+      // メドレー全体を自動保存
+      const success = await onAutoSave(videoId, medleyTitle, medleyCreator, medleyDuration);
+      
+      if (success) {
+        setLastAutoSaveTime(now);
+        logger.info('✅ Auto-save completed successfully');
+      } else {
+        logger.warn('⚠️ Auto-save failed');
+      }
+    } catch (error) {
+      logger.error('❌ Auto-save error:', error);
+    } finally {
+      setIsAutoSaving(false);
+    }
+  }, [autoSave, onAutoSave, isAutoSaving, videoId, formData, segments, lastAutoSaveTime, 
+      applyToAllInstances, onBatchUpdate, song, isNew, isChangingSong, onSave, 
+      medleyTitle, medleyCreator, medleyDuration]);
 
   useEffect(() => {
     logger.debug('📋 useEffect triggered:', {
@@ -331,7 +429,7 @@ export default function SongEditModal({
     }
   };
 
-  // セグメント変更ハンドラー
+  // セグメント変更ハンドラー（自動保存対応）
   const handleSegmentsChange = (newSegments: TimeSegment[]) => {
     logger.debug('🔄 SongEditModal: handleSegmentsChange called', {
       currentSegments: segments.length,
@@ -399,10 +497,17 @@ export default function SongEditModal({
               {onChangeSong && (
                 <div className="text-center mb-4">
                   <button
-                    onClick={onChangeSong}
+                    onClick={async () => {
+                      // 楽曲変更前に自動保存を実行
+                      if (autoSave) {
+                        await performAutoSave();
+                      }
+                      onChangeSong();
+                    }}
                     className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-colors font-medium"
+                    disabled={isAutoSaving}
                   >
-                    🎵 楽曲データベースから選択
+                    {isAutoSaving ? '保存中...' : '🎵 楽曲データベースから選択'}
                   </button>
                 </div>
               )}
@@ -435,14 +540,26 @@ export default function SongEditModal({
               {onChangeSong && (
                 <div className="text-center">
                   <button
-                    onClick={onChangeSong}
+                    onClick={async () => {
+                      // 楽曲選択前に自動保存を実行
+                      if (autoSave) {
+                        await performAutoSave();
+                      }
+                      onChangeSong();
+                    }}
                     className="px-6 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-colors font-medium text-lg"
+                    disabled={isAutoSaving}
                   >
-                    🎵 楽曲データベースから選択
+                    {isAutoSaving ? '保存中...' : '🎵 楽曲データベースから選択'}
                   </button>
                   <p className="text-sm text-gray-600 mt-3">
                     楽曲データベースから選択して楽曲を追加してください
                   </p>
+                  {isAutoSaving && (
+                    <p className="text-sm text-orange-600 mt-2 animate-pulse">
+                      💾 自動保存中...
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -517,6 +634,23 @@ export default function SongEditModal({
           ) : null;
         })()}
 
+        {/* 自動保存ステータス表示 */}
+        {autoSave && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+              </svg>
+              <span className="text-sm font-medium text-blue-700">
+                {isAutoSaving ? '💾 自動保存中...' : '✅ 自動保存が有効です'}
+              </span>
+            </div>
+            <p className="text-xs text-blue-600 mt-1">
+              楽曲情報を変更すると自動的にデータベースに保存されます
+            </p>
+          </div>
+        )}
+
         {/* ボタン */}
         <div className="flex justify-between mt-6">
           <div>
@@ -524,6 +658,7 @@ export default function SongEditModal({
               <button
                 onClick={handleDelete}
                 className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-600"
+                disabled={isAutoSaving}
               >
                 削除
               </button>
@@ -533,23 +668,29 @@ export default function SongEditModal({
             <button
               onClick={onClose}
               className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+              disabled={isAutoSaving}
             >
-              キャンセル
+              {autoSave && !isAutoSaving ? '完了' : 'キャンセル'}
             </button>
-            {isNew && continuousMode && onSaveAndNext && (
-              <button
-                onClick={handleSaveAndNext}
-                className="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-mint-600 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-accent)' }}
-              >
-                保存して次へ
-              </button>
+            {/* 自動保存が有効でない場合のみ保存ボタンを表示 */}
+            {!autoSave && (
+              <>
+                {isNew && continuousMode && onSaveAndNext && (
+                  <button
+                    onClick={handleSaveAndNext}
+                    className="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-mint-600 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-accent)' }}
+                  >
+                    保存して次へ
+                  </button>
+                )}
+                <button
+                  onClick={handleSave}
+                  className="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-primary)' }}
+                >
+                  {isNew ? (continuousMode ? "保存して終了" : "追加") : "保存"}
+                </button>
+              </>
             )}
-            <button
-              onClick={handleSave}
-              className="px-4 py-2 text-white rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 transition-all hover:shadow-lg" style={{ background: 'var(--gradient-primary)' }}
-            >
-              {isNew ? (continuousMode ? "保存して終了" : "追加") : "保存"}
-            </button>
           </div>
         </div>
     </BaseModal>

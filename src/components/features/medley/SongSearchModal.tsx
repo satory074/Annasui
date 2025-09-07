@@ -13,6 +13,13 @@ interface SongSearchModalProps {
   onSelectSong: (song: SongDatabaseEntry) => void;
   onManualAdd: () => void; // 手動入力オプション
   onEditSong?: (song: SongDatabaseEntry) => void; // 楽曲編集用
+  // 自動保存機能用
+  autoSave?: boolean;
+  onAutoSave?: (videoId: string, title: string, creator: string, duration: number) => Promise<boolean>;
+  videoId?: string;
+  medleyTitle?: string;
+  medleyCreator?: string;
+  medleyDuration?: number;
 }
 
 export default function SongSearchModal({
@@ -20,7 +27,13 @@ export default function SongSearchModal({
   onClose,
   onSelectSong,
   onManualAdd,
-  onEditSong
+  onEditSong,
+  autoSave = false,
+  onAutoSave,
+  videoId = '',
+  medleyTitle = '',
+  medleyCreator = '',
+  medleyDuration = 0
 }: SongSearchModalProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [songDatabase, setSongDatabase] = useState<SongDatabaseEntry[]>([]);
@@ -39,6 +52,7 @@ export default function SongSearchModal({
       appleMusic?: string;
     };
   } | null>(null);
+  const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
 
   // 検索結果とページネーション
   const { searchResults, totalPages, paginatedResults } = useMemo(() => {
@@ -154,6 +168,45 @@ export default function SongSearchModal({
       ...createSongFromDatabase(dbEntry, 0, 0),
       id: Date.now() + Math.random() // 一時的なID
     };
+  };
+
+  // 楽曲選択時の自動保存処理
+  const handleSelectSongWithAutoSave = async (song: SongDatabaseEntry) => {
+    if (autoSave && onAutoSave && videoId) {
+      try {
+        setIsAutoSaving(true);
+        logger.info('🔄 Auto-saving after song selection...', {
+          songTitle: song.title,
+          songArtist: song.artist,
+          videoId
+        });
+        
+        // まず楽曲データを更新
+        onSelectSong(song);
+        
+        // 少し待ってからメドレー全体を自動保存
+        setTimeout(async () => {
+          try {
+            const success = await onAutoSave(videoId, medleyTitle, medleyCreator, medleyDuration);
+            if (success) {
+              logger.info('✅ Auto-save after song selection completed successfully');
+            } else {
+              logger.warn('⚠️ Auto-save after song selection failed');
+            }
+          } catch (error) {
+            logger.error('❌ Auto-save after song selection error:', error);
+          } finally {
+            setIsAutoSaving(false);
+          }
+        }, 500); // 500ms後に実行
+      } catch (error) {
+        logger.error('❌ Error during auto-save song selection:', error);
+        setIsAutoSaving(false);
+      }
+    } else {
+      // 自動保存が無効の場合は通常の処理
+      onSelectSong(song);
+    }
   };
 
   return (
@@ -321,7 +374,7 @@ export default function SongSearchModal({
                   ) : (
                     /* 表示モード */
                     <div
-                      onClick={() => onSelectSong(song)}
+                      onClick={() => handleSelectSongWithAutoSave(song)}
                       className="cursor-pointer"
                     >
                       <div className="flex items-start gap-4">
@@ -349,11 +402,12 @@ export default function SongSearchModal({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              onSelectSong(song);
+                              handleSelectSongWithAutoSave(song);
                             }}
                             className="px-4 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 whitespace-nowrap"
+                            disabled={isAutoSaving}
                           >
-                            選択
+                            {isAutoSaving ? '保存中...' : '選択'}
                           </button>
                         </div>
                       </div>
@@ -384,6 +438,18 @@ export default function SongSearchModal({
             )}
           </div>
         </div>
+        
+        {/* 自動保存ステータス表示 */}
+        {autoSave && isAutoSaving && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-sm font-medium text-blue-700">
+                💾 楽曲選択を自動保存中...
+              </span>
+            </div>
+          </div>
+        )}
         
         {/* ページネーション */}
         {totalPages > 1 && (
@@ -447,8 +513,9 @@ export default function SongSearchModal({
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+            disabled={isAutoSaving}
           >
-            キャンセル
+            {autoSave && !isAutoSaving ? '完了' : 'キャンセル'}
           </button>
         </div>
     </BaseModal>

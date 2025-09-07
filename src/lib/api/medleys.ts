@@ -251,8 +251,6 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
   try {
     logger.debug('🔍 Fetching medley data for:', videoId)
 
-    let medleyData: unknown[] = [];
-    let songData: unknown[] = [];
 
     // Try Supabase client first, fallback to direct fetch
     if (supabase) {

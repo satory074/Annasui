@@ -61,6 +61,7 @@ export default function MedleyPlayer({
     
     // 編集モード関連の状態
     const [isEditMode, setIsEditMode] = useState<boolean>(false);
+    const [autoSaveEnabled, setAutoSaveEnabled] = useState<boolean>(false);
     const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
     const [editingSong, setEditingSong] = useState<SongSection | null>(null);
     const [isNewSong, setIsNewSong] = useState<boolean>(false);
@@ -115,6 +116,7 @@ export default function MedleyPlayer({
         editingSongs,
         hasChanges,
         isSaving,
+        isAutoSaving,
         updateSong,
         addSong,
         deleteSong,
@@ -122,7 +124,8 @@ export default function MedleyPlayer({
         resetChanges,
         batchUpdate,
         undo,
-        redo
+        redo,
+        enableAutoSave
     } = useMedleyEdit(medleySongs);
     
     // ニコニコプレイヤーの統合
@@ -1243,17 +1246,39 @@ export default function MedleyPlayer({
                                                                 const success = await saveMedley(videoId, title, creator, effectiveDuration);
                                                                 
                                                                 if (success) {
+                                                                    // 保存成功時に自動保存を有効化
+                                                                    enableAutoSave(videoId, title, creator, effectiveDuration);
+                                                                    setAutoSaveEnabled(true);
+                                                                    
                                                                     alert('メドレーを保存しました！ページを再読み込みして通常の表示に切り替えます。');
                                                                     window.location.reload();
                                                                 } else {
                                                                     alert('メドレーの保存に失敗しました。しばらく時間をおいて再度お試しください。');
                                                                 }
                                                             }}
-                                                            disabled={isSaving}
-                                                            className={`px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-colors duration-200 font-medium ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            disabled={isSaving || isAutoSaving}
+                                                            className={`px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-colors duration-200 font-medium ${(isSaving || isAutoSaving) ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         >
-                                                            {isSaving ? '保存中...' : 'メドレーを保存'}
+                                                            {(isSaving || isAutoSaving) ? '保存中...' : 'メドレーを保存'}
                                                         </button>
+                                                        
+                                                        {/* 自動保存ステータス表示 */}
+                                                        {autoSaveEnabled && (
+                                                            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                                                <div className="flex items-center gap-2">
+                                                                    <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                                                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
+                                                                    </svg>
+                                                                    <span className="text-sm font-medium text-blue-700">
+                                                                        {isAutoSaving ? '🖥️ 自動保存中...' : '✅ 自動保存が有効です'}
+                                                                    </span>
+                                                                </div>
+                                                                <p className="text-xs text-blue-600 mt-1">
+                                                                    楽曲情報を変更すると自動的にデータベースに保存されます
+                                                                </p>
+                                                            </div>
+                                                        )}
+                                                        
                                                         <p className="text-xs text-gray-500 mt-2">
                                                             保存後はページが再読み込みされ、通常のタイムライン表示に変わります
                                                         </p>

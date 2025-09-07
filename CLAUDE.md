@@ -397,6 +397,14 @@ const handleDeleteMedley = async (medley: MedleyData) => {
 - **Remaining edit controls**: Edit mode toggle, Undo/Redo buttons only
 - **Focused workflow**: Editing now primarily relies on timeline interaction (double-click to edit) and keyboard shortcuts
 
+**Auto-Save System (Added 2025-09-07):**
+- **Automatic Persistence**: Song data automatically saved to database 2 seconds after changes without requiring manual save button
+- **Smart Validation**: Prevents auto-save of incomplete songs (empty titles, "空の楽曲" prefixes, "アーティスト未設定" artists)
+- **Edit Mode Integration**: Auto-save enabled when edit mode is activated, disabled when deactivated
+- **Visual Feedback**: "自動保存中..." loading indicator shows during save operations
+- **Debounced Saves**: Multiple rapid changes consolidated into single save operation after 2-second delay
+- **Error Handling**: Graceful fallback if auto-save fails, with user notification
+
 **Keyboard Shortcuts System:**
 - **Spacebar**: Play/pause toggle (global, works outside edit mode)
 - **S key**: Set start time (edit mode only)
@@ -779,6 +787,59 @@ const handleTooltipMouseLeave = () => {
 };
 ```
 
+**Auto-Save Pattern**: Debounced auto-save with validation and proper cleanup:
+```typescript
+// Auto-save configuration with useRef for stable reference
+const autoSaveConfigRef = useRef<{
+  enabled: boolean;
+  videoId: string;
+  medleyTitle: string;
+  medleyCreator: string;
+  duration: number;
+}>({ enabled: false, videoId: '', medleyTitle: '', medleyCreator: '', duration: 0 });
+
+const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+// Debounced auto-save function
+const triggerAutoSave = useCallback(() => {
+  if (autoSaveTimeoutRef.current) {
+    clearTimeout(autoSaveTimeoutRef.current);
+  }
+  
+  autoSaveTimeoutRef.current = setTimeout(() => {
+    performAutoSave();
+  }, 2000); // 2 second debounce
+}, [performAutoSave]);
+
+// Auto-save with validation
+const performAutoSave = useCallback(async () => {
+  const config = autoSaveConfigRef.current;
+  if (!config.enabled || isAutoSaving || !config.videoId) return;
+
+  // Validate songs before saving
+  const invalidSongs = editingSongs.filter(song => {
+    const isTitleEmpty = !song.title || song.title.trim() === '' || song.title.startsWith('空の楽曲');
+    const isArtistEmpty = !song.artist || song.artist.trim() === '' || song.artist === 'アーティスト未設定';
+    return isTitleEmpty || isArtistEmpty;
+  });
+
+  if (invalidSongs.length > 0) return; // Skip auto-save for invalid songs
+
+  setIsAutoSaving(true);
+  // Perform save operation
+  setIsAutoSaving(false);
+}, [editingSongs, isAutoSaving]);
+
+// Cleanup on unmount
+useEffect(() => {
+  return () => {
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+  };
+}, []);
+```
+
 ## Common Issues and Solutions
 
 ### Player Integration
@@ -968,6 +1029,15 @@ const handleTooltipMouseLeave = () => {
 - **Original video link not working**: Verify `generateOriginalVideoUrl()` function returns valid URL for the platform
 - **Metadata not loading**: Check Niconico metadata API proxy is working and `videoMetadata` state is populated
 
+### Auto-Save Issues (Added 2025-09-07)
+- **Auto-save not triggering**: Verify edit mode is active and `enableAutoSave` has been called with proper configuration
+- **Auto-save skipping songs**: Check for incomplete song data (empty titles, "空の楽曲" prefixes, "アーティスト未設定" artists)
+- **Multiple auto-saves firing**: Ensure debounce timeout (2 seconds) is properly clearing previous timeouts
+- **Auto-save failing silently**: Check `updateMedley` and `createMedley` API functions are working and user is approved
+- **Visual feedback missing**: Verify `isAutoSaving` state is properly connected to UI loading indicators
+- **Auto-save continuing after edit mode disabled**: Ensure `disableAutoSave` properly clears timeout and resets configuration
+- **Memory leaks from timeouts**: Verify useEffect cleanup removes timeout references on component unmount
+
 ## File Organization
 
 ```
@@ -1002,8 +1072,9 @@ database/ - Database migrations and schema
 - `CHANGELOG.md` - Keep a Changelog format version tracking with detailed release notes
 - Firebase hosting rewrites in `firebase.json` for `/version` route static serving
 
-**Data:**
+**Data & Auto-Save:**
 - `src/lib/api/medleys.ts` - Database API with direct fetch implementation (includes `deleteMedley` function)
+- `src/hooks/useMedleyEdit.ts` - Core medley editing hook with auto-save functionality (Added 2025-09-07)
 - `src/lib/utils/songDatabase.ts` - Song search and caching for cross-medley search
 - `src/lib/utils/videoMetadata.ts` - Video metadata extraction
 

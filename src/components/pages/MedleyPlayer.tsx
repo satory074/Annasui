@@ -20,8 +20,11 @@ import { logger } from "@/lib/utils/logger";
 import { PlayerLoadingMessage } from "@/components/ui/loading/PlayerSkeleton";
 import { useAuth } from "@/contexts/AuthContext";
 import AuthorizationBanner from "@/components/ui/AuthorizationBanner";
+import AuthModal from "@/components/features/auth/AuthModal";
 import { ActiveSongPopup } from "@/components/ui/song/ActiveSongPopup";
 import { ActiveSongDebugPanel } from "@/components/ui/debug/ActiveSongDebugPanel";
+import { getNiconicoVideoMetadata } from "@/lib/utils/videoMetadata";
+import MedleyHeader from "@/components/features/medley/MedleyHeader";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -71,6 +74,13 @@ export default function MedleyPlayer({
     
     // 手動楽曲追加モーダル関連の状態
     const [manualAddModalOpen, setManualAddModalOpen] = useState<boolean>(false);
+    
+    // 認証モーダル関連の状態
+    const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+    
+    // メタデータ関連の状態
+    const [videoMetadata, setVideoMetadata] = useState<{title: string, creator: string} | null>(null);
+    const [fetchingMetadata, setFetchingMetadata] = useState<boolean>(false);
 
     // 楽曲選択とツールチップ関連の状態
     const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
@@ -89,6 +99,35 @@ export default function MedleyPlayer({
 
     // メドレーデータの取得
     const { medleySongs, medleyTitle, medleyCreator, medleyDuration, medleyData, loading, error } = useMedleyData(videoId);
+    
+    // 新規メドレー用にメタデータを取得
+    useEffect(() => {
+        // メドレーデータがない場合かつニコニコ動画の場合のみメタデータを取得
+        if (medleySongs.length === 0 && !loading && !error && platform === 'niconico' && videoId.startsWith('sm')) {
+            const fetchMetadata = async () => {
+                setFetchingMetadata(true);
+                try {
+                    logger.debug('📹 Fetching metadata for new medley:', videoId);
+                    const metadata = await getNiconicoVideoMetadata(videoId);
+                    if (metadata.success) {
+                        setVideoMetadata({
+                            title: metadata.title,
+                            creator: metadata.creator
+                        });
+                        logger.debug('✅ Metadata fetched successfully:', metadata.title);
+                    } else {
+                        logger.warn('⚠️ Failed to fetch metadata:', metadata.error);
+                    }
+                } catch (error) {
+                    logger.error('❌ Error fetching metadata:', error);
+                } finally {
+                    setFetchingMetadata(false);
+                }
+            };
+            
+            fetchMetadata();
+        }
+    }, [medleySongs.length, loading, error, platform, videoId]);
     
     // 編集機能
     const {
@@ -803,6 +842,15 @@ export default function MedleyPlayer({
                     <AuthorizationBanner />
                 </div>
 
+                {/* メドレー基本情報 - 常に表示 */}
+                {!loading && !error && (
+                    <MedleyHeader
+                        title={medleyTitle || (videoMetadata ? videoMetadata.title : undefined)}
+                        creator={medleyCreator || (videoMetadata ? videoMetadata.creator : undefined)}
+                        originalVideoUrl={generateOriginalVideoUrl()}
+                    />
+                )}
+
                 {/* 楽曲リスト（統合コントロール付き） */}
                 {!loading && displaySongs.length > 0 && (
                     <SongListGrouped
@@ -837,9 +885,9 @@ export default function MedleyPlayer({
                         onQuickSetEndTime={user && isApproved ? handleQuickSetEndTime : undefined}
                         onQuickAddMarker={user && isApproved ? handleQuickAddMarker : undefined}
                         tempStartTime={tempStartTime}
-                        medleyTitle={medleyTitle}
-                        medleyCreator={medleyCreator}
-                        originalVideoUrl={generateOriginalVideoUrl()}
+                        medleyTitle="" // MedleyHeaderで表示するため空にする
+                        medleyCreator="" // MedleyHeaderで表示するため空にする
+                        originalVideoUrl=""
                         onToggleEditMode={user && isApproved ? handleToggleEditMode : undefined}
                         canUndo={editingSongs.length > 0}
                         canRedo={false}
@@ -860,11 +908,136 @@ export default function MedleyPlayer({
                     </div>
                 )}
 
-                {/* メドレーデータがない場合の表示 */}
+                {/* メドレーデータがない場合の表示 - 新規作成UI */}
                 {!loading && !error && medleySongs.length === 0 && (
-                    <div className="p-8 text-center text-gray-600">
-                        <p className="text-lg mb-2">メドレーデータが見つかりません</p>
-                        <p className="text-sm">動画ID「{videoId}」のアノテーションデータが登録されていません。</p>
+                    <div className="p-6">
+                        <div className="max-w-2xl mx-auto">
+                            <div className="text-center mb-6">
+                                <div className="inline-flex items-center justify-center w-16 h-16 bg-orange-100 rounded-full mb-4">
+                                    <svg className="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-lg font-medium text-gray-900 mb-2">楽曲タイムラインを作成</h3>
+                                <p className="text-sm text-gray-600">
+                                    動画の再生に合わせて楽曲情報を追加し、アノテーション付きメドレーを完成させましょう。
+                                </p>
+                            </div>
+                            
+                            {user && isApproved ? (
+                                <div className="space-y-4">
+                                    <button
+                                        onClick={() => setIsEditMode(true)}
+                                        className="w-full px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-colors duration-200 font-medium"
+                                    >
+                                        編集モードを開始
+                                    </button>
+                                    <p className="text-xs text-gray-500">
+                                        編集モードでは、動画の再生時間に楽曲情報を追加できます。
+                                        <br />
+                                        <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">M</kbd> キーで楽曲を追加、
+                                        <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">S</kbd>/<kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">E</kbd> キーで開始・終了時間を設定
+                                    </p>
+                                    
+                                    {/* 空のタイムライン表示 */}
+                                    {isEditMode && (
+                                        <div className="mt-6 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                                            <div className="text-center text-gray-500 mb-4">
+                                                <p className="text-sm font-medium">楽曲タイムライン</p>
+                                                <p className="text-xs">動画の再生に合わせて楽曲情報を追加してください</p>
+                                            </div>
+                                            
+                                            {/* 簡易タイムライン表示 */}
+                                            <div className="relative h-8 bg-gray-200 rounded-full overflow-hidden">
+                                                <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-600">
+                                                    動画時間: {Math.floor(effectiveDuration / 60)}:{String(Math.floor(effectiveDuration % 60)).padStart(2, '0')}
+                                                </div>
+                                                {/* 現在再生位置の表示 */}
+                                                {effectiveDuration > 0 && (
+                                                    <div
+                                                        className="absolute top-0 bottom-0 w-1 bg-orange-500"
+                                                        style={{
+                                                            left: `${(currentTime / effectiveDuration) * 100}%`
+                                                        }}
+                                                    />
+                                                )}
+                                            </div>
+                                            
+                                            <div className="mt-4 text-center space-x-2">
+                                                <button
+                                                    onClick={() => handleQuickAddMarker(currentTime)}
+                                                    disabled={!playerReady}
+                                                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                                                >
+                                                    現在位置に楽曲追加
+                                                </button>
+                                                <button
+                                                    onClick={() => setSongSearchModalOpen(true)}
+                                                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+                                                >
+                                                    楽曲データベースから選択
+                                                </button>
+                                            </div>
+                                            
+                                            {/* 楽曲が追加された場合の保存機能 */}
+                                            {editingSongs.length > 0 && (
+                                                <div className="mt-6 pt-4 border-t border-gray-300">
+                                                    <div className="text-center">
+                                                        <p className="text-sm text-gray-700 mb-4">
+                                                            {editingSongs.length}曲の楽曲が追加されました。
+                                                            <br />
+                                                            メドレーデータを保存しますか？
+                                                        </p>
+                                                        <button
+                                                            onClick={async () => {
+                                                                // メタデータが取得できている場合はそれを使用、なければデフォルト値
+                                                                const title = videoMetadata?.title || `${videoId} メドレー`;
+                                                                const creator = videoMetadata?.creator || user?.user_metadata?.name || user?.email || '匿名ユーザー';
+                                                                
+                                                                logger.debug('💾 Saving new medley:', { videoId, title, creator, songCount: editingSongs.length });
+                                                                const success = await saveMedley(videoId, title, creator, effectiveDuration);
+                                                                
+                                                                if (success) {
+                                                                    alert('メドレーを保存しました！ページを再読み込みして通常の表示に切り替えます。');
+                                                                    window.location.reload();
+                                                                } else {
+                                                                    alert('メドレーの保存に失敗しました。しばらく時間をおいて再度お試しください。');
+                                                                }
+                                                            }}
+                                                            disabled={isSaving}
+                                                            className={`px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-colors duration-200 font-medium ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                        >
+                                                            {isSaving ? '保存中...' : 'メドレーを保存'}
+                                                        </button>
+                                                        <p className="text-xs text-gray-500 mt-2">
+                                                            保存後はページが再読み込みされ、通常のタイムライン表示に変わります
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="text-center">
+                                    <p className="text-sm text-gray-600 mb-4">
+                                        メドレーデータを作成するには、ログインして管理者の承認が必要です。
+                                    </p>
+                                    {!user ? (
+                                        <button
+                                            onClick={() => setShowAuthModal(true)}
+                                            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
+                                        >
+                                            ログイン
+                                        </button>
+                                    ) : (
+                                        <div className="text-sm text-orange-600">
+                                            管理者の承認をお待ちください
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -1001,6 +1174,14 @@ export default function MedleyPlayer({
                 activeSongs={displaySongs.filter(song => 
                     currentTime >= song.startTime && currentTime < song.endTime + 0.1
                 )}
+            />
+
+            {/* 認証モーダル */}
+            <AuthModal
+                isOpen={showAuthModal}
+                onClose={() => setShowAuthModal(false)}
+                title="メドレー編集にはログインが必要です"
+                description="メドレーの楽曲データを作成・編集するには、Googleアカウントでログインして管理者の承認が必要です。"
             />
         </div>
     );

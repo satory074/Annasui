@@ -229,6 +229,7 @@ async function checkUserApproval(): Promise<{ isApproved: boolean; user: User | 
 
 #### Component Architecture
 - `MedleyPlayer` - Core reusable player with platform detection and song change state management
+- `MedleyHeader` - Separated medley basic info display (title/creator) that always shows regardless of song count (Added 2025-09-07)
 - `SongList` - Unified timeline with editing and interaction
 - Platform-specific players: `NicoPlayer`, `YouTubePlayer`
 - Modals: `SongEditModal` (with song change feature), `SongSearchModal` (supports change mode), `CreateMedleyModal`
@@ -242,6 +243,26 @@ async function checkUserApproval(): Promise<{ isApproved: boolean; user: User | 
 - "楽曲を変更" button → `SongSearchModal` opens in change mode (`isChangingSong: true`)
 - Song selection → Updates `editingSong` state with new song data, preserving time segments
 - Modal closes → Returns to `SongEditModal` with updated song information
+
+#### MedleyHeader Architecture (Added 2025-09-07)
+**Separated Basic Information Display:**
+- **Component**: `MedleyHeader.tsx` - Dedicated component for medley title and creator display
+- **Always Visible**: Shows medley basic info regardless of song count (fixes empty medley display issue)
+- **UI Consistency**: Maintains uniform appearance between populated and empty medleys
+- **Sticky Positioning**: Uses `sticky top-16 z-50` to position below main AppHeader
+- **Link Integration**: Title becomes clickable link to original video when `originalVideoUrl` provided
+
+**Implementation Pattern:**
+```typescript
+// MedleyPlayer.tsx integration
+{!loading && !error && (
+    <MedleyHeader
+        title={medleyTitle || (videoMetadata ? videoMetadata.title : undefined)}
+        creator={medleyCreator || (videoMetadata ? videoMetadata.creator : undefined)}
+        originalVideoUrl={generateOriginalVideoUrl()}
+    />
+)}
+```
 
 #### Header Architecture (Updated 2025-08-31)
 **Unified AppHeader System:**
@@ -940,6 +961,13 @@ const handleTooltipMouseLeave = () => {
 - **Tooltip flickering**: Check that mouse events are properly debounced and timeout values are appropriate (200ms recommended)
 - **Tooltip positioning issues**: Verify BaseTooltip component handles viewport bounds and collision detection correctly
 
+### MedleyHeader Display Issues (Added 2025-09-07)
+- **Header not showing for empty medleys**: Verify `MedleyHeader` component is called outside conditional song list rendering
+- **Title/creator missing**: Check that `medleyTitle` and `medleyCreator` states are properly set from API or metadata
+- **Header overlapping content**: Ensure proper z-index hierarchy (`z-50`) and sticky positioning (`top-16`)
+- **Original video link not working**: Verify `generateOriginalVideoUrl()` function returns valid URL for the platform
+- **Metadata not loading**: Check Niconico metadata API proxy is working and `videoMetadata` state is populated
+
 ## File Organization
 
 ```
@@ -963,6 +991,7 @@ database/ - Database migrations and schema
 - `src/components/pages/HomePageClient.tsx` - Client-side homepage with search functionality
 - `src/app/[platform]/[videoId]/page.tsx` - Platform players (Niconico/YouTube)
 - `src/components/pages/MedleyPlayer.tsx` - Main player component
+- `src/components/features/medley/MedleyHeader.tsx` - Medley basic info display (title/creator) separated from song list (Added 2025-09-07)
 - `src/hooks/useNicoPlayer.ts` - Niconico postMessage integration
 - `src/hooks/usePlayerPosition.ts` - ActiveSongPopup positioning and overlap detection
 

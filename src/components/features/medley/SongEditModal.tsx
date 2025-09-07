@@ -50,6 +50,8 @@ interface SongEditModalProps {
   onBatchUpdate?: (songs: SongSection[]) => void;
   // 楽曲変更用
   onChangeSong?: () => void;
+  // 楽曲変更フラグ（置換判定用）
+  isChangingSong?: boolean;
 }
 
 export default function SongEditModal({
@@ -70,7 +72,8 @@ export default function SongEditModal({
   onTogglePlayPause,
   allSongs = [],
   onBatchUpdate,
-  onChangeSong
+  onChangeSong,
+  isChangingSong = false
 }: SongEditModalProps) {
   const [formData, setFormData] = useState<SongSection>({
     id: 0,
@@ -245,14 +248,42 @@ export default function SongEditModal({
         };
       });
 
+      // 保存パス判定のデバッグログ
+      logger.info('🔄 handleSave: Save path determination', {
+        applyToAllInstances,
+        segmentsLength: segments.length,
+        isNew,
+        hasSong: !!song,
+        hasOnBatchUpdate: !!onBatchUpdate,
+        isChangingSong,
+        songId: song?.id,
+        songTitle: song?.title,
+        isEmpty: song?.title?.startsWith('空の楽曲')
+      });
+
       if (applyToAllInstances && onBatchUpdate && song) {
+        logger.info('📝 [PATH 1] Using batchUpdate - applying to all instances');
         // 全てのインスタンスに適用（時刻情報は各セグメント固有）
         onBatchUpdate(songsToSave);
-      } else if (onBatchUpdate) {
-        // 複数セグメントの場合はバッチ更新を使用
+      } else if ((segments.length === 1 && !isNew && song) || isChangingSong) {
+        logger.info('📝 [PATH 2] Using updateSong - replacing existing song', {
+          reason: isChangingSong ? 'Song changing mode' : 'Single segment existing song',
+          preservedId: song?.id,
+          newTitle: songsToSave[0]?.title
+        });
+        // 既存の楽曲を置換する場合（新規作成ではない）または楽曲変更の場合は updateSong を使用
+        const singleSong = songsToSave[0];
+        onSave(singleSong);
+      } else if ((segments.length > 1 || isNew) && onBatchUpdate) {
+        logger.info('📝 [PATH 3] Using batchUpdate - multiple segments or new song', {
+          reason: segments.length > 1 ? 'Multiple segments' : 'New song',
+          segmentsCount: segments.length
+        });
+        // 複数セグメントの場合や新規楽曲の場合のみバッチ更新を使用
         onBatchUpdate(songsToSave);
       } else {
-        // 単一セグメントの場合は従来の保存方法
+        logger.info('📝 [PATH 4] Fallback - using onSave for single segment');
+        // フォールバック：単一セグメントの場合
         if (segments.length === 1) {
           const singleSong = songsToSave[0];
           onSave(singleSong);

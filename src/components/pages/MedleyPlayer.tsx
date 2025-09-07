@@ -80,7 +80,7 @@ export default function MedleyPlayer({
     
     // メタデータ関連の状態
     const [videoMetadata, setVideoMetadata] = useState<{title: string, creator: string} | null>(null);
-    const [fetchingMetadata, setFetchingMetadata] = useState<boolean>(false);
+    const [, setFetchingMetadata] = useState<boolean>(false);
 
     // 楽曲選択とツールチップ関連の状態
     const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
@@ -89,45 +89,26 @@ export default function MedleyPlayer({
     const [tooltipPosition, setTooltipPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const [isTooltipVisible, setIsTooltipVisible] = useState<boolean>(false);
     
-    const [isHoveringTooltip, setIsHoveringTooltip] = useState<boolean>(false);
-    const [isHoveringSong, setIsHoveringSong] = useState<boolean>(false);
+    const [, setIsHoveringTooltip] = useState<boolean>(false);
+    const [, setIsHoveringSong] = useState<boolean>(false);
     const [hideTooltipTimeout, setHideTooltipTimeout] = useState<NodeJS.Timeout | null>(null);
 
     // 仮アノテーション作成用の状態
     const [tempStartTime, setTempStartTime] = useState<number | null>(null);
     const [untitledSongCounter, setUntitledSongCounter] = useState<number>(1);
 
+    // Mキー長押し機能用の状態管理
+    const [tempTimelineBar, setTempTimelineBar] = useState<{
+        startTime: number;
+        endTime: number;
+        isActive: boolean;
+    } | null>(null);
+    const [isLongPress, setIsLongPress] = useState<boolean>(false);
+    const [isPressingM, setIsPressingM] = useState<boolean>(false);
+    const mKeyLongPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+
     // メドレーデータの取得
     const { medleySongs, medleyTitle, medleyCreator, medleyDuration, medleyData, loading, error } = useMedleyData(videoId);
-    
-    // 新規メドレー用にメタデータを取得
-    useEffect(() => {
-        // メドレーデータがない場合かつニコニコ動画の場合のみメタデータを取得
-        if (medleySongs.length === 0 && !loading && !error && platform === 'niconico' && videoId.startsWith('sm')) {
-            const fetchMetadata = async () => {
-                setFetchingMetadata(true);
-                try {
-                    logger.debug('📹 Fetching metadata for new medley:', videoId);
-                    const metadata = await getNiconicoVideoMetadata(videoId);
-                    if (metadata.success) {
-                        setVideoMetadata({
-                            title: metadata.title,
-                            creator: metadata.creator
-                        });
-                        logger.debug('✅ Metadata fetched successfully:', metadata.title);
-                    } else {
-                        logger.warn('⚠️ Failed to fetch metadata:', metadata.error);
-                    }
-                } catch (error) {
-                    logger.error('❌ Error fetching metadata:', error);
-                } finally {
-                    setFetchingMetadata(false);
-                }
-            };
-            
-            fetchMetadata();
-        }
-    }, [medleySongs.length, loading, error, platform, videoId]);
     
     // 編集機能
     const {
@@ -190,6 +171,60 @@ export default function MedleyPlayer({
             // 再生状態の変化はuseNicoPlayerが自動処理
         }
     });
+    
+    // 新規メドレー用にメタデータを取得
+    useEffect(() => {
+        // メドレーデータがない場合かつニコニコ動画の場合のみメタデータを取得
+        if (medleySongs.length === 0 && !loading && !error && platform === 'niconico' && videoId.startsWith('sm')) {
+            const fetchMetadata = async () => {
+                setFetchingMetadata(true);
+                try {
+                    logger.debug('📹 Fetching metadata for new medley:', videoId);
+                    const metadata = await getNiconicoVideoMetadata(videoId);
+                    if (metadata.success) {
+                        setVideoMetadata({
+                            title: metadata.title,
+                            creator: metadata.creator
+                        });
+                        logger.debug('✅ Metadata fetched successfully:', metadata.title);
+                    } else {
+                        logger.warn('⚠️ Failed to fetch metadata:', metadata.error);
+                    }
+                } catch (error) {
+                    logger.error('❌ Error fetching metadata:', error);
+                } finally {
+                    setFetchingMetadata(false);
+                }
+            };
+            
+            fetchMetadata();
+        }
+    }, [medleySongs.length, loading, error, platform, videoId]);
+    
+    // tempTimelineBarのリアルタイム更新
+    useEffect(() => {
+        if (tempTimelineBar && tempTimelineBar.isActive) {
+            logger.debug('🎵 Setting up interval for tempTimelineBar update');
+            const interval = setInterval(() => {
+                setTempTimelineBar(prev => {
+                    if (prev && prev.isActive) {
+                        const updated = {
+                            ...prev,
+                            endTime: currentTime
+                        };
+                        logger.debug('🎵 Updating tempTimelineBar endTime:', updated.endTime);
+                        return updated;
+                    }
+                    return prev;
+                });
+            }, 100); // Update every 100ms
+            
+            return () => {
+                logger.debug('🎵 Clearing interval for tempTimelineBar update');
+                clearInterval(interval);
+            };
+        }
+    }, [tempTimelineBar?.isActive, currentTime]);
     
     // durationを決定（静的データを優先、プレイヤーデータはフォールバック）
     const effectiveDuration = medleyDuration || duration;
@@ -282,11 +317,126 @@ export default function MedleyPlayer({
         };
     }, [editModalOpen, songSearchModalOpen, manualAddModalOpen, playerReady, togglePlayPause]);
 
+    // S/E/Mキーボードショートカット（編集モード用）
+    useEffect(() => {
+        if (!isEditMode || !user || !isApproved) return;
+
+        logger.debug('🔧 Setting up S/E/M keyboard event listeners for edit mode');
+        
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.repeat) return;
+            logger.debug('⌨️ S/E/M Key pressed:', e.key, 'edit mode:', isEditMode);
+
+            // モーダルが開いている場合は無効化
+            const isModalOpen = editModalOpen || songSearchModalOpen || manualAddModalOpen;
+            if (isModalOpen) return;
+
+            switch (e.key.toLowerCase()) {
+                case 's':
+                    if (!e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        logger.debug('🟦 S key pressed, calling handleQuickSetStartTime');
+                        handleQuickSetStartTime(currentTime);
+                    }
+                    break;
+                case 'e':
+                    if (!e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        logger.debug('🟢 E key pressed, calling handleQuickSetEndTime');
+                        handleQuickSetEndTime(currentTime);
+                    }
+                    break;
+                case 'm':
+                    if (!e.ctrlKey && !e.metaKey) {
+                        e.preventDefault();
+                        setIsPressingM(true);
+                        setIsLongPress(false); // リセット
+                        logger.debug('🎵 M key pressed, currentTime:', currentTime);
+                        
+                        // Clear any existing timer
+                        if (mKeyLongPressTimerRef.current) {
+                            clearTimeout(mKeyLongPressTimerRef.current);
+                        }
+                        
+                        logger.debug('🎵 Setting up M key long press timer');
+                        const longPressTimer = setTimeout(() => {
+                            logger.debug('🎵 M key long press detected, entering long press mode at time:', currentTime);
+                            setIsLongPress(true);
+                            setTempTimelineBar({
+                                startTime: currentTime,
+                                endTime: currentTime,
+                                isActive: true
+                            });
+                        }, 500); // 500ms delay for long press
+                        
+                        mKeyLongPressTimerRef.current = longPressTimer;
+                    }
+                    break;
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            switch (e.key.toLowerCase()) {
+                case 'm':
+                    if (!e.ctrlKey && !e.metaKey) {
+                        setIsPressingM(false);
+                        
+                        // Clear long press timer if still running
+                        if (mKeyLongPressTimerRef.current) {
+                            logger.debug('🎵 Clearing M key long press timer');
+                            clearTimeout(mKeyLongPressTimerRef.current);
+                            mKeyLongPressTimerRef.current = null;
+                        }
+                        
+                        // Check if this was a long press or short press
+                        if (isLongPress) {
+                            // Long press: Handle temporary timeline bar completion
+                            if (tempTimelineBar && tempTimelineBar.isActive) {
+                                logger.debug('🎵 M key released (long press), completing temporary timeline bar', tempTimelineBar);
+                                
+                                // Only create song if the bar has meaningful duration (at least 1 second)
+                                const duration = tempTimelineBar.endTime - tempTimelineBar.startTime;
+                                if (duration >= 1.0) {
+                                    logger.debug('🎵 Creating song from temp bar, duration:', duration);
+                                    handleAddSongFromTempBar(tempTimelineBar.startTime, tempTimelineBar.endTime);
+                                } else {
+                                    logger.debug('🎵 Temp bar duration too short:', duration);
+                                }
+                                
+                                // Clear temporary bar
+                                setTempTimelineBar(null);
+                            }
+                        } else {
+                            // Short press: Create default 30-second song
+                            logger.debug('🎵 M key released (short press), creating default song');
+                            handleQuickAddMarker(currentTime);
+                        }
+                        
+                        // Reset long press flag
+                        setIsLongPress(false);
+                    }
+                    break;
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+        
+        return () => {
+            logger.debug('🔧 Cleaning up S/E/M keyboard event listeners');
+            document.removeEventListener('keydown', handleKeyDown);
+            document.removeEventListener('keyup', handleKeyUp);
+        };
+    }, [isEditMode, user, isApproved, currentTime, editModalOpen, songSearchModalOpen, manualAddModalOpen, isLongPress, tempTimelineBar]);
+
     // コンポーネントのアンマウント時にタイムアウトをクリーンアップ
     useEffect(() => {
         return () => {
             if (hideTooltipTimeout) {
                 clearTimeout(hideTooltipTimeout);
+            }
+            if (mKeyLongPressTimerRef.current) {
+                clearTimeout(mKeyLongPressTimerRef.current);
             }
         };
     }, [hideTooltipTimeout]);
@@ -365,6 +515,20 @@ export default function MedleyPlayer({
 
     // 編集機能のハンドラ
     const handleEditSong = (song: SongSection) => {
+        logger.info('🎯 handleEditSong called', {
+            songId: song.id,
+            songTitle: song.title,
+            isEmpty: song.title.startsWith('空の楽曲'),
+            startTime: song.startTime,
+            endTime: song.endTime,
+            currentStates: {
+                editingSong: !!editingSong,
+                isNewSong: isNewSong,
+                editModalOpen: editModalOpen,
+                isChangingSong: isChangingSong
+            }
+        });
+        
         setEditingSong(song);
         setIsNewSong(false);
         setEditModalOpen(true);
@@ -376,11 +540,39 @@ export default function MedleyPlayer({
         setSongSearchModalOpen(false);
         setSelectedDatabaseSong(dbSong);
         
+        // デバッグ用ログ - 詳細な状態確認
+        logger.info('🎵 handleSelectSongFromDatabase called - DETAILED STATE CHECK', {
+            isChangingSong: isChangingSong,
+            editModalOpen: editModalOpen,
+            editingSong: editingSong ? {
+                id: editingSong.id,
+                title: editingSong.title,
+                startTime: editingSong.startTime,
+                endTime: editingSong.endTime,
+                isEmpty: editingSong.title.startsWith('空の楽曲')
+            } : null,
+            selectedSong: dbSong ? { title: dbSong.title, artist: dbSong.artist } : null,
+            // 条件の詳細チェック
+            condition1: (isChangingSong || (editModalOpen && editingSong)),
+            condition2: !!editingSong,
+            finalCondition: ((isChangingSong || (editModalOpen && editingSong)) && editingSong)
+        });
+        
         // 楽曲DBから基本情報を取得
         const songTemplate = createSongFromDatabase(dbSong, 0, 0);
         
-        if (isChangingSong && editModalOpen && editingSong) {
-            // 楽曲変更モードの場合は、時間情報を保持したまま楽曲情報を更新
+        // 楽曲置換の判定を簡素化 - editingSongが存在する場合は常に置換
+        if (editingSong) {
+            logger.info('🔄 [REPLACEMENT PATH] Replacing existing song with database selection', {
+                preservedId: editingSong.id,
+                preservedStartTime: editingSong.startTime,
+                preservedEndTime: editingSong.endTime,
+                newTitle: songTemplate.title,
+                newArtist: songTemplate.artist,
+                replacingEmptySong: editingSong.title.startsWith('空の楽曲')
+            });
+            
+            // 既存楽曲がある場合は必ず置換 - ID、時間情報を保持して楽曲情報のみ更新
             setEditingSong({
                 ...editingSong,
                 title: songTemplate.title,
@@ -388,16 +580,22 @@ export default function MedleyPlayer({
                 originalLink: songTemplate.originalLink,
                 links: songTemplate.links
             });
+            
+            // 置換時はisNewSongをfalseに設定して、必ずupdateSongが呼ばれるようにする
+            setIsNewSong(false);
             setIsChangingSong(false);
-        } else if (editModalOpen && editingSong) {
-            // 編集モーダルが既に開いている場合は、現在の楽曲情報を更新
-            setEditingSong({
-                ...editingSong,
-                title: songTemplate.title,
-                artist: songTemplate.artist,
-                originalLink: songTemplate.originalLink
-            });
+            
+            logger.info('✅ Song replacement completed - will call updateSong on save');
         } else {
+            logger.info('➕ [NEW SONG PATH] Creating new song from database selection', {
+                reason: 'No editingSong exists',
+                isChangingSong: isChangingSong,
+                editModalOpen: editModalOpen,
+                newId: Date.now(),
+                newTitle: songTemplate.title,
+                newArtist: songTemplate.artist
+            });
+            
             // 新規追加の場合
             setEditingSong({
                 id: Date.now(), // 一時的なID
@@ -419,9 +617,26 @@ export default function MedleyPlayer({
             // 楽曲をデータベースに追加
             const addedSong = await addManualSong(songData);
             
-            // 楽曲検索モーダルを開き直して、追加された楽曲を検索可能にする
             setManualAddModalOpen(false);
-            setSongSearchModalOpen(true);
+            
+            // 置換モードの場合は、追加した楽曲で直接置換処理を実行
+            if (editingSong && (isChangingSong || editModalOpen)) {
+                logger.info('🔄 Manual song added in replacement context - executing direct replacement', {
+                    editingSongId: editingSong.id,
+                    editingSongTitle: editingSong.title,
+                    newSongTitle: addedSong.title,
+                    newSongArtist: addedSong.artist,
+                    isChangingSong: isChangingSong,
+                    editModalOpen: editModalOpen
+                });
+                
+                // 直接置換処理を実行（SongSearchModalを再開せずに）
+                handleSelectSongFromDatabase(addedSong);
+            } else {
+                // 新規追加の場合のみ楽曲検索モーダルを開き直す
+                logger.info('➕ Manual song added in new song context - reopening search modal');
+                setSongSearchModalOpen(true);
+            }
             
             // 成功メッセージ（オプション）
             logger.info(`楽曲「${addedSong.title}」を楽曲データベースに追加しました`);
@@ -433,6 +648,23 @@ export default function MedleyPlayer({
 
     // 楽曲変更の開始
     const handleChangeSong = () => {
+        logger.info('🔄 handleChangeSong called', {
+            currentStates: {
+                editingSong: editingSong ? {
+                    id: editingSong.id,
+                    title: editingSong.title,
+                    isEmpty: editingSong.title.startsWith('空の楽曲')
+                } : null,
+                isNewSong: isNewSong,
+                editModalOpen: editModalOpen,
+                isChangingSong: isChangingSong
+            },
+            aboutToSet: {
+                isChangingSong: true,
+                songSearchModalOpen: true
+            }
+        });
+        
         setIsChangingSong(true);
         setSongSearchModalOpen(true);
     };
@@ -456,9 +688,24 @@ export default function MedleyPlayer({
     };
 
     const handleSaveSong = (song: SongSection) => {
+        logger.info('💾 handleSaveSong called', {
+            isNewSong: isNewSong,
+            songId: song.id,
+            songTitle: song.title,
+            songArtist: song.artist,
+            currentEditingSongs: editingSongs.map(s => ({ id: s.id, title: s.title })),
+            willCallAddSong: isNewSong,
+            willCallUpdateSong: !isNewSong
+        });
+        
         if (isNewSong) {
+            logger.info('➕ Calling addSong - will create NEW song');
             addSong(song);
         } else {
+            logger.info('🔄 Calling updateSong - will replace EXISTING song', {
+                searchingForId: song.id,
+                availableIds: editingSongs.map(s => s.id)
+            });
             updateSong(song);
         }
         
@@ -881,10 +1128,9 @@ export default function MedleyPlayer({
                         onResetChanges={user && isApproved ? () => resetChanges(medleySongs) : undefined}
                         hasChanges={hasChanges}
                         isSaving={isSaving}
-                        onQuickSetStartTime={user && isApproved ? handleQuickSetStartTime : undefined}
-                        onQuickSetEndTime={user && isApproved ? handleQuickSetEndTime : undefined}
-                        onQuickAddMarker={user && isApproved ? handleQuickAddMarker : undefined}
                         tempStartTime={tempStartTime}
+                        tempTimelineBar={tempTimelineBar}
+                        isPressingM={isPressingM}
                         medleyTitle="" // MedleyHeaderで表示するため空にする
                         medleyCreator="" // MedleyHeaderで表示するため空にする
                         originalVideoUrl=""
@@ -893,7 +1139,6 @@ export default function MedleyPlayer({
                         canRedo={false}
                         onUndo={undo}
                         onRedo={redo}
-                        onAddSongFromTempBar={user && isApproved ? handleAddSongFromTempBar : undefined}
                     />
                 )}
 
@@ -1061,6 +1306,7 @@ export default function MedleyPlayer({
                 isFromDatabase={selectedDatabaseSong !== null}
                 // 楽曲変更用
                 onChangeSong={handleChangeSong}
+                isChangingSong={isChangingSong}
                 // 連続入力モード用
                 continuousMode={continuousInputMode}
                 onSaveAndNext={handleSaveAndNext}

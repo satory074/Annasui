@@ -67,10 +67,50 @@ export function useMedleyEdit(
 
   // 楽曲を更新
   const updateSong = useCallback((updatedSong: SongSection) => {
+    logger.info('🔄 updateSong called in useMedleyEdit', {
+      updatedSongId: updatedSong.id,
+      updatedSongTitle: updatedSong.title,
+      updatedSongArtist: updatedSong.artist
+    });
+    
     setEditingSongs(prev => {
-      const newSongs = prev.map(song =>
-        song.id === updatedSong.id ? updatedSong : song
+      logger.info('🔍 updateSong: searching in current songs', {
+        searchingForId: updatedSong.id,
+        currentSongs: prev.map(s => ({ id: s.id, title: s.title })),
+        matchFound: prev.some(s => s.id === updatedSong.id)
+      });
+      
+      const newSongs = prev.map(song => {
+        const isMatch = song.id === updatedSong.id;
+        if (isMatch) {
+          logger.info('✅ Found matching song to update', {
+            originalTitle: song.title,
+            newTitle: updatedSong.title,
+            originalArtist: song.artist,
+            newArtist: updatedSong.artist
+          });
+        }
+        return isMatch ? updatedSong : song;
+      });
+      
+      const wasUpdated = newSongs.some((song, index) => 
+        song.id === updatedSong.id && prev[index].title !== updatedSong.title
       );
+      
+      if (!wasUpdated) {
+        logger.warn('⚠️ updateSong: No song was actually updated - possible ID mismatch', {
+          searchedForId: updatedSong.id,
+          availableIds: prev.map(s => s.id),
+          updatedSongTitle: updatedSong.title,
+          possibleDuplicate: 'This may result in duplicate songs being created'
+        });
+      }
+      
+      logger.info('🔄 updateSong result', {
+        wasUpdated: wasUpdated,
+        resultingSongs: newSongs.map(s => ({ id: s.id, title: s.title }))
+      });
+      
       addToHistory(newSongs);
       detectChanges(newSongs);
       return newSongs;

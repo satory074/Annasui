@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { SongSection } from "@/types";
 import { formatTime } from "@/lib/utils/time";
 import PlayPauseButton from "@/components/ui/PlayPauseButton";
@@ -27,10 +27,13 @@ interface SongListProps {
   onResetChanges?: () => void;
   hasChanges?: boolean;
   isSaving?: boolean;
-  onQuickSetStartTime?: (time: number) => void;
-  onQuickSetEndTime?: (time: number) => void;
-  onQuickAddMarker?: (time: number) => void;
   tempStartTime?: number | null;
+  tempTimelineBar?: {
+    startTime: number;
+    endTime: number;
+    isActive: boolean;
+  } | null;
+  isPressingM?: boolean;
   medleyTitle?: string;
   medleyCreator?: string;
   originalVideoUrl?: string;
@@ -40,8 +43,6 @@ interface SongListProps {
   canRedo?: boolean;
   onUndo?: () => void;
   onRedo?: () => void;
-  // Temporary timeline bar - for adding songs from M key long press
-  onAddSongFromTempBar?: (startTime: number, endTime: number) => void;
 }
 
 // 楽曲グループの型定義
@@ -66,10 +67,9 @@ export default function SongListGrouped({
   onSelectSong,
   onSongHover,
   onSongHoverEnd,
-  onQuickSetStartTime,
-  onQuickSetEndTime,
-  onQuickAddMarker,
   tempStartTime = null,
+  tempTimelineBar = null,
+  isPressingM = false,
   medleyTitle,
   medleyCreator,
   originalVideoUrl,
@@ -78,66 +78,15 @@ export default function SongListGrouped({
   canRedo = false,
   onUndo,
   onRedo,
-  onAddSongFromTempBar,
 }: SongListProps) {
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
   const [dragMode, setDragMode] = useState<'start' | 'end' | 'move' | null>(null);
   const [dragStart, setDragStart] = useState<{ x: number; initialTime: number; timelineWidth: number } | null>(null);
-  const [isPressingS, setIsPressingS] = useState(false);
-  const [isPressingE, setIsPressingE] = useState(false);  
-  const [isPressingM, setIsPressingM] = useState(false);
-  
-
-  // 一時的なタイムラインバーの状態管理（Mキー長押し用）
-  const [tempTimelineBar, setTempTimelineBar] = useState<{
-    startTime: number;
-    endTime: number;
-    isActive: boolean;
-  } | null>(null);
-  const mKeyLongPressTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const tempTimelineBarRef = useRef<{ startTime: number; endTime: number; isActive: boolean; } | null>(null);
-  const [isLongPress, setIsLongPress] = useState<boolean>(false);
-  
-  // Ref を state と同期
-  useEffect(() => {
-    tempTimelineBarRef.current = tempTimelineBar;
-  }, [tempTimelineBar]);
+  // 実際に表示に使用するキーボード状態（すべてfalse - MedleyPlayerで管理）
+  const effectiveIsPressingS = false;
+  const effectiveIsPressingE = false;
 
   const effectiveTimelineDuration = actualPlayerDuration || duration;
-
-  // Update temporary timeline bar continuously while M key is held
-  useEffect(() => {
-    if (tempTimelineBar && tempTimelineBar.isActive) {
-      logger.debug('🎵 Setting up interval for tempTimelineBar update');
-      const interval = setInterval(() => {
-        setTempTimelineBar(prev => {
-          if (prev && prev.isActive) {
-            const updated = {
-              ...prev,
-              endTime: currentTime
-            };
-            logger.debug('🎵 Updating tempTimelineBar endTime:', updated.endTime);
-            return updated;
-          }
-          return prev;
-        });
-      }, 100); // Update every 100ms
-      
-      return () => {
-        logger.debug('🎵 Clearing interval for tempTimelineBar update');
-        clearInterval(interval);
-      };
-    }
-  }, [tempTimelineBar?.isActive, currentTime]);
-
-  // Cleanup timer on unmount
-  useEffect(() => {
-    return () => {
-      if (mKeyLongPressTimerRef.current) {
-        clearTimeout(mKeyLongPressTimerRef.current);
-      }
-    };
-  }, []);
 
   // 楽曲をタイトル・アーティストでグループ化
   const groupedSongs = useMemo(() => {
@@ -287,131 +236,8 @@ export default function SongListGrouped({
     }
   }, [draggingSong, dragMode, handleMouseMove, handleMouseUp]);
 
-  // キーボードイベントリスナー（安定した登録のため、useEffect内で関数を定義）
-  useEffect(() => {
-    if (!isEditMode) return;
-
-    logger.debug('🔧 Setting up keyboard event listeners for edit mode');
-    
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.repeat) return;
-      logger.debug('⌨️ Key pressed:', e.key, 'edit mode:', isEditMode);
-
-      switch (e.key.toLowerCase()) {
-        case 's':
-          if (!e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            setIsPressingS(true);
-            logger.debug('🟦 S key pressed, calling onQuickSetStartTime');
-            onQuickSetStartTime?.(currentTime);
-          }
-          break;
-        case 'e':
-          if (!e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            setIsPressingE(true);
-            logger.debug('🟢 E key pressed, calling onQuickSetEndTime');
-            onQuickSetEndTime?.(currentTime);
-          }
-          break;
-        case 'm':
-          if (!e.ctrlKey && !e.metaKey) {
-            e.preventDefault();
-            setIsPressingM(true);
-            setIsLongPress(false); // リセット
-            logger.debug('🎵 M key pressed, currentTime:', currentTime);
-            
-            // 編集モードの場合のみ長押し検出を開始
-            if (isEditMode) {
-              // Clear any existing timer
-              if (mKeyLongPressTimerRef.current) {
-                clearTimeout(mKeyLongPressTimerRef.current);
-              }
-              
-              logger.debug('🎵 Setting up M key long press timer');
-              const longPressTimer = setTimeout(() => {
-                logger.debug('🎵 M key long press detected, entering long press mode at time:', currentTime);
-                setIsLongPress(true);
-                setTempTimelineBar({
-                  startTime: currentTime,
-                  endTime: currentTime,
-                  isActive: true
-                });
-              }, 500); // 500ms delay for long press
-              
-              mKeyLongPressTimerRef.current = longPressTimer;
-            }
-          }
-          break;
-      }
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      switch (e.key.toLowerCase()) {
-        case 's':
-          if (!e.ctrlKey && !e.metaKey) {
-            setIsPressingS(false);
-          }
-          break;
-        case 'e':
-          if (!e.ctrlKey && !e.metaKey) {
-            setIsPressingE(false);
-          }
-          break;
-        case 'm':
-          if (!e.ctrlKey && !e.metaKey) {
-            setIsPressingM(false);
-            
-            // Clear long press timer if still running
-            if (mKeyLongPressTimerRef.current) {
-              logger.debug('🎵 Clearing M key long press timer');
-              clearTimeout(mKeyLongPressTimerRef.current);
-              mKeyLongPressTimerRef.current = null;
-            }
-            
-            // Check if this was a long press or short press
-            if (isLongPress) {
-              // Long press: Handle temporary timeline bar completion
-              const currentTempBar = tempTimelineBarRef.current;
-              if (currentTempBar && currentTempBar.isActive) {
-                logger.debug('🎵 M key released (long press), completing temporary timeline bar', currentTempBar);
-                
-                // Only create song if the bar has meaningful duration (at least 1 second)
-                const duration = currentTempBar.endTime - currentTempBar.startTime;
-                if (duration >= 1.0 && onAddSongFromTempBar) {
-                  logger.debug('🎵 Creating song from temp bar, duration:', duration);
-                  onAddSongFromTempBar(currentTempBar.startTime, currentTempBar.endTime);
-                } else {
-                  logger.debug('🎵 Temp bar duration too short:', duration);
-                }
-                
-                // Clear temporary bar
-                setTempTimelineBar(null);
-              }
-            } else {
-              // Short press: Create default 30-second song
-              logger.debug('🎵 M key released (short press), creating default song');
-              if (isEditMode && onQuickAddMarker) {
-                onQuickAddMarker(currentTime);
-              }
-            }
-            
-            // Reset long press flag
-            setIsLongPress(false);
-          }
-          break;
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keyup', handleKeyUp);
-    
-    return () => {
-      logger.debug('🔧 Cleaning up keyboard event listeners');
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('keyup', handleKeyUp);
-    };
-  }, [isEditMode, currentTime, onQuickSetStartTime, onQuickSetEndTime, onQuickAddMarker, onAddSongFromTempBar, isLongPress]);
+  // Note: キーボードイベントハンドリングはMedleyPlayerで管理されるため、
+  // SongListGrouped内では重複したイベントリスナーを削除
 
   const currentSongs_computed = getCurrentSongs();
 
@@ -535,8 +361,8 @@ export default function SongListGrouped({
               </h3>
               {isEditMode && (
                 <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                  キーボード: <kbd className={`px-1 rounded transition-all ${isPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200'}`}>S</kbd>開始時刻 
-                  <kbd className={`px-1 rounded transition-all ${isPressingE ? 'bg-mint-600 text-white animate-pulse' : 'bg-gray-200'}`}>E</kbd>終了時刻 
+                  キーボード: <kbd className={`px-1 rounded transition-all ${effectiveIsPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200'}`}>S</kbd>開始時刻 
+                  <kbd className={`px-1 rounded transition-all ${effectiveIsPressingE ? 'bg-mint-600 text-white animate-pulse' : 'bg-gray-200'}`}>E</kbd>終了時刻 
                   <kbd className={`px-1 rounded transition-all ${tempTimelineBar?.isActive ? 'bg-purple-600 text-white animate-pulse' : isPressingM ? 'bg-indigo-600 text-white animate-pulse' : 'bg-gray-200'}`}>M</kbd>{tempTimelineBar?.isActive ? '空楽曲作成中' : 'マーカー追加'}
                   {tempTimelineBar?.isActive && <span className="ml-1 text-purple-600 font-medium">（長押し中）</span>}
                 </div>
@@ -736,7 +562,7 @@ export default function SongListGrouped({
                   />
 
                   {/* キー押下時のインジケーター */}
-                  {(isPressingS || isPressingE || isPressingM) && (
+                  {(effectiveIsPressingS || effectiveIsPressingE || isPressingM) && (
                     <div
                       className="absolute z-20 flex flex-col items-center"
                       style={{
@@ -745,16 +571,16 @@ export default function SongListGrouped({
                       }}
                     >
                       <div className={`w-1 h-full ${
-                        isPressingS ? 'bg-orange-600' : 
-                        isPressingE ? 'bg-mint-600' : 
+                        effectiveIsPressingS ? 'bg-orange-600' : 
+                        effectiveIsPressingE ? 'bg-mint-600' : 
                         isPressingM ? 'bg-indigo-600' : 'bg-gray-400'
                       } opacity-80`} />
                       <div className={`text-xs px-1 py-0.5 rounded text-white font-semibold ${
-                        isPressingS ? 'bg-orange-600' :
-                        isPressingE ? 'bg-mint-600' :
+                        effectiveIsPressingS ? 'bg-orange-600' :
+                        effectiveIsPressingE ? 'bg-mint-600' :
                         isPressingM ? 'bg-indigo-600' : 'bg-gray-400'
                       }`}>
-                        {isPressingS ? 'S' : isPressingE ? 'E' : isPressingM ? 'M' : ''}
+                        {effectiveIsPressingS ? 'S' : effectiveIsPressingE ? 'E' : isPressingM ? 'M' : ''}
                       </div>
                     </div>
                   )}

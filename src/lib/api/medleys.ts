@@ -214,7 +214,7 @@ export async function getMedleyContributors(medleyId: string): Promise<MedleyCon
 
     const contributorsData = await directFetch(
       `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/medley_contributors?select=*&medley_id=eq.${medleyId}`
-    ) as any[];
+    ) as Array<{id: number, medley_id: number, user_id: string, name: string, email: string, avatar_url?: string, edit_count?: number, first_contribution?: string, last_contribution?: string, is_creator?: boolean}>;
 
     if (!contributorsData || contributorsData.length === 0) {
       logger.debug('No contributors found for medley:', medleyId)
@@ -226,11 +226,11 @@ export async function getMedleyContributors(medleyId: string): Promise<MedleyCon
       userId: contributor.user_id,
       name: contributor.name || contributor.email?.split('@')[0] || 'Anonymous',
       email: contributor.email,
-      avatarUrl: contributor.avatar_url,
-      editCount: contributor.edit_count,
-      firstContribution: contributor.first_contribution,
-      lastContribution: contributor.last_contribution,
-      isCreator: contributor.is_creator
+      avatarUrl: contributor.avatar_url || null,
+      editCount: contributor.edit_count || 0,
+      firstContribution: contributor.first_contribution || '',
+      lastContribution: contributor.last_contribution || '',
+      isCreator: contributor.is_creator || false
     }));
 
     logger.debug(`✅ Found ${contributors.length} contributors for medley:`, medleyId)
@@ -251,8 +251,8 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
   try {
     logger.debug('🔍 Fetching medley data for:', videoId)
 
-    let medleyData: unknown[];
-    let songData: unknown[];
+    let medleyData: unknown[] = [];
+    let songData: unknown[] = [];
 
     // Try Supabase client first, fallback to direct fetch
     if (supabase) {
@@ -302,29 +302,29 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
 
     // Fallback to direct fetch
     logger.debug('🔧 Using direct fetch for medley data')
-    medleyData = await directFetch(
+    const medleyDataDirect = await directFetch(
       `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/medleys?select=*&video_id=eq.${videoId}`
     ) as unknown[];
 
-    if (!medleyData || medleyData.length === 0) {
+    if (!medleyDataDirect || medleyDataDirect.length === 0) {
       logger.debug('No medley found for video ID:', videoId)
       return null
     }
 
-    const medley = medleyData[0] as Record<string, unknown>;
+    const medley = medleyDataDirect[0] as Record<string, unknown>;
 
     // Get the songs for this medley using direct fetch
-    songData = await directFetch(
+    const songDataDirect = await directFetch(
       `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/songs?select=*&medley_id=eq.${medley.id}&order=order_index`
     ) as unknown[];
 
     logger.debug('✅ Successfully fetched medley data via direct fetch:', {
       title: medley.title,
-      songCount: songData.length
+      songCount: songDataDirect.length
     })
 
     // Convert medley data
-    const medleyResult = convertDbRowToMedleyData(medley as MedleyRow, (songData || []) as SongRow[])
+    const medleyResult = convertDbRowToMedleyData(medley as MedleyRow, (songDataDirect || []) as SongRow[])
     
     // Fetch contributors if medley has an ID
     if (medley.id) {

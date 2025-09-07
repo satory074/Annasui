@@ -35,7 +35,7 @@ export default function AdminPage() {
 
       try {
         // Admin check: user can manage approvals (based on RLS policy)
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('approved_users')
           .select('id')
           .limit(1);

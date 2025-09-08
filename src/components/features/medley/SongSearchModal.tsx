@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { getSongDatabase, searchSongs, SongDatabaseEntry, createSongFromDatabase } from "@/lib/utils/songDatabase";
+import { getSongDatabase, searchSongs, SongDatabaseEntry, SearchResult, createSongFromDatabase } from "@/lib/utils/songDatabase";
 import { SongSection } from "@/types";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import SongInfoDisplay from "@/components/ui/song/SongInfoDisplay";
@@ -55,16 +55,26 @@ export default function SongSearchModal({
   const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
 
   // 検索結果とページネーション
-  const { searchResults, totalPages, paginatedResults } = useMemo(() => {
+  const { searchResults, totalPages, paginatedResults, resultsByMatchType } = useMemo(() => {
     const results = searchSongs(songDatabase, searchTerm);
     const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const paginatedResults = results.slice(startIndex, startIndex + ITEMS_PER_PAGE);
     
+    // 一致タイプ別に分類
+    const resultsByMatchType = {
+      exact: results.filter(r => r.matchType === 'exact'),
+      startsWith: results.filter(r => r.matchType === 'startsWith'),
+      wordMatch: results.filter(r => r.matchType === 'wordMatch'),
+      partialMatch: results.filter(r => r.matchType === 'partialMatch'),
+      fuzzyMatch: results.filter(r => r.matchType === 'fuzzyMatch')
+    };
+    
     return {
       searchResults: results,
       totalPages,
-      paginatedResults
+      paginatedResults,
+      resultsByMatchType
     };
   }, [songDatabase, searchTerm, currentPage]);
 
@@ -170,8 +180,24 @@ export default function SongSearchModal({
     };
   };
 
+  // 一致タイプのラベルと色を取得
+  const getMatchTypeInfo = (matchType: SearchResult['matchType']) => {
+    switch (matchType) {
+      case 'exact':
+        return { label: '完全一致', color: 'bg-green-100 text-green-800 border-green-200' };
+      case 'startsWith':
+        return { label: '前方一致', color: 'bg-blue-100 text-blue-800 border-blue-200' };
+      case 'wordMatch':
+        return { label: '単語一致', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
+      case 'partialMatch':
+        return { label: '部分一致', color: 'bg-orange-100 text-orange-800 border-orange-200' };
+      case 'fuzzyMatch':
+        return { label: 'あいまい一致', color: 'bg-gray-100 text-gray-800 border-gray-200' };
+    }
+  };
+
   // 楽曲選択時の自動保存処理
-  const handleSelectSongWithAutoSave = async (song: SongDatabaseEntry) => {
+  const handleSelectSongWithAutoSave = async (song: SearchResult | SongDatabaseEntry) => {
     if (autoSave && onAutoSave && videoId) {
       try {
         setIsAutoSaving(true);
@@ -238,14 +264,34 @@ export default function SongSearchModal({
         
         {/* 結果件数とページネーション情報 */}
         <div className="flex justify-between items-center mb-4">
-          <p className="text-sm text-gray-600">
-            {searchResults.length}件の楽曲が見つかりました
-            {totalPages > 1 && (
-              <span className="ml-2 text-gray-500">
-                （{currentPage}/{totalPages}ページ）
-              </span>
+          <div className="flex flex-col">
+            <p className="text-sm text-gray-600">
+              {searchResults.length}件の楽曲が見つかりました
+              {totalPages > 1 && (
+                <span className="ml-2 text-gray-500">
+                  （{currentPage}/{totalPages}ページ）
+                </span>
+              )}
+            </p>
+            
+            {/* 一致タイプ別の件数表示（検索時のみ） */}
+            {searchTerm && searchResults.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {Object.entries(resultsByMatchType).map(([type, results]) => {
+                  if (results.length === 0) return null;
+                  const info = getMatchTypeInfo(type as SearchResult['matchType']);
+                  return (
+                    <span
+                      key={type}
+                      className={`px-2 py-1 rounded-full text-xs border ${info.color}`}
+                    >
+                      {info.label}: {results.length}件
+                    </span>
+                  );
+                })}
+              </div>
             )}
-          </p>
+          </div>
           
           {/* ページサイズ変更 */}
           {searchResults.length > 10 && (
@@ -261,6 +307,8 @@ export default function SongSearchModal({
             {paginatedResults.map((song) => {
               const songSection = convertToSongSection(song);
               const isEditing = editingEntryId === song.id;
+              const isSearchResult = 'searchScore' in song && searchTerm;
+              const matchInfo = isSearchResult ? getMatchTypeInfo((song as SearchResult).matchType) : null;
               
               return (
                 <div
@@ -384,6 +432,30 @@ export default function SongSearchModal({
                             variant="card"
                             showTimeCodes={false}
                           />
+                          
+                          {/* 検索関連情報 */}
+                          {isSearchResult && matchInfo && (
+                            <div className="flex items-center gap-3 mt-2">
+                              <span className={`px-2 py-1 rounded-full text-xs border ${matchInfo.color}`}>
+                                {matchInfo.label}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                スコア: {Math.round((song as SearchResult).searchScore)}
+                              </span>
+                              <span className="text-xs text-gray-500">
+                                一致フィールド: {
+                                  (song as SearchResult).matchedField === 'title' ? '楽曲名' :
+                                  (song as SearchResult).matchedField === 'artist' ? 'アーティスト名' :
+                                  '楽曲名・アーティスト名'
+                                }
+                              </span>
+                              {song.usageCount > 0 && (
+                                <span className="text-xs text-gray-500">
+                                  使用回数: {song.usageCount}回
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </div>
                         
                         {/* ボタングループ */}

@@ -470,11 +470,50 @@ const showTroubleshooting = loadingTime > 15; // 15 seconds
   - Validates artist fields (including "アーティスト未設定" default values)
   - Displays up to 10 specific validation errors with timestamps
 
-#### Song Database Integration
-**Two-Step Flow**: Song selection via `SongSearchModal` → edit via `SongEditModal`
-- Real-time search across titles/artists with inline editing capabilities
-- Database built from all medley data with deduplication
+#### Song Database Integration & Advanced Search System (Updated 2025-09-08)
+**High-Precision Multi-Stage Search System**: Comprehensive search implementation that eliminates ambiguous search issues through advanced normalization and scoring.
+
+**Key Features:**
+- **Enhanced Normalization**: Katakana→Hiragana conversion, full-width→half-width conversion, music terminology standardization
+- **Multi-Stage Search Algorithm**: Exact match (100pts) → Prefix match (80pts) → Word match (60pts) → Partial match (40pts) → Fuzzy match (20pts)
+- **Intelligent Scoring**: Usage frequency bonus, string length penalty, field-specific weighting
+- **Visual Search Results**: Color-coded match type badges, score visibility, result categorization
+
+**Implementation Architecture:**
+```typescript
+export interface SearchResult extends SongDatabaseEntry {
+  searchScore: number;
+  matchType: 'exact' | 'startsWith' | 'wordMatch' | 'partialMatch' | 'fuzzyMatch';
+  matchedField: 'title' | 'artist' | 'both';
+}
+```
+
+**Normalization Pipeline:**
+- Katakana/Hiragana unification: `katakanaToHiragana()`
+- Full-width character conversion: `toHalfWidth()`
+- Music term standardization: feat./featuring, vs/versus, remix, cover, etc.
+- Symbol removal: brackets, punctuation, musical symbols
+- Comprehensive Unicode handling for Japanese text
+
+**Search Priority System:**
+1. **Exact Match** (100-90pts): Perfect title/artist match - highest precision
+2. **Prefix Match** (80-75pts): Search term matches start of title/artist
+3. **Word Match** (60-55pts): Complete word boundary matches
+4. **Partial Match** (40-30pts): Traditional substring matching
+5. **Fuzzy Match** (20pts): Character-level similarity matching (>50% threshold)
+
+**UI Improvements:**
+- Match type badges with color coding (green=exact, blue=prefix, orange=partial, etc.)
+- Real-time search score display
+- Match field indication (title/artist/both)
+- Usage frequency display
+- Result categorization summary
+
+**Two-Step Flow**: Song selection via enhanced `SongSearchModal` → edit via `SongEditModal`
+- Real-time high-precision search across titles/artists with inline editing capabilities
+- Database built from all medley data with intelligent deduplication
 - Multi-platform URL editing for all songs
+- Search result caching and performance optimization
 
 #### SongEditModal with Song Change Feature (Updated 2025-09-01)
 **Simplified Song Editing Interface**: Streamlined modal interface that guides users to the song database
@@ -971,7 +1010,7 @@ useEffect(() => {
 - **Title area hidden**: Song list headers should use `sticky top-16 z-50` to position below main header
 - **Z-index conflicts**: Main header (z-[100]) must have higher priority than song list headers (z-50)
 
-### Search System Issues (Updated 2025-08-31)
+### Search System Issues (Updated 2025-09-08)
 - **Search input missing**: Ensure search input field is present below tabs in HomePageClient.tsx
 - **Search not working**: Check searchTerm state and filtering logic in filteredAndSortedMedleys
 - **Tab switching clears search**: Verify search state is preserved when switching between medley/song modes
@@ -979,6 +1018,18 @@ useEffect(() => {
 - **Keyboard shortcuts not working**: Check ESC key handler and clear button functionality
 - **Cross-medley song search fails**: Verify songSearchResults array mapping and filtering logic
 - **Genre references in legacy code**: Genre filtering has been removed - ensure no genreFilter state or UI remains
+
+#### Advanced Search System Issues (Added 2025-09-08)
+- **Search precision issues**: Verify `SearchResult` interface is properly imported and used in `SongSearchModal`
+- **Normalization not working**: Check that `normalizeSearchTerm()`, `katakanaToHiragana()`, and `toHalfWidth()` functions are working correctly
+- **Match type badges not displaying**: Ensure `getMatchTypeInfo()` function is implemented and match type colors are properly applied
+- **Search scores incorrect**: Verify scoring algorithm in `searchSongs()` function includes usage bonus and length penalty calculations
+- **Fuzzy search too permissive**: Adjust character match threshold from 0.5 to more restrictive value if needed
+- **Music term normalization failing**: Check `normalizeMusicTerms()` regex patterns for feat/remix/cover standardization
+- **Japanese text search issues**: Ensure proper Unicode handling in text processing pipeline
+- **Search performance slow**: Consider implementing search result caching or debouncing for large datasets
+- **Match field detection wrong**: Verify `matchedField` assignment logic correctly identifies title vs artist matches
+- **Result categorization broken**: Check `resultsByMatchType` grouping logic in search modal useMemo hook
 
 ### SongEditModal Issues (Updated 2025-09-01)
 - **Simplified interface issues**: Modal now only shows "楽曲データベースから選択" button for new songs - no manual input fields
@@ -1105,8 +1156,9 @@ database/ - Database migrations and schema
 **Data & Auto-Save:**
 - `src/lib/api/medleys.ts` - Database API with direct fetch implementation (includes `deleteMedley` function)
 - `src/hooks/useMedleyEdit.ts` - Core medley editing hook with auto-save functionality (Added 2025-09-07)
-- `src/lib/utils/songDatabase.ts` - Song search and caching for cross-medley search
+- `src/lib/utils/songDatabase.ts` - **Advanced multi-stage search system** with high-precision normalization and scoring (Updated 2025-09-08)
 - `src/lib/utils/videoMetadata.ts` - Video metadata extraction
+- `src/components/features/medley/SongSearchModal.tsx` - Enhanced search UI with match type visualization and result categorization (Updated 2025-09-08)
 
 **Database Management:**
 - `database/migrations/` - SQL migration files for Supabase setup

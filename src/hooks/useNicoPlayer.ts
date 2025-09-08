@@ -381,28 +381,34 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         logger.info("Player iframe loaded - initializing...");
         iframeLoadHandled.current = true;
 
-        // タイムアウトを設定（10秒に短縮してリトライを促進）
+        // タイムアウトを設定（20秒に延長してより安定したロードを促進）
         initTimeoutRef.current = setTimeout(() => {
             if (!playerReady && !isRetrying) {
-                logger.error("Player initialization timeout");
+                logger.error(`Player initialization timeout after 20s for video: ${videoId}`);
+                logger.error(`Player state: ready=${playerReady}, retrying=${isRetrying}, retryCount=${initRetryCount}/${maxRetryCount}`);
                 if (initRetryCount < maxRetryCount) {
                     logger.warn(`⏱️ Initialization timeout. Triggering retry (${initRetryCount + 1}/${maxRetryCount})`);
                     retryInitialization();
                 } else {
-                    setPlayerError("プレイヤーの初期化に失敗しました。SafeModeに切り替えてください。");
+                    logger.error(`❌ Maximum retries exceeded for video: ${videoId}. Player initialization failed completely.`);
+                    setPlayerError("プレイヤーの初期化に失敗しました。ページを再読み込みするか、SafeModeに切り替えてください。");
                 }
             }
-        }, 10000); // 10秒に短縮してよりレスポンシブに
+        }, 20000); // 20秒に延長してより安定したロードを促進
 
         // 最小限の初期化プロセス - loadCompleteイベントを待つ方式に変更
         setTimeout(() => {
             if (!playerRef.current?.contentWindow) {
-                logger.warn("Player contentWindow not available");
+                logger.warn(`Player contentWindow not available for video: ${videoId}`);
+                logger.warn(`iframe src: ${playerRef.current?.src || 'not set'}`);
                 setPlayerError("プレイヤーの読み込みに失敗しました");
                 return;
             }
 
             try {
+                logger.info(`🎬 Starting player initialization for video: ${videoId}`);
+                logger.debug(`iframe ready: ${!!playerRef.current}`);
+                logger.debug(`contentWindow ready: ${!!playerRef.current?.contentWindow}`);
                 logger.debug("Requesting initial status - waiting for loadComplete event");
                 
                 // loadCompleteイベントを待つため、playerReadyは設定しない
@@ -413,12 +419,12 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                     eventName: "getStatus",
                 });
                 
-                logger.debug("Initial status request sent, waiting for loadComplete");
+                logger.info(`✅ Initial status request sent for video: ${videoId}, waiting for loadComplete`);
             } catch (error) {
-                logger.error("Error during initialization:", error);
+                logger.error(`Error during initialization for video ${videoId}:`, error);
                 setPlayerError("プレイヤーの初期化に失敗しました");
             }
-        }, 1000); // より長い遅延でプレイヤーの完全な読み込みを待つ
+        }, 2000); // 2秒に延長してプレイヤーの完全な読み込みを待つ
     }, [sendMessageToPlayer, playerReady, retryInitialization, initRetryCount, maxRetryCount, isRetrying]);
 
     // 再生のみ（一時停止中でも再生開始）

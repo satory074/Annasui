@@ -1021,7 +1021,7 @@ export default function MedleyPlayer({
 
     // Show loading screen while data is loading
     if (loading) {
-        return <PlayerLoadingMessage />;
+        return <PlayerLoadingMessage videoId={videoId} />;
     }
 
     return (

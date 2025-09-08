@@ -380,6 +380,28 @@ const handleDeleteMedley = async (medley: MedleyData) => {
 };
 ```
 
+#### Loading & Error Handling Architecture (Updated 2025-09-08)
+**Enhanced User Experience for Loading States:**
+- **Extended Timeouts**: API timeout increased from 10s→30s, player initialization from 10s→20s for improved reliability
+- **Progressive Loading Messages**: Real-time loading timer, troubleshooting hints after 15s, comprehensive error guidance
+- **Production Logging**: Enhanced debug information with video ID tracking, detailed initialization states
+- **Intelligent Feedback**: Loading screens show elapsed time, specific video IDs, and actionable troubleshooting steps
+
+**PlayerLoadingMessage Improvements:**
+```typescript
+interface PlayerLoadingMessageProps {
+  videoId?: string; // Shows specific video being loaded
+}
+
+// Progressive enhancement based on loading time
+const showTroubleshooting = loadingTime > 15; // 15 seconds
+```
+
+**Critical Timeout Configuration:**
+- **API Data Fetching**: 30-second timeout in `useMedleyDataApi.ts` prevents premature failures
+- **Player Initialization**: 20-second timeout in `useNicoPlayer.ts` allows complex iframe communication
+- **Retry Logic**: Enhanced 3-attempt retry system with exponential backoff
+
 #### Timeline System & Annotation Enhancement Features (Updated 2025-09-01)
 **Timeline Display**: Always shows full video duration with simplified position calculations
 **Edit Mode Features**: 
@@ -1037,6 +1059,14 @@ useEffect(() => {
 - **Visual feedback missing**: Verify `isAutoSaving` state is properly connected to UI loading indicators
 - **Auto-save continuing after edit mode disabled**: Ensure `disableAutoSave` properly clears timeout and resets configuration
 - **Memory leaks from timeouts**: Verify useEffect cleanup removes timeout references on component unmount
+
+### Loading & Timeout Issues (Updated 2025-09-08)
+- **Persistent loading states**: Check API timeout configuration (should be 30s in `useMedleyDataApi.ts`)
+- **Player initialization failures**: Verify player timeout is 20s in `useNicoPlayer.ts` with proper retry logic
+- **Loading message not showing progress**: Ensure `PlayerLoadingMessage` receives `videoId` prop for debugging
+- **Troubleshooting hints not appearing**: Check 15-second threshold in loading component
+- **iframe communication failures**: Verify postMessage origin and player initialization sequence
+- **Production debugging**: Use enhanced logging with video ID tracking for issue identification
 
 ## File Organization
 

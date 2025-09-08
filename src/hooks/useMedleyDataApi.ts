@@ -40,12 +40,12 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
       setLoading(true)
       setError(null)
 
-      // プロダクション環境での無限ローディング防止のためタイムアウトを設定（短縮）
+      // プロダクション環境での無限ローディング防止のためタイムアウトを設定
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {
-          console.warn('⚠️ Medley data request timed out after 10 seconds')
+          console.warn('⚠️ Medley data request timed out after 30 seconds')
           reject(new Error('リクエストがタイムアウトしました。ネットワーク接続を確認してください。'))
-        }, 10000) // 10秒でタイムアウト（短縮）
+        }, 30000) // 30秒でタイムアウト（延長）
       })
 
       try {

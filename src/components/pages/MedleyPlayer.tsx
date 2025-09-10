@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useMedleyData } from "@/hooks/useMedleyData";
 import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import { useMedleyEdit } from "@/hooks/useMedleyEdit";
@@ -227,7 +227,127 @@ export default function MedleyPlayer({
                 clearInterval(interval);
             };
         }
-    }, [tempTimelineBar?.isActive, currentTime]);
+    }, [tempTimelineBar?.isActive, tempTimelineBar, currentTime]);
+
+    // ホットキー機能のハンドラー - useEffectより前に定義
+    const handleAddSongFromTempBar = useCallback((startTime: number, endTime: number) => {
+        if (!user || !isApproved) {
+            return; // Only approved users can add songs
+        }
+        
+        logger.debug('🎵 Creating song from temporary timeline bar', { startTime, endTime });
+        
+        // Create a new song with placeholder data
+        const newSong: SongSection = {
+            id: Date.now(), // Temporary ID
+            title: `空の楽曲 ${untitledSongCounter}`,
+            artist: 'アーティスト未設定',
+            startTime: Math.round(startTime * 10) / 10,
+            endTime: Math.round(endTime * 10) / 10,
+            color: '#9333ea', // Purple color to match the temporary bar
+            originalLink: undefined
+        };
+        
+        // Add the song to the medley
+        addSong(newSong);
+        
+        // Increment counter for next untitled song
+        setUntitledSongCounter(prev => prev + 1);
+        
+        // Do not open edit modal - allow continuous addition of empty songs
+    }, [user, isApproved, addSong, untitledSongCounter, setUntitledSongCounter]);
+
+    const handleQuickSetStartTime = useCallback((time: number) => {
+        if (editingSong) {
+            // 編集中の楽曲がある場合は、開始時刻を更新
+            const updatedSong = {
+                ...editingSong,
+                startTime: Math.round(time * 10) / 10 // 0.1秒精度に丸める
+            };
+            updateSong(updatedSong);
+            setEditingSong(updatedSong);
+        } else {
+            // 編集中の楽曲がない場合は、開始時刻を一時保存
+            const roundedTime = Math.round(time * 10) / 10;
+            setTempStartTime(roundedTime);
+            logger.debug(`開始時刻を設定: ${roundedTime}秒 (Eキーで終了時刻を設定してアノテーションを作成)`);
+        }
+    }, [editingSong, setTempStartTime, updateSong, setEditingSong]);
+
+    const handleQuickSetEndTime = useCallback((time: number) => {
+        if (editingSong) {
+            // 編集中の楽曲がある場合は、終了時刻を更新
+            const updatedSong = {
+                ...editingSong,
+                endTime: Math.max(editingSong.startTime + 0.1, Math.round(time * 10) / 10)
+            };
+            updateSong(updatedSong);
+            setEditingSong(updatedSong);
+        } else if (tempStartTime !== null) {
+            // tempStartTimeが設定されている場合は、仮アノテーションを自動作成
+            const roundedEndTime = Math.round(time * 10) / 10;
+            const roundedStartTime = tempStartTime;
+            
+            // 終了時刻が開始時刻より前の場合は調整
+            const finalEndTime = Math.max(roundedStartTime + 0.1, roundedEndTime);
+            
+            const newSong: SongSection = {
+                id: Date.now(),
+                title: `未設定の楽曲 ${untitledSongCounter}`,
+                artist: "アーティスト未設定",
+                startTime: roundedStartTime,
+                endTime: finalEndTime,
+                color: "bg-gray-400",
+                originalLink: ""
+            };
+            
+            // 楽曲を追加
+            addSong(newSong);
+            logger.debug(`仮アノテーションを作成: ${roundedStartTime}秒〜${finalEndTime}秒 "${newSong.title}"`);
+            
+            // 状態をリセット
+            setTempStartTime(null);
+            setUntitledSongCounter(prev => prev + 1);
+        } else {
+            // tempStartTimeが設定されていない場合は、前の楽曲の終了時刻から開始
+            const previousSongEndTime = editingSongs.length > 0 
+                ? Math.max(...editingSongs.map(s => s.endTime))
+                : 0;
+            const newSong: SongSection = {
+                id: Date.now(),
+                title: "新しい楽曲",
+                artist: "",
+                startTime: Math.round(previousSongEndTime * 10) / 10,
+                endTime: Math.round(time * 10) / 10,
+                color: "bg-blue-400",
+                originalLink: ""
+            };
+            setEditingSong(newSong);
+            setIsNewSong(true);
+            setEditModalOpen(true);
+        }
+    }, [editingSong, updateSong, setEditingSong, tempStartTime, setTempStartTime, addSong, setIsNewSong, setEditModalOpen, editingSongs, untitledSongCounter]);
+
+    const handleQuickAddMarker = useCallback((time: number) => {
+        logger.debug('🚀 handleQuickAddMarker called with time:', time);
+        // 現在時刻に空の楽曲を直接追加（編集モーダルを開かない）
+        const newSong: SongSection = {
+            id: Date.now(),
+            title: `空の楽曲 ${untitledSongCounter}`,
+            artist: "アーティスト未設定",
+            startTime: Math.round(time * 10) / 10,
+            endTime: Math.round(time * 10) / 10 + 30, // デフォルト30秒
+            color: "#9333ea", // 紫色
+            originalLink: ""
+        };
+        logger.debug('📝 Empty song created and added directly to timeline:', newSong);
+        
+        // 直接楽曲を追加
+        addSong(newSong);
+        
+        // カウンターをインクリメント
+        setUntitledSongCounter(prev => prev + 1);
+    }, [addSong, untitledSongCounter, setUntitledSongCounter]);
     
     // durationを決定（静的データを優先、プレイヤーデータはフォールバック）
     const effectiveDuration = medleyDuration || duration;
@@ -430,7 +550,7 @@ export default function MedleyPlayer({
             document.removeEventListener('keydown', handleKeyDown);
             document.removeEventListener('keyup', handleKeyUp);
         };
-    }, [isEditMode, user, isApproved, currentTime, editModalOpen, songSearchModalOpen, manualAddModalOpen, isLongPress, tempTimelineBar]);
+    }, [isEditMode, user, isApproved, currentTime, editModalOpen, songSearchModalOpen, manualAddModalOpen, isLongPress, tempTimelineBar, handleAddSongFromTempBar, handleQuickAddMarker, handleQuickSetEndTime, handleQuickSetStartTime]);
 
     // コンポーネントのアンマウント時にタイムアウトをクリーンアップ
     useEffect(() => {
@@ -871,127 +991,6 @@ export default function MedleyPlayer({
         setIsEditMode(!isEditMode);
     };
 
-    const handleAddSongFromTempBar = (startTime: number, endTime: number) => {
-        if (!user || !isApproved) {
-            return; // Only approved users can add songs
-        }
-        
-        logger.debug('🎵 Creating song from temporary timeline bar', { startTime, endTime });
-        
-        // Create a new song with placeholder data
-        const newSong: SongSection = {
-            id: Date.now(), // Temporary ID
-            title: `空の楽曲 ${untitledSongCounter}`,
-            artist: 'アーティスト未設定',
-            startTime: Math.round(startTime * 10) / 10,
-            endTime: Math.round(endTime * 10) / 10,
-            color: '#9333ea', // Purple color to match the temporary bar
-            originalLink: undefined
-        };
-        
-        // Add the song to the medley
-        addSong(newSong);
-        
-        // Increment counter for next untitled song
-        setUntitledSongCounter(prev => prev + 1);
-        
-        // Do not open edit modal - allow continuous addition of empty songs
-    };
-
-
-
-    // ホットキー機能のハンドラー
-    const handleQuickSetStartTime = (time: number) => {
-        if (editingSong) {
-            // 編集中の楽曲がある場合は、開始時刻を更新
-            const updatedSong = {
-                ...editingSong,
-                startTime: Math.round(time * 10) / 10 // 0.1秒精度に丸める
-            };
-            updateSong(updatedSong);
-            setEditingSong(updatedSong);
-        } else {
-            // 編集中の楽曲がない場合は、開始時刻を一時保存
-            const roundedTime = Math.round(time * 10) / 10;
-            setTempStartTime(roundedTime);
-            logger.debug(`開始時刻を設定: ${roundedTime}秒 (Eキーで終了時刻を設定してアノテーションを作成)`);
-        }
-    };
-
-    const handleQuickSetEndTime = (time: number) => {
-        if (editingSong) {
-            // 編集中の楽曲がある場合は、終了時刻を更新
-            const updatedSong = {
-                ...editingSong,
-                endTime: Math.max(editingSong.startTime + 0.1, Math.round(time * 10) / 10)
-            };
-            updateSong(updatedSong);
-            setEditingSong(updatedSong);
-        } else if (tempStartTime !== null) {
-            // tempStartTimeが設定されている場合は、仮アノテーションを自動作成
-            const roundedEndTime = Math.round(time * 10) / 10;
-            const roundedStartTime = tempStartTime;
-            
-            // 終了時刻が開始時刻より前の場合は調整
-            const finalEndTime = Math.max(roundedStartTime + 0.1, roundedEndTime);
-            
-            const newSong: SongSection = {
-                id: Date.now(),
-                title: `未設定の楽曲 ${untitledSongCounter}`,
-                artist: "アーティスト未設定",
-                startTime: roundedStartTime,
-                endTime: finalEndTime,
-                color: "bg-gray-400",
-                        originalLink: ""
-            };
-            
-            // 楽曲を追加
-            addSong(newSong);
-            logger.debug(`仮アノテーションを作成: ${roundedStartTime}秒〜${finalEndTime}秒 "${newSong.title}"`);
-            
-            // 状態をリセット
-            setTempStartTime(null);
-            setUntitledSongCounter(prev => prev + 1);
-        } else {
-            // tempStartTimeが設定されていない場合は、前の楽曲の終了時刻から開始
-            const previousSongEndTime = displaySongs.length > 0 
-                ? Math.max(...displaySongs.map(s => s.endTime))
-                : 0;
-            const newSong: SongSection = {
-                id: Date.now(),
-                title: "新しい楽曲",
-                artist: "",
-                startTime: Math.round(previousSongEndTime * 10) / 10,
-                endTime: Math.round(time * 10) / 10,
-                color: "bg-blue-400",
-                        originalLink: ""
-            };
-            setEditingSong(newSong);
-            setIsNewSong(true);
-            setEditModalOpen(true);
-        }
-    };
-
-    const handleQuickAddMarker = (time: number) => {
-        logger.debug('🚀 handleQuickAddMarker called with time:', time);
-        // 現在時刻に空の楽曲を直接追加（編集モーダルを開かない）
-        const newSong: SongSection = {
-            id: Date.now(),
-            title: `空の楽曲 ${untitledSongCounter}`,
-            artist: "アーティスト未設定",
-            startTime: Math.round(time * 10) / 10,
-            endTime: Math.round(time * 10) / 10 + 30, // デフォルト30秒
-            color: "#9333ea", // 紫色
-            originalLink: ""
-        };
-        logger.debug('📝 Empty song created and added directly to timeline:', newSong);
-        
-        // 直接楽曲を追加
-        addSong(newSong);
-        
-        // カウンターをインクリメント
-        setUntitledSongCounter(prev => prev + 1);
-    };
 
 
 

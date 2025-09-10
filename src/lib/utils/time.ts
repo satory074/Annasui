@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger';
+
 export function formatTime(time: number): string {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -28,7 +30,7 @@ export function parseTimeInput(timeString: string): number {
 export function normalizeTimeValue(timeValue: number): number {
     // NaNや無効な値のチェック
     if (!isFinite(timeValue) || timeValue < 0) {
-        console.warn(`⚠️ Invalid time value: ${timeValue}, returning 0`);
+        logger.warn(`⚠️ Invalid time value: ${timeValue}, returning 0`);
         return 0;
     }
 
@@ -39,7 +41,7 @@ export function normalizeTimeValue(timeValue: number): number {
 export function validateAndClampTime(currentTime: number, duration: number, previousTime: number = 0): number {
     // NaNや無効な値のチェック
     if (!isFinite(currentTime) || currentTime < 0) {
-        console.warn(`⚠️ Invalid currentTime: ${currentTime}, using previous value: ${previousTime}`);
+        logger.warn(`⚠️ Invalid currentTime: ${currentTime}, using previous value: ${previousTime}`);
         return previousTime;
     }
 
@@ -67,7 +69,7 @@ export function detectTimeCorruption(currentTime: number, duration: number): boo
     const isCorrupted = currentTime > corruptionThreshold;
     
     if (isCorrupted) {
-        console.error(`🚨 PLAYER TIME CORRUPTION DETECTED: currentTime=${currentTime}s, duration=${duration}s (ratio: ${(currentTime/duration).toFixed(2)}x)`);
+        logger.error(`🚨 PLAYER TIME CORRUPTION DETECTED: currentTime=${currentTime}s, duration=${duration}s (ratio: ${(currentTime/duration).toFixed(2)}x)`);
     }
     
     return isCorrupted;

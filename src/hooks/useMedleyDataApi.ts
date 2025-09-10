@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { SongSection, MedleyData } from '@/types'
 import { getMedleyByVideoId } from '@/lib/api/medleys'
+import { logger } from '@/lib/utils/logger'
 
 interface UseMedleyDataApiReturn {
   medleySongs: SongSection[]
@@ -43,7 +44,7 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
       // プロダクション環境での無限ローディング防止のためタイムアウトを設定
       const timeoutPromise = new Promise<never>((_, reject) => {
         timeoutId = setTimeout(() => {
-          console.warn('⚠️ Medley data request timed out after 30 seconds')
+          logger.warn('⚠️ Medley data request timed out after 30 seconds')
           reject(new Error('リクエストがタイムアウトしました。ネットワーク接続を確認してください。'))
         }, 30000) // 30秒でタイムアウト（延長）
       })
@@ -74,8 +75,8 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
       } catch (err) {
         if (isCancelled) return
         
-        console.error('❌ Error fetching medley data:', err)
-        console.info('🔍 Error details for debugging:', {
+        logger.error('❌ Error fetching medley data:', err)
+        logger.info('🔍 Error details for debugging:', {
           errorType: err?.constructor?.name,
           errorMessage: (err as Error)?.message || String(err),
           videoId,

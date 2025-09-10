@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { User, Session } from '@supabase/supabase-js'
 import { logger } from '@/lib/utils/logger'
@@ -86,7 +86,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return () => subscription.unsubscribe()
   }, [mounted])
 
-  const checkApprovalStatus = async () => {
+  const checkApprovalStatus = useCallback(async () => {
     if (!supabase || !user) {
       setIsApproved(false)
       return
@@ -125,7 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } finally {
       setApprovalLoading(false)
     }
-  }
+  }, [user])
 
   // Check approval status when user changes
   useEffect(() => {
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } else {
       setIsApproved(false)
     }
-  }, [user, loading])
+  }, [user, loading, checkApprovalStatus])
 
   const signIn = async (provider: 'google') => {
     if (!supabase) {

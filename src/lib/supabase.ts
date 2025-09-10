@@ -1,10 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
+import { logger } from '@/lib/utils/logger'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dheairurkxjftugrwdjl.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZWFpcnVya3hqZnR1Z3J3ZGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyODI3OTEsImV4cCI6MjA3MTg1ODc5MX0.7VSQnn4HdWrMf3qgdPkB2bSyjSH1nuJhH1DR8m4Y4h8'
 
 // Debug logging for production
-console.log('🔍 Supabase Environment Debug:', {
+logger.debug('🔍 Supabase Environment Debug:', {
   hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
   hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
   urlLength: supabaseUrl.length,
@@ -23,14 +24,14 @@ if (supabaseUrl !== 'https://placeholder.supabase.co' &&
     supabaseAnonKey !== 'your_supabase_anon_key_here' &&
     supabaseUrl.length > 0 && supabaseAnonKey.length > 0) {
   try {
-    console.log('✅ Creating Supabase client...')
+    logger.info('✅ Creating Supabase client...')
     supabase = createClient(supabaseUrl, supabaseAnonKey)
   } catch (error) {
-    console.warn('❌ Failed to create Supabase client:', error)
+    logger.error('❌ Failed to create Supabase client:', error)
     supabase = null
   }
 } else {
-  console.warn('❌ Supabase environment variables not properly configured')
+  logger.warn('❌ Supabase environment variables not properly configured')
 }
 
 // Export a safe client that checks for null

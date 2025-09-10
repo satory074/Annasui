@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import { MedleyData } from "@/types";
 import { getVideoMetadata, VideoMetadata } from "@/lib/utils/videoMetadata";
@@ -349,15 +350,19 @@ export default function CreateMedleyModal({
                 )}
               </label>
               <div className="flex justify-center">
-                <img
-                  src={formData.thumbnailUrl}
-                  alt="動画サムネイル"
-                  className="w-80 h-45 object-cover bg-gray-100 border border-gray-200 rounded"
-                  onError={(e) => {
-                    // サムネイル読み込みエラー時は非表示にする
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
+                <div className="relative w-80 h-45">
+                  <Image
+                    src={formData.thumbnailUrl}
+                    alt="動画サムネイル"
+                    fill
+                    className="object-cover bg-gray-100 border border-gray-200 rounded"
+                    sizes="320px"
+                    onError={(e) => {
+                      // サムネイル読み込みエラー時は非表示にする
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
               </div>
             </div>
           )}

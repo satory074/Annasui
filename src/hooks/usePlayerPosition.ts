@@ -272,7 +272,7 @@ export function usePlayerPosition(
     // プロダクション環境でも位置情報をコンソールに出力（位置固定機能追加版）
     const playerInCenterArea = playerCenterY > viewportHeight * 0.3 && playerCenterY < viewportHeight * 0.7;
     
-    console.log('🎯 Player Position Debug (with Position Fixing):', {
+    logger.debug('🎯 Player Position Debug (with Position Fixing):', {
       isVisible,
       isInUpperArea,
       playerInCenterArea,

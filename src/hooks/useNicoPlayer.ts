@@ -372,7 +372,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
 
         window.addEventListener("message", handleMessage);
         return () => window.removeEventListener("message", handleMessage);
-    }, [sendMessageToPlayer, onDurationChange, onPlayingChange, onTimeUpdate, videoId, startTimeSyncInterval, stopTimeSyncInterval, duration]);
+    }, [sendMessageToPlayer, onDurationChange, onPlayingChange, onTimeUpdate, videoId, startTimeSyncInterval, stopTimeSyncInterval, duration, initRetryCount]);
 
     // iframeの読み込み完了時の処理
     const handleIframeLoad = useCallback(() => {
@@ -425,7 +425,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                 setPlayerError("プレイヤーの初期化に失敗しました");
             }
         }, 2000); // 2秒に延長してプレイヤーの完全な読み込みを待つ
-    }, [sendMessageToPlayer, playerReady, retryInitialization, initRetryCount, maxRetryCount, isRetrying]);
+    }, [sendMessageToPlayer, playerReady, retryInitialization, initRetryCount, maxRetryCount, isRetrying, videoId]);
 
     // 再生のみ（一時停止中でも再生開始）
     const play = useCallback(() => {

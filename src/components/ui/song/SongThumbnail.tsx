@@ -89,7 +89,7 @@ export default function SongThumbnail({
     };
 
     loadThumbnail();
-  }, [links, originalLink, title, retryCount]);
+  }, [links, originalLink, title, retryCount, thumbnailUrl]);
 
   const sizeClasses = {
     sm: "w-32 h-18",

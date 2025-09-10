@@ -296,13 +296,13 @@ export default function SongEditModal({
       setSegments([{
         id: 1,
         startTime: currentTime || 0,
-        endTime: Math.min((currentTime || 0) + 30, maxDuration || 300),
+        endTime: Math.min((currentTime || 0) + 30, (maxDuration || 300)),
         segmentNumber: 1,
         color: "bg-orange-400"
       }]);
     }
     setErrors({});
-  }, [song, isNew, isOpen, isSaving]);
+  }, [song, isNew, isOpen, isSaving, currentTime, maxDuration, allSongs]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};

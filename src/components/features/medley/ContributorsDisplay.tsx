@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Image from 'next/image'
 import { MedleyContributor } from '@/types'
 
 interface ContributorsDisplayProps {
@@ -136,10 +137,12 @@ const ContributorsDisplay: React.FC<ContributorsDisplayProps> = ({
                 {/* Custom Avatar since UserAvatar expects Supabase User type */}
                 <div className={`relative w-8 h-8 rounded-full overflow-hidden group-hover:ring-2 group-hover:ring-orange-300 transition-all ${contributor.avatarUrl ? 'bg-gray-200' : 'bg-gradient-to-r from-orange-400 to-orange-500'}`}>
                   {contributor.avatarUrl ? (
-                    <img
+                    <Image
                       src={contributor.avatarUrl}
                       alt={contributor.name || 'Anonymous'}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="32px"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement;
                         target.style.display = 'none';

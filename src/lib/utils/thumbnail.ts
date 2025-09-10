@@ -156,7 +156,7 @@ export async function getSpotifyThumbnail(trackId: string): Promise<string | nul
     const data = await response.json();
     return data.thumbnail_url || null;
   } catch (error) {
-    console.warn('Failed to fetch Spotify thumbnail:', error);
+    logger.warn('Failed to fetch Spotify thumbnail:', error);
     return null;
   }
 }
@@ -177,7 +177,7 @@ export async function getAppleMusicThumbnail(url: string): Promise<string | null
     const ogImage = doc.querySelector('meta[property="og:image"]');
     return ogImage ? ogImage.getAttribute('content') : null;
   } catch (error) {
-    console.warn('Failed to fetch Apple Music thumbnail:', error);
+    logger.warn('Failed to fetch Apple Music thumbnail:', error);
     return null;
   }
 }
@@ -214,7 +214,7 @@ export async function getNiconicoThumbnailFromAPI(videoId: string): Promise<stri
     const thumbnailUrl = xmlDoc.querySelector('thumbnail_url')?.textContent;
     return thumbnailUrl || null;
   } catch (error) {
-    console.warn('Failed to fetch Niconico thumbnail from API:', error);
+    logger.warn('Failed to fetch Niconico thumbnail from API:', error);
     return null;
   }
 }

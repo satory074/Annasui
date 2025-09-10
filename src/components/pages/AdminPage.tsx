@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useAuth } from "@/contexts/AuthContext";
 import AppHeader from "@/components/layout/AppHeader";
 import { logger } from "@/lib/utils/logger";
@@ -258,11 +259,13 @@ export default function AdminPage() {
                   <tr key={userData.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <img
-                            className="h-10 w-10 rounded-full"
+                        <div className="flex-shrink-0 h-10 w-10 relative">
+                          <Image
+                            className="rounded-full object-cover"
                             src={userData.avatar_url || '/default-avatar.svg'}
                             alt=""
+                            fill
+                            sizes="40px"
                           />
                         </div>
                         <div className="ml-4">

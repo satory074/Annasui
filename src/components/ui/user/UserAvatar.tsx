@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import Image from 'next/image'
 import { User } from '@supabase/supabase-js'
 
 interface UserAvatarProps {
@@ -25,13 +26,16 @@ export default function UserAvatar({ user, size = 'md', className = '' }: UserAv
 
   if (avatarUrl) {
     return (
-      <img
-        src={avatarUrl}
-        alt={name || 'User avatar'}
-        className={`${sizeClasses[size]} rounded-full object-cover ${className}`}
-        onError={(e) => {
-          // Fallback to initials if image fails to load
-          const target = e.target as HTMLImageElement
+      <div className={`${sizeClasses[size]} relative rounded-full overflow-hidden ${className}`}>
+        <Image
+          src={avatarUrl}
+          alt={name || 'User avatar'}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 40px, 48px"
+          onError={(e) => {
+            // Fallback to initials if image fails to load
+            const target = e.target as HTMLImageElement
           target.style.display = 'none'
           const fallback = target.nextElementSibling as HTMLDivElement
           if (fallback) {
@@ -39,6 +43,7 @@ export default function UserAvatar({ user, size = 'md', className = '' }: UserAv
           }
         }}
       />
+      </div>
     )
   }
 

@@ -1162,7 +1162,7 @@ database/ - Database migrations and schema
 
 **Database Management:**
 - `database/migrations/` - SQL migration files for Supabase setup
-- `scripts/` - Node.js scripts for database operations and testing
+- `scripts/` - Node.js scripts for database operations and testing (see `scripts/README.md` for usage guide)
 
 **API Proxy System:**
 - `src/app/api/thumbnail/niconico/[videoId]/route.ts` - CORS proxy for Niconico thumbnails
@@ -1254,7 +1254,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 ```
 
 **Critical Setup Requirements:**
-1. **Database Migrations**: Run SQL files in `database/migrations/` directory in Supabase Dashboard
+1. **Database Migrations**: Run SQL files in `database/migrations/` directory in Supabase Dashboard (in order)
    - `001_create_users_table.sql` - User profiles table
    - `002_add_user_id_to_medleys.sql` - User ownership for medleys
    - `003_fix_rick_astley_medley.sql` - Platform corrections (run after major data fixes)
@@ -1313,6 +1313,7 @@ The Medlean logo features three flowing wave forms representing different songs 
 - **Logger Usage**: `import { logger } from '@/lib/utils/logger'`
 - **Methods**: `logger.debug()`, `logger.info()`, `logger.warn()`, `logger.error()`
 - **Production Behavior**: Only warns/errors logged in production
+- **Migration**: All `console.log()` statements have been replaced with appropriate logger methods (completed 2025-09-10)
 
 ### Input Sanitization
 - **XSS Protection**: Comprehensive input validation for all user-editable fields
@@ -1375,3 +1376,4 @@ if (editOperation && (!user || !isApproved)) {
 - **Build Validation**: Automated build, lint, and type checking in deployment pipeline
 - **Admin Authorization**: Complete user approval system with secure database policies
 - **Security**: Row Level Security (RLS) prevents unauthorized data access
+- **Code Quality**: Recent improvements (2025-09-10) include React Hook dependency fixes, Image optimization for SEO, unified logging system, and project organization cleanup

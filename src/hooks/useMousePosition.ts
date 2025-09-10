@@ -29,14 +29,14 @@ export function useMousePosition(edgeThreshold: number = 150): MousePosition {
 
   // プロダクション環境での初期化ログ
   useEffect(() => {
-    console.log('🖱️ useMousePosition: Hook initialized', {
+    logger.debug('🖱️ useMousePosition: Hook initialized', {
       edgeThreshold,
       initialPosition: mousePosition,
       isProduction: process.env.NODE_ENV === 'production',
       windowSize: typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight}` : 'SSR',
       timestamp: new Date().toISOString()
     });
-  }, [edgeThreshold]); // edgeThreshold が変わった時のみログ出力
+  }, [edgeThreshold, mousePosition]); // edgeThreshold が変わった時のみログ出力
 
   useEffect(() => {
     const updateMousePosition = (e: MouseEvent) => {

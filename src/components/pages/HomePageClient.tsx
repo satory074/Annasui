@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createMedley, deleteMedley } from "@/lib/api/medleys";
 import { MedleyData, SongSection } from "@/types";
@@ -556,10 +557,12 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                 <div key={`${song.videoId}-${song.id}-${song.startTime}`} className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-200">
                                     <Link href={getSongUrl(song)} className="block">
                                         <div className="aspect-video bg-gray-200 relative overflow-hidden">
-                                            <img
+                                            <Image
                                                 src={song.thumbnailUrl}
                                                 alt={song.title}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                fill
+                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                                                 onError={(e) => {
                                                     const target = e.target as HTMLImageElement;
                                                     target.src = '/default-thumbnail.svg';
@@ -618,10 +621,12 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                         
                                         if (effectivePlatform === 'youtube') {
                                             return (
-                                                <img
+                                                <Image
                                                     src={getYouTubeThumbnail(medley.videoId, 'maxresdefault')}
                                                     alt={medley.title}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                    fill
+                                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
                                                         target.src = getYouTubeThumbnail(medley.videoId, 'hqdefault');
@@ -631,10 +636,12 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                         } else {
                                             // Default to Niconico for legacy compatibility
                                             return (
-                                                <img
+                                                <Image
                                                     src={getThumbnailUrl(`https://www.nicovideo.jp/watch/${medley.videoId}`) || '/default-thumbnail.svg'}
                                                     alt={medley.title}
-                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                                    fill
+                                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
                                                         target.src = '/default-thumbnail.svg';

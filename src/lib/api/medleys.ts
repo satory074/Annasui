@@ -168,7 +168,7 @@ async function directFetch(url: string): Promise<unknown> {
   // プロダクション環境でのネットワークタイムアウト対策（短縮）
   const controller = new AbortController();
   const timeoutId = setTimeout(() => {
-    console.warn('⚠️ DirectFetch request timed out after 8 seconds:', url);
+    logger.warn('⚠️ DirectFetch request timed out after 8 seconds:', url);
     controller.abort();
   }, 8000); // 8秒でタイムアウト（短縮）
 

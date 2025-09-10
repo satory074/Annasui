@@ -167,7 +167,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
       return {
         ...baseStyle,
         ...avoidanceStyle,
-        top: '6rem',
+        bottom: '1rem',
         right: '1rem',
         left: 'auto'
       };
@@ -175,7 +175,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
       return {
         ...baseStyle,
         ...avoidanceStyle,
-        top: '6rem',
+        bottom: '1rem',
         left: '1rem',
         right: 'auto'
       };

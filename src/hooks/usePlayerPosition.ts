@@ -126,23 +126,23 @@ export function usePlayerPosition(
     // マウス位置に基づく衝突検出と回避ロジック
     const popupWidth = 320; // ポップアップの幅（推定値）
     const popupHeight = 100; // ポップアップの高さ（推定値）
-    const popupTop = 96; // top: 6rem = 96px
+    const popupBottom = 16; // bottom: 1rem = 16px
     const popupLeft = 16; // left: 1rem = 16px
     const popupRight = 16; // right: 1rem = 16px
     
-    // 現在のポップアップ位置での矩形を計算
+    // 現在のポップアップ位置での矩形を計算（下部表示用）
     const leftPopupRect = {
       left: popupLeft,
       right: popupLeft + popupWidth,
-      top: popupTop,
-      bottom: popupTop + popupHeight
+      top: window.innerHeight - popupBottom - popupHeight,
+      bottom: window.innerHeight - popupBottom
     };
     
     const rightPopupRect = {
       left: window.innerWidth - popupRight - popupWidth,
       right: window.innerWidth - popupRight,
-      top: popupTop,
-      bottom: popupTop + popupHeight
+      top: window.innerHeight - popupBottom - popupHeight,
+      bottom: window.innerHeight - popupBottom
     };
     
     // マウスがポップアップ領域に近いかチェック（マージン100px）

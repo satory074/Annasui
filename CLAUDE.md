@@ -546,11 +546,11 @@ if (isChangingSong && editModalOpen && editingSong) {
 }
 ```
 
-#### ActiveSongPopup Architecture (Updated 2025-09-03)
+#### ActiveSongPopup Architecture (Updated 2025-09-11)
 **Real-time Song Display System**: Popup component that shows currently playing songs during video playback with intelligent positioning to avoid overlap and mouse interference.
 
 **Key Features:**
-- **Dynamic Positioning**: Automatically positions left/right based on player location and screen size
+- **Bottom-Right Positioning**: Fixed positioning in screen bottom area with left/right switching for mouse avoidance (Updated 2025-09-11)
 - **Mouse Avoidance System**: Real-time mouse tracking that moves popup away from cursor to prevent UI interference
 - **Overlap Prevention**: Hides completely when popup would interfere with video viewing
 - **Song Detection**: Automatically detects active songs based on `currentTime` and song time ranges
@@ -565,13 +565,14 @@ if (isChangingSong && editModalOpen && editingSong) {
 - **Collision Avoidance**: Moves popup away when mouse enters 100px buffer zone around popup area
 - **Position Fixing (Updated 2025-09-03)**: After mouse avoidance, popup stays in new position for 4 seconds
 - **Visual Feedback**: Shows enhanced orange shadow and scale animation during position fixing
-- **Smart Positioning**: Prioritizes player position → mouse avoidance → position fixing → edge avoidance
+- **Smart Positioning**: Prioritizes mouse avoidance → position fixing → edge avoidance
 - **Smooth Transitions**: 0.3s CSS transitions for natural movement
 
-**Position Logic (`usePlayerPosition` hook):**
-- **Desktop**: Right-side default, switches to left when player in center area (30%-70% of viewport)
-- **Mobile**: Always left-side for consistent touch interaction
-- **Mouse Override**: Position changes dynamically based on cursor proximity
+**Position Logic (`usePlayerPosition` hook - Updated 2025-09-11):**
+- **Bottom Positioning**: Uses `bottom: 1rem` instead of `top: 6rem` for screen bottom placement
+- **Left/Right Switching**: Dynamic positioning between left-bottom and right-bottom based on mouse proximity
+- **Mobile/Desktop Consistent**: Both mobile and desktop use bottom positioning with mouse avoidance
+- **Mouse Override**: Position changes dynamically based on cursor proximity to bottom area
 - **Hide Conditions**: Popup hidden when player occupies large areas:
   - Height > 60% of viewport
   - Width > 80% of viewport  

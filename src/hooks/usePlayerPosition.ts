@@ -43,6 +43,7 @@ export function usePlayerPosition(
   const [shouldHidePopup, setShouldHidePopup] = useState<boolean>(false);
   const [isMouseNearPopup, setIsMouseNearPopup] = useState<boolean>(false);
   const [mouseAvoidanceActive, setMouseAvoidanceActive] = useState<boolean>(false);
+  const [collisionAvoidanceActive, setCollisionAvoidanceActive] = useState<boolean>(false);
   
   // Position fixing state
   const [fixedPosition, setFixedPosition] = useState<'left' | 'right' | null>(null);
@@ -111,17 +112,16 @@ export function usePlayerPosition(
     const viewportHeight = window.innerHeight;
     const playerCenterY = rect.top + rect.height / 2;
     
-    // プレイヤーがかなり大きな範囲を占有している場合は非表示
-    const playerOccupiesLargeArea = isVisible && rect.height > viewportHeight * 0.6;
+    // プレイヤーが画面下部と重複する場合は非表示（右下配置用に最適化）
+    // 注: Niconicoプレイヤーは標準サイズでもビューポートを超過するため、より厳格な条件に変更
+    const playerOverlapsBottomArea = isVisible && 
+      rect.bottom > viewportHeight * 1.5 && // プレイヤーが極端に下部に拡張している場合のみ (一時的に無効化)
+      rect.height > viewportHeight * 1.2;   // かつ異常に大きなサイズの場合のみ
     
-    // プレイヤーが画面の大部分（左右50%以上）を占める場合も非表示
-    const playerOccupiesWideArea = isVisible && rect.width > window.innerWidth * 0.8;
-    
-    // プレイヤーが中央の広範囲にある場合は非表示にする
-    const playerInLargeCenterArea = isVisible && 
-      playerCenterY > viewportHeight * 0.2 && 
-      playerCenterY < viewportHeight * 0.8 && 
-      rect.height > viewportHeight * 0.3;
+    // プレイヤーがフルスクリーンまたはほぼ全画面の場合は非表示
+    const playerIsFullscreen = isVisible && 
+      rect.width > window.innerWidth * 0.995 && // (98% → 99.5%に緩和)
+      rect.height > viewportHeight * 0.995;
     
     // マウス位置に基づく衝突検出と回避ロジック
     const popupWidth = 320; // ポップアップの幅（推定値）
@@ -157,8 +157,8 @@ export function usePlayerPosition(
                                   mousePosition.y >= (rightPopupRect.top - mouseBuffer) &&
                                   mousePosition.y <= (rightPopupRect.bottom + mouseBuffer);
     
-    if (playerOccupiesLargeArea || playerOccupiesWideArea || playerInLargeCenterArea) {
-      // プレイヤーが大きすぎる、または中央の広範囲を占める場合は非表示
+    if (playerOverlapsBottomArea || playerIsFullscreen) {
+      // プレイヤーが下部に重複、またはフルスクリーンの場合は非表示
       setShouldHidePopup(true);
       setPopupPosition('right'); // デフォルト位置は保持
       setIsMouseNearPopup(false);
@@ -179,67 +179,56 @@ export function usePlayerPosition(
           (fixedPosition === 'right' && isMouseNearRightPopup);
         setMouseAvoidanceActive(isCurrentPositionBeingAvoided);
       } else if (isMobile) {
-        // モバイルでは基本的に左側だが、マウスが被る場合は右側に移動
-        if (isMouseNearLeftPopup) {
-          const newPosition = 'right';
-          setPopupPosition(newPosition);
-          setMouseAvoidanceActive(true);
-          // Set position fixing when avoiding mouse
-          setFixedPosition(newPosition);
-          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
-        } else {
-          const newPosition = 'left';
-          setPopupPosition(newPosition);
-          setMouseAvoidanceActive(isMouseNearRightPopup);
-          // Set position fixing if avoiding mouse on right
-          if (isMouseNearRightPopup) {
-            setFixedPosition(newPosition);
-            setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
-          }
-        }
-      } else {
-        // デスクトップでのポジション決定ロジック
-        const playerInCenterArea = playerCenterY > viewportHeight * 0.3 && playerCenterY < viewportHeight * 0.7;
-        
-        // 基本のポジション（プレイヤー位置ベース）
-        let basePosition: 'left' | 'right';
-        if (isVisible && playerInCenterArea && !playerInLargeCenterArea) {
-          basePosition = 'left';
-        } else {
-          basePosition = 'right';
-        }
-        
-        // マウス回避ロジックを適用
-        let finalPosition = basePosition;
+        // モバイルでも右下固定ベース（デスクトップと統一）
+        let finalPosition: 'left' | 'right' = 'right'; // デフォルトは右下
         let avoidanceActive = false;
         
-        if (basePosition === 'left' && isMouseNearLeftPopup) {
-          // 左側にいるがマウスが被る場合、右側に移動
-          finalPosition = 'right';
-          avoidanceActive = true;
-          // Set position fixing when avoiding mouse
-          setFixedPosition(finalPosition);
-          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
-        } else if (basePosition === 'right' && isMouseNearRightPopup) {
-          // 右側にいるがマウスが被る場合、左側に移動
+        // マウス回避ロジック（タッチ操作も考慮）
+        if (isMouseNearRightPopup) {
           finalPosition = 'left';
           avoidanceActive = true;
-          // Set position fixing when avoiding mouse
+          setFixedPosition(finalPosition);
+          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
+        } else if (isMouseNearLeftPopup) {
+          // 左側でマウスが被る場合は右側に戻す
+          finalPosition = 'right';
+          avoidanceActive = true;
+          setFixedPosition(finalPosition);
+          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
+        }
+        
+        setPopupPosition(finalPosition);
+        setMouseAvoidanceActive(avoidanceActive);
+      } else {
+        // デスクトップでのポジション決定ロジック（右下固定ベース）
+        // 基本は右下で、マウス回避のみで左下に切り替え
+        let finalPosition: 'left' | 'right' = 'right'; // デフォルトは右下
+        let avoidanceActive = false;
+        
+        // マウス回避ロジック
+        if (isMouseNearRightPopup) {
+          // 右下でマウスが被る場合、左下に移動
+          finalPosition = 'left';
+          avoidanceActive = true;
+          setFixedPosition(finalPosition);
+          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
+        } else if (isMouseNearLeftPopup) {
+          // 左下でマウスが被る場合、右下に戻す
+          finalPosition = 'right';
+          avoidanceActive = true;
           setFixedPosition(finalPosition);
           setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         }
         
         // マウスが画面端にいる場合の強制回避
-        if (mousePosition.isNearLeftEdge && (finalPosition === 'left' || isMouseNearLeftPopup)) {
-          finalPosition = 'right';
-          avoidanceActive = true;
-          // Set position fixing for edge avoidance
-          setFixedPosition(finalPosition);
-          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
-        } else if (mousePosition.isNearRightEdge && (finalPosition === 'right' || isMouseNearRightPopup)) {
+        if (mousePosition.isNearRightEdge && (finalPosition === 'right' || isMouseNearRightPopup)) {
           finalPosition = 'left';
           avoidanceActive = true;
-          // Set position fixing for edge avoidance
+          setFixedPosition(finalPosition);
+          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
+        } else if (mousePosition.isNearLeftEdge && (finalPosition === 'left' || isMouseNearLeftPopup)) {
+          finalPosition = 'right';
+          avoidanceActive = true;
           setFixedPosition(finalPosition);
           setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         }
@@ -252,13 +241,12 @@ export function usePlayerPosition(
     logger.debug('Player position updated', {
       isVisible,
       isInUpperArea,
-      popupPosition: isMobile ? 'left (mobile)' : (isVisible && isInUpperArea ? 'right' : 'left'),
+      popupPosition: `${popupPosition} (bottom-fixed)`,
       playerTop: rect.top,
       playerBottom: rect.bottom,
       scrollY,
       windowWidth: window.innerWidth,
       windowHeight: window.innerHeight,
-      upperAreaThreshold: 200,
       playerRect: {
         top: rect.top,
         bottom: rect.bottom,
@@ -269,18 +257,16 @@ export function usePlayerPosition(
       }
     });
 
-    // プロダクション環境でも位置情報をコンソールに出力（位置固定機能追加版）
-    const playerInCenterArea = playerCenterY > viewportHeight * 0.3 && playerCenterY < viewportHeight * 0.7;
+    // プロダクション環境でも位置情報をコンソールに出力（右下固定ベース）
     
-    logger.debug('🎯 Player Position Debug (with Position Fixing):', {
+    // プロダクション環境専用デバッグ出力（logger.debugは本番で出力されないため）
+    console.log('🎯 Player Position Debug (Bottom-Right Fixed Base):', {
       isVisible,
       isInUpperArea,
-      playerInCenterArea,
-      playerInLargeCenterArea,
-      playerOccupiesLargeArea,
-      playerOccupiesWideArea,
-      shouldHidePopup: playerOccupiesLargeArea || playerOccupiesWideArea || playerInLargeCenterArea,
-      popupPosition: popupPosition,
+      playerOverlapsBottomArea,
+      playerIsFullscreen,
+      shouldHidePopup: playerOverlapsBottomArea || playerIsFullscreen,
+      popupPosition: `${popupPosition} (bottom-fixed)`,
       mouseAvoidanceActive: mouseAvoidanceActive,
       isMouseNearPopup: isMouseNearLeftPopup || isMouseNearRightPopup,
       isPositionFixed: isPositionFixed,
@@ -296,9 +282,10 @@ export function usePlayerPosition(
       isMouseNearLeftPopup,
       isMouseNearRightPopup,
       playerTop: Math.round(rect.top),
+      playerBottom: Math.round(rect.bottom),
       playerCenterY: Math.round(playerCenterY),
       playerSize: `${Math.round(rect.width)}x${Math.round(rect.height)}`,
-      centerAreaRange: `${Math.round(viewportHeight * 0.3)}-${Math.round(viewportHeight * 0.7)}px`,
+      bottomOverlapThreshold: `${Math.round(viewportHeight * 1.2)}px (height) / ${Math.round(viewportHeight * 1.5)}px (bottom)`,
       scrollY: Math.round(scrollY),
       windowSize: `${window.innerWidth}x${window.innerHeight}`,
       isMobile

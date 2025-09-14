@@ -11,7 +11,7 @@ import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
 import AuthModal from "@/components/features/auth/AuthModal";
 import AppHeader from "@/components/layout/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
-import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
+import { getThumbnailUrl, getYouTubeThumbnail, getNiconicoThumbnail } from "@/lib/utils/thumbnail";
 import { autoCorrectPlatform } from "@/lib/utils/platformDetection";
 import { logger } from "@/lib/utils/logger";
 
@@ -635,15 +635,17 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                             );
                                         } else {
                                             // Default to Niconico for legacy compatibility
+                                            // Use proxy API to handle CORS and fallback properly
+                                            const proxyThumbnailUrl = `/api/thumbnail/niconico/${medley.videoId}/`;
                                             return (
-                                                <Image
-                                                    src={getThumbnailUrl(`https://www.nicovideo.jp/watch/${medley.videoId}`) || '/default-thumbnail.svg'}
+                                                // Use regular img instead of Next.js Image to avoid redirect issues
+                                                <img
+                                                    src={proxyThumbnailUrl}
                                                     alt={medley.title}
-                                                    fill
-                                                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                                                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                                     onError={(e) => {
                                                         const target = e.target as HTMLImageElement;
+                                                        // Fallback to default thumbnail on error
                                                         target.src = '/default-thumbnail.svg';
                                                         target.alt = `${medley.title} (デフォルトサムネイル)`;
                                                     }}

@@ -46,6 +46,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Critical Implementation Details
 
+#### Trailing Slash Configuration (Updated 2025-09-13)
+**CRITICAL**: Firebase Hosting redirect issue resolution - Next.js configuration must use trailing slashes.
+
+**Key Requirements:**
+- **Next.js Config**: `next.config.ts` must have `trailingSlash: true`
+- **API URLs**: All thumbnail API URLs must include trailing slashes: `/api/thumbnail/niconico/${id}/`
+- **Reason**: Firebase Hosting automatically adds trailing slashes causing 308 redirect loops with `trailingSlash: false`
+- **Affected Files**: All thumbnail URL generation must use trailing slash format
+
+**Implementation Pattern:**
+```typescript
+// Correct: Always include trailing slash for API routes
+return `/api/thumbnail/niconico/${id}/`;
+
+// Incorrect: Missing trailing slash causes redirect loops in production
+return `/api/thumbnail/niconico/${id}`;
+```
+
 #### Niconico Player Integration (`useNicoPlayer` hook)
 **CRITICAL**: Core functionality relies on postMessage communication with Niconico's embedded player.
 
@@ -955,11 +973,12 @@ useEffect(() => {
 
 ### API Proxy Issues
 #### Thumbnail Issues
-- **Images not loading**: Verify proxy API route is working (`/api/thumbnail/niconico/[videoId]`)
+- **Images not loading**: Verify proxy API route is working (`/api/thumbnail/niconico/[videoId]/`) - Note trailing slash requirement
 - **CORS errors**: Direct CDN access blocked - must use server-side proxy implementation
 - **Fallback failure**: Check all 5-tier fallback hierarchy (CDN L/M/default → getthumbinfo API → legacy)
 - **404 responses**: Some video IDs may be invalid or videos deleted from platform
 - **Cache issues**: Production deployment may need cache clearing for new proxy API
+- **Redirect loops**: Ensure `trailingSlash: true` in `next.config.ts` and all API URLs end with `/`
 
 #### Metadata API Issues (Added 2025-09-05)
 - **"取得" button fails**: Check `/api/metadata/niconico/[videoId]` proxy API is working

@@ -95,7 +95,7 @@ export function MedleyCollectionStructuredData({ medleys }: MedleyCollectionStru
           "description": `${medley.songs.length}曲収録のメドレーアノテーション`,
           "url": `https://anasui-e6f49.web.app/${platform}/${videoId}`,
           "thumbnailUrl": platform === 'niconico' 
-            ? `/api/thumbnail/niconico/${videoId}`
+            ? `/api/thumbnail/niconico/${videoId}/`
             : `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`,
           "duration": `PT${Math.floor(medley.duration / 60)}M${medley.duration % 60}S`,
           "uploadDate": medley.createdAt || new Date().toISOString(),

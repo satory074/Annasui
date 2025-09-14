@@ -3,11 +3,11 @@ import { NextRequest, NextResponse } from 'next/server';
 // ニコニコ動画のサムネイルを取得するプロキシAPI
 
 /**
- * ニコニコ動画のサムネイルを複数のAPIから取得を試行
+ * ニコニコ動画のサムネイルを複数のAPIから取得してストリーミング
  */
 async function fetchNiconicoThumbnail(videoId: string): Promise<{
   success: boolean;
-  thumbnailUrl?: string;
+  imageBuffer?: Buffer;
   contentType?: string;
   error?: string;
 }> {
@@ -32,19 +32,26 @@ async function fetchNiconicoThumbnail(videoId: string): Promise<{
       console.log(`[Thumbnail API] Trying: ${url}`);
       
       const response = await fetch(url, {
-        method: 'HEAD', // まずHEADリクエストで存在確認
+        method: 'GET', // 実際に画像データを取得
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; Medlean/1.0; +https://anasui-e6f49.web.app)',
         },
       });
       
-      if (response.ok) {
-        console.log(`[Thumbnail API] Success: ${url}`);
-        return {
-          success: true,
-          thumbnailUrl: url,
-          contentType: response.headers.get('content-type') || 'image/jpeg',
-        };
+      if (response.ok && response.body) {
+        const contentType = response.headers.get('content-type') || 'image/jpeg';
+        
+        // Content-Typeが画像かチェック
+        if (contentType.startsWith('image/')) {
+          const imageBuffer = Buffer.from(await response.arrayBuffer());
+          console.log(`[Thumbnail API] Success: ${url} (${imageBuffer.length} bytes, ${contentType})`);
+          
+          return {
+            success: true,
+            imageBuffer,
+            contentType,
+          };
+        }
       }
       
       console.log(`[Thumbnail API] Failed (${response.status}): ${url}`);
@@ -73,11 +80,28 @@ async function fetchNiconicoThumbnail(videoId: string): Promise<{
         const extractedUrl = thumbnailUrlMatch[1];
         console.log(`[Thumbnail API] Extracted from XML: ${extractedUrl}`);
         
-        return {
-          success: true,
-          thumbnailUrl: extractedUrl,
-          contentType: 'image/jpeg',
-        };
+        // 抽出したURLから実際に画像データを取得
+        try {
+          const imageResponse = await fetch(extractedUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; Medlean/1.0; +https://anasui-e6f49.web.app)',
+            },
+          });
+          
+          if (imageResponse.ok && imageResponse.body) {
+            const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+            const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
+            console.log(`[Thumbnail API] Success via getthumbinfo: ${extractedUrl} (${imageBuffer.length} bytes)`);
+            
+            return {
+              success: true,
+              imageBuffer,
+              contentType,
+            };
+          }
+        } catch (error) {
+          console.error(`[Thumbnail API] Error fetching image from XML URL: ${extractedUrl}`, error);
+        }
       }
     }
   } catch (error) {
@@ -113,37 +137,95 @@ export async function GET(
     // サムネイル取得を試行
     const result = await fetchNiconicoThumbnail(formattedVideoId);
     
-    if (result.success && result.thumbnailUrl) {
-      // キャッシュヘッダー付きのリダイレクトレスポンス
-      const response = NextResponse.redirect(result.thumbnailUrl);
+    if (result.success && result.imageBuffer) {
+      // 画像データをストリーミングで返す
+      const response = new NextResponse(result.imageBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': result.contentType || 'image/jpeg',
+          'Content-Length': result.imageBuffer.length.toString(),
+          // キャッシュヘッダー (1時間ブラウザキャッシュ、24時間CDNキャッシュ)
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+          'CDN-Cache-Control': 'public, max-age=86400',
+          // CORS ヘッダー
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, HEAD',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+      });
       
-      // 1時間キャッシュ（サムネイルは変更されないため）
-      response.headers.set('Cache-Control', 'public, max-age=3600, s-maxage=3600');
-      response.headers.set('CDN-Cache-Control', 'public, max-age=86400'); // 24時間
-      
+      console.log(`[Thumbnail API] Streaming ${result.imageBuffer.length} bytes for ${formattedVideoId}`);
       return response;
     }
     
     // すべて失敗した場合は404を返す
     return NextResponse.json(
       { error: result.error || 'Thumbnail not found' },
-      { status: 404 }
+      { 
+        status: 404,
+        headers: {
+          // エラーの場合は短期キャッシュ (5分)
+          'Cache-Control': 'public, max-age=300, s-maxage=300',
+        }
+      }
     );
     
   } catch (error) {
     console.error('[Thumbnail API] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
-      { status: 500 }
+      { 
+        status: 500,
+        headers: {
+          // エラーの場合は短期キャッシュ (1分)
+          'Cache-Control': 'public, max-age=60, s-maxage=60',
+        }
+      }
     );
   }
 }
 
-// キャッシュヘッダーを設定するためのOPTIONSハンドラー
+// HEAD リクエスト用ハンドラー（ヘッダー情報のみ返す）
 export async function HEAD(
   request: NextRequest,
   { params }: { params: Promise<{ videoId: string }> }
 ) {
-  // HEADリクエストでもGETと同じロジックを使用
-  return GET(request, { params });
+  try {
+    const { videoId } = await params;
+    
+    // videoId の基本検証
+    if (!videoId || !/^(sm)?\d+$/.test(videoId)) {
+      return new NextResponse(null, { status: 400 });
+    }
+    
+    // sm prefix を付与
+    const formattedVideoId = videoId.startsWith('sm') ? videoId : `sm${videoId}`;
+    
+    console.log(`[Thumbnail API] HEAD request for: ${formattedVideoId}`);
+    
+    // サムネイル取得を試行
+    const result = await fetchNiconicoThumbnail(formattedVideoId);
+    
+    if (result.success && result.imageBuffer) {
+      // ヘッダー情報のみ返す（ボディは空）
+      return new NextResponse(null, {
+        status: 200,
+        headers: {
+          'Content-Type': result.contentType || 'image/jpeg',
+          'Content-Length': result.imageBuffer.length.toString(),
+          'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+          'CDN-Cache-Control': 'public, max-age=86400',
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, HEAD',
+          'Access-Control-Allow-Headers': 'Content-Type',
+        },
+      });
+    }
+    
+    return new NextResponse(null, { status: 404 });
+    
+  } catch (error) {
+    console.error('[Thumbnail API] HEAD request error:', error);
+    return new NextResponse(null, { status: 500 });
+  }
 }

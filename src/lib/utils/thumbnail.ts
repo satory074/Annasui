@@ -232,7 +232,7 @@ export function getThumbnailUrl(originalLink: string): string | null {
       return getYouTubeThumbnail(id);
     case 'niconico':
       // プロキシサーバーを経由してニコニコのサムネイルを取得
-      return `/api/thumbnail/niconico/${id}`;
+      return `/api/thumbnail/niconico/${id}/`;
     case 'spotify':
       // SpotifyはasyncなAPIが必要なため、同期的にはプレースホルダーを返す
       return getSpotifyThumbnailPlaceholder();

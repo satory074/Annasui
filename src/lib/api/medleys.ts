@@ -139,12 +139,24 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
 function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyData {
   const sortedSongs = [...songs].sort((a, b) => a.order_index - b.order_index)
   
+  // Auto-detect platform based on video_id pattern
+  let platform: 'niconico' | 'youtube' = 'niconico'; // Default to niconico for backwards compatibility
+  
+  if (medley.video_id) {
+    if (medley.video_id.match(/^sm\d+$/)) {
+      platform = 'niconico';
+    } else if (medley.video_id.match(/^[a-zA-Z0-9_-]{11}$/)) {
+      platform = 'youtube';
+    }
+  }
+  
   return {
     id: medley.id,
     videoId: medley.video_id,
     title: medley.title,
     creator: medley.creator || '',
     duration: medley.duration,
+    platform: platform,
     user_id: medley.user_id || undefined,
     createdAt: medley.created_at,
     updatedAt: medley.updated_at,

@@ -26,7 +26,7 @@ export async function generateMetadata({ params }: MedleyPageProps): Promise<Met
       };
     }
 
-    const thumbnailUrl = getThumbnailUrl(`https://www.nicovideo.jp/watch/${videoId}`) || `/api/thumbnail/niconico/${videoId}`;
+    const thumbnailUrl = getThumbnailUrl(`https://www.nicovideo.jp/watch/${videoId}`) || `/api/thumbnail/niconico/${videoId}/`;
     const songCount = medleyData.songs.length;
     const durationMinutes = Math.floor(medleyData.duration / 60);
     const durationSeconds = medleyData.duration % 60;

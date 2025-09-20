@@ -257,7 +257,8 @@ async function checkUserApproval(): Promise<{ isApproved: boolean; user: User | 
 - Version Management: `VersionPage`, `VersionInfoModal` (dual-access version system)
 
 **Modal Interaction Flow:**
-- Timeline click → `SongEditModal` opens
+- Timeline double-click → **DISABLED** (as of 2025-09-20)
+- Alternative edit access → `SongEditModal` opens via other methods
 - "楽曲を変更" button → `SongSearchModal` opens in change mode (`isChangingSong: true`)
 - Song selection → Updates `editingSong` state with new song data, preserving time segments
 - Modal closes → Returns to `SongEditModal` with updated song information
@@ -420,22 +421,23 @@ const showTroubleshooting = loadingTime > 15; // 15 seconds
 - **Player Initialization**: 20-second timeout in `useNicoPlayer.ts` allows complex iframe communication
 - **Retry Logic**: Enhanced 3-attempt retry system with exponential backoff
 
-#### Timeline System & Annotation Enhancement Features (Updated 2025-09-01)
+#### Timeline System & Annotation Enhancement Features (Updated 2025-09-20)
 **Timeline Display**: Always shows full video duration with simplified position calculations
-**Edit Mode Features**: 
+**Edit Mode Features**:
 - Drag-and-drop editing (0.1s precision)
 - Undo/redo (50-action history)
 - Keyboard shortcuts (S/E/M keys) with comprehensive visual feedback
 - Real-time song bar creation with elapsed time display
 - Adjacent song time alignment buttons
-- **Song Change**: Double-click song segment → Edit modal → "楽曲を変更" button → Select new song while preserving time segments
+- **Timeline Interaction**: Double-click editing disabled (as of 2025-09-20) - use alternative edit access methods
 
-**Simplified Edit Interface (Updated 2025-09-03):**
+**Simplified Edit Interface (Updated 2025-09-20):**
 - **Removed buttons**: "楽曲追加" (Add Song), "インポート" (Import), and "クイック" (Quick) buttons have been removed from the edit interface
 - **UI Simplification**: "変更を保存" (Save Changes) and "リセット" (Reset) buttons removed - editing now auto-saves via timeline interactions
 - **Icon Removal**: Individual song edit/delete icon buttons removed to reduce UI clutter
+- **Double-Click Disabled**: Timeline song bars no longer open edit modal on double-click (disabled 2025-09-20)
 - **Remaining edit controls**: Edit mode toggle, Undo/Redo buttons only
-- **Focused workflow**: Editing now primarily relies on timeline interaction (double-click to edit) and keyboard shortcuts
+- **Focused workflow**: Editing now primarily relies on keyboard shortcuts and alternative edit access methods
 
 **Auto-Save System (Added 2025-09-07):**
 - **Automatic Persistence**: Song data automatically saved to database 2 seconds after changes without requiring manual save button
@@ -725,37 +727,21 @@ const debouncedWarn = (message: string, key: string) => {
 };
 ```
 
-**Performance Optimization Pattern**: Use React.memo for stable components:
+**Essential UI Patterns:**
 ```typescript
+// Performance: Use React.memo for stable components
 const MyComponent = React.memo(function MyComponent({ props }) {
-  // Remove debug logging in production
   // Use logger.debug() instead of console.log()
   return <div>{content}</div>;
 });
-```
 
-**AppHeader Usage Pattern**: Always use AppHeader with appropriate variant:
-```typescript
-// Home page - light theme
-<AppHeader variant="home" />
-
-// Player page - dark theme
+// Header variants: "home" (light), "player" (dark), "default" (neutral)
 <AppHeader variant="player" />
 
-// Other pages - default neutral theme
-<AppHeader variant="default" />
-```
-
-**Sticky Header Pattern**: Maintain proper header hierarchy:
-```typescript
-// Main AppHeader - Fixed at top with highest z-index
+// Sticky header hierarchy: Main header z-[100], song headers z-50
 <header className="fixed top-0 left-0 right-0 z-[100] w-full">
-
-// Page container - Account for fixed header height
-<div className="min-h-screen pt-16">
-
-// Song list headers - Sticky below main header
-<div className="sticky top-16 z-50 bg-white">
+<div className="min-h-screen pt-16"> {/* Account for header height */}
+<div className="sticky top-16 z-50 bg-white"> {/* Song list headers */}
 ```
 
 **Keyboard Event Handling Pattern**: Proper keyboard shortcut implementation:
@@ -826,69 +812,41 @@ case 'm':
   break;
 ```
 
-**Tree-Shaking Prevention Pattern**: Essential for components that may be removed in production builds:
+**Production Build Patterns:**
 ```typescript
-// Module-level initialization - prevents tree-shaking removal
+// Tree-shaking prevention for critical components
 if (typeof window !== 'undefined') {
-  console.log('🔥 ComponentName: Module loaded in production', {
-    timestamp: new Date().toISOString(),
-    url: window.location.href
-  });
+  console.log('🔥 ComponentName: Module loaded in production');
 }
-
-export const MyComponent = React.FC<Props> = (props) => {
-  // Component implementation
-  return <div>Content</div>;
-};
-
-// Component displayName - helps with production debugging
 MyComponent.displayName = 'MyComponent';
 
-// Export verification - ensures bundler includes component
-if (typeof window !== 'undefined') {
-  console.log('🔥 ComponentName: Component definition exported', {
-    displayName: MyComponent.displayName,
-    timestamp: new Date().toISOString()
-  });
-}
-```
-
-**Component Existence Validation Pattern**: Runtime checks to prevent silent failures:
-```typescript
-// In parent component - validate component exists before rendering
+// Runtime component validation to prevent silent failures
 if (!MyComponent) {
   console.error('🚨 CRITICAL: MyComponent is undefined!');
-  return <div style={{ 
-    position: 'fixed', top: '6rem', left: '1rem', zIndex: 1000,
-    background: 'red', color: 'white', padding: '1rem' 
-  }}>
+  return <div style={{ position: 'fixed', top: '6rem', left: '1rem',
+    zIndex: 1000, background: 'red', color: 'white', padding: '1rem' }}>
     ERROR: MyComponent not loaded
   </div>;
 }
-
-return <MyComponent {...props} />;
 ```
 
-**Tooltip State Management Pattern**: Handle async state updates in timeouts to prevent stale closures:
+**State Management Patterns:**
 ```typescript
-// Correct: Use state setter function to get current values
+// Tooltip: Use state setter callbacks to prevent stale closures
 const handleTooltipMouseLeave = () => {
   setIsHoveringTooltip(false);
-  
   const timeout = setTimeout(() => {
-    // State updates are async - use setter callbacks to get current values
-    setIsHoveringTooltip(currentHoveringTooltip => {
-      setIsHoveringSong(currentHoveringSong => {
-        if (!currentHoveringTooltip && !currentHoveringSong) {
+    setIsHoveringTooltip(current => {
+      setIsHoveringSong(currentSong => {
+        if (!current && !currentSong) {
           setIsTooltipVisible(false);
           setTooltipSong(null);
         }
-        return currentHoveringSong;
+        return currentSong;
       });
-      return currentHoveringTooltip;
+      return current;
     });
   }, 200);
-  
   setHideTooltipTimeout(timeout);
 };
 ```
@@ -957,7 +915,7 @@ useEffect(() => {
 - **Undo/Redo not working**: Check keyboard listeners in edit mode
 - **Timeline duration mismatch**: Songs beyond actual video length show red styling
 - **Hotkeys not working**: Ensure edit mode is active and keyboard event listeners attached
-- **Edit interface simplification**: As of 2025-09-03, edit interface only shows Edit Mode toggle and Undo/Redo buttons. Song addition is done via timeline double-click or keyboard shortcuts (M key). Manual save/reset buttons and individual song edit/delete icons have been removed for streamlined auto-save workflow
+- **Edit interface simplification**: As of 2025-09-20, edit interface only shows Edit Mode toggle and Undo/Redo buttons. Timeline double-click editing has been disabled. Song addition is done via keyboard shortcuts (M key) or alternative edit access methods. Manual save/reset buttons and individual song edit/delete icons have been removed for streamlined auto-save workflow
 
 ### Keyboard Shortcuts Issues
 - **Spacebar not working**: Check if player is ready (`playerReady` state) and no modals are open

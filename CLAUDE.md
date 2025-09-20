@@ -614,22 +614,23 @@ import SongThumbnail from "@/components/ui/song/SongThumbnail";
 - **Smart Positioning**: Prioritizes mouse avoidance → position fixing → edge avoidance
 - **Smooth Transitions**: 0.3s CSS transitions for natural movement
 
-**Position Logic (`usePlayerPosition` hook - Updated 2025-09-11):**
+**Position Logic (`usePlayerPosition` hook - Updated 2025-09-20):**
 - **Bottom Positioning**: Uses `bottom: 1rem` instead of `top: 6rem` for screen bottom placement
 - **Left/Right Switching**: Dynamic positioning between left-bottom and right-bottom based on mouse proximity
 - **Mobile/Desktop Consistent**: Both mobile and desktop use bottom positioning with mouse avoidance
 - **Mouse Override**: Position changes dynamically based on cursor proximity to bottom area
-- **Hide Conditions**: Popup hidden when player occupies large areas:
-  - Height > 60% of viewport
-  - Width > 80% of viewport  
-  - Large center area (20%-80% vertical + height > 30% viewport)
+- **Improved Collision Detection**: Uses precise popup zone calculation (116px = popup height 100px + margin 16px)
+- **Hide Conditions**: Popup hidden when:
+  - **Rectangle Overlap**: Player and popup rectangles actually intersect
+  - **Popup Zone Intrusion**: Player bottom extends into popup zone (116px from screen bottom)
+  - **Fullscreen Mode**: Player occupies 99.5%+ of both width and height
 
-**Position Fixing System (Added 2025-09-03):**
-- **Duration**: 4 seconds (configurable via `POSITION_FIX_DURATION` constant)
+**Position Fixing System (Updated 2025-09-20):**
+- **Permanent Fixing**: Position stays fixed until user scrolls >100px (no time limit)
 - **Trigger**: Automatically activated when mouse avoidance occurs
-- **Clearing Conditions**: Position fix clears when user scrolls >100px or timer expires
-- **Visual State**: Enhanced orange borders, shadows, and "(位置固定)" status text
-- **Debug Support**: Real-time countdown and state displayed in debug mode (`?debug=true`)
+- **Clearing Conditions**: Position fix clears only when user scrolls >100px
+- **Visual State**: Enhanced orange borders, shadows, and position indicators
+- **Debug Support**: Real-time collision detection details displayed in debug mode (`?debug=true`)
 
 **Critical Implementation Requirements:**
 ```typescript
@@ -661,6 +662,34 @@ return <ActiveSongPopup currentTime={currentTime} songs={songs} isVisible={isVis
 - Handles multiple segments of same song with unique identifiers
 - Deduplicates identical songs appearing in multiple segments
 - Updates in real-time with currentTime changes from video player
+
+**Collision Detection Implementation (Updated 2025-09-20):**
+```typescript
+// Precise popup zone calculation
+const popupZoneHeight = popupHeight + popupBottom; // 100px + 16px = 116px
+
+// Rectangle overlap detection
+const hasRectangleOverlap = isVisible && !(
+  rect.right < popupRect.left ||   // Player left of popup
+  rect.left > popupRect.right ||   // Player right of popup
+  rect.bottom < popupRect.top ||   // Player above popup
+  rect.top > popupRect.bottom      // Player below popup
+);
+
+// Popup zone intrusion detection
+const playerInPopupZone = isVisible && rect.bottom > viewportHeight - popupZoneHeight;
+
+// Final collision decision
+if (hasRectangleOverlap || playerInPopupZone || playerIsFullscreen) {
+  setShouldHidePopup(true);
+}
+```
+
+**Key Improvements from 2025-09-20:**
+- **Removed arbitrary 60% viewport rule** that incorrectly hid popup when player was large but not interfering
+- **Added precise popup zone calculation** (116px) instead of generic 150px threshold
+- **Implemented actual rectangle intersection** mathematics for accurate overlap detection
+- **Enhanced debug logging** with detailed collision detection breakdown
 
 #### SEO Architecture (Added 2025-08-30)
 **Comprehensive SEO Implementation:**

@@ -132,11 +132,9 @@ export function usePlayerPosition(
       rect.top > popupRect.bottom      // プレイヤーがポップアップの下側
     );
 
-    // 追加の衝突条件：プレイヤーが画面下部に大きく表示される場合
-    const playerOverlapsBottomArea = isVisible && (
-      rect.bottom > viewportHeight - 150 ||  // プレイヤーが画面下部150px以内に来る
-      rect.height > viewportHeight * 0.6    // プレイヤーが画面の60%以上を占める
-    );
+    // プレイヤーがポップアップ表示領域に侵入している場合
+    const popupZoneHeight = popupHeight + popupBottom; // 100px + 16px = 116px
+    const playerInPopupZone = isVisible && rect.bottom > viewportHeight - popupZoneHeight;
     
     // プレイヤーがフルスクリーンまたはほぼ全画面の場合は非表示
     const playerIsFullscreen = isVisible && 
@@ -171,8 +169,8 @@ export function usePlayerPosition(
                                   mousePosition.y >= (rightPopupRect.top - mouseBuffer) &&
                                   mousePosition.y <= (rightPopupRect.bottom + mouseBuffer);
     
-    if (hasRectangleOverlap || playerOverlapsBottomArea || playerIsFullscreen) {
-      // プレイヤーとポップアップが重複、またはフルスクリーンの場合は非表示
+    if (hasRectangleOverlap || playerInPopupZone || playerIsFullscreen) {
+      // プレイヤーがポップアップ領域に侵入、またはフルスクリーンの場合は非表示
       setShouldHidePopup(true);
       setPopupPosition('right'); // デフォルト位置は保持
       setIsMouseNearPopup(false);
@@ -273,9 +271,25 @@ export function usePlayerPosition(
       isInUpperArea,
       collisionDetection: {
         hasRectangleOverlap,
-        playerOverlapsBottomArea,
+        playerInPopupZone,
         playerIsFullscreen,
-        shouldHidePopup: hasRectangleOverlap || playerOverlapsBottomArea || playerIsFullscreen
+        shouldHidePopup: hasRectangleOverlap || playerInPopupZone || playerIsFullscreen,
+        // 境界条件の詳細検証
+        overlapDetails: {
+          playerLeftOfPopup: rect.right < popupRect.left,
+          playerRightOfPopup: rect.left > popupRect.right,
+          playerAbovePopup: rect.bottom < popupRect.top,
+          playerBelowPopup: rect.top > popupRect.bottom,
+          // 接触・重複の境界値
+          horizontalOverlap: Math.max(0, Math.min(rect.right, popupRect.right) - Math.max(rect.left, popupRect.left)),
+          verticalOverlap: Math.max(0, Math.min(rect.bottom, popupRect.bottom) - Math.max(rect.top, popupRect.top)),
+          // ポップアップ領域侵入の詳細
+          distanceFromBottom: Math.round(viewportHeight - rect.bottom),
+          popupZoneHeight: popupZoneHeight,
+          popupZoneTop: Math.round(viewportHeight - popupZoneHeight),
+          isInPopupZone: rect.bottom > viewportHeight - popupZoneHeight,
+          playerHeightRatio: Math.round((rect.height / viewportHeight) * 100) / 100
+        }
       },
       playerRect: {
         top: Math.round(rect.top),
@@ -292,7 +306,19 @@ export function usePlayerPosition(
         left: Math.round(popupRect.left),
         right: Math.round(popupRect.right),
         width: popupWidth,
-        height: popupHeight
+        height: popupHeight,
+        // 座標計算の検証
+        calculationVerification: {
+          leftPosition: popupPosition === 'left' ? `${popupMargin}px from left` : `${window.innerWidth - popupMargin - popupWidth}px from left`,
+          rightPosition: popupPosition === 'left' ? `${popupMargin + popupWidth}px from left` : `${window.innerWidth - popupMargin}px from left`,
+          bottomFromViewport: `${popupBottom}px from bottom`,
+          topFromViewport: `${window.innerHeight - popupBottom - popupHeight}px from top`,
+          // 画面サイズに対する相対位置
+          relativeX: popupPosition === 'left' ?
+            Math.round((popupMargin / window.innerWidth) * 100) + '%' :
+            Math.round(((window.innerWidth - popupMargin - popupWidth) / window.innerWidth) * 100) + '%',
+          relativeY: Math.round(((window.innerHeight - popupBottom - popupHeight) / window.innerHeight) * 100) + '%'
+        }
       },
       popupPosition: `${popupPosition} (bottom-fixed)`,
       mouseAvoidanceActive: mouseAvoidanceActive,
@@ -309,8 +335,8 @@ export function usePlayerPosition(
       isMouseNearLeftPopup,
       isMouseNearRightPopup,
       thresholds: {
-        bottomAreaLimit: Math.round(viewportHeight - 150),
-        playerSizeLimit: Math.round(viewportHeight * 0.6),
+        popupZoneLimit: Math.round(viewportHeight - popupZoneHeight),
+        popupZoneHeight: popupZoneHeight,
         fullscreenWidthLimit: Math.round(window.innerWidth * 0.995),
         fullscreenHeightLimit: Math.round(viewportHeight * 0.995)
       },

@@ -171,10 +171,10 @@ export default function SongListGrouped({
     onTimelineClick?.(song.startTime);
   };
 
-  // 楽曲ダブルクリック処理
+  // 楽曲ダブルクリック処理（無効化）
   const handleSongDoubleClick = (e: React.MouseEvent, song: SongSection) => {
     e.stopPropagation();
-    onEditSong?.(song);
+    // onEditSong?.(song); // 編集モーダルを開かないようにコメントアウト
   };
 
   // ホバー処理

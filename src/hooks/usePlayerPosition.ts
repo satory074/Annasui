@@ -98,24 +98,45 @@ export function usePlayerPosition(
     const scrollDelta = Math.abs(scrollY - lastScrollY);
     if (scrollDelta > SIGNIFICANT_SCROLL_THRESHOLD) {
       setFixedPosition(null);
-      setPositionFixedUntil(0);
     }
     setLastScrollY(scrollY);
 
-    // Check if position fix has expired
-    const currentTime = Date.now();
-    const isPositionFixed = fixedPosition !== null && currentTime < positionFixedUntil;
+    // Position is fixed until user scrolls significantly
+    const isPositionFixed = fixedPosition !== null;
 
     // ポップアップの位置と表示/非表示を決定（位置固定機能付きマウス回避）
     const isMobile = window.innerWidth < 768; // md breakpoint
     const viewportHeight = window.innerHeight;
     const playerCenterY = rect.top + rect.height / 2;
     
-    // プレイヤーが画面下部と重複する場合は非表示（右下配置用に最適化）
-    // 注: Niconicoプレイヤーは標準サイズでもビューポートを超過するため、より厳格な条件に変更
-    const playerOverlapsBottomArea = isVisible && 
-      rect.bottom > viewportHeight * 1.5 && // プレイヤーが極端に下部に拡張している場合のみ (一時的に無効化)
-      rect.height > viewportHeight * 1.2;   // かつ異常に大きなサイズの場合のみ
+    // プレイヤーとポップアップの実際の衝突判定
+    // ポップアップの実際の座標を計算（下部表示用）
+    const popupWidth = 320; // ポップアップの幅（推定値）
+    const popupHeight = 100; // ポップアップの高さ（推定値）
+    const popupBottom = 16; // bottom: 1rem = 16px
+    const popupMargin = 16; // left/right: 1rem = 16px
+
+    // ポップアップの矩形領域を計算
+    const popupRect = {
+      left: popupPosition === 'left' ? popupMargin : window.innerWidth - popupMargin - popupWidth,
+      right: popupPosition === 'left' ? popupMargin + popupWidth : window.innerWidth - popupMargin,
+      top: window.innerHeight - popupBottom - popupHeight,
+      bottom: window.innerHeight - popupBottom
+    };
+
+    // プレイヤーとポップアップの矩形が重複するかチェック
+    const hasRectangleOverlap = isVisible && !(
+      rect.right < popupRect.left ||   // プレイヤーがポップアップの左側
+      rect.left > popupRect.right ||   // プレイヤーがポップアップの右側
+      rect.bottom < popupRect.top ||   // プレイヤーがポップアップの上側
+      rect.top > popupRect.bottom      // プレイヤーがポップアップの下側
+    );
+
+    // 追加の衝突条件：プレイヤーが画面下部に大きく表示される場合
+    const playerOverlapsBottomArea = isVisible && (
+      rect.bottom > viewportHeight - 150 ||  // プレイヤーが画面下部150px以内に来る
+      rect.height > viewportHeight * 0.6    // プレイヤーが画面の60%以上を占める
+    );
     
     // プレイヤーがフルスクリーンまたはほぼ全画面の場合は非表示
     const playerIsFullscreen = isVisible && 
@@ -123,23 +144,17 @@ export function usePlayerPosition(
       rect.height > viewportHeight * 0.995;
     
     // マウス位置に基づく衝突検出と回避ロジック
-    const popupWidth = 320; // ポップアップの幅（推定値）
-    const popupHeight = 100; // ポップアップの高さ（推定値）
-    const popupBottom = 16; // bottom: 1rem = 16px
-    const popupLeft = 16; // left: 1rem = 16px
-    const popupRight = 16; // right: 1rem = 16px
-    
-    // 現在のポップアップ位置での矩形を計算（下部表示用）
+    // 左と右のポップアップ位置での矩形を計算（マウス回避用）
     const leftPopupRect = {
-      left: popupLeft,
-      right: popupLeft + popupWidth,
+      left: popupMargin,
+      right: popupMargin + popupWidth,
       top: window.innerHeight - popupBottom - popupHeight,
       bottom: window.innerHeight - popupBottom
     };
-    
+
     const rightPopupRect = {
-      left: window.innerWidth - popupRight - popupWidth,
-      right: window.innerWidth - popupRight,
+      left: window.innerWidth - popupMargin - popupWidth,
+      right: window.innerWidth - popupMargin,
       top: window.innerHeight - popupBottom - popupHeight,
       bottom: window.innerHeight - popupBottom
     };
@@ -156,8 +171,8 @@ export function usePlayerPosition(
                                   mousePosition.y >= (rightPopupRect.top - mouseBuffer) &&
                                   mousePosition.y <= (rightPopupRect.bottom + mouseBuffer);
     
-    if (playerOverlapsBottomArea || playerIsFullscreen) {
-      // プレイヤーが下部に重複、またはフルスクリーンの場合は非表示
+    if (hasRectangleOverlap || playerOverlapsBottomArea || playerIsFullscreen) {
+      // プレイヤーとポップアップが重複、またはフルスクリーンの場合は非表示
       setShouldHidePopup(true);
       setPopupPosition('right'); // デフォルト位置は保持
       setIsMouseNearPopup(false);
@@ -187,13 +202,11 @@ export function usePlayerPosition(
           finalPosition = 'left';
           avoidanceActive = true;
           setFixedPosition(finalPosition);
-          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         } else if (isMouseNearLeftPopup) {
           // 左側でマウスが被る場合は右側に戻す
           finalPosition = 'right';
           avoidanceActive = true;
           setFixedPosition(finalPosition);
-          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         }
         
         setPopupPosition(finalPosition);
@@ -210,13 +223,11 @@ export function usePlayerPosition(
           finalPosition = 'left';
           avoidanceActive = true;
           setFixedPosition(finalPosition);
-          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         } else if (isMouseNearLeftPopup) {
           // 左下でマウスが被る場合、右下に戻す
           finalPosition = 'right';
           avoidanceActive = true;
           setFixedPosition(finalPosition);
-          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         }
         
         // マウスが画面端にいる場合の強制回避
@@ -224,12 +235,10 @@ export function usePlayerPosition(
           finalPosition = 'left';
           avoidanceActive = true;
           setFixedPosition(finalPosition);
-          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         } else if (mousePosition.isNearLeftEdge && (finalPosition === 'left' || isMouseNearLeftPopup)) {
           finalPosition = 'right';
           avoidanceActive = true;
           setFixedPosition(finalPosition);
-          setPositionFixedUntil(currentTime + POSITION_FIX_DURATION);
         }
         
         setPopupPosition(finalPosition);
@@ -262,16 +271,35 @@ export function usePlayerPosition(
     console.log('🎯 Player Position Debug (Bottom-Right Fixed Base):', {
       isVisible,
       isInUpperArea,
-      playerOverlapsBottomArea,
-      playerIsFullscreen,
-      shouldHidePopup: playerOverlapsBottomArea || playerIsFullscreen,
+      collisionDetection: {
+        hasRectangleOverlap,
+        playerOverlapsBottomArea,
+        playerIsFullscreen,
+        shouldHidePopup: hasRectangleOverlap || playerOverlapsBottomArea || playerIsFullscreen
+      },
+      playerRect: {
+        top: Math.round(rect.top),
+        bottom: Math.round(rect.bottom),
+        left: Math.round(rect.left),
+        right: Math.round(rect.right),
+        width: Math.round(rect.width),
+        height: Math.round(rect.height)
+      },
+      popupRect: {
+        position: popupPosition,
+        top: Math.round(popupRect.top),
+        bottom: Math.round(popupRect.bottom),
+        left: Math.round(popupRect.left),
+        right: Math.round(popupRect.right),
+        width: popupWidth,
+        height: popupHeight
+      },
       popupPosition: `${popupPosition} (bottom-fixed)`,
       mouseAvoidanceActive: mouseAvoidanceActive,
       isMouseNearPopup: isMouseNearLeftPopup || isMouseNearRightPopup,
       isPositionFixed: isPositionFixed,
       fixedPosition: fixedPosition,
-      positionFixedUntil: positionFixedUntil > 0 ? new Date(positionFixedUntil).toLocaleTimeString() : 'none',
-      timeUntilFixExpires: positionFixedUntil > 0 ? Math.max(0, Math.round((positionFixedUntil - currentTime) / 1000)) + 's' : 'none',
+      fixedUntilScroll: isPositionFixed ? 'until scroll (100px+)' : 'none',
       mousePosition: {
         x: Math.round(mousePosition.x),
         y: Math.round(mousePosition.y),
@@ -280,16 +308,17 @@ export function usePlayerPosition(
       },
       isMouseNearLeftPopup,
       isMouseNearRightPopup,
-      playerTop: Math.round(rect.top),
-      playerBottom: Math.round(rect.bottom),
-      playerCenterY: Math.round(playerCenterY),
-      playerSize: `${Math.round(rect.width)}x${Math.round(rect.height)}`,
-      bottomOverlapThreshold: `${Math.round(viewportHeight * 1.2)}px (height) / ${Math.round(viewportHeight * 1.5)}px (bottom)`,
+      thresholds: {
+        bottomAreaLimit: Math.round(viewportHeight - 150),
+        playerSizeLimit: Math.round(viewportHeight * 0.6),
+        fullscreenWidthLimit: Math.round(window.innerWidth * 0.995),
+        fullscreenHeightLimit: Math.round(viewportHeight * 0.995)
+      },
       scrollY: Math.round(scrollY),
       windowSize: `${window.innerWidth}x${window.innerHeight}`,
       isMobile
     });
-  }, [playerContainerRef, mousePosition, mouseAvoidanceActive, popupPosition, fixedPosition, lastScrollY, positionFixedUntil]);
+  }, [playerContainerRef, mousePosition, mouseAvoidanceActive, popupPosition, fixedPosition, lastScrollY]);
 
   useEffect(() => {
     // 初回実行
@@ -332,6 +361,6 @@ export function usePlayerPosition(
     shouldHidePopup,
     isMouseNearPopup,
     mouseAvoidanceActive,
-    isPositionFixed: fixedPosition !== null && Date.now() < positionFixedUntil
+    isPositionFixed: fixedPosition !== null
   };
 }

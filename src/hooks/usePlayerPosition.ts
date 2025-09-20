@@ -43,7 +43,6 @@ export function usePlayerPosition(
   const [shouldHidePopup, setShouldHidePopup] = useState<boolean>(false);
   const [isMouseNearPopup, setIsMouseNearPopup] = useState<boolean>(false);
   const [mouseAvoidanceActive, setMouseAvoidanceActive] = useState<boolean>(false);
-  const [collisionAvoidanceActive, setCollisionAvoidanceActive] = useState<boolean>(false);
   
   // Position fixing state
   const [fixedPosition, setFixedPosition] = useState<'left' | 'right' | null>(null);

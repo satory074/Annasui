@@ -11,7 +11,7 @@ import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
 import AuthModal from "@/components/features/auth/AuthModal";
 import AppHeader from "@/components/layout/AppHeader";
 import { useAuth } from "@/contexts/AuthContext";
-import { getThumbnailUrl, getYouTubeThumbnail, getNiconicoThumbnail } from "@/lib/utils/thumbnail";
+import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
 import { autoCorrectPlatform } from "@/lib/utils/platformDetection";
 import { logger } from "@/lib/utils/logger";
 

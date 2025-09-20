@@ -533,7 +533,7 @@ export interface SearchResult extends SongDatabaseEntry {
 - Multi-platform URL editing for all songs
 - Search result caching and performance optimization
 
-#### SongEditModal with Song Change Feature (Updated 2025-09-01)
+#### SongEditModal with Song Change Feature (Updated 2025-09-14)
 **Simplified Song Editing Interface**: Streamlined modal interface that guides users to the song database
 - **New Song Addition**: Only shows "楽曲データベースから選択" button (manual input fields removed)
 - **Existing Song Editing**: Shows read-only song information with "楽曲を変更" button
@@ -542,6 +542,11 @@ export interface SearchResult extends SongDatabaseEntry {
 - **Time Preservation**: Start/end times are maintained when changing to a different song
 - **Modal Integration**: Seamless flow between SongEditModal and SongSearchModal
 - **Redundant Field Removal**: Manual input fields, hint sections, and platform URL inputs removed for cleaner interface
+- **Thumbnail Display (Added 2025-09-14)**: Shows song thumbnails after database selection
+  - **Existing Songs**: Thumbnail displays in gray background section with responsive layout
+  - **New Songs**: Thumbnail displays in green "選択された楽曲" section with success styling
+  - **Multi-Platform Support**: Automatic thumbnail selection based on platform priority
+  - **Responsive Layout**: Thumbnail on left, song info on right with proper spacing
 
 **Implementation Pattern:**
 ```typescript
@@ -562,6 +567,27 @@ if (isChangingSong && editModalOpen && editingSong) {
     // startTime and endTime preserved
   });
 }
+
+// In SongEditModal.tsx - Thumbnail display pattern
+import SongThumbnail from "@/components/ui/song/SongThumbnail";
+
+<div className="flex items-start gap-4">
+  {/* Thumbnail display */}
+  <div className="flex-shrink-0">
+    <SongThumbnail
+      key={`${formData.title}-${formData.originalLink || JSON.stringify(formData.links)}`}
+      originalLink={formData.originalLink}
+      title={formData.title}
+      size="md"
+      links={formData.links}
+    />
+  </div>
+  
+  {/* Song information */}
+  <div className="flex-1 space-y-3">
+    {/* Song details */}
+  </div>
+</div>
 ```
 
 #### ActiveSongPopup Architecture (Updated 2025-09-11)
@@ -1051,7 +1077,7 @@ useEffect(() => {
 - **Match field detection wrong**: Verify `matchedField` assignment logic correctly identifies title vs artist matches
 - **Result categorization broken**: Check `resultsByMatchType` grouping logic in search modal useMemo hook
 
-### SongEditModal Issues (Updated 2025-09-01)
+### SongEditModal Issues (Updated 2025-09-14)
 - **Simplified interface issues**: Modal now only shows "楽曲データベースから選択" button for new songs - no manual input fields
 - **Empty song warnings**: Ensure empty songs show appropriate warning messages directing users to database selection
 - **Song change button not appearing**: Verify `onChangeSong` prop is passed to SongEditModal and user is editing existing song (not new)
@@ -1060,6 +1086,9 @@ useEffect(() => {
 - **Song info not updating**: Verify `setEditingSong` is called with updated song data after selection
 - **Platform URL fields removed**: Manual platform URL inputs have been removed - songs from database include this information
 - **Hint sections removed**: All hint/help sections removed as interface now guides users directly to database selection
+- **Thumbnail not displaying**: Verify `SongThumbnail` component is imported and `formData.links` or `formData.originalLink` contain valid URLs
+- **Thumbnail key warnings**: Ensure proper key prop using song title and links for re-rendering when song changes
+- **Layout issues**: Check responsive flexbox layout with `flex items-start gap-4` for proper thumbnail positioning
 
 ### Playback Controls Issues (Updated 2025-08-31)
 - **Controls not displaying**: Verify both `onTogglePlayPause` and `onSeek` props are passed to SongListGrouped

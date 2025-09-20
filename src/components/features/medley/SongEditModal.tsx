@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { SongSection } from "@/types";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import MultiSegmentTimeEditor, { TimeSegment } from "@/components/ui/song/MultiSegmentTimeEditor";
+import SongThumbnail from "@/components/ui/song/SongThumbnail";
 import { getDuplicateInfo } from "@/lib/utils/duplicateSongs";
 import { sanitizeSongSection } from "@/lib/utils/sanitize";
 import { logger } from "@/lib/utils/logger";
@@ -514,21 +515,37 @@ export default function SongEditModal({
               
               {/* 既存楽曲の場合は読み取り専用で表示（空の楽曲も含む） */}
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-gray-600">楽曲名:</span>
-                    <div className="font-medium text-gray-900">{formData.title || "未設定"}</div>
+                <div className="flex items-start gap-4">
+                  {/* サムネイル表示 */}
+                  <div className="flex-shrink-0">
+                    <SongThumbnail
+                      key={`${formData.title}-${formData.originalLink || JSON.stringify(formData.links)}`}
+                      originalLink={formData.originalLink}
+                      title={formData.title}
+                      size="md"
+                      links={formData.links}
+                    />
                   </div>
-                  <div>
-                    <span className="text-gray-600">アーティスト:</span>
-                    <div className="font-medium text-gray-900">{formData.artist || "未設定"}</div>
+                  
+                  {/* 楽曲情報 */}
+                  <div className="flex-1 space-y-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-gray-600">楽曲名:</span>
+                        <div className="font-medium text-gray-900">{formData.title || "未設定"}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">アーティスト:</span>
+                        <div className="font-medium text-gray-900">{formData.artist || "未設定"}</div>
+                      </div>
+                    </div>
+                    {isEmptySong(song) && (
+                      <div className="text-sm text-orange-700 bg-orange-50 p-3 rounded-md border-l-4 border-orange-400">
+                        ⚠️ この楽曲には情報が不足しています。楽曲データベースから選択して情報を更新してください。
+                      </div>
+                    )}
                   </div>
                 </div>
-                {isEmptySong(song) && (
-                  <div className="text-sm text-orange-700 bg-orange-50 p-3 rounded-md border-l-4 border-orange-400">
-                    ⚠️ この楽曲には情報が不足しています。楽曲データベースから選択して情報を更新してください。
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -562,6 +579,44 @@ export default function SongEditModal({
                   )}
                 </div>
               )}
+            </div>
+          )}
+          
+          {/* 新規楽曲でデータベースから選択済みの場合の情報表示 */}
+          {isNew && isFromDatabase && formData.title && (
+            <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+              <h3 className="text-lg font-medium text-green-800 mb-4">
+                選択された楽曲
+              </h3>
+              <div className="flex items-start gap-4">
+                {/* サムネイル表示 */}
+                <div className="flex-shrink-0">
+                  <SongThumbnail
+                    key={`${formData.title}-${formData.originalLink || JSON.stringify(formData.links)}`}
+                    originalLink={formData.originalLink}
+                    title={formData.title}
+                    size="md"
+                    links={formData.links}
+                  />
+                </div>
+                
+                {/* 楽曲情報 */}
+                <div className="flex-1 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-green-700">楽曲名:</span>
+                      <div className="font-medium text-green-900">{formData.title}</div>
+                    </div>
+                    <div>
+                      <span className="text-green-700">アーティスト:</span>
+                      <div className="font-medium text-green-900">{formData.artist || "未設定"}</div>
+                    </div>
+                  </div>
+                  <div className="text-sm text-green-700">
+                    ✅ データベースから選択されました
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

@@ -14,7 +14,6 @@ interface SongListProps {
   currentSongs?: SongSection[];
   onTimelineClick?: (time: number) => void;
   onSeek?: (time: number) => void;
-  onEditSong?: (song: SongSection) => void;
   onDeleteSong?: (songId: number) => void;
   onTogglePlayPause?: () => void;
   isPlaying?: boolean;
@@ -59,7 +58,6 @@ export default function SongListGrouped({
   currentTime,
   onTimelineClick,
   onSeek,
-  onEditSong,
   onTogglePlayPause,
   isPlaying,
   isEditMode = false,
@@ -172,9 +170,9 @@ export default function SongListGrouped({
   };
 
   // 楽曲ダブルクリック処理（無効化）
-  const handleSongDoubleClick = (e: React.MouseEvent, song: SongSection) => {
+  const handleSongDoubleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // onEditSong?.(song); // 編集モーダルを開かないようにコメントアウト
+    // 編集モーダルを開かないように無効化
   };
 
   // ホバー処理
@@ -485,7 +483,7 @@ export default function SongListGrouped({
                           width: `${((song.endTime - song.startTime) / effectiveTimelineDuration) * 100}%`,
                         }}
                         onClick={(e) => handleSongClick(e, song)}
-                        onDoubleClick={(e) => handleSongDoubleClick(e, song)}
+                        onDoubleClick={(e) => handleSongDoubleClick(e)}
                         onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
                         onMouseEnter={(e) => handleSongHover(e, song)}
                         onMouseLeave={handleSongLeave}

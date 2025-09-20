@@ -9,6 +9,7 @@ interface SongDetailTooltipProps {
   isVisible: boolean;
   position: { x: number; y: number };
   onSeek?: (time: number) => void;
+  onEdit?: (song: SongSection) => void;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
 }
@@ -18,6 +19,7 @@ export default function SongDetailTooltip({
   isVisible,
   position,
   onSeek,
+  onEdit,
   onMouseEnter,
   onMouseLeave
 }: SongDetailTooltipProps) {
@@ -34,6 +36,7 @@ export default function SongDetailTooltip({
         song={song}
         variant="compact"
         onSeek={onSeek}
+        onEdit={onEdit}
       />
     </BaseTooltip>
   );

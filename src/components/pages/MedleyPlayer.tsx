@@ -637,25 +637,6 @@ export default function MedleyPlayer({
     };
 
     // 編集機能のハンドラ
-    const handleEditSong = (song: SongSection) => {
-        logger.info('🎯 handleEditSong called', {
-            songId: song.id,
-            songTitle: song.title,
-            isEmpty: song.title.startsWith('空の楽曲'),
-            startTime: song.startTime,
-            endTime: song.endTime,
-            currentStates: {
-                editingSong: !!editingSong,
-                isNewSong: isNewSong,
-                editModalOpen: editModalOpen,
-                isChangingSong: isChangingSong
-            }
-        });
-        
-        setEditingSong(song);
-        setIsNewSong(false);
-        setEditModalOpen(true);
-    };
 
     
     // 楽曲DB検索モーダルのハンドラ
@@ -956,7 +937,7 @@ export default function MedleyPlayer({
 
     const handleTooltipMouseLeave = () => {
         setIsHoveringTooltip(false);
-        
+
         // タイムアウトを設定して遅延後に非表示
         const timeout = setTimeout(() => {
             // 状態更新が非同期なので、現在の状態値を正確に取得
@@ -971,8 +952,30 @@ export default function MedleyPlayer({
                 return currentHoveringTooltip;
             });
         }, 200); // 200ms の遅延
-        
+
         setHideTooltipTimeout(timeout);
+    };
+
+    // ツールチップから編集ボタンがクリックされた時の処理
+    const handleEditFromTooltip = (song: SongSection) => {
+        if (!user || !isApproved) {
+            setShowAuthModal(true);
+            return;
+        }
+
+        // ツールチップを閉じる
+        setIsTooltipVisible(false);
+        setTooltipSong(null);
+        if (hideTooltipTimeout) {
+            clearTimeout(hideTooltipTimeout);
+            setHideTooltipTimeout(null);
+        }
+
+        // 編集モーダルを開く
+        setEditingSong(song);
+        setIsNewSong(false);
+        setEditModalOpen(true);
+        logger.info('編集モーダルをツールチップから開きました:', { songTitle: song.title, songId: song.id });
     };
 
 
@@ -1111,7 +1114,6 @@ export default function MedleyPlayer({
                         currentSongs={getCurrentSongs()}
                         onTimelineClick={handleTimelineClick}
                         onSeek={seek}
-                        onEditSong={user && isApproved ? handleEditSong : undefined}
                         onDeleteSong={user && isApproved ? deleteSong : undefined}
                         onTogglePlayPause={togglePlayPause}
                         isPlaying={isPlaying}
@@ -1374,6 +1376,7 @@ export default function MedleyPlayer({
                 isVisible={isTooltipVisible}
                 position={tooltipPosition}
                 onSeek={seek}
+                onEdit={user && isApproved ? handleEditFromTooltip : undefined}
                 onMouseEnter={handleTooltipMouseEnter}
                 onMouseLeave={handleTooltipMouseLeave}
             />

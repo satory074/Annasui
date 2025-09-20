@@ -107,6 +107,7 @@ interface SongInfoDisplayProps {
   showTimeCodes?: boolean;
   showOriginalLink?: boolean;
   onSeek?: (time: number) => void;
+  onEdit?: (song: SongSection) => void;
 }
 
 export default function SongInfoDisplay({
@@ -115,11 +116,18 @@ export default function SongInfoDisplay({
   showThumbnail = true,
   showTimeCodes = true,
   showOriginalLink = true,
-  onSeek
+  onSeek,
+  onEdit
 }: SongInfoDisplayProps) {
   const handlePlayFromHere = () => {
     if (onSeek) {
       onSeek(song.startTime);
+    }
+  };
+
+  const handleEdit = () => {
+    if (onEdit) {
+      onEdit(song);
     }
   };
 
@@ -182,17 +190,32 @@ export default function SongInfoDisplay({
           )}
         </div>
 
-        {onSeek && (
+        {(onSeek || onEdit) && (
           <div className="pt-3 border-t border-gray-200">
-            <button
-              onClick={handlePlayFromHere}
-              className="w-full px-3 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center gap-2 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-10V4a2 2 0 00-2-2H6a2 2 0 00-2 2v16c0 1.1.9 2 2 2h12a2 2 0 002-2V6z" />
-              </svg>
-              この曲から再生
-            </button>
+            <div className="flex gap-2">
+              {onSeek && (
+                <button
+                  onClick={handlePlayFromHere}
+                  className="flex-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center gap-2 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-10V4a2 2 0 00-2-2H6a2 2 0 00-2 2v16c0 1.1.9 2 2 2h12a2 2 0 002-2V6z" />
+                  </svg>
+                  この曲から再生
+                </button>
+              )}
+              {onEdit && (
+                <button
+                  onClick={handleEdit}
+                  className="flex-1 px-3 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm rounded-md hover:from-orange-600 hover:to-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 flex items-center justify-center gap-2 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  編集
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

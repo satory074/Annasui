@@ -21,7 +21,6 @@ export interface UsePlayerPositionReturn {
 }
 
 // Position fixing constants
-const POSITION_FIX_DURATION = 4000; // 4 seconds
 const SIGNIFICANT_SCROLL_THRESHOLD = 100; // pixels
 
 /**
@@ -46,7 +45,6 @@ export function usePlayerPosition(
   
   // Position fixing state
   const [fixedPosition, setFixedPosition] = useState<'left' | 'right' | null>(null);
-  const [positionFixedUntil, setPositionFixedUntil] = useState<number>(0);
   const [lastScrollY, setLastScrollY] = useState<number>(0);
   
   const lastUpdateTime = useRef<number>(0);
@@ -107,7 +105,6 @@ export function usePlayerPosition(
     // ポップアップの位置と表示/非表示を決定（位置固定機能付きマウス回避）
     const isMobile = window.innerWidth < 768; // md breakpoint
     const viewportHeight = window.innerHeight;
-    const playerCenterY = rect.top + rect.height / 2;
     
     // プレイヤーとポップアップの実際の衝突判定
     // ポップアップの実際の座標を計算（下部表示用）
@@ -159,12 +156,40 @@ export function usePlayerPosition(
     
     // マウスがポップアップ領域に近いかチェック（マージン100px）
     const mouseBuffer = 100;
-    const isMouseNearLeftPopup = mousePosition.x >= (leftPopupRect.left - mouseBuffer) && 
+
+    // 精密な距離計算
+    const distanceToLeftPopup = {
+      horizontal: Math.max(0,
+        Math.max(leftPopupRect.left - mousePosition.x, mousePosition.x - leftPopupRect.right)
+      ),
+      vertical: Math.max(0,
+        Math.max(leftPopupRect.top - mousePosition.y, mousePosition.y - leftPopupRect.bottom)
+      ),
+      // 矩形の最も近い点までの距離
+      get closest() {
+        return Math.sqrt(this.horizontal * this.horizontal + this.vertical * this.vertical);
+      }
+    };
+
+    const distanceToRightPopup = {
+      horizontal: Math.max(0,
+        Math.max(rightPopupRect.left - mousePosition.x, mousePosition.x - rightPopupRect.right)
+      ),
+      vertical: Math.max(0,
+        Math.max(rightPopupRect.top - mousePosition.y, mousePosition.y - rightPopupRect.bottom)
+      ),
+      // 矩形の最も近い点までの距離
+      get closest() {
+        return Math.sqrt(this.horizontal * this.horizontal + this.vertical * this.vertical);
+      }
+    };
+
+    const isMouseNearLeftPopup = mousePosition.x >= (leftPopupRect.left - mouseBuffer) &&
                                  mousePosition.x <= (leftPopupRect.right + mouseBuffer) &&
                                  mousePosition.y >= (leftPopupRect.top - mouseBuffer) &&
                                  mousePosition.y <= (leftPopupRect.bottom + mouseBuffer);
-                                 
-    const isMouseNearRightPopup = mousePosition.x >= (rightPopupRect.left - mouseBuffer) && 
+
+    const isMouseNearRightPopup = mousePosition.x >= (rightPopupRect.left - mouseBuffer) &&
                                   mousePosition.x <= (rightPopupRect.right + mouseBuffer) &&
                                   mousePosition.y >= (rightPopupRect.top - mouseBuffer) &&
                                   mousePosition.y <= (rightPopupRect.bottom + mouseBuffer);
@@ -182,63 +207,69 @@ export function usePlayerPosition(
       const currentMouseNear = isMouseNearLeftPopup || isMouseNearRightPopup;
       setIsMouseNearPopup(currentMouseNear);
       
-      // If position is currently fixed, use the fixed position
-      if (isPositionFixed && fixedPosition) {
-        setPopupPosition(fixedPosition);
-        // Check if we should still show avoidance styling
-        const isCurrentPositionBeingAvoided = 
-          (fixedPosition === 'left' && isMouseNearLeftPopup) ||
-          (fixedPosition === 'right' && isMouseNearRightPopup);
-        setMouseAvoidanceActive(isCurrentPositionBeingAvoided);
-      } else if (isMobile) {
+      // Dynamic mouse avoidance logic - always check mouse position even if previously fixed
+      if (isMobile) {
         // モバイルでも右下固定ベース（デスクトップと統一）
         let finalPosition: 'left' | 'right' = 'right'; // デフォルトは右下
         let avoidanceActive = false;
-        
-        // マウス回避ロジック（タッチ操作も考慮）
+
+        // マウス回避ロジック（タッチ操作も考慮）- 動的切り替え
         if (isMouseNearRightPopup) {
           finalPosition = 'left';
           avoidanceActive = true;
-          setFixedPosition(finalPosition);
+          setFixedPosition(finalPosition); // 現在の選択を記録（デバッグ用）
         } else if (isMouseNearLeftPopup) {
           // 左側でマウスが被る場合は右側に戻す
           finalPosition = 'right';
           avoidanceActive = true;
-          setFixedPosition(finalPosition);
+          setFixedPosition(finalPosition); // 現在の選択を記録（デバッグ用）
+        } else {
+          // マウスがポップアップから離れた場合はデフォルト位置（右下）に戻る
+          finalPosition = 'right';
+          avoidanceActive = false;
+          setFixedPosition(null); // 固定解除
         }
-        
+
         setPopupPosition(finalPosition);
         setMouseAvoidanceActive(avoidanceActive);
       } else {
         // デスクトップでのポジション決定ロジック（右下固定ベース）
-        // 基本は右下で、マウス回避のみで左下に切り替え
+        // 基本は右下で、マウス回避のみで左下に切り替え - 動的切り替え
         let finalPosition: 'left' | 'right' = 'right'; // デフォルトは右下
         let avoidanceActive = false;
-        
-        // マウス回避ロジック
+
+        // マウス回避ロジック - 動的切り替え
         if (isMouseNearRightPopup) {
           // 右下でマウスが被る場合、左下に移動
           finalPosition = 'left';
           avoidanceActive = true;
-          setFixedPosition(finalPosition);
+          setFixedPosition(finalPosition); // 現在の選択を記録（デバッグ用）
         } else if (isMouseNearLeftPopup) {
           // 左下でマウスが被る場合、右下に戻す
           finalPosition = 'right';
           avoidanceActive = true;
-          setFixedPosition(finalPosition);
+          setFixedPosition(finalPosition); // 現在の選択を記録（デバッグ用）
         }
-        
+
         // マウスが画面端にいる場合の強制回避
         if (mousePosition.isNearRightEdge && (finalPosition === 'right' || isMouseNearRightPopup)) {
           finalPosition = 'left';
           avoidanceActive = true;
-          setFixedPosition(finalPosition);
+          setFixedPosition(finalPosition); // 現在の選択を記録（デバッグ用）
         } else if (mousePosition.isNearLeftEdge && (finalPosition === 'left' || isMouseNearLeftPopup)) {
           finalPosition = 'right';
           avoidanceActive = true;
-          setFixedPosition(finalPosition);
+          setFixedPosition(finalPosition); // 現在の選択を記録（デバッグ用）
         }
-        
+
+        // マウスがすべてのポップアップと画面端から離れた場合はデフォルト位置に戻る
+        if (!isMouseNearRightPopup && !isMouseNearLeftPopup &&
+            !mousePosition.isNearRightEdge && !mousePosition.isNearLeftEdge) {
+          finalPosition = 'right'; // デフォルトは右下
+          avoidanceActive = false;
+          setFixedPosition(null); // 固定解除
+        }
+
         setPopupPosition(finalPosition);
         setMouseAvoidanceActive(avoidanceActive);
       }
@@ -247,7 +278,7 @@ export function usePlayerPosition(
     logger.debug('Player position updated', {
       isVisible,
       isInUpperArea,
-      popupPosition: `${popupPosition} (bottom-fixed)`,
+      popupPosition: `${popupPosition} (dynamic-avoidance)`,
       playerTop: rect.top,
       playerBottom: rect.bottom,
       scrollY,
@@ -266,7 +297,7 @@ export function usePlayerPosition(
     // プロダクション環境でも位置情報をコンソールに出力（右下固定ベース）
     
     // プロダクション環境専用デバッグ出力（logger.debugは本番で出力されないため）
-    console.log('🎯 Player Position Debug (Bottom-Right Fixed Base):', {
+    console.log('🎯 Player Position Debug (Dynamic Mouse Avoidance):', {
       isVisible,
       isInUpperArea,
       collisionDetection: {
@@ -320,7 +351,7 @@ export function usePlayerPosition(
           relativeY: Math.round(((window.innerHeight - popupBottom - popupHeight) / window.innerHeight) * 100) + '%'
         }
       },
-      popupPosition: `${popupPosition} (bottom-fixed)`,
+      popupPosition: `${popupPosition} (dynamic-avoidance)`,
       mouseAvoidanceActive: mouseAvoidanceActive,
       isMouseNearPopup: isMouseNearLeftPopup || isMouseNearRightPopup,
       isPositionFixed: isPositionFixed,
@@ -334,6 +365,95 @@ export function usePlayerPosition(
       },
       isMouseNearLeftPopup,
       isMouseNearRightPopup,
+      // 詳細なマウス衝突判定情報
+      mouseCollisionDetails: {
+        leftPopupDistance: {
+          horizontal: Math.round(distanceToLeftPopup.horizontal),
+          vertical: Math.round(distanceToLeftPopup.vertical),
+          closest: Math.round(distanceToLeftPopup.closest),
+          withinBuffer: distanceToLeftPopup.closest <= mouseBuffer,
+          bufferOverlap: Math.max(0, mouseBuffer - distanceToLeftPopup.closest)
+        },
+        rightPopupDistance: {
+          horizontal: Math.round(distanceToRightPopup.horizontal),
+          vertical: Math.round(distanceToRightPopup.vertical),
+          closest: Math.round(distanceToRightPopup.closest),
+          withinBuffer: distanceToRightPopup.closest <= mouseBuffer,
+          bufferOverlap: Math.max(0, mouseBuffer - distanceToRightPopup.closest)
+        },
+        edgeDetection: {
+          leftEdgeDistance: Math.round(mousePosition.x),
+          rightEdgeDistance: Math.round(window.innerWidth - mousePosition.x),
+          leftEdgeThreshold: 150,
+          rightEdgeThreshold: 150,
+          isNearLeftEdge: mousePosition.isNearLeftEdge,
+          isNearRightEdge: mousePosition.isNearRightEdge,
+          // 境界条件の詳細
+          boundaryValidation: {
+            leftEdgeExact: mousePosition.x === 150,
+            leftEdgeInside: mousePosition.x < 150,
+            leftEdgeOutside: mousePosition.x > 150,
+            rightEdgeExact: mousePosition.x === (window.innerWidth - 150),
+            rightEdgeInside: mousePosition.x > (window.innerWidth - 150),
+            rightEdgeOutside: mousePosition.x < (window.innerWidth - 150)
+          }
+        },
+        bufferZoneValidation: {
+          mouseBuffer: mouseBuffer,
+          leftPopupCenter: {
+            x: Math.round((leftPopupRect.left + leftPopupRect.right) / 2),
+            y: Math.round((leftPopupRect.top + leftPopupRect.bottom) / 2)
+          },
+          rightPopupCenter: {
+            x: Math.round((rightPopupRect.left + rightPopupRect.right) / 2),
+            y: Math.round((rightPopupRect.top + rightPopupRect.bottom) / 2)
+          },
+          // バッファゾーンの境界テスト
+          leftBufferBoundary: {
+            top: leftPopupRect.top - mouseBuffer,
+            bottom: leftPopupRect.bottom + mouseBuffer,
+            left: leftPopupRect.left - mouseBuffer,
+            right: leftPopupRect.right + mouseBuffer,
+            mouseAtBoundary: {
+              top: Math.abs(mousePosition.y - (leftPopupRect.top - mouseBuffer)) < 1,
+              bottom: Math.abs(mousePosition.y - (leftPopupRect.bottom + mouseBuffer)) < 1,
+              left: Math.abs(mousePosition.x - (leftPopupRect.left - mouseBuffer)) < 1,
+              right: Math.abs(mousePosition.x - (leftPopupRect.right + mouseBuffer)) < 1
+            }
+          },
+          rightBufferBoundary: {
+            top: rightPopupRect.top - mouseBuffer,
+            bottom: rightPopupRect.bottom + mouseBuffer,
+            left: rightPopupRect.left - mouseBuffer,
+            right: rightPopupRect.right + mouseBuffer,
+            mouseAtBoundary: {
+              top: Math.abs(mousePosition.y - (rightPopupRect.top - mouseBuffer)) < 1,
+              bottom: Math.abs(mousePosition.y - (rightPopupRect.bottom + mouseBuffer)) < 1,
+              left: Math.abs(mousePosition.x - (rightPopupRect.left - mouseBuffer)) < 1,
+              right: Math.abs(mousePosition.x - (rightPopupRect.right + mouseBuffer)) < 1
+            }
+          }
+        },
+        positionSwitchingLogic: {
+          currentPosition: popupPosition,
+          isDynamicAvoidance: fixedPosition !== null, // 現在回避中かどうか
+          lastAvoidancePosition: fixedPosition, // 最後に回避した位置（デバッグ用）
+          mouseAvoidanceReason: mouseAvoidanceActive ? (
+            isMouseNearRightPopup && popupPosition === 'left' ? 'avoiding-right-popup' :
+            isMouseNearLeftPopup && popupPosition === 'right' ? 'avoiding-left-popup' :
+            mousePosition.isNearRightEdge && popupPosition === 'left' ? 'avoiding-right-edge' :
+            mousePosition.isNearLeftEdge && popupPosition === 'right' ? 'avoiding-left-edge' :
+            'unknown-avoidance'
+          ) : 'no-avoidance',
+          // 動的位置切り替えの状態
+          dynamicSwitching: {
+            wouldSwitchToLeft: isMouseNearRightPopup || (mousePosition.isNearRightEdge && !isMouseNearLeftPopup),
+            wouldSwitchToRight: isMouseNearLeftPopup || (mousePosition.isNearLeftEdge && !isMouseNearRightPopup),
+            wouldReturnToDefault: !isMouseNearRightPopup && !isMouseNearLeftPopup && !mousePosition.isNearRightEdge && !mousePosition.isNearLeftEdge,
+            currentlyAvoiding: mouseAvoidanceActive
+          }
+        }
+      },
       thresholds: {
         popupZoneLimit: Math.round(viewportHeight - popupZoneHeight),
         popupZoneHeight: popupZoneHeight,

@@ -625,12 +625,26 @@ import SongThumbnail from "@/components/ui/song/SongThumbnail";
   - **Popup Zone Intrusion**: Player bottom extends into popup zone (116px from screen bottom)
   - **Fullscreen Mode**: Player occupies 99.5%+ of both width and height
 
-**Position Fixing System (Updated 2025-09-20):**
-- **Permanent Fixing**: Position stays fixed until user scrolls >100px (no time limit)
-- **Trigger**: Automatically activated when mouse avoidance occurs
-- **Clearing Conditions**: Position fix clears only when user scrolls >100px
-- **Visual State**: Enhanced orange borders, shadows, and position indicators
-- **Debug Support**: Real-time collision detection details displayed in debug mode (`?debug=true`)
+**Dynamic Mouse Avoidance System (Updated 2025-09-20):**
+- **Real-time Position Switching**: Popup continuously moves away from mouse cursor without permanent fixing
+- **100px Buffer Zone**: Mouse proximity detection with precise distance calculations
+- **150px Edge Detection**: Screen edge proximity triggers forced avoidance
+- **Dynamic Behavior**: Position changes instantly based on current mouse location
+- **No Time Limits**: No 4-second timers - position updates in real-time as mouse moves
+- **Return to Default**: Popup returns to right-bottom when mouse moves away from all zones
+- **Enhanced Debug Logging**: Comprehensive collision detection details with distance calculations
+
+**Critical Mouse Collision Logic (Fixed 2025-09-20):**
+```typescript
+// Dynamic switching - no permanent position fixing
+if (isMouseNearRightPopup) {
+  finalPosition = 'left';   // Move away from mouse
+} else if (isMouseNearLeftPopup) {
+  finalPosition = 'right';  // Move away from mouse
+} else {
+  finalPosition = 'right';  // Return to default
+}
+```
 
 **Critical Implementation Requirements:**
 ```typescript
@@ -690,6 +704,43 @@ if (hasRectangleOverlap || playerInPopupZone || playerIsFullscreen) {
 - **Added precise popup zone calculation** (116px) instead of generic 150px threshold
 - **Implemented actual rectangle intersection** mathematics for accurate overlap detection
 - **Enhanced debug logging** with detailed collision detection breakdown
+- **Fixed permanent position fixing bug** that prevented dynamic mouse avoidance
+- **Added comprehensive mouse collision boundary testing** with pixel-perfect distance calculations
+
+**Mouse Collision Debug System (Added 2025-09-20):**
+```typescript
+// Production console output shows detailed collision information
+🎯 Player Position Debug (Dynamic Mouse Avoidance): {
+  mouseCollisionDetails: {
+    leftPopupDistance: {
+      horizontal: 234,        // Distance to left popup
+      vertical: 0,           // Mouse Y within popup area
+      closest: 234,          // Euclidean distance
+      withinBuffer: false,   // Outside 100px buffer
+      bufferOverlap: 0       // No buffer overlap
+    },
+    rightPopupDistance: { /* similar structure */ },
+    edgeDetection: {
+      leftEdgeDistance: 150,     // Distance from left edge
+      rightEdgeDistance: 1230,   // Distance from right edge
+      boundaryValidation: {
+        leftEdgeExact: true,     // Mouse exactly at 150px threshold
+        leftEdgeInside: false,   // Not inside edge zone
+        leftEdgeOutside: false   // Not outside edge zone
+      }
+    },
+    positionSwitchingLogic: {
+      mouseAvoidanceReason: "avoiding-right-popup",
+      dynamicSwitching: {
+        wouldSwitchToLeft: true,
+        wouldSwitchToRight: false,
+        wouldReturnToDefault: false,
+        currentlyAvoiding: true
+      }
+    }
+  }
+}
+```
 
 #### SEO Architecture (Added 2025-08-30)
 **Comprehensive SEO Implementation:**
@@ -1094,7 +1145,7 @@ useEffect(() => {
 - **Authorization bypass**: Check both frontend and backend enforce admin approval for deletion operations
 - **Database constraints**: Ensure foreign key relationships allow cascading deletes or proper cleanup
 
-### ActiveSongPopup Issues (Updated 2025-09-03)
+### ActiveSongPopup Issues (Updated 2025-09-20)
 - **Component not appearing in production**: Check that module-level logging appears (`🔥 ActiveSongPopup: Module loaded`)
 - **Tree-shaking removal**: Ensure displayName is set and module-level initialization code is present
 - **Silent component failures**: Add runtime component validation before rendering in parent component
@@ -1105,9 +1156,19 @@ useEffect(() => {
 - **Production logging missing**: Use both `console.log()` and `logger.info()` for production visibility
 - **Popup overlapping video**: Check `usePlayerPosition` hook is properly detecting player position and setting `shouldHidePopup`
 - **Position not updating on scroll**: Verify `playerContainerRef` is passed and scroll/resize event listeners are active
-- **Hide logic too aggressive**: Adjust thresholds in hide conditions (currently 60% height, 80% width, 30% center area)
-- **Mobile positioning issues**: Ensure mobile detection (`window.innerWidth < 768`) forces left positioning
+- **Hide logic too aggressive**: Check precise popup zone calculation (116px) instead of arbitrary percentage rules
+- **Mobile positioning issues**: Ensure mobile detection (`window.innerWidth < 768`) uses dynamic mouse avoidance
 - **Debug panel not showing position data**: Confirm `playerPosition.rect` is being populated with player boundaries
+
+#### Mouse Collision Detection Issues (Added 2025-09-20)
+- **Popup not moving when mouse approaches**: Check that permanent position fixing logic has been removed from `usePlayerPosition.ts:211-217`
+- **Position stuck after mouse avoidance**: Verify dynamic position switching logic is implemented - popup should move in real-time
+- **Mouse not triggering position changes**: Check 100px buffer zone calculation and `isMouseNearLeftPopup`/`isMouseNearRightPopup` detection
+- **Popup not returning to default**: Ensure `finalPosition = 'right'` when mouse moves away from all zones
+- **Edge detection not working**: Verify 150px edge threshold detection in `useMousePosition` hook
+- **Debug info not showing distances**: Check `mouseCollisionDetails` object in console output includes precise distance calculations
+- **Boundary conditions failing**: Test exact pixel boundaries (100px, 150px) using debug output for validation
+- **Position switching reasons unclear**: Check `mouseAvoidanceReason` field in debug output for explanation of position changes
 
 ### Position Fixing Issues (Added 2025-09-03)
 - **Position not staying fixed**: Verify `isPositionFixed` flag is properly destructured in ActiveSongPopup component

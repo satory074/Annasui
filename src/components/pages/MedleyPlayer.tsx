@@ -687,7 +687,7 @@ export default function MedleyPlayer({
             
             // 置換時はisNewSongをfalseに設定して、必ずupdateSongが呼ばれるようにする
             setIsNewSong(false);
-            setIsChangingSong(false);
+            // NOTE: isChangingSongは保存完了後にリセットする（SongEditModalの保存ロジックで使用するため）
             
             logger.info('✅ Song replacement completed - will call updateSong on save');
         } else {
@@ -794,6 +794,7 @@ export default function MedleyPlayer({
     const handleSaveSong = (song: SongSection) => {
         logger.info('💾 handleSaveSong called', {
             isNewSong: isNewSong,
+            isChangingSong: isChangingSong,
             songId: song.id,
             songTitle: song.title,
             songArtist: song.artist,
@@ -801,16 +802,23 @@ export default function MedleyPlayer({
             willCallAddSong: isNewSong,
             willCallUpdateSong: !isNewSong
         });
-        
+
         if (isNewSong) {
             logger.info('➕ Calling addSong - will create NEW song');
             addSong(song);
         } else {
             logger.info('🔄 Calling updateSong - will replace EXISTING song', {
                 searchingForId: song.id,
-                availableIds: editingSongs.map(s => s.id)
+                availableIds: editingSongs.map(s => s.id),
+                wasChangingSong: isChangingSong
             });
             updateSong(song);
+        }
+
+        // 保存完了後にisChangingSongフラグをリセット
+        if (isChangingSong) {
+            logger.info('✅ Song replacement saved - resetting isChangingSong flag');
+            setIsChangingSong(false);
         }
         
         // 連続入力モードでない場合はモーダルを閉じる

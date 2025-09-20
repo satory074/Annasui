@@ -489,10 +489,29 @@ export function useMedleyEdit(
 
   // 元のsongs配列が変更された時に編集中の配列も更新
   useEffect(() => {
-    if (!hasChanges) {
+    // 初回読み込み時、または実際にoriginalSongsの内容が変わった場合は更新
+    const currentSongsString = JSON.stringify(editingSongs);
+    const originalSongsString = JSON.stringify(originalSongs);
+    
+    // hasChangesがfalseの場合、または初回読み込みで内容が異なる場合
+    if (!hasChanges || currentSongsString !== originalSongsString) {
+      logger.debug('🔄 Updating editingSongs from originalSongs', {
+        hasChanges,
+        originalSongsCount: originalSongs.length,
+        editingSongsCount: editingSongs.length,
+        contentsMatch: currentSongsString === originalSongsString
+      });
+      
       setEditingSongs(originalSongs);
+      
+      // 内容が変わった場合は履歴もリセット
+      if (currentSongsString !== originalSongsString) {
+        setHistory([originalSongs]);
+        setHistoryIndex(0);
+        setHasChanges(false);
+      }
     }
-  }, [originalSongs, hasChanges]);
+  }, [originalSongs, hasChanges, editingSongs]);
 
   return {
     editingSongs,

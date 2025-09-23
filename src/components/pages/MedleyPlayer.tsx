@@ -477,6 +477,46 @@ export default function MedleyPlayer({
     };
 
 
+    // 新しい楽曲区間を追加する関数
+    const handleAddNewSong = () => {
+        logger.info('➕ handleAddNewSong called - adding new song at current time', {
+            currentTime: currentTime || 0,
+            duration: duration,
+            playerReady: playerReady
+        });
+
+        // 現在時刻に30秒の区間を作成
+        const newSong: SongSection = {
+            id: Date.now(),
+            title: "",
+            artist: "",
+            startTime: currentTime || 0,
+            endTime: Math.min((currentTime || 0) + 30, duration),
+            color: "bg-orange-400",
+            originalLink: "",
+            links: {
+                niconico: "",
+                youtube: "",
+                spotify: "",
+                appleMusic: ""
+            }
+        };
+
+        // 新規楽曲として編集状態にセット
+        setEditingSong(newSong);
+        setIsNewSong(true);
+        setIsChangingSong(false); // 楽曲変更モードではない
+
+        // 楽曲選択モーダルを直接開く
+        setSongSearchModalOpen(true);
+
+        logger.info('✅ New song segment created, opening song search modal', {
+            newSongId: newSong.id,
+            startTime: newSong.startTime,
+            endTime: newSong.endTime
+        });
+    };
+
     // 楽曲変更の開始
     const handleChangeSong = () => {
         logger.info('🔄 handleChangeSong called', {
@@ -851,6 +891,7 @@ export default function MedleyPlayer({
                         medleyTitle="" // MedleyHeaderで表示するため空にする
                         medleyCreator="" // MedleyHeaderで表示するため空にする
                         originalVideoUrl=""
+                        onAddSong={user && isApproved ? handleAddNewSong : undefined}
                     />
                 )}
 
@@ -933,7 +974,7 @@ export default function MedleyPlayer({
                                             
                                             <div className="mt-4 text-center">
                                                 <button
-                                                    onClick={() => setSongSearchModalOpen(true)}
+                                                    onClick={handleAddNewSong}
                                                     className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
                                                 >
                                                     楽曲データベースから選択

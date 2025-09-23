@@ -535,6 +535,43 @@ export interface SearchResult extends SongDatabaseEntry {
 - Multi-platform URL editing for all songs
 - Search result caching and performance optimization
 
+#### Song Addition Workflow Improvements (Added 2025-09-23)
+**Streamlined Song Addition System**: Simplified workflow for adding new songs to medleys with direct integration to song database.
+
+**Key Improvements:**
+- **Enhanced Empty Medley Flow**: "楽曲データベースから選択" button automatically creates 30-second segment at current time
+- **Song List Addition Button**: Orange "追加" button in SongListGrouped header for existing medleys (authorized users only)
+- **Direct Database Integration**: Both flows open SongSearchModal immediately after creating time segment
+- **Time-Based Segment Creation**: New songs automatically positioned at current playback time with 30-second default duration
+
+**Implementation Pattern:**
+```typescript
+// handleAddNewSong in MedleyPlayer.tsx
+const handleAddNewSong = () => {
+  // Create 30-second segment at current time
+  const newSong: SongSection = {
+    id: Date.now(),
+    title: "",
+    artist: "",
+    startTime: currentTime || 0,
+    endTime: Math.min((currentTime || 0) + 30, duration),
+    color: "bg-orange-400",
+    originalLink: "",
+    links: {}
+  };
+
+  // Set as new song and open search modal
+  setEditingSong(newSong);
+  setIsNewSong(true);
+  setSongSearchModalOpen(true);
+};
+```
+
+**UI Integration:**
+- **SongListGrouped**: Added `onAddSong` prop and "追加" button in header
+- **Authorization Check**: Only shows for authenticated and approved users (`user && isApproved`)
+- **Consistent Styling**: Orange button with plus icon matching design system
+
 #### SongEditModal with Song Change Feature (Updated 2025-09-14)
 **Simplified Song Editing Interface**: Streamlined modal interface that guides users to the song database
 - **New Song Addition**: Only shows "楽曲データベースから選択" button (manual input fields removed)

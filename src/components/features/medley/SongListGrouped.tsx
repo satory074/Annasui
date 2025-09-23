@@ -24,6 +24,7 @@ interface SongListProps {
   medleyTitle?: string;
   medleyCreator?: string;
   originalVideoUrl?: string;
+  onAddSong?: () => void; // 楽曲追加用
 }
 
 // 楽曲グループの型定義
@@ -48,6 +49,7 @@ export default function SongListGrouped({
   onSongHoverEnd,
   medleyTitle,
   medleyCreator,
+  onAddSong,
   originalVideoUrl,
 }: SongListProps) {
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
@@ -309,9 +311,25 @@ export default function SongListGrouped({
                   size="sm"
                 />
               )}
-              <h3 className="text-xs font-medium text-gray-700">
-                楽曲一覧 ({Object.keys(groupedSongs).length}楽曲, {songs.length}区間)
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-medium text-gray-700">
+                  楽曲一覧 ({Object.keys(groupedSongs).length}楽曲, {songs.length}区間)
+                </h3>
+
+                {/* 楽曲追加ボタン */}
+                {onAddSong && (
+                  <button
+                    onClick={onAddSong}
+                    className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-colors"
+                    title="楽曲を追加"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    追加
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

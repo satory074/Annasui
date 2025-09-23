@@ -4,19 +4,20 @@ Medleanは、ニコニコ動画、YouTube、Spotify、Apple Musicのメドレー
 
 ## 主な機能
 
-- **マルチプラットフォーム対応**: ニコニコ動画とYouTubeの両方に対応
-- **インタラクティブなタイムライン**: 楽曲の開始・終了時間を視覚的に表示
-- **楽曲検索**: メドレー間を横断した楽曲検索機能
-- **アノテーション編集**: ドラッグ&ドロップによる楽曲時間の調整
-- **プレイヤー連携**: 動画プレイヤーとの完全同期
-- **レスポンシブデザイン**: モバイル・デスクトップ両対応
+- **マルチプラットフォーム対応**: ニコニコ動画（完全統合）、YouTube（埋め込み）、Spotify・Apple Music（サムネイル）
+- **インタラクティブなタイムライン**: 楽曲の開始・終了時間を視覚的に表示、ドラッグ&ドロップ編集
+- **高精度楽曲検索**: 多段階検索アルゴリズムによるメドレー間横断検索
+- **リアルタイム編集**: 自動保存システム、キーボードショートカット、アンドゥ・リドゥ機能
+- **ユーザー認証**: 管理者承認制による安全な編集権限管理
+- **レスポンシブデザイン**: モバイル・デスクトップ両対応、Vibrant Orangeデザインシステム
+- **リアルタイム楽曲表示**: 動画再生中の現在楽曲ポップアップ表示
 
 ## 技術スタック
 
 - **フロントエンド**: Next.js 15.2.1, React 19.0.0, TypeScript
-- **スタイリング**: TailwindCSS 4, Emotion
-- **データベース**: Supabase PostgreSQL
-- **認証**: Supabase Auth (OAuth with GitHub/Google)
+- **スタイリング**: TailwindCSS 4, Emotion for CSS-in-JS
+- **データベース**: Supabase PostgreSQL with Row Level Security
+- **認証**: Supabase Auth (OAuth with Google) + 管理者承認システム
 - **デプロイ**: Firebase App Hosting (SSR対応)
 - **プレイヤー統合**: postMessage API (ニコニコ), iframe embed (YouTube)
 
@@ -43,18 +44,16 @@ npm run dev
 
 開発サーバーは [http://localhost:3000](http://localhost:3000) で起動します。
 
-### 環境変数の設定（オプション）
+### 環境変数の設定
 
-Supabaseを使用する場合は、環境変数を設定してください：
+本番環境で動作させるためには、Firebase Consoleで環境変数を設定してください：
 
 ```bash
-# .env.localファイルを作成
-cp .env.example .env.local
-
-# 以下の変数を設定
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+NEXT_PUBLIC_SUPABASE_URL=https://dheairurkxjftugrwdjl.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 ```
+
+ローカル開発の場合は `.env.local` ファイルを作成して同様の変数を設定してください。
 
 ## 開発コマンド
 
@@ -145,13 +144,19 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 
 ## ドキュメント
 
-詳細なドキュメントは [docs/](./docs/) ディレクトリを参照してください：
+### 開発者向けドキュメント
+
+- **[CLAUDE.md](./CLAUDE.md)** - Claude Code利用時の必須ガイド（簡潔版）
+- **[docs/TECHNICAL_REFERENCE.md](./docs/TECHNICAL_REFERENCE.md)** - 詳細な技術仕様とアーキテクチャ
+- **[docs/TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md)** - 包括的なトラブルシューティングガイド
+- **[CHANGELOG.md](./CHANGELOG.md)** - 変更履歴
+
+### その他のドキュメント
 
 - [アーキテクチャ設計](./docs/architecture.md)
 - [API統合](./docs/api-integration.md)
 - [要件仕様](./docs/requirements.md)
 - [コントリビューションガイド](./docs/contributing.md)
-- [変更履歴](./CHANGELOG.md)
 
 ## ライセンス
 
@@ -164,14 +169,17 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 ローカル環境とプロダクション環境では、iframe通信やSSR等の違いにより動作が異なる場合があります。
 
 ### データベース設定
-アプリケーションを正しく動作させるためには、以下のデータベースマイグレーションをSupabase Dashboardで実行してください:
 
-1. `database/migrations/001_create_users_table.sql`
-2. `database/migrations/002_add_user_id_to_medleys.sql`  
-3. `database/migrations/003_fix_rick_astley_medley.sql`
-4. `database/migrations/004_add_rick_astley_song_data.sql`
+アプリケーションを正しく動作させるためには、以下のデータベースマイグレーションをSupabase Dashboardで**順番に**実行してください：
 
-OAuthプロバイダーの設定もSupabase Auth設定でGitHubとGoogleを有効化してください。
+1. `database/migrations/001_create_users_table.sql` - ユーザープロファイルテーブル
+2. `database/migrations/002_add_user_id_to_medleys.sql` - メドレー所有権設定
+3. `database/migrations/005_create_approved_users_table.sql` - **管理者承認システム**
+4. `database/migrations/007_setup_admin_user.sql` - **管理者ユーザー設定**（YOUR_ADMIN_USER_IDを実際のUUIDに置換）
+
+OAuthプロバイダーの設定もSupabase Auth設定で**Google**を有効化してください（GitHub認証は削除済み）。
+
+**重要**: 管理者設定のため、最初にOAuthでログインしてからユーザーIDを取得し、`007_setup_admin_user.sql`を更新して実行してください。
 
 ### アルファ版について
 - 現在はアルファ版 (v0.1.0-alpha.1) です
@@ -184,4 +192,8 @@ OAuthプロバイダーの設定もSupabase Auth設定でGitHubとGoogleを有�
 
 ## サポート
 
-プロジェクトに関する質問や問題については、[CLAUDE.md](./CLAUDE.md) のガイドラインを参照してください。
+プロジェクトに関する質問や問題については、以下のドキュメントを参照してください：
+
+- **開発中の問題**: [docs/TROUBLESHOOTING.md](./docs/TROUBLESHOOTING.md)
+- **技術的な詳細**: [docs/TECHNICAL_REFERENCE.md](./docs/TECHNICAL_REFERENCE.md)
+- **Claude Code利用**: [CLAUDE.md](./CLAUDE.md)

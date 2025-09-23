@@ -646,9 +646,9 @@ import SongThumbnail from "@/components/ui/song/SongThumbnail";
 - **Real-time Tracking**: Monitors mouse position with 16ms debounced updates for optimal performance
 - **Edge Detection**: Automatically detects when mouse approaches screen edges (150px threshold)
 - **Collision Avoidance**: Moves popup away when mouse enters 100px buffer zone around popup area
-- **Position Fixing (Updated 2025-09-03)**: After mouse avoidance, popup stays in new position for 4 seconds
-- **Visual Feedback**: Shows enhanced orange shadow and scale animation during position fixing
-- **Smart Positioning**: Prioritizes mouse avoidance → position fixing → edge avoidance
+- **Position Fixing (Removed 2025-09-20)**: ~~After mouse avoidance, popup stays in new position for 4 seconds~~ - Replaced with dynamic switching
+- **Visual Feedback**: Shows enhanced orange shadow and scale animation during mouse avoidance
+- **Smart Positioning**: Prioritizes mouse avoidance → edge avoidance → return to default position
 - **Smooth Transitions**: 0.3s CSS transitions for natural movement
 
 **Position Logic (`usePlayerPosition` hook - Updated 2025-09-20):**
@@ -666,8 +666,8 @@ import SongThumbnail from "@/components/ui/song/SongThumbnail";
 - **Real-time Position Switching**: Popup continuously moves away from mouse cursor without permanent fixing
 - **100px Buffer Zone**: Mouse proximity detection with precise distance calculations
 - **150px Edge Detection**: Screen edge proximity triggers forced avoidance
-- **Dynamic Behavior**: Position changes instantly based on current mouse location
-- **No Time Limits**: No 4-second timers - position updates in real-time as mouse moves
+- **Dynamic Behavior**: Position changes instantly based on current mouse location (replaces previous 4-second position fixing)
+- **No Time Limits**: Position updates in real-time as mouse moves without any timers
 - **Return to Default**: Popup returns to right-bottom when mouse moves away from all zones
 - **Enhanced Debug Logging**: Comprehensive collision detection details with distance calculations
 
@@ -741,7 +741,8 @@ if (hasRectangleOverlap || playerInPopupZone || playerIsFullscreen) {
 - **Added precise popup zone calculation** (116px) instead of generic 150px threshold
 - **Implemented actual rectangle intersection** mathematics for accurate overlap detection
 - **Enhanced debug logging** with detailed collision detection breakdown
-- **Fixed permanent position fixing bug** that prevented dynamic mouse avoidance
+- **Replaced 4-second position fixing with dynamic mouse avoidance** - popup now moves in real-time without timers
+- **Removed permanent position fixing state** that was causing inconsistent behavior
 - **Added comprehensive mouse collision boundary testing** with pixel-perfect distance calculations
 
 **Mouse Collision Debug System (Added 2025-09-20):**
@@ -1207,14 +1208,17 @@ useEffect(() => {
 - **Boundary conditions failing**: Test exact pixel boundaries (100px, 150px) using debug output for validation
 - **Position switching reasons unclear**: Check `mouseAvoidanceReason` field in debug output for explanation of position changes
 
-### Position Fixing Issues (Added 2025-09-03)
-- **Position not staying fixed**: Verify `isPositionFixed` flag is properly destructured in ActiveSongPopup component
-- **Timer not working**: Check `currentTime` variable name conflicts - use unique names in `usePlayerPosition`
-- **Position clearing too early**: Ensure scroll threshold (100px) is appropriate for user interaction
-- **Visual feedback missing**: Confirm orange styling and "(位置固定)" text appear during position fixing
-- **Debug countdown not showing**: Verify debug panel displays `timeUntilFixExpires` with real-time countdown
-- **Mouse avoidance not triggering fix**: Check that position fixing state is set when avoidance occurs
-- **Scroll clearing not working**: Ensure `lastScrollY` state and `scrollDelta` calculation work correctly
+### Position Fixing Issues (Removed 2025-09-20)
+~~Position fixing feature was removed in favor of dynamic mouse avoidance. The following troubleshooting items are no longer applicable:~~
+- ~~**Position not staying fixed**: Verify `isPositionFixed` flag is properly destructured in ActiveSongPopup component~~
+- ~~**Timer not working**: Check `currentTime` variable name conflicts - use unique names in `usePlayerPosition`~~
+- ~~**Position clearing too early**: Ensure scroll threshold (100px) is appropriate for user interaction~~
+- ~~**Visual feedback missing**: Confirm orange styling and "(位置固定)" text appear during position fixing~~
+- ~~**Debug countdown not showing**: Verify debug panel displays `timeUntilFixExpires` with real-time countdown~~
+- ~~**Mouse avoidance not triggering fix**: Check that position fixing state is set when avoidance occurs~~
+- ~~**Scroll clearing not working**: Ensure `lastScrollY` state and `scrollDelta` calculation work correctly~~
+
+**Note**: Legacy debug displays may still show position fixing references but the actual functionality uses dynamic switching only.
 
 ### Song Segment Time Editing Issues (Added 2025-09-03)
 - **Time values reverting to original**: Check useEffect dependencies in SongEditModal - avoid including `currentTime`, `maxDuration`, `allSongs` that can cause race conditions

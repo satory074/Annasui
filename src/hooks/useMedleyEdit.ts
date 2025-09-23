@@ -93,6 +93,7 @@ export function useMedleyEdit(
         endTime: song.endTime,
         color: song.color,
         originalLink: song.originalLink,
+        links: song.links,
         order_index: index + 1
       }));
 
@@ -376,7 +377,7 @@ export function useMedleyEdit(
         alert(`${title}\n\n${instruction}\n\n${errorMessages.join('\n')}${moreMessage}${helpText}`);
         return false;
       }
-      
+
       // 楽曲データの準備（IDを除く）
       const songsToSave = editingSongs.map((song, index) => ({
         title: song.title,
@@ -385,6 +386,7 @@ export function useMedleyEdit(
         endTime: song.endTime,
         color: song.color,
         originalLink: song.originalLink,
+        links: song.links,
         order_index: index + 1
       }));
 

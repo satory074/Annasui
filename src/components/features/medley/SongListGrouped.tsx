@@ -17,31 +17,13 @@ interface SongListProps {
   onDeleteSong?: (songId: number) => void;
   onTogglePlayPause?: () => void;
   isPlaying?: boolean;
-  isEditMode?: boolean;
   selectedSong?: SongSection | null;
   onSelectSong?: (song: SongSection | null) => void;
   onSongHover?: (song: SongSection, element: HTMLElement) => void;
   onSongHoverEnd?: () => void;
-  onSaveChanges?: () => void;
-  onResetChanges?: () => void;
-  hasChanges?: boolean;
-  isSaving?: boolean;
-  tempStartTime?: number | null;
-  tempTimelineBar?: {
-    startTime: number;
-    endTime: number;
-    isActive: boolean;
-  } | null;
-  isPressingM?: boolean;
   medleyTitle?: string;
   medleyCreator?: string;
   originalVideoUrl?: string;
-  // Edit mode toggle
-  onToggleEditMode?: () => void;
-  canUndo?: boolean;
-  canRedo?: boolean;
-  onUndo?: () => void;
-  onRedo?: () => void;
 }
 
 // 楽曲グループの型定義
@@ -60,29 +42,17 @@ export default function SongListGrouped({
   onSeek,
   onTogglePlayPause,
   isPlaying,
-  isEditMode = false,
   selectedSong,
   onSelectSong,
   onSongHover,
   onSongHoverEnd,
-  tempStartTime = null,
-  tempTimelineBar = null,
-  isPressingM = false,
   medleyTitle,
   medleyCreator,
   originalVideoUrl,
-  onToggleEditMode,
-  canUndo = false,
-  canRedo = false,
-  onUndo,
-  onRedo,
 }: SongListProps) {
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
   const [dragMode, setDragMode] = useState<'start' | 'end' | 'move' | null>(null);
   const [dragStart, setDragStart] = useState<{ x: number; initialTime: number; timelineWidth: number } | null>(null);
-  // 実際に表示に使用するキーボード状態（すべてfalse - MedleyPlayerで管理）
-  const effectiveIsPressingS = false;
-  const effectiveIsPressingE = false;
 
   const effectiveTimelineDuration = actualPlayerDuration || duration;
 
@@ -187,21 +157,6 @@ export default function SongListGrouped({
 
 
   // ドラッグ処理（簡略化）
-  const handleMouseDown = (e: React.MouseEvent, song: SongSection, timelineElement: HTMLElement) => {
-    if (!isEditMode) return;
-    e.preventDefault();
-    e.stopPropagation();
-
-    const rect = timelineElement.getBoundingClientRect();
-
-    setDraggingSong(song);
-    setDragMode('move');
-    setDragStart({
-      x: e.clientX,
-      initialTime: song.startTime,
-      timelineWidth: rect.width
-    });
-  };
 
   const handleMouseMove = useCallback(() => {
     if (!draggingSong || !dragStart || !dragMode) return;
@@ -357,58 +312,10 @@ export default function SongListGrouped({
               <h3 className="text-xs font-medium text-gray-700">
                 楽曲一覧 ({Object.keys(groupedSongs).length}楽曲, {songs.length}区間)
               </h3>
-              {isEditMode && (
-                <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                  キーボード: <kbd className={`px-1 rounded transition-all ${effectiveIsPressingS ? 'bg-orange-600 text-white animate-pulse' : 'bg-gray-200'}`}>S</kbd>開始時刻 
-                  <kbd className={`px-1 rounded transition-all ${effectiveIsPressingE ? 'bg-mint-600 text-white animate-pulse' : 'bg-gray-200'}`}>E</kbd>終了時刻 
-                  <kbd className={`px-1 rounded transition-all ${tempTimelineBar?.isActive ? 'bg-purple-600 text-white animate-pulse' : isPressingM ? 'bg-indigo-600 text-white animate-pulse' : 'bg-gray-200'}`}>M</kbd>{tempTimelineBar?.isActive ? '空楽曲作成中' : 'マーカー追加'}
-                  {tempTimelineBar?.isActive && <span className="ml-1 text-purple-600 font-medium">（長押し中）</span>}
-                </div>
-              )}
             </div>
           </div>
         </div>
 
-        {/* セクション2: 編集コントロール */}
-        <div className="px-3 py-2 bg-gray-100">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={onToggleEditMode}
-                className={`px-3 py-1 text-xs rounded font-medium transition-colors ${
-                  isEditMode
-                    ? 'bg-orange-500 text-white hover:bg-orange-600'
-                    : 'text-white hover:shadow-lg'
-                }`}
-                style={!isEditMode ? { background: 'var(--gradient-primary)' } : {}}
-              >
-                {isEditMode ? '編集終了' : '編集モード'}
-              </button>
-              {isEditMode && (
-                <>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={onUndo}
-                      disabled={!canUndo}
-                      className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-                      title="元に戻す (Ctrl+Z)"
-                    >
-                      ↶
-                    </button>
-                    <button
-                      onClick={onRedo}
-                      disabled={!canRedo}
-                      className="px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600 disabled:opacity-50"
-                      title="やり直し (Ctrl+Y)"
-                    >
-                      ↷
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* メインコンテンツエリア */}
@@ -474,7 +381,7 @@ export default function SongListGrouped({
                         } ${
                           selectedSong?.id === song.id ? 'ring-2 ring-blue-500' : ''
                         } ${
-                          isEditMode ? 'cursor-move hover:opacity-80' : 'cursor-pointer'
+                          'cursor-pointer'
                         } ${
                           draggingSong?.id === song.id ? 'opacity-70 z-30' : ''
                         } select-none`}
@@ -484,10 +391,10 @@ export default function SongListGrouped({
                         }}
                         onClick={(e) => handleSongClick(e, song)}
                         onDoubleClick={(e) => handleSongDoubleClick(e)}
-                        onMouseDown={(e) => isEditMode ? handleMouseDown(e, song, e.currentTarget.closest('.timeline-container') as HTMLElement) : undefined}
+                        onMouseDown={undefined}
                         onMouseEnter={(e) => handleSongHover(e, song)}
                         onMouseLeave={handleSongLeave}
-                        title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}${isEditMode ? ' | ドラッグ移動, 矢印キーで微調整' : ' | クリックで再生'}`}
+                        title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''} | クリックで再生`}
                       >
                         <div className={`text-xs font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1 ${
                           // 空の楽曲のテキストカラー調整
@@ -559,62 +466,6 @@ export default function SongListGrouped({
                     }}
                   />
 
-                  {/* キー押下時のインジケーター */}
-                  {(effectiveIsPressingS || effectiveIsPressingE || isPressingM) && (
-                    <div
-                      className="absolute z-20 flex flex-col items-center"
-                      style={{
-                        left: `${(currentTime / effectiveTimelineDuration) * 100}%`,
-                        transform: 'translateX(-50%)'
-                      }}
-                    >
-                      <div className={`w-1 h-full ${
-                        effectiveIsPressingS ? 'bg-orange-600' : 
-                        effectiveIsPressingE ? 'bg-mint-600' : 
-                        isPressingM ? 'bg-indigo-600' : 'bg-gray-400'
-                      } opacity-80`} />
-                      <div className={`text-xs px-1 py-0.5 rounded text-white font-semibold ${
-                        effectiveIsPressingS ? 'bg-orange-600' :
-                        effectiveIsPressingE ? 'bg-mint-600' :
-                        isPressingM ? 'bg-indigo-600' : 'bg-gray-400'
-                      }`}>
-                        {effectiveIsPressingS ? 'S' : effectiveIsPressingE ? 'E' : isPressingM ? 'M' : ''}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 実時間作成バー（Sキー押下後の楽曲作成中） */}
-                  {tempStartTime !== null && tempStartTime !== undefined && (
-                    <div 
-                      className="absolute z-15 h-full bg-blue-400/50 border-2 border-blue-400 rounded-sm"
-                      style={{
-                        left: `${Math.min((tempStartTime / effectiveTimelineDuration) * 100, (currentTime / effectiveTimelineDuration) * 100)}%`,
-                        width: `${Math.abs(((currentTime - tempStartTime) / effectiveTimelineDuration) * 100)}%`
-                      }}
-                    >
-                      <div className="absolute -top-6 left-1 text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">
-                        作成中... ({Math.round((currentTime - tempStartTime) * 10) / 10}s)
-                      </div>
-                    </div>
-                  )}
-
-                  {/* 一時的なタイムラインバー（Mキー長押し用） */}
-                  {tempTimelineBar && tempTimelineBar.isActive && (
-                    <div 
-                      className="absolute z-20 h-full bg-purple-400/60 border-2 border-purple-500 border-dashed rounded-sm animate-pulse"
-                      style={{
-                        left: `${(tempTimelineBar.startTime / effectiveTimelineDuration) * 100}%`,
-                        width: `${Math.max(0.5, ((tempTimelineBar.endTime - tempTimelineBar.startTime) / effectiveTimelineDuration) * 100)}%`
-                      }}
-                    >
-                      <div className="absolute -top-6 left-1 text-xs bg-purple-600 text-white px-1.5 py-0.5 rounded font-semibold whitespace-nowrap">
-                        空の楽曲作成中... ({Math.round((tempTimelineBar.endTime - tempTimelineBar.startTime) * 10) / 10}s)
-                      </div>
-                      <div className="text-xs text-purple-900 font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center justify-center">
-                        空の楽曲
-                      </div>
-                    </div>
-                  )}
                   
                 </div>
               </div>

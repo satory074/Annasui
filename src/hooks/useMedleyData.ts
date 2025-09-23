@@ -9,6 +9,7 @@ interface UseMedleyDataReturn {
     medleyData: MedleyData | null
     loading?: boolean
     error?: string | null
+    refetch: () => void
 }
 
 export function useMedleyData(videoId: string): UseMedleyDataReturn {
@@ -23,5 +24,6 @@ export function useMedleyData(videoId: string): UseMedleyDataReturn {
         medleyData: apiResult.medleyData,
         loading: apiResult.loading,
         error: apiResult.error,
+        refetch: apiResult.refetch,
     };
 }

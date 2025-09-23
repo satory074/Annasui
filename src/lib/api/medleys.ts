@@ -434,6 +434,7 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
       end_time: song.endTime,
       color: song.color,
       original_link: song.originalLink || null,
+      links: song.links ? JSON.stringify(song.links) : null,
       order_index: index + 1
     }))
 
@@ -621,6 +622,7 @@ export async function saveMedleySongs(medleyId: string, songs: Omit<SongSection,
         end_time: song.endTime,
         color: song.color,
         original_link: song.originalLink || null,
+        links: song.links ? JSON.stringify(song.links) : null,
         order_index: index + 1
       }))
 

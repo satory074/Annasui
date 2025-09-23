@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { SongSection, MedleyData } from '@/types'
 import { getMedleyByVideoId } from '@/lib/api/medleys'
 import { logger } from '@/lib/utils/logger'
@@ -11,6 +11,7 @@ interface UseMedleyDataApiReturn {
   medleyData: MedleyData | null
   loading: boolean
   error: string | null
+  refetch: () => void
 }
 
 export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
@@ -22,12 +23,10 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    let isCancelled = false
-    let timeoutId: NodeJS.Timeout
+  const fetchMedleyData = useCallback(async () => {
+    let timeoutId: NodeJS.Timeout | undefined
 
-    async function fetchMedleyData() {
-      if (!videoId) {
+    if (!videoId) {
         setMedleySongs([])
         setMedleyTitle('')
         setMedleyCreator('')
@@ -54,8 +53,6 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
           getMedleyByVideoId(videoId),
           timeoutPromise
         ])
-        
-        if (isCancelled) return
 
         if (medleyData) {
           setMedleySongs(medleyData.songs)
@@ -73,7 +70,6 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
           setError(`メドレーデータが見つかりませんでした: ${videoId}`)
         }
       } catch (err) {
-        if (isCancelled) return
         
         logger.error('❌ Error fetching medley data:', err)
         logger.info('🔍 Error details for debugging:', {
@@ -107,21 +103,13 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
           clearTimeout(timeoutId)
         }
         
-        if (!isCancelled) {
-          setLoading(false)
-        }
+        setLoading(false)
       }
-    }
+    }, [videoId])
 
-    fetchMedleyData()
-
-    return () => {
-      isCancelled = true
-      if (timeoutId) {
-        clearTimeout(timeoutId)
-      }
-    }
-  }, [videoId])
+    useEffect(() => {
+      fetchMedleyData()
+    }, [fetchMedleyData])
 
   return {
     medleySongs,
@@ -131,5 +119,6 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
     medleyData,
     loading,
     error,
+    refetch: fetchMedleyData,
   }
 }

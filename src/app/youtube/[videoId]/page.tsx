@@ -19,7 +19,7 @@ export async function generateMetadata({ params }: YouTubeMedleyPageProps): Prom
     
     if (!medleyData) {
       return {
-        title: `${videoId} - Medlean`,
+        title: `Medlean - ${videoId}`,
         description: 'YouTubeメドレーのアノテーションを表示',
         robots: { index: false, follow: false },
       };
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: YouTubeMedleyPageProps): Prom
     const durationSeconds = medleyData.duration % 60;
     const songTitles = medleyData.songs.slice(0, 5).map(song => song.title).join('、');
     
-    const title = `${medleyData.title} - Medlean`;
+    const title = `Medlean - ${medleyData.title}`;
     const description = `${medleyData.title}の詳細なアノテーション情報。収録楽曲${songCount}曲、再生時間${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}。収録曲: ${songTitles}${songCount > 5 ? '他' : ''}`;
 
     return {
@@ -90,7 +90,7 @@ export async function generateMetadata({ params }: YouTubeMedleyPageProps): Prom
   } catch (error) {
     logger.error('Error generating metadata:', error);
     return {
-      title: `${videoId} - Medlean`,
+      title: `Medlean - ${videoId}`,
       description: 'YouTubeメドレーのアノテーションを表示',
     };
   }

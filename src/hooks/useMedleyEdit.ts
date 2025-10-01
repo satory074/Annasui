@@ -25,9 +25,17 @@ interface UseMedleyEditReturn {
   isAutoSaving: boolean;
 }
 
+interface UseMedleyEditProps {
+  originalSongs: SongSection[];
+  onSaveSuccess?: () => void;
+}
+
 export function useMedleyEdit(
-  originalSongs: SongSection[]
+  props: UseMedleyEditProps | SongSection[]
 ): UseMedleyEditReturn {
+  // Handle both old and new API formats for backward compatibility
+  const originalSongs = Array.isArray(props) ? props : props.originalSongs;
+  const onSaveSuccess = Array.isArray(props) ? undefined : props.onSaveSuccess;
   const [editingSongs, setEditingSongs] = useState<SongSection[]>(originalSongs);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -120,6 +128,11 @@ export function useMedleyEdit(
       if (result) {
         setHasChanges(false);
         logger.info('✅ Auto-save completed successfully');
+
+        // Trigger data refresh callback if provided
+        if (onSaveSuccess && typeof onSaveSuccess === 'function') {
+          onSaveSuccess();
+        }
       } else {
         logger.warn('⚠️ Auto-save failed');
       }
@@ -128,7 +141,7 @@ export function useMedleyEdit(
     } finally {
       setIsAutoSaving(false);
     }
-  }, [isAutoSaving, editingSongs]);
+  }, [isAutoSaving, editingSongs, onSaveSuccess]);
 
   // デバウンス付き自動保存トリガー
   const triggerAutoSave = useCallback(() => {

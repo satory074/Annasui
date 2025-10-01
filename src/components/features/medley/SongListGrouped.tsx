@@ -25,6 +25,7 @@ interface SongListProps {
   medleyCreator?: string;
   originalVideoUrl?: string;
   onAddSong?: () => void; // 楽曲追加用
+  onEditSong?: (song: SongSection) => void; // 楽曲編集用
 }
 
 // 楽曲グループの型定義
@@ -50,6 +51,7 @@ export default function SongListGrouped({
   medleyTitle,
   medleyCreator,
   onAddSong,
+  onEditSong,
   originalVideoUrl,
 }: SongListProps) {
   const [draggingSong, setDraggingSong] = useState<SongSection | null>(null);
@@ -141,10 +143,10 @@ export default function SongListGrouped({
     onTimelineClick?.(song.startTime);
   };
 
-  // 楽曲ダブルクリック処理（無効化）
-  const handleSongDoubleClick = (e: React.MouseEvent) => {
+  // 楽曲ダブルクリック処理
+  const handleSongDoubleClick = (e: React.MouseEvent, song: SongSection) => {
     e.stopPropagation();
-    // 編集モーダルを開かないように無効化
+    onEditSong?.(song);
   };
 
   // ホバー処理
@@ -408,7 +410,7 @@ export default function SongListGrouped({
                           width: `${((song.endTime - song.startTime) / effectiveTimelineDuration) * 100}%`,
                         }}
                         onClick={(e) => handleSongClick(e, song)}
-                        onDoubleClick={(e) => handleSongDoubleClick(e)}
+                        onDoubleClick={(e) => handleSongDoubleClick(e, song)}
                         onMouseDown={undefined}
                         onMouseEnter={(e) => handleSongHover(e, song)}
                         onMouseLeave={handleSongLeave}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useMedleyData } from "@/hooks/useMedleyData";
 import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import { useMedleyEdit } from "@/hooks/useMedleyEdit";
@@ -38,15 +38,42 @@ export default function MedleyPlayer({
   platform = 'niconico'
 }: MedleyPlayerProps) {
     const { user, isApproved } = useAuth();
-    
+
+    // デバッグモードでの認証バイパス（クライアントサイドで判定）
+    const [bypassAuth, setBypassAuth] = useState(false);
+    const [isDebugMode, setIsDebugMode] = useState(false);
+
+    useEffect(() => {
+        // クライアントサイドでのみ実行
+        const debugMode = window.location.search.includes('debug=true');
+        const bypass = window.location.search.includes('bypass_auth=true') &&
+                       window.location.hostname === 'localhost';
+
+        setIsDebugMode(debugMode);
+        setBypassAuth(bypass);
+    }, []);
+
+    // 実際の権限判定（デバッグモードではバイパス可能）
+    const hasEditPermission = useMemo(() => {
+        return (user && isApproved) || bypassAuth;
+    }, [user, isApproved, bypassAuth]);
+
+    const effectiveUser = bypassAuth && !user ? { id: 'debug-user', email: 'debug@test.com' } : user;
+
     // 認証・承認状態のデバッグログ（プロダクション環境での問題調査用）
     logger.info('🔐 MedleyPlayer: Auth state', {
-        user: user ? {
-            id: user.id,
-            email: user.email
+        user: effectiveUser ? {
+            id: effectiveUser.id,
+            email: effectiveUser.email
         } : null,
         isApproved,
-        hasEditPermission: !!(user && isApproved)
+        hasEditPermission,
+        debugMode: {
+            isDebugMode,
+            bypassAuth,
+            isLocalhost: bypassAuth,
+            hostname: typeof window !== 'undefined' ? window.location.hostname : 'SSR'
+        }
     });
     
     const [videoId, setVideoId] = useState<string>(initialVideoId);
@@ -96,11 +123,12 @@ export default function MedleyPlayer({
 
 
     // メドレーデータの取得
-    const { medleySongs, medleyTitle, medleyCreator, medleyDuration, medleyData, loading, error } = useMedleyData(videoId);
+    const { medleySongs, medleyTitle, medleyCreator, medleyDuration, medleyData, loading, error, refetch } = useMedleyData(videoId);
     
     // 編集機能
     const {
         editingSongs,
+        hasChanges,
         isSaving,
         isAutoSaving,
         updateSong,
@@ -111,7 +139,7 @@ export default function MedleyPlayer({
         undo,
         redo,
         enableAutoSave,
-    } = useMedleyEdit(medleySongs);
+    } = useMedleyEdit({ originalSongs: medleySongs, onSaveSuccess: refetch });
     
     // ニコニコプレイヤーの統合
     const {
@@ -329,7 +357,7 @@ export default function MedleyPlayer({
     }, [isTooltipVisible, hideTooltipTimeout]);
     
     // 現在のトラックの追跡（編集中か元のデータかを切り替え）
-    const displaySongs = medleySongs;
+    const displaySongs = hasChanges ? editingSongs : medleySongs;
     
     // Debug logging for displaySongs changes
     useEffect(() => {
@@ -400,22 +428,32 @@ export default function MedleyPlayer({
                 preservedEndTime: editingSong.endTime,
                 newTitle: songTemplate.title,
                 newArtist: songTemplate.artist,
-                replacingEmptySong: editingSong.title.startsWith('空の楽曲')
+                replacingEmptySong: editingSong.title.startsWith('空の楽曲'),
+                idExistsInEditingSongs: editingSongs.some(s => s.id === editingSong.id)
             });
-            
+
             // 既存楽曲がある場合は必ず置換 - ID、時間情報を保持して楽曲情報のみ更新
-            setEditingSong({
+            const replacedSong = {
                 ...editingSong,
                 title: songTemplate.title,
                 artist: songTemplate.artist,
                 originalLink: songTemplate.originalLink,
                 links: songTemplate.links
+            };
+
+            setEditingSong(replacedSong);
+
+            logger.info('🔍 After setEditingSong - ID VERIFICATION', {
+                newEditingSongId: replacedSong.id,
+                newEditingSongTitle: replacedSong.title,
+                stillMatchesOriginalId: replacedSong.id === editingSong.id,
+                willFindInEditingSongs: editingSongs.some(s => s.id === replacedSong.id)
             });
-            
+
             // 置換時はisNewSongをfalseに設定して、必ずupdateSongが呼ばれるようにする
             setIsNewSong(false);
             // NOTE: isChangingSongは保存完了後にリセットする（SongEditModalの保存ロジックで使用するため）
-            
+
             logger.info('✅ Song replacement completed - will call updateSong on save');
         } else {
             logger.info('➕ [NEW SONG PATH] Creating new song from database selection', {
@@ -559,15 +597,18 @@ export default function MedleyPlayer({
     };
 
     const handleSaveSong = (song: SongSection) => {
-        logger.info('💾 handleSaveSong called', {
+        logger.info('💾 handleSaveSong called - DETAILED ID TRACKING', {
             isNewSong: isNewSong,
             isChangingSong: isChangingSong,
             songId: song.id,
             songTitle: song.title,
             songArtist: song.artist,
+            editingSongId: editingSong?.id,
+            editingSongTitle: editingSong?.title,
             currentEditingSongs: editingSongs.map(s => ({ id: s.id, title: s.title })),
             willCallAddSong: isNewSong,
-            willCallUpdateSong: !isNewSong
+            willCallUpdateSong: !isNewSong,
+            idMatch: editingSongs.some(s => s.id === song.id)
         });
 
         if (isNewSong) {
@@ -577,7 +618,8 @@ export default function MedleyPlayer({
             logger.info('🔄 Calling updateSong - will replace EXISTING song', {
                 searchingForId: song.id,
                 availableIds: editingSongs.map(s => s.id),
-                wasChangingSong: isChangingSong
+                wasChangingSong: isChangingSong,
+                exactMatch: editingSongs.find(s => s.id === song.id)?.title || 'NO_MATCH'
             });
             updateSong(song);
         }
@@ -733,7 +775,7 @@ export default function MedleyPlayer({
 
     // ツールチップから編集ボタンがクリックされた時の処理
     const handleEditFromTooltip = (song: SongSection) => {
-        if (!user || !isApproved) {
+        if (!hasEditPermission) {
             setShowAuthModal(true);
             return;
         }
@@ -753,7 +795,13 @@ export default function MedleyPlayer({
         logger.info('編集モーダルをツールチップから開きました:', { songTitle: song.title, songId: song.id });
     };
 
-
+    // 楽曲をダブルクリックして編集モーダルを開く
+    const handleEditSongClick = (song: SongSection) => {
+        setEditingSong(song);
+        setIsNewSong(false);
+        setEditModalOpen(true);
+        logger.info('編集モーダルをダブルクリックから開きました:', { songTitle: song.title, songId: song.id });
+    };
 
 
 
@@ -875,7 +923,7 @@ export default function MedleyPlayer({
                         currentSongs={getCurrentSongs()}
                         onTimelineClick={handleTimelineClick}
                         onSeek={seek}
-                        onDeleteSong={user && isApproved ? deleteSong : undefined}
+                        onDeleteSong={hasEditPermission ? deleteSong : undefined}
                         onTogglePlayPause={togglePlayPause}
                         isPlaying={isPlaying}
                         selectedSong={selectedSong}
@@ -891,7 +939,8 @@ export default function MedleyPlayer({
                         medleyTitle="" // MedleyHeaderで表示するため空にする
                         medleyCreator="" // MedleyHeaderで表示するため空にする
                         originalVideoUrl=""
-                        onAddSong={user && isApproved ? handleAddNewSong : undefined}
+                        onAddSong={hasEditPermission ? handleAddNewSong : undefined}
+                        onEditSong={hasEditPermission ? handleEditSongClick : undefined}
                     />
                 )}
 
@@ -923,7 +972,7 @@ export default function MedleyPlayer({
                                 </p>
                             </div>
                             
-                            {user && isApproved ? (
+                            {hasEditPermission ? (
                                 <div className="space-y-4">
                                     <button
                                         onClick={() => {
@@ -1047,7 +1096,7 @@ export default function MedleyPlayer({
                                     <p className="text-sm text-gray-600 mb-4">
                                         メドレーデータを作成するには、ログインして管理者の承認が必要です。
                                     </p>
-                                    {!user ? (
+                                    {!hasEditPermission ? (
                                         <button
                                             onClick={() => setShowAuthModal(true)}
                                             className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
@@ -1129,7 +1178,7 @@ export default function MedleyPlayer({
                 isVisible={isTooltipVisible}
                 position={tooltipPosition}
                 onSeek={seek}
-                onEdit={user && isApproved ? handleEditFromTooltip : undefined}
+                onEdit={hasEditPermission ? handleEditFromTooltip : undefined}
                 onMouseEnter={handleTooltipMouseEnter}
                 onMouseLeave={handleTooltipMouseLeave}
             />
@@ -1197,10 +1246,27 @@ export default function MedleyPlayer({
                 editModalOpen={editModalOpen}
                 songSearchModalOpen={songSearchModalOpen}
                 manualAddModalOpen={manualAddModalOpen}
-                activeSongs={displaySongs.filter(song => 
+                activeSongs={displaySongs.filter(song =>
                     currentTime >= song.startTime && currentTime < song.endTime + 0.1
                 )}
             />
+
+            {/* 認証デバッグ情報（デバッグモード時のみ表示） */}
+            {isDebugMode && (
+                <div className="fixed bottom-4 left-4 p-4 bg-yellow-100 border border-yellow-400 rounded-lg text-sm z-50 max-w-md">
+                    <h4 className="font-bold text-yellow-800 mb-2">🐛 認証デバッグ情報</h4>
+                    <div className="space-y-1 text-yellow-700">
+                        <div>ユーザー: {effectiveUser ? `${effectiveUser.email} (${effectiveUser.id})` : 'なし'}</div>
+                        <div>承認済み: {isApproved ? '✓' : '✗'}</div>
+                        <div>編集権限: {hasEditPermission ? '✓' : '✗'}</div>
+                        <div>認証バイパス: {bypassAuth ? '✓ 有効' : '✗'}</div>
+                        <div>環境: {bypassAuth ? 'localhost (bypass enabled)' : 'production'}</div>
+                        <div className="text-xs mt-2 text-yellow-600">
+                            ?bypass_auth=true を追加で編集権限をバイパス
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* 認証モーダル */}
             <AuthModal

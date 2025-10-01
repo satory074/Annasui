@@ -47,6 +47,7 @@ export default function MedleyPlayer({
         // クライアントサイドでのみ実行
         const urlParams = new URLSearchParams(window.location.search);
         const debugParam = urlParams.get('debug') === 'true';
+        const debugKeyParam = urlParams.get('debug_key');
         const isLocalhost = window.location.hostname === 'localhost';
 
         // 環境変数でのデバッグバイパス（開発環境のみ）
@@ -59,8 +60,12 @@ export default function MedleyPlayer({
         // デバッグモード: URLパラメータまたはセッションストレージ
         const debugMode = debugParam || sessionBypass || envBypass;
 
-        // 認証バイパス: localhost環境でデバッグモードが有効な場合のみ
-        const bypass = isLocalhost && debugMode;
+        // デバッグキーの検証
+        const debugPassword = process.env.NEXT_PUBLIC_DEBUG_PASSWORD;
+        const hasValidDebugKey = !!(debugKeyParam && debugPassword && debugKeyParam === debugPassword);
+
+        // 認証バイパス: localhost環境 OR 有効なデバッグキーがある場合
+        const bypass = !!(debugMode && (isLocalhost || hasValidDebugKey));
 
         setIsDebugMode(debugMode);
         setBypassAuth(bypass);
@@ -75,6 +80,7 @@ export default function MedleyPlayer({
             envBypass,
             sessionBypass,
             isLocalhost,
+            hasValidDebugKey: !!hasValidDebugKey,
             finalBypass: bypass
         });
     }, []);
@@ -1317,9 +1323,10 @@ export default function MedleyPlayer({
                     </div>
                     <div className="mt-3 pt-2 border-t border-yellow-300 text-xs text-yellow-600">
                         <div className="font-medium mb-1">有効化方法:</div>
-                        <div>• URLパラメータ: <code className="bg-yellow-200 px-1 py-0.5 rounded">?debug=true</code></div>
+                        <div>• localhost: <code className="bg-yellow-200 px-1 py-0.5 rounded">?debug=true</code></div>
+                        <div>• 本番環境: <code className="bg-yellow-200 px-1 py-0.5 rounded">?debug=true&debug_key=PASSWORD</code></div>
                         <div>• 環境変数: <code className="bg-yellow-200 px-1 py-0.5 rounded">NEXT_PUBLIC_DEBUG_BYPASS_AUTH=true</code></div>
-                        <div className="mt-1 text-yellow-500">※ localhost環境でのみ動作します</div>
+                        <div className="mt-1 text-yellow-500">※ 本番環境ではdebug_keyが必要です</div>
                     </div>
                 </div>
             )}

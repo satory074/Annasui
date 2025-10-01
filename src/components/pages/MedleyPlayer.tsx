@@ -45,12 +45,38 @@ export default function MedleyPlayer({
 
     useEffect(() => {
         // クライアントサイドでのみ実行
-        const debugMode = window.location.search.includes('debug=true');
-        const bypass = window.location.search.includes('bypass_auth=true') &&
-                       window.location.hostname === 'localhost';
+        const urlParams = new URLSearchParams(window.location.search);
+        const debugParam = urlParams.get('debug') === 'true';
+        const isLocalhost = window.location.hostname === 'localhost';
+
+        // 環境変数でのデバッグバイパス（開発環境のみ）
+        const envBypass = process.env.NEXT_PUBLIC_DEBUG_BYPASS_AUTH === 'true' &&
+                         process.env.NODE_ENV === 'development';
+
+        // セッションストレージから状態を復元
+        const sessionBypass = sessionStorage.getItem('debug_bypass_auth') === 'true';
+
+        // デバッグモード: URLパラメータまたはセッションストレージ
+        const debugMode = debugParam || sessionBypass || envBypass;
+
+        // 認証バイパス: localhost環境でデバッグモードが有効な場合のみ
+        const bypass = isLocalhost && debugMode;
 
         setIsDebugMode(debugMode);
         setBypassAuth(bypass);
+
+        // セッションストレージに保存（ページ遷移時も維持）
+        if (bypass) {
+            sessionStorage.setItem('debug_bypass_auth', 'true');
+        }
+
+        logger.info('🐛 Debug mode initialized', {
+            debugParam,
+            envBypass,
+            sessionBypass,
+            isLocalhost,
+            finalBypass: bypass
+        });
     }, []);
 
     // 実際の権限判定（デバッグモードではバイパス可能）
@@ -1253,17 +1279,47 @@ export default function MedleyPlayer({
 
             {/* 認証デバッグ情報（デバッグモード時のみ表示） */}
             {isDebugMode && (
-                <div className="fixed bottom-4 left-4 p-4 bg-yellow-100 border border-yellow-400 rounded-lg text-sm z-50 max-w-md">
-                    <h4 className="font-bold text-yellow-800 mb-2">🐛 認証デバッグ情報</h4>
+                <div className="fixed bottom-4 left-4 p-4 bg-yellow-100 border border-yellow-400 rounded-lg text-sm z-50 max-w-md shadow-lg">
+                    <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-bold text-yellow-800">🐛 認証デバッグ情報</h4>
+                        <button
+                            onClick={() => {
+                                sessionStorage.removeItem('debug_bypass_auth');
+                                window.location.reload();
+                            }}
+                            className="px-2 py-1 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 rounded text-xs font-medium transition-colors"
+                            title="デバッグモードを無効化してリロード"
+                        >
+                            無効化
+                        </button>
+                    </div>
                     <div className="space-y-1 text-yellow-700">
-                        <div>ユーザー: {effectiveUser ? `${effectiveUser.email} (${effectiveUser.id})` : 'なし'}</div>
-                        <div>承認済み: {isApproved ? '✓' : '✗'}</div>
-                        <div>編集権限: {hasEditPermission ? '✓' : '✗'}</div>
-                        <div>認証バイパス: {bypassAuth ? '✓ 有効' : '✗'}</div>
-                        <div>環境: {bypassAuth ? 'localhost (bypass enabled)' : 'production'}</div>
-                        <div className="text-xs mt-2 text-yellow-600">
-                            ?bypass_auth=true を追加で編集権限をバイパス
+                        <div className="flex justify-between">
+                            <span>ユーザー:</span>
+                            <span className="font-mono text-xs">{effectiveUser ? `${effectiveUser.email}` : 'なし'}</span>
                         </div>
+                        <div className="flex justify-between">
+                            <span>承認済み:</span>
+                            <span>{isApproved ? '✓ はい' : '✗ いいえ'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>編集権限:</span>
+                            <span className="font-bold">{hasEditPermission ? '✓ あり' : '✗ なし'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>認証バイパス:</span>
+                            <span className="font-bold">{bypassAuth ? '✓ 有効' : '✗ 無効'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                            <span>環境:</span>
+                            <span>{typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'localhost' : 'production'}</span>
+                        </div>
+                    </div>
+                    <div className="mt-3 pt-2 border-t border-yellow-300 text-xs text-yellow-600">
+                        <div className="font-medium mb-1">有効化方法:</div>
+                        <div>• URLパラメータ: <code className="bg-yellow-200 px-1 py-0.5 rounded">?debug=true</code></div>
+                        <div>• 環境変数: <code className="bg-yellow-200 px-1 py-0.5 rounded">NEXT_PUBLIC_DEBUG_BYPASS_AUTH=true</code></div>
+                        <div className="mt-1 text-yellow-500">※ localhost環境でのみ動作します</div>
                     </div>
                 </div>
             )}

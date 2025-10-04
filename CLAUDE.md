@@ -20,11 +20,11 @@ Guide for Claude Code when working with the Medlean project.
 
 ## Project Overview
 
-**Medlean** - Multi-platform medley annotation platform built with Next.js. Supports Niconico (full integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, user auth with admin approval, auto-save system.
+**Medlean** - Multi-platform medley annotation platform built with Next.js. Supports Niconico (full integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, auto-save system.
 
-**Tech Stack**: Next.js 15.2.1 + React 19.0.0 + TypeScript, TailwindCSS 4, Supabase (auth/database), Firebase Hosting
+**Tech Stack**: Next.js 15.2.1 + React 19.0.0 + TypeScript, TailwindCSS 4, Supabase (database), Firebase Hosting
 
-**Status**: Alpha v0.1.0-alpha.1 with admin-approval authorization system
+**Status**: Alpha v0.1.0-alpha.1 with open access editing
 
 ## Core Architecture
 
@@ -52,23 +52,12 @@ Pattern: Server-side fetch → Process response → Return to client
 - **MUST** convert seconds to milliseconds for Niconico API (`time * 1000`)
 - **MUST** use `commandInProgress` flag to prevent command overlap
 
-### Authorization System
-- **MUST** check `isApproved` for all edit operations
-- Only approved users can create/edit/delete medleys
-- Admin approval required via `/admin` page
-
 ### API Proxy Requirements
 - Use proxy APIs for CORS: `/api/thumbnail/niconico/[videoId]/` and `/api/metadata/niconico/[videoId]/`
 - **MUST** include User-Agent header for Niconico API calls
 - Server-side XML parsing uses regex (not DOMParser)
 
 ## Architecture Patterns
-
-### Authentication Flow
-1. Anonymous: Read-only access
-2. Authenticated: Login but no edit until approved
-3. Approved: Full CRUD access
-4. Admin: User management + all approved permissions
 
 ### Auto-Save System
 - 2-second debounced auto-save when edit mode active
@@ -84,7 +73,6 @@ Pattern: Server-side fetch → Process response → Return to client
 - Use `logger.debug/info/warn/error()` instead of console.log
 - Always include `displayName` for production builds
 - Use unique keys for dynamic components
-- Check user approval for edit operations
 
 ## Common Issues
 
@@ -92,11 +80,6 @@ Pattern: Server-side fetch → Process response → Return to client
 - **Seek fails**: Check millisecond conversion (`* 1000`)
 - **iframe not responding**: Verify postMessage origin and no sandbox attribute
 - **Duration mismatch**: Use `actualPlayerDuration` for timeline
-
-### Authentication Issues
-- **Edit buttons missing**: Verify user is authenticated AND approved
-- **OAuth loops**: Check callback URL in Supabase Dashboard
-- **Profile creation errors**: Auto-creation system handles missing profiles
 
 ### API Issues
 - **Thumbnails not loading**: Check proxy API with trailing slash
@@ -119,7 +102,7 @@ Pattern: Server-side fetch → Process response → Return to client
 src/
 ├── app/ - Next.js App Router
 ├── components/
-│   ├── features/ - Auth, medley, player components
+│   ├── features/ - Medley, player components
 │   ├── pages/ - Page-level components
 │   └── ui/ - Reusable UI components
 ├── hooks/ - Data management (useMedleyEdit, useNicoPlayer)
@@ -140,23 +123,15 @@ src/
 ## Database Setup
 
 Run migrations in Supabase Dashboard (database/migrations/) **in order**:
-1. `001_create_users_table.sql` - User profiles
-2. `002_add_user_id_to_medleys.sql` - Medley ownership
-3. `003_fix_rick_astley_medley.sql` - Platform corrections
-4. `004_add_rick_astley_song_data.sql` - Sample data
-5. `005_create_approved_users_table.sql` - Admin approval system
-6. `006_create_medley_edit_history.sql` - Edit history tracking
-7. `007_setup_admin_user.sql` - Replace YOUR_ADMIN_USER_ID with actual UUID
+1. `003_fix_rick_astley_medley.sql` - Platform corrections
+2. `004_add_rick_astley_song_data.sql` - Sample data
+3. `006_create_medley_edit_history.sql` - Edit history tracking
 
-Configure OAuth providers (Google) in Supabase Auth settings.
+Core tables: `medleys`, `songs`, `medley_edit_history`
 
-## Security Patterns
+## Code Patterns
 
 ```typescript
-// Check approval for edits
-const { user, isApproved } = useAuth();
-if (editOperation && (!user || !isApproved)) return;
-
 // Use logger, not console
 logger.debug('Operation completed', data);
 

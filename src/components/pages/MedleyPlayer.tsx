@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMedleyData } from "@/hooks/useMedleyData";
 import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import { useMedleyEdit } from "@/hooks/useMedleyEdit";
@@ -18,9 +18,6 @@ import { SongSection } from "@/types";
 import { SongDatabaseEntry, createSongFromDatabase, addManualSong } from "@/lib/utils/songDatabase";
 import { logger } from "@/lib/utils/logger";
 import { PlayerLoadingMessage } from "@/components/ui/loading/PlayerSkeleton";
-import { useAuth } from "@/contexts/AuthContext";
-import AuthorizationBanner from "@/components/ui/AuthorizationBanner";
-import AuthModal from "@/components/features/auth/AuthModal";
 import { ActiveSongPopup } from "@/components/ui/song/ActiveSongPopup";
 import { ActiveSongDebugPanel } from "@/components/ui/debug/ActiveSongDebugPanel";
 import { getNiconicoVideoMetadata } from "@/lib/utils/videoMetadata";
@@ -37,77 +34,6 @@ export default function MedleyPlayer({
   initialTime = 0,
   platform = 'niconico'
 }: MedleyPlayerProps) {
-    const { user, isApproved } = useAuth();
-
-    // デバッグモードでの認証バイパス（クライアントサイドで判定）
-    const [bypassAuth, setBypassAuth] = useState(false);
-    const [isDebugMode, setIsDebugMode] = useState(false);
-
-    useEffect(() => {
-        // クライアントサイドでのみ実行
-        const urlParams = new URLSearchParams(window.location.search);
-        const debugParam = urlParams.get('debug') === 'true';
-        const debugKeyParam = urlParams.get('debug_key');
-        const isLocalhost = window.location.hostname === 'localhost';
-
-        // 環境変数でのデバッグバイパス（開発環境のみ）
-        const envBypass = process.env.NEXT_PUBLIC_DEBUG_BYPASS_AUTH === 'true' &&
-                         process.env.NODE_ENV === 'development';
-
-        // セッションストレージから状態を復元
-        const sessionBypass = sessionStorage.getItem('debug_bypass_auth') === 'true';
-
-        // デバッグモード: URLパラメータまたはセッションストレージ
-        const debugMode = debugParam || sessionBypass || envBypass;
-
-        // デバッグキーの検証
-        const debugPassword = process.env.NEXT_PUBLIC_DEBUG_PASSWORD;
-        const hasValidDebugKey = !!(debugKeyParam && debugPassword && debugKeyParam === debugPassword);
-
-        // 認証バイパス: localhost環境 OR 有効なデバッグキーがある場合
-        const bypass = !!(debugMode && (isLocalhost || hasValidDebugKey));
-
-        setIsDebugMode(debugMode);
-        setBypassAuth(bypass);
-
-        // セッションストレージに保存（ページ遷移時も維持）
-        if (bypass) {
-            sessionStorage.setItem('debug_bypass_auth', 'true');
-        }
-
-        logger.info('🐛 Debug mode initialized', {
-            debugParam,
-            envBypass,
-            sessionBypass,
-            isLocalhost,
-            hasValidDebugKey: !!hasValidDebugKey,
-            finalBypass: bypass
-        });
-    }, []);
-
-    // 実際の権限判定（デバッグモードではバイパス可能）
-    const hasEditPermission = useMemo(() => {
-        return (user && isApproved) || bypassAuth;
-    }, [user, isApproved, bypassAuth]);
-
-    const effectiveUser = bypassAuth && !user ? { id: 'debug-user', email: 'debug@test.com' } : user;
-
-    // 認証・承認状態のデバッグログ（プロダクション環境での問題調査用）
-    logger.info('🔐 MedleyPlayer: Auth state', {
-        user: effectiveUser ? {
-            id: effectiveUser.id,
-            email: effectiveUser.email
-        } : null,
-        isApproved,
-        hasEditPermission,
-        debugMode: {
-            isDebugMode,
-            bypassAuth,
-            isLocalhost: bypassAuth,
-            hostname: typeof window !== 'undefined' ? window.location.hostname : 'SSR'
-        }
-    });
-    
     const [videoId, setVideoId] = useState<string>(initialVideoId);
     const [inputVideoId, setInputVideoId] = useState<string>(initialVideoId);
     
@@ -135,7 +61,7 @@ export default function MedleyPlayer({
     const [manualAddModalOpen, setManualAddModalOpen] = useState<boolean>(false);
     
     // 認証モーダル関連の状態
-    const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+    
     
     // メタデータ関連の状態
     const [videoMetadata, setVideoMetadata] = useState<{title: string, creator: string} | null>(null);
@@ -820,11 +746,6 @@ export default function MedleyPlayer({
 
     // ツールチップから編集ボタンがクリックされた時の処理
     const handleEditFromTooltip = (song: SongSection) => {
-        if (!hasEditPermission) {
-            setShowAuthModal(true);
-            return;
-        }
-
         // ツールチップを閉じる
         setIsTooltipVisible(false);
         setTooltipSong(null);
@@ -942,12 +863,6 @@ export default function MedleyPlayer({
                     </div>
                 )}
 
-
-                {/* Authorization Banner */}
-                <div className="p-4">
-                    <AuthorizationBanner />
-                </div>
-
                 {/* メドレー基本情報 - 常に表示 */}
                 {!loading && !error && (
                     <MedleyHeader
@@ -968,7 +883,7 @@ export default function MedleyPlayer({
                         currentSongs={getCurrentSongs()}
                         onTimelineClick={handleTimelineClick}
                         onSeek={seek}
-                        onDeleteSong={hasEditPermission ? deleteSong : undefined}
+                        onDeleteSong={deleteSong}
                         onTogglePlayPause={togglePlayPause}
                         isPlaying={isPlaying}
                         selectedSong={selectedSong}
@@ -984,8 +899,8 @@ export default function MedleyPlayer({
                         medleyTitle="" // MedleyHeaderで表示するため空にする
                         medleyCreator="" // MedleyHeaderで表示するため空にする
                         originalVideoUrl=""
-                        onAddSong={hasEditPermission ? handleAddNewSong : undefined}
-                        onEditSong={hasEditPermission ? handleEditSongClick : undefined}
+                        onAddSong={handleAddNewSong}
+                        onEditSong={handleEditSongClick}
                     />
                 )}
 
@@ -1016,9 +931,8 @@ export default function MedleyPlayer({
                                     動画の再生に合わせて楽曲情報を追加し、アノテーション付きメドレーを完成させましょう。
                                 </p>
                             </div>
-                            
-                            {hasEditPermission ? (
-                                <div className="space-y-4">
+
+                            <div className="space-y-4">
                                     <button
                                         onClick={() => {
                                             // Enable auto-save for existing medley
@@ -1089,7 +1003,7 @@ export default function MedleyPlayer({
                                                             onClick={async () => {
                                                                 // メタデータが取得できている場合はそれを使用、なければデフォルト値
                                                                 const title = videoMetadata?.title || `${videoId} メドレー`;
-                                                                const creator = videoMetadata?.creator || user?.user_metadata?.name || user?.email || '匿名ユーザー';
+                                                                const creator = videoMetadata?.creator || '匿名ユーザー';
                                                                 
                                                                 logger.debug('💾 Saving new medley:', { videoId, title, creator, songCount: editingSongs.length });
                                                                 const success = await saveMedley(videoId, title, creator, effectiveDuration);
@@ -1137,25 +1051,6 @@ export default function MedleyPlayer({
                                         </div>
                                     )}
                                 </div>
-                            ) : (
-                                <div className="text-center">
-                                    <p className="text-sm text-gray-600 mb-4">
-                                        メドレーデータを作成するには、ログインして管理者の承認が必要です。
-                                    </p>
-                                    {!hasEditPermission ? (
-                                        <button
-                                            onClick={() => setShowAuthModal(true)}
-                                            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors duration-200"
-                                        >
-                                            ログイン
-                                        </button>
-                                    ) : (
-                                        <div className="text-sm text-orange-600">
-                                            管理者の承認をお待ちください
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
                     </div>
                 )}
@@ -1230,7 +1125,7 @@ export default function MedleyPlayer({
                 isVisible={isTooltipVisible}
                 position={tooltipPosition}
                 onSeek={seek}
-                onEdit={hasEditPermission ? handleEditFromTooltip : undefined}
+                onEdit={handleEditFromTooltip}
                 onMouseEnter={handleTooltipMouseEnter}
                 onMouseLeave={handleTooltipMouseLeave}
             />
@@ -1301,62 +1196,6 @@ export default function MedleyPlayer({
                 activeSongs={displaySongs.filter(song =>
                     currentTime >= song.startTime && currentTime < song.endTime + 0.1
                 )}
-            />
-
-            {/* 認証デバッグ情報（デバッグモード時のみ表示） */}
-            {isDebugMode && (
-                <div className="fixed bottom-4 left-4 p-4 bg-yellow-100 border border-yellow-400 rounded-lg text-sm z-50 max-w-md shadow-lg">
-                    <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-bold text-yellow-800">🐛 認証デバッグ情報</h4>
-                        <button
-                            onClick={() => {
-                                sessionStorage.removeItem('debug_bypass_auth');
-                                window.location.reload();
-                            }}
-                            className="px-2 py-1 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 rounded text-xs font-medium transition-colors"
-                            title="デバッグモードを無効化してリロード"
-                        >
-                            無効化
-                        </button>
-                    </div>
-                    <div className="space-y-1 text-yellow-700">
-                        <div className="flex justify-between">
-                            <span>ユーザー:</span>
-                            <span className="font-mono text-xs">{effectiveUser ? `${effectiveUser.email}` : 'なし'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>承認済み:</span>
-                            <span>{isApproved ? '✓ はい' : '✗ いいえ'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>編集権限:</span>
-                            <span className="font-bold">{hasEditPermission ? '✓ あり' : '✗ なし'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>認証バイパス:</span>
-                            <span className="font-bold">{bypassAuth ? '✓ 有効' : '✗ 無効'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>環境:</span>
-                            <span>{typeof window !== 'undefined' && window.location.hostname === 'localhost' ? 'localhost' : 'production'}</span>
-                        </div>
-                    </div>
-                    <div className="mt-3 pt-2 border-t border-yellow-300 text-xs text-yellow-600">
-                        <div className="font-medium mb-1">有効化方法:</div>
-                        <div>• localhost: <code className="bg-yellow-200 px-1 py-0.5 rounded">?debug=true</code></div>
-                        <div>• 本番環境: <code className="bg-yellow-200 px-1 py-0.5 rounded">?debug=true&debug_key=PASSWORD</code></div>
-                        <div>• 環境変数: <code className="bg-yellow-200 px-1 py-0.5 rounded">NEXT_PUBLIC_DEBUG_BYPASS_AUTH=true</code></div>
-                        <div className="mt-1 text-yellow-500">※ 本番環境ではdebug_keyが必要です</div>
-                    </div>
-                </div>
-            )}
-
-            {/* 認証モーダル */}
-            <AuthModal
-                isOpen={showAuthModal}
-                onClose={() => setShowAuthModal(false)}
-                title="メドレー編集にはログインが必要です"
-                description="メドレーの楽曲データを作成・編集するには、Googleアカウントでログインして管理者の承認が必要です。"
             />
         </div>
     );

@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
-import UserProfileDropdown from "@/components/features/auth/UserProfileDropdown";
 import VersionInfoModal from "@/components/ui/VersionInfoModal";
 
 interface AppHeaderProps {
@@ -105,9 +104,6 @@ export default function AppHeader({
               </svg>
               <span>フィードバック</span>
             </a>
-
-            {/* User Profile */}
-            <UserProfileDropdown />
 
             {/* Mobile Menu Button */}
             <button

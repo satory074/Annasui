@@ -1,19 +1,16 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
-import { supabase } from '@/lib/supabase'
-import type { User, Session } from '@supabase/supabase-js'
-import { logger } from '@/lib/utils/logger'
+import React, { createContext, useContext } from 'react'
+
+// Simplified AuthContext - authentication system has been removed
+// This context is kept for backwards compatibility but all auth features are disabled
 
 interface AuthContextType {
-  user: User | null
-  session: Session | null
-  loading: boolean
-  isApproved: boolean
-  approvalLoading: boolean
-  checkApprovalStatus: () => Promise<void>
-  signIn: (provider: 'google') => Promise<void>
-  signOut: () => Promise<void>
+  user: null
+  session: null
+  loading: false
+  isApproved: false
+  approvalLoading: false
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -31,165 +28,14 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null)
-  const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [mounted, setMounted] = useState(false)
-  const [isApproved, setIsApproved] = useState(false)
-  const [approvalLoading, setApprovalLoading] = useState(false)
-
-  // Handle client-side mounting
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
-    // Only initialize auth if Supabase is available and component is mounted
-    if (!supabase) {
-      logger.warn('⚠️ Supabase client not available, auth features disabled')
-      setLoading(false)
-      return
-    }
-
-    if (!mounted) {
-      return
-    }
-
-    // Get initial session
-    const getInitialSession = async () => {
-      try {
-        const { data: { session }, error } = await supabase!.auth.getSession()
-        if (error) {
-          logger.error('Error getting initial session:', error)
-        } else {
-          setSession(session)
-          setUser(session?.user ?? null)
-          logger.info('📱 Initial auth session:', session?.user ? 'authenticated' : 'anonymous')
-        }
-      } catch (error) {
-        logger.error('Error in getInitialSession:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    getInitialSession()
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase!.auth.onAuthStateChange((event, session) => {
-      logger.info('🔄 Auth state changed:', event, session?.user ? 'authenticated' : 'anonymous')
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    return () => subscription.unsubscribe()
-  }, [mounted])
-
-  const checkApprovalStatus = useCallback(async () => {
-    if (!supabase || !user) {
-      setIsApproved(false)
-      return
-    }
-
-    // テストモードのチェック（開発環境のみ）
-    const isTestMode = process.env.NEXT_PUBLIC_TEST_MODE === 'true' && process.env.NODE_ENV === 'development'
-    if (isTestMode) {
-      logger.debug('🧪 Test mode enabled - automatically approving user')
-      setIsApproved(true)
-      return
-    }
-
-    try {
-      setApprovalLoading(true)
-      logger.debug('🔍 Checking user approval status for:', user.id)
-
-      const { data, error } = await supabase
-        .from('approved_users')
-        .select('id')
-        .eq('user_id', user.id)
-        .single()
-
-      if (error && error.code !== 'PGRST116') { // PGRST116 is "not found"
-        logger.error('❌ Error checking approval status:', error)
-        setIsApproved(false)
-        return
-      }
-
-      const approved = !!data
-      setIsApproved(approved)
-      logger.info(approved ? '✅ User is approved' : '⏳ User is not approved')
-    } catch (error) {
-      logger.error('❌ Error in checkApprovalStatus:', error)
-      setIsApproved(false)
-    } finally {
-      setApprovalLoading(false)
-    }
-  }, [user])
-
-  // Check approval status when user changes
-  useEffect(() => {
-    if (user && !loading) {
-      checkApprovalStatus()
-    } else {
-      setIsApproved(false)
-    }
-  }, [user, loading, checkApprovalStatus])
-
-  const signIn = async (provider: 'google') => {
-    if (!supabase) {
-      logger.warn('⚠️ Authentication unavailable: Supabase client not configured')
-      return
-    }
-
-    try {
-      logger.info(`🔐 Attempting to sign in with ${provider}...`)
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: `${window.location.origin}/auth/callback`
-        }
-      })
-
-      if (error) {
-        logger.error(`❌ Error signing in with ${provider}:`, error)
-        throw error
-      }
-    } catch (error) {
-      logger.error('Sign in error:', error)
-      throw error
-    }
-  }
-
-  const signOut = async () => {
-    if (!supabase) {
-      logger.warn('⚠️ Sign out unavailable: Supabase client not configured')
-      return
-    }
-
-    try {
-      logger.info('🚪 Signing out...')
-      const { error } = await supabase.auth.signOut()
-      if (error) {
-        logger.error('❌ Error signing out:', error)
-        throw error
-      }
-      logger.info('✅ Signed out successfully')
-    } catch (error) {
-      logger.error('Sign out error:', error)
-      throw error
-    }
-  }
-
+  // Return a static context with no authentication
+  // All users are anonymous with no approval system
   const value: AuthContextType = {
-    user,
-    session,
-    loading,
-    isApproved,
-    approvalLoading,
-    checkApprovalStatus,
-    signIn,
-    signOut
+    user: null,
+    session: null,
+    loading: false,
+    isApproved: false,
+    approvalLoading: false
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

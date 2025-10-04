@@ -53,13 +53,18 @@ DROP TABLE IF EXISTS users CASCADE;
 -- Step 5: Remove user_id from medleys table
 -- ========================================
 
--- Drop existing RLS policies that reference user_id
+-- Drop ALL existing RLS policies (including any already created ones)
+DROP POLICY IF EXISTS "Anyone can view medleys" ON medleys;
+DROP POLICY IF EXISTS "Anyone can insert medleys" ON medleys;
+DROP POLICY IF EXISTS "Anyone can update medleys" ON medleys;
+DROP POLICY IF EXISTS "Anyone can delete medleys" ON medleys;
 DROP POLICY IF EXISTS "Approved users can insert medleys" ON medleys;
 DROP POLICY IF EXISTS "Approved users can update their own medleys" ON medleys;
 DROP POLICY IF EXISTS "Approved users can delete their own medleys" ON medleys;
 DROP POLICY IF EXISTS "Users can insert their own medleys" ON medleys;
 DROP POLICY IF EXISTS "Users can update their own medleys" ON medleys;
 DROP POLICY IF EXISTS "Users can delete their own medleys" ON medleys;
+DROP POLICY IF EXISTS "Everyone can view medleys" ON medleys;
 
 -- Remove user_id column from medleys table
 ALTER TABLE medleys DROP COLUMN IF EXISTS user_id CASCADE;
@@ -81,7 +86,11 @@ CREATE POLICY "Anyone can delete medleys" ON medleys
 -- Step 6: Update songs table RLS policies
 -- ========================================
 
--- Drop existing RLS policies
+-- Drop ALL existing RLS policies (including any already created ones)
+DROP POLICY IF EXISTS "Anyone can view songs" ON songs;
+DROP POLICY IF EXISTS "Anyone can insert songs" ON songs;
+DROP POLICY IF EXISTS "Anyone can update songs" ON songs;
+DROP POLICY IF EXISTS "Anyone can delete songs" ON songs;
 DROP POLICY IF EXISTS "Approved users can manage songs for their medleys" ON songs;
 DROP POLICY IF EXISTS "Users can manage songs for their medleys" ON songs;
 

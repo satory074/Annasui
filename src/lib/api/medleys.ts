@@ -69,10 +69,10 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
 
 function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyData {
   const sortedSongs = [...songs].sort((a, b) => a.order_index - b.order_index)
-  
+
   // Auto-detect platform based on video_id pattern
   let platform: 'niconico' | 'youtube' = 'niconico'; // Default to niconico for backwards compatibility
-  
+
   if (medley.video_id) {
     if (medley.video_id.match(/^sm\d+$/)) {
       platform = 'niconico';
@@ -80,7 +80,7 @@ function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyDa
       platform = 'youtube';
     }
   }
-  
+
   return {
     id: medley.id,
     videoId: medley.video_id,
@@ -90,6 +90,8 @@ function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyDa
     platform: platform,
     createdAt: medley.created_at,
     updatedAt: medley.updated_at,
+    lastEditor: (medley as Record<string, unknown>).last_editor as string | undefined,
+    lastEditedAt: (medley as Record<string, unknown>).last_edited_at as string | undefined,
     songs: sortedSongs.map(convertDbRowToSongSection)
   }
 }
@@ -325,7 +327,10 @@ export async function getAllMedleys(): Promise<MedleyData[]> {
   }
 }
 
-export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { songs: Omit<SongSection, 'id'>[] }): Promise<MedleyData | null> {
+export async function createMedley(
+  medleyData: Omit<MedleyData, 'songs'> & { songs: Omit<SongSection, 'id'>[] },
+  editorNickname?: string
+): Promise<MedleyData | null> {
   if (!supabase) {
     return null
   }
@@ -339,6 +344,8 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
         title: medleyData.title,
         creator: medleyData.creator || null,
         duration: medleyData.duration,
+        last_editor: editorNickname || null,
+        last_edited_at: new Date().toISOString()
       })
       .select()
       .single()
@@ -357,7 +364,9 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
       color: song.color,
       original_link: song.originalLink || null,
       links: song.links ? JSON.stringify(song.links) : null,
-      order_index: index + 1
+      order_index: index + 1,
+      last_editor: editorNickname || null,
+      last_edited_at: new Date().toISOString()
     }))
 
     const { data: songs, error: songsError } = await supabase
@@ -369,6 +378,14 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
       throw songsError
     }
 
+    // Record edit history
+    if (editorNickname) {
+      await recordMedleyEdit(medley.id as string, editorNickname, 'create', {
+        title: medleyData.title,
+        songCount: medleyData.songs.length
+      })
+    }
+
     return convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[])
   } catch (error) {
     logger.error('Error creating medley:', error)
@@ -376,7 +393,11 @@ export async function createMedley(medleyData: Omit<MedleyData, 'songs'> & { son
   }
 }
 
-export async function updateMedley(videoId: string, updates: Partial<Omit<MedleyData, 'videoId' | 'songs'>> & { songs?: Omit<SongSection, 'id'>[] }): Promise<MedleyData | null> {
+export async function updateMedley(
+  videoId: string,
+  updates: Partial<Omit<MedleyData, 'videoId' | 'songs'>> & { songs?: Omit<SongSection, 'id'>[] },
+  editorNickname?: string
+): Promise<MedleyData | null> {
   if (!supabase) {
     return null
   }
@@ -387,7 +408,9 @@ export async function updateMedley(videoId: string, updates: Partial<Omit<Medley
       .update({
         title: updates.title,
         creator: updates.creator,
-        duration: updates.duration
+        duration: updates.duration,
+        last_editor: editorNickname || null,
+        last_edited_at: new Date().toISOString()
       })
       .eq('video_id', videoId)
       .select()
@@ -399,12 +422,20 @@ export async function updateMedley(videoId: string, updates: Partial<Omit<Medley
 
     // Update songs if provided
     if (updates.songs) {
-      const success = await saveMedleySongs(medley.id as string, updates.songs);
+      const success = await saveMedleySongs(medley.id as string, updates.songs, editorNickname);
       if (!success) {
         logger.error('Failed to update songs for medley:', medley.id);
         throw new Error('Failed to update songs');
       }
       logger.info('Successfully updated songs for medley:', medley.id);
+    }
+
+    // Record edit history
+    if (editorNickname) {
+      await recordMedleyEdit(medley.id as string, editorNickname, 'update', {
+        title: updates.title,
+        songCount: updates.songs?.length
+      })
     }
 
     // Get updated data
@@ -419,7 +450,7 @@ export async function updateMedley(videoId: string, updates: Partial<Omit<Medley
     }
 
     return convertDbRowToMedleyData(
-      medley as MedleyRow, 
+      medley as MedleyRow,
       (songsResult.data || []) as SongRow[]
     )
   } catch (error) {
@@ -497,7 +528,11 @@ export async function deleteMedley(videoId: string): Promise<boolean> {
 }
 
 // Songs management functions
-export async function saveMedleySongs(medleyId: string, songs: Omit<SongSection, 'id'>[]): Promise<boolean> {
+export async function saveMedleySongs(
+  medleyId: string,
+  songs: Omit<SongSection, 'id'>[],
+  editorNickname?: string
+): Promise<boolean> {
   if (!supabase) {
     return false
   }
@@ -524,7 +559,9 @@ export async function saveMedleySongs(medleyId: string, songs: Omit<SongSection,
         color: song.color,
         original_link: song.originalLink || null,
         links: song.links ? JSON.stringify(song.links) : null,
-        order_index: index + 1
+        order_index: index + 1,
+        last_editor: editorNickname || null,
+        last_edited_at: new Date().toISOString()
       }))
 
       const { error: insertError } = await supabase
@@ -541,5 +578,104 @@ export async function saveMedleySongs(medleyId: string, songs: Omit<SongSection,
   } catch (error) {
     logger.error('❌ Error saving medley songs:', error)
     return false
+  }
+}
+
+// Contributor tracking functions
+export async function recordMedleyEdit(
+  medleyId: string,
+  editorNickname: string,
+  action: 'create' | 'update' | 'delete' | 'song_add' | 'song_update' | 'song_delete',
+  changes?: Record<string, unknown>
+): Promise<boolean> {
+  if (!supabase) {
+    return false
+  }
+
+  try {
+    const { error } = await supabase
+      .from('medley_edits')
+      .insert({
+        medley_id: medleyId,
+        editor_nickname: editorNickname,
+        action: action,
+        changes: changes || null
+      })
+
+    if (error) {
+      logger.error('Error recording medley edit:', error)
+      return false
+    }
+
+    logger.debug(`✅ Recorded ${action} by ${editorNickname} for medley ${medleyId}`)
+    return true
+  } catch (error) {
+    logger.error('Error recording medley edit:', error)
+    return false
+  }
+}
+
+export async function getMedleyContributors(medleyId: string): Promise<MedleyContributor[]> {
+  if (!supabase) {
+    return []
+  }
+
+  try {
+    const { data, error } = await supabase
+      .rpc('get_medley_contributors', {
+        medley_uuid: medleyId,
+        limit_count: 5
+      })
+
+    if (error) {
+      logger.error('Error fetching contributors:', error)
+      return []
+    }
+
+    return (data || []).map((row: { editor_nickname: string; edit_count: number; last_edit: string }) => ({
+      nickname: row.editor_nickname,
+      editCount: Number(row.edit_count),
+      lastEdit: new Date(row.last_edit)
+    }))
+  } catch (error) {
+    logger.error('Error fetching contributors:', error)
+    return []
+  }
+}
+
+export async function getMedleyEditHistory(medleyId: string, limit = 10): Promise<Array<{
+  id: string
+  editorNickname: string
+  action: string
+  changes: Record<string, unknown> | null
+  createdAt: Date
+}>> {
+  if (!supabase) {
+    return []
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('medley_edits')
+      .select('*')
+      .eq('medley_id', medleyId)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      logger.error('Error fetching edit history:', error)
+      return []
+    }
+
+    return (data || []).map(edit => ({
+      id: edit.id as string,
+      editorNickname: edit.editor_nickname as string,
+      action: edit.action as string,
+      changes: edit.changes as Record<string, unknown> | null,
+      createdAt: new Date(edit.created_at as string)
+    }))
+  } catch (error) {
+    logger.error('Error fetching edit history:', error)
+    return []
   }
 }

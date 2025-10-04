@@ -13,14 +13,14 @@ interface UseMedleyEditReturn {
   updateSong: (updatedSong: SongSection) => void;
   addSong: (newSong: Omit<SongSection, 'id'>) => void;
   deleteSong: (songId: number) => void;
-  saveMedley: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number) => Promise<boolean>;
+  saveMedley: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number, editorNickname?: string) => Promise<boolean>;
   resetChanges: (originalSongs: SongSection[]) => void;
   reorderSongs: (fromIndex: number, toIndex: number) => void;
   batchUpdate: (songsToRemove: number[], songsToAdd: Omit<SongSection, 'id'>[]) => void;
   undo: () => void;
   redo: () => void;
   // 自動保存機能
-  enableAutoSave: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number) => void;
+  enableAutoSave: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number, editorNickname?: string) => void;
   disableAutoSave: () => void;
   isAutoSaving: boolean;
 }
@@ -48,6 +48,7 @@ export function useMedleyEdit(
     medleyTitle: string;
     medleyCreator: string;
     duration: number;
+    editorNickname?: string;
   }>({ enabled: false, videoId: '', medleyTitle: '', medleyCreator: '', duration: 0 });
   
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -334,10 +335,11 @@ export function useMedleyEdit(
 
   // メドレーを保存
   const saveMedley = useCallback(async (
-    videoId: string, 
-    medleyTitle: string, 
-    medleyCreator: string, 
-    duration: number
+    videoId: string,
+    medleyTitle: string,
+    medleyCreator: string,
+    duration: number,
+    editorNickname?: string
   ): Promise<boolean> => {
     setIsSaving(true);
 
@@ -409,8 +411,8 @@ export function useMedleyEdit(
         creator: medleyCreator,
         duration: duration,
         songs: songsToSave
-      });
-      
+      }, editorNickname);
+
       if (!result) {
         // Create new medley if update failed (doesn't exist)
         const medleyData: Omit<MedleyData, 'songs'> & { songs: Omit<SongSection, 'id'>[] } = {
@@ -420,7 +422,7 @@ export function useMedleyEdit(
           duration,
           songs: songsToSave
         };
-        result = await createMedley(medleyData);
+        result = await createMedley(medleyData, editorNickname);
       }
 
       if (result) {
@@ -472,15 +474,16 @@ export function useMedleyEdit(
   }, [canRedo, historyIndex, history, detectChanges]);
 
   // 自動保存を有効化
-  const enableAutoSave = useCallback((videoId: string, medleyTitle: string, medleyCreator: string, duration: number) => {
+  const enableAutoSave = useCallback((videoId: string, medleyTitle: string, medleyCreator: string, duration: number, editorNickname?: string) => {
     autoSaveConfigRef.current = {
       enabled: true,
       videoId,
       medleyTitle,
       medleyCreator,
-      duration
+      duration,
+      editorNickname
     };
-    logger.info('🔄 Auto-save enabled for medley:', { videoId, medleyTitle });
+    logger.info('🔄 Auto-save enabled for medley:', { videoId, medleyTitle, editorNickname });
   }, []);
 
   // 自動保存を無効化

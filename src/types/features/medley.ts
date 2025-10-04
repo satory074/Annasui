@@ -15,16 +15,11 @@ export type SongSection = {
   };
 };
 
-// コントリビューター情報のデータモデル
+// コントリビューター情報のデータモデル（ニックネームベース認証用）
 export type MedleyContributor = {
-  userId: string | null;    // ユーザーID（null = 匿名）
-  name: string | null;      // ユーザー名
-  email?: string;           // メールアドレス
-  avatarUrl: string | null; // アバターURL
+  nickname: string;         // エディターのニックネーム
   editCount: number;        // 編集回数
-  firstContribution: string; // 初回貢献日時
-  lastContribution: string;  // 最終貢献日時
-  isCreator: boolean;       // 作成者かどうか
+  lastEdit: Date;           // 最終編集日時
 };
 
 // メドレー情報全体のデータモデル
@@ -39,6 +34,8 @@ export type MedleyData = {
   user_id?: string;     // 作成者のユーザーID（認証済みユーザーの場合）
   createdAt?: string;   // 投稿日時（ISO 8601形式）
   updatedAt?: string;   // 更新日時（ISO 8601形式）
+  lastEditor?: string;  // 最終編集者のニックネーム
+  lastEditedAt?: string; // 最終編集日時（ISO 8601形式）
   viewCount?: number;   // 再生回数
   contributors?: MedleyContributor[]; // コントリビューター一覧
 };

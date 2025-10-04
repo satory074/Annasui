@@ -126,8 +126,11 @@ Run migrations in Supabase Dashboard (database/migrations/) **in order**:
 1. `003_fix_rick_astley_medley.sql` - Platform corrections
 2. `004_add_rick_astley_song_data.sql` - Sample data
 3. `006_create_medley_edit_history.sql` - Edit history tracking
+4. `010_remove_auth_system.sql` - Remove authentication (open access)
 
 Core tables: `medleys`, `songs`, `medley_edit_history`
+
+**Note**: Authentication removed - all users have full CRUD access without login.
 
 ## Code Patterns
 

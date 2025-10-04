@@ -8,7 +8,7 @@ Medleanは、ニコニコ動画、YouTube、Spotify、Apple Musicのメドレー
 - **インタラクティブなタイムライン**: 楽曲の開始・終了時間を視覚的に表示、ドラッグ&ドロップ編集
 - **高精度楽曲検索**: 多段階検索アルゴリズムによるメドレー間横断検索
 - **リアルタイム編集**: 自動保存システム、キーボードショートカット、アンドゥ・リドゥ機能
-- **ユーザー認証**: 管理者承認制による安全な編集権限管理
+- **オープンアクセス**: 認証なしで誰でも自由に編集・作成可能
 - **レスポンシブデザイン**: モバイル・デスクトップ両対応、Vibrant Orangeデザインシステム
 - **リアルタイム楽曲表示**: 動画再生中の現在楽曲ポップアップ表示
 
@@ -16,9 +16,8 @@ Medleanは、ニコニコ動画、YouTube、Spotify、Apple Musicのメドレー
 
 - **フロントエンド**: Next.js 15.2.1, React 19.0.0, TypeScript
 - **スタイリング**: TailwindCSS 4, Emotion for CSS-in-JS
-- **データベース**: Supabase PostgreSQL with Row Level Security
-- **認証**: Supabase Auth (OAuth with Google) + 管理者承認システム
-- **デプロイ**: Firebase App Hosting (SSR対応)
+- **データベース**: Supabase PostgreSQL with Row Level Security (オープンアクセス)
+- **デプロイ**: Firebase Hosting (SSR対応)
 - **プレイヤー統合**: postMessage API (ニコニコ), iframe embed (YouTube)
 
 ## 開発環境のセットアップ
@@ -172,14 +171,13 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
 
 アプリケーションを正しく動作させるためには、以下のデータベースマイグレーションをSupabase Dashboardで**順番に**実行してください：
 
-1. `database/migrations/001_create_users_table.sql` - ユーザープロファイルテーブル
-2. `database/migrations/002_add_user_id_to_medleys.sql` - メドレー所有権設定
-3. `database/migrations/005_create_approved_users_table.sql` - **管理者承認システム**
-4. `database/migrations/007_setup_admin_user.sql` - **管理者ユーザー設定**（YOUR_ADMIN_USER_IDを実際のUUIDに置換）
+1. `database/migrations/003_fix_rick_astley_medley.sql` - プラットフォーム修正
+2. `database/migrations/004_add_rick_astley_song_data.sql` - サンプルデータ追加
+3. `database/migrations/006_create_medley_edit_history.sql` - 編集履歴追跡
 
-OAuthプロバイダーの設定もSupabase Auth設定で**Google**を有効化してください（GitHub認証は削除済み）。
+コアテーブル: `medleys`, `songs`, `medley_edit_history`
 
-**重要**: 管理者設定のため、最初にOAuthでログインしてからユーザーIDを取得し、`007_setup_admin_user.sql`を更新して実行してください。
+**注**: 認証システムは削除済みです。すべてのユーザーが編集可能です。
 
 ### アルファ版について
 - 現在はアルファ版 (v0.1.0-alpha.1) です

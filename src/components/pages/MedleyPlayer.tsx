@@ -908,9 +908,10 @@ export default function MedleyPlayer({
                 {/* Contributors Display */}
                 {!loading && !error && displaySongs.length > 0 && medleyData?.contributors && (
                     <div className="p-6">
-                        <ContributorsDisplay 
+                        <ContributorsDisplay
                             contributors={medleyData.contributors}
-                            lastUpdated={medleyData.updatedAt}
+                            lastEditor={medleyData.lastEditor}
+                            lastEditedAt={medleyData.lastEditedAt}
                             compact={false}
                         />
                     </div>

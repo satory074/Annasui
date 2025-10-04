@@ -151,45 +151,6 @@ async function directFetch(url: string): Promise<unknown> {
   }
 }
 
-// Fetch contributors for a medley
-export async function getMedleyContributors(medleyId: string): Promise<MedleyContributor[]> {
-  try {
-    logger.debug('🔍 Fetching contributors for medley:', medleyId)
-
-    const contributorsData = await directFetch(
-      `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/medley_contributors?select=*&medley_id=eq.${medleyId}`
-    ) as Array<{id: number, medley_id: number, user_id: string, name: string, email: string, avatar_url?: string, edit_count?: number, first_contribution?: string, last_contribution?: string, is_creator?: boolean}>;
-
-    if (!contributorsData || contributorsData.length === 0) {
-      logger.debug('No contributors found for medley:', medleyId)
-      return []
-    }
-
-    // Convert database rows to MedleyContributor objects
-    const contributors: MedleyContributor[] = contributorsData.map((contributor) => ({
-      userId: contributor.user_id,
-      name: contributor.name || contributor.email?.split('@')[0] || 'Anonymous',
-      email: contributor.email,
-      avatarUrl: contributor.avatar_url || null,
-      editCount: contributor.edit_count || 0,
-      firstContribution: contributor.first_contribution || '',
-      lastContribution: contributor.last_contribution || '',
-      isCreator: contributor.is_creator || false
-    }));
-
-    logger.debug(`✅ Found ${contributors.length} contributors for medley:`, medleyId)
-    return contributors
-  } catch (error) {
-    // If the contributors table doesn't exist (404), that's expected behavior
-    if (error instanceof Error && error.message.includes('HTTP 404')) {
-      logger.debug('Contributors table not found, returning empty array')
-      return []
-    }
-    logger.error('❌ Error fetching contributors:', error)
-    return []
-  }
-}
-
 // API functions
 export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | null> {
   try {
@@ -632,7 +593,8 @@ export async function getMedleyContributors(medleyId: string): Promise<MedleyCon
       return []
     }
 
-    return (data || []).map((row: { editor_nickname: string; edit_count: number; last_edit: string }) => ({
+    const contributors = data as Array<{ editor_nickname: string; edit_count: number; last_edit: string }> | null
+    return (contributors || []).map((row) => ({
       nickname: row.editor_nickname,
       editCount: Number(row.edit_count),
       lastEdit: new Date(row.last_edit)

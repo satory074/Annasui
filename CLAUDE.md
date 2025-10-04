@@ -61,11 +61,12 @@ Pattern: Server-side fetch → Process response → Return to client
 - **MUST** use `commandInProgress` flag to prevent command overlap
 
 ### Authentication Requirements
-- **MUST** check `isAuthenticated` before showing edit UI
+- **MUST** check `isAuthenticated` AND `authLoading` before showing edit UI
 - **MUST** pass `nickname` parameter to all save operations
 - Edit operations: `saveMedley(videoId, title, creator, duration, nickname)`
 - Auto-save enablement: `enableAutoSave(videoId, title, creator, duration, nickname)`
 - Environment variable: `EDIT_PASSWORD` (server-side only, no `NEXT_PUBLIC_` prefix)
+- **CRITICAL**: Use `authLoading ? <Loading /> : isAuthenticated ? <EditUI /> : <LoginPrompt />` pattern to prevent UI flicker
 
 ### API Proxy Requirements
 - Use proxy APIs for CORS: `/api/thumbnail/niconico/[videoId]/` and `/api/metadata/niconico/[videoId]/`

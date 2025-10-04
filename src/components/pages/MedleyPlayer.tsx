@@ -63,7 +63,7 @@ export default function MedleyPlayer({
     const [manualAddModalOpen, setManualAddModalOpen] = useState<boolean>(false);
 
     // 認証関連の状態
-    const { isAuthenticated, nickname } = useAuth();
+    const { isAuthenticated, nickname, loading: authLoading } = useAuth();
     const [loginModalOpen, setLoginModalOpen] = useState<boolean>(false);
 
     // メタデータ関連の状態
@@ -938,34 +938,66 @@ export default function MedleyPlayer({
                             </div>
 
                             <div className="space-y-4">
-                                    <button
-                                        onClick={() => {
-                                            if (!isAuthenticated) {
-                                                setLoginModalOpen(true);
-                                                return;
-                                            }
-                                            // Enable auto-save for existing medley
-                                            enableAutoSave(
-                                                videoId,
-                                                medleyTitle || videoMetadata?.title || '',
-                                                medleyCreator || videoMetadata?.creator || '',
-                                                effectiveDuration,
-                                                nickname || undefined
-                                            );
-                                            setAutoSaveEnabled(true);
-                                            // Open song search modal to add first song
-                                            handleAddNewSong();
-                                        }}
-                                        className="w-full px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-colors duration-200 font-medium"
-                                    >
-                                        {isAuthenticated ? '楽曲を追加して編集開始' : 'ログインして編集開始'}
-                                    </button>
-                                    <p className="text-xs text-gray-500">
-                                        編集モードでは、動画の再生時間に楽曲情報を追加できます。
-                                        <br />
-                                        <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">M</kbd> キーで楽曲を追加、
-                                        <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">S</kbd>/<kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">E</kbd> キーで開始・終了時間を設定
-                                    </p>
+                                    {authLoading ? (
+                                        <div className="w-full px-6 py-3 bg-gray-100 rounded-lg">
+                                            <div className="flex items-center justify-center gap-2">
+                                                <svg className="animate-spin h-5 w-5 text-gray-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                                <span className="text-sm text-gray-600">読み込み中...</span>
+                                            </div>
+                                        </div>
+                                    ) : isAuthenticated ? (
+                                        <>
+                                            <button
+                                                onClick={() => {
+                                                    // Enable auto-save for existing medley
+                                                    enableAutoSave(
+                                                        videoId,
+                                                        medleyTitle || videoMetadata?.title || '',
+                                                        medleyCreator || videoMetadata?.creator || '',
+                                                        effectiveDuration,
+                                                        nickname || undefined
+                                                    );
+                                                    setAutoSaveEnabled(true);
+                                                    // Open song search modal to add first song
+                                                    handleAddNewSong();
+                                                }}
+                                                className="w-full px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-colors duration-200 font-medium"
+                                            >
+                                                楽曲を追加して編集開始
+                                            </button>
+                                            <p className="text-xs text-gray-500">
+                                                編集モードでは、動画の再生時間に楽曲情報を追加できます。
+                                                <br />
+                                                <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">M</kbd> キーで楽曲を追加、
+                                                <kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">S</kbd>/<kbd className="px-1 py-0.5 bg-gray-100 rounded text-xs">E</kbd> キーで開始・終了時間を設定
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                                <div className="flex items-start gap-3">
+                                                    <svg className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                                                    </svg>
+                                                    <div className="flex-1">
+                                                        <h4 className="text-sm font-medium text-blue-900 mb-1">編集するにはログインが必要です</h4>
+                                                        <p className="text-xs text-blue-800">
+                                                            メドレーの作成・編集機能を利用するには、ログインしてください。
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={() => setLoginModalOpen(true)}
+                                                className="w-full px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-colors duration-200 font-medium"
+                                            >
+                                                ログイン
+                                            </button>
+                                        </>
+                                    )}
                                     
                                     {/* 空のタイムライン表示 */}
                                     {false && (

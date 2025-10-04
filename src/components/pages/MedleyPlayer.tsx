@@ -248,9 +248,20 @@ export default function MedleyPlayer({
             fetchMetadata();
         }
     }, [medleySongs.length, loading, error, platform, videoId]);
-    
 
-    
+    // 既存メドレー読み込み時に自動保存を有効化
+    useEffect(() => {
+        if (medleySongs.length > 0 && !autoSaveEnabled && medleyTitle && medleyCreator) {
+            setAutoSaveEnabled(true);
+            enableAutoSave(videoId, medleyTitle, medleyCreator, medleyDuration);
+            logger.info('✅ Auto-save enabled for existing medley', {
+                videoId,
+                songCount: medleySongs.length
+            });
+        }
+    }, [medleySongs.length, medleyTitle, medleyCreator, medleyDuration, videoId, autoSaveEnabled, enableAutoSave]);
+
+
     // durationを決定（静的データを優先、プレイヤーデータはフォールバック）
     const effectiveDuration = medleyDuration || duration;
     
@@ -486,7 +497,9 @@ export default function MedleyPlayer({
             setIsNewSong(false);
             // NOTE: isChangingSongは保存完了後にリセットする（SongEditModalの保存ロジックで使用するため）
 
-            logger.info('✅ Song replacement completed - will call updateSong on save');
+            // 編集モーダルを開く
+            setEditModalOpen(true);
+            logger.info('✅ Song replacement completed - opening edit modal');
         } else {
             logger.info('➕ [NEW SONG PATH] Creating new song from database selection', {
                 reason: 'No editingSong exists',
@@ -1008,7 +1021,6 @@ export default function MedleyPlayer({
                                 <div className="space-y-4">
                                     <button
                                         onClick={() => {
-                                            // Edit mode removed
                                             // Enable auto-save for existing medley
                                             enableAutoSave(
                                                 videoId,
@@ -1017,10 +1029,12 @@ export default function MedleyPlayer({
                                                 effectiveDuration
                                             );
                                             setAutoSaveEnabled(true);
+                                            // Open song search modal to add first song
+                                            handleAddNewSong();
                                         }}
                                         className="w-full px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-colors duration-200 font-medium"
                                     >
-                                        編集モードを開始
+                                        楽曲を追加して編集開始
                                     </button>
                                     <p className="text-xs text-gray-500">
                                         編集モードでは、動画の再生時間に楽曲情報を追加できます。
@@ -1192,6 +1206,12 @@ export default function MedleyPlayer({
                 onSelectSong={handleSelectSongFromDatabase}
                 onManualAdd={handleManualAddSong}
                 onEditSong={handleEditSongFromDatabase}
+                autoSave={autoSaveEnabled}
+                onAutoSave={saveMedley}
+                videoId={videoId}
+                medleyTitle={medleyTitle}
+                medleyCreator={medleyCreator}
+                medleyDuration={medleyDuration}
             />
 
 

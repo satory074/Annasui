@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useMedleyData } from "@/hooks/useMedleyData";
 import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import { useMedleyEdit } from "@/hooks/useMedleyEdit";
+import { useAuth } from "@/contexts/AuthContext";
 import AppHeader from "@/components/layout/AppHeader";
 import NicoPlayer from "@/components/features/player/NicoPlayer";
 import YouTubePlayer from "@/components/features/player/YouTubePlayer";
@@ -14,6 +15,7 @@ import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
 import SongSearchModal from "@/components/features/medley/SongSearchModal";
 import ManualSongAddModal from "@/components/features/medley/ManualSongAddModal";
 import ContributorsDisplay from "@/components/features/medley/ContributorsDisplay";
+import LoginModal from "@/components/features/auth/LoginModal";
 import { SongSection } from "@/types";
 import { SongDatabaseEntry, createSongFromDatabase, addManualSong } from "@/lib/utils/songDatabase";
 import { logger } from "@/lib/utils/logger";
@@ -59,10 +61,11 @@ export default function MedleyPlayer({
     
     // 手動楽曲追加モーダル関連の状態
     const [manualAddModalOpen, setManualAddModalOpen] = useState<boolean>(false);
-    
-    // 認証モーダル関連の状態
-    
-    
+
+    // 認証関連の状態
+    const { isAuthenticated, nickname } = useAuth();
+    const [loginModalOpen, setLoginModalOpen] = useState<boolean>(false);
+
     // メタデータ関連の状態
     const [videoMetadata, setVideoMetadata] = useState<{title: string, creator: string} | null>(null);
     const [, setFetchingMetadata] = useState<boolean>(false);
@@ -175,17 +178,18 @@ export default function MedleyPlayer({
         }
     }, [medleySongs.length, loading, error, platform, videoId]);
 
-    // 既存メドレー読み込み時に自動保存を有効化
+    // 既存メドレー読み込み時に自動保存を有効化（認証済みユーザーのみ）
     useEffect(() => {
-        if (medleySongs.length > 0 && !autoSaveEnabled && medleyTitle && medleyCreator) {
+        if (isAuthenticated && medleySongs.length > 0 && !autoSaveEnabled && medleyTitle && medleyCreator) {
             setAutoSaveEnabled(true);
-            enableAutoSave(videoId, medleyTitle, medleyCreator, medleyDuration);
+            enableAutoSave(videoId, medleyTitle, medleyCreator, medleyDuration, nickname || undefined);
             logger.info('✅ Auto-save enabled for existing medley', {
                 videoId,
-                songCount: medleySongs.length
+                songCount: medleySongs.length,
+                editor: nickname
             });
         }
-    }, [medleySongs.length, medleyTitle, medleyCreator, medleyDuration, videoId, autoSaveEnabled, enableAutoSave]);
+    }, [isAuthenticated, nickname, medleySongs.length, medleyTitle, medleyCreator, medleyDuration, videoId, autoSaveEnabled, enableAutoSave]);
 
 
     // durationを決定（静的データを優先、プレイヤーデータはフォールバック）
@@ -899,8 +903,8 @@ export default function MedleyPlayer({
                         medleyTitle="" // MedleyHeaderで表示するため空にする
                         medleyCreator="" // MedleyHeaderで表示するため空にする
                         originalVideoUrl=""
-                        onAddSong={handleAddNewSong}
-                        onEditSong={handleEditSongClick}
+                        onAddSong={isAuthenticated ? handleAddNewSong : undefined}
+                        onEditSong={isAuthenticated ? handleEditSongClick : undefined}
                     />
                 )}
 
@@ -936,12 +940,17 @@ export default function MedleyPlayer({
                             <div className="space-y-4">
                                     <button
                                         onClick={() => {
+                                            if (!isAuthenticated) {
+                                                setLoginModalOpen(true);
+                                                return;
+                                            }
                                             // Enable auto-save for existing medley
                                             enableAutoSave(
                                                 videoId,
                                                 medleyTitle || videoMetadata?.title || '',
                                                 medleyCreator || videoMetadata?.creator || '',
-                                                effectiveDuration
+                                                effectiveDuration,
+                                                nickname || undefined
                                             );
                                             setAutoSaveEnabled(true);
                                             // Open song search modal to add first song
@@ -949,7 +958,7 @@ export default function MedleyPlayer({
                                         }}
                                         className="w-full px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-colors duration-200 font-medium"
                                     >
-                                        楽曲を追加して編集開始
+                                        {isAuthenticated ? '楽曲を追加して編集開始' : 'ログインして編集開始'}
                                     </button>
                                     <p className="text-xs text-gray-500">
                                         編集モードでは、動画の再生時間に楽曲情報を追加できます。
@@ -1006,12 +1015,12 @@ export default function MedleyPlayer({
                                                                 const title = videoMetadata?.title || `${videoId} メドレー`;
                                                                 const creator = videoMetadata?.creator || '匿名ユーザー';
                                                                 
-                                                                logger.debug('💾 Saving new medley:', { videoId, title, creator, songCount: editingSongs.length });
-                                                                const success = await saveMedley(videoId, title, creator, effectiveDuration);
-                                                                
+                                                                logger.debug('💾 Saving new medley:', { videoId, title, creator, songCount: editingSongs.length, editor: nickname });
+                                                                const success = await saveMedley(videoId, title, creator, effectiveDuration, nickname || undefined);
+
                                                                 if (success) {
                                                                     // 保存成功時に自動保存を有効化
-                                                                    enableAutoSave(videoId, title, creator, effectiveDuration);
+                                                                    enableAutoSave(videoId, title, creator, effectiveDuration, nickname || undefined);
                                                                     setAutoSaveEnabled(true);
                                                                     
                                                                     alert('メドレーを保存しました！ページを再読み込みして通常の表示に切り替えます。');
@@ -1197,6 +1206,21 @@ export default function MedleyPlayer({
                 activeSongs={displaySongs.filter(song =>
                     currentTime >= song.startTime && currentTime < song.endTime + 0.1
                 )}
+            />
+
+            {/* ログインモーダル */}
+            <LoginModal
+                isOpen={loginModalOpen}
+                onClose={() => setLoginModalOpen(false)}
+                onLoginSuccess={() => {
+                    logger.info('✅ Login successful, enabling edit mode');
+                    setLoginModalOpen(false);
+                    // ログイン成功後、自動保存を有効化
+                    if (medleySongs.length > 0 && medleyTitle && medleyCreator) {
+                        enableAutoSave(videoId, medleyTitle, medleyCreator, medleyDuration, nickname || undefined);
+                        setAutoSaveEnabled(true);
+                    }
+                }}
             />
         </div>
     );

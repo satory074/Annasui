@@ -9,9 +9,11 @@ import { MedleyData, SongSection } from "@/types";
 import MedleyStatistics from "@/components/features/statistics/MedleyStatistics";
 import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
 import AppHeader from "@/components/layout/AppHeader";
+import LoginModal from "@/components/features/auth/LoginModal";
 import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
 import { autoCorrectPlatform } from "@/lib/utils/platformDetection";
 import { logger } from "@/lib/utils/logger";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface HomePageClientProps {
     initialMedleys: MedleyData[];
@@ -19,6 +21,7 @@ interface HomePageClientProps {
 
 export default function HomePageClient({ initialMedleys }: HomePageClientProps) {
     const router = useRouter();
+    const { isAuthenticated } = useAuth();
     const [medleys, setMedleys] = useState<MedleyData[]>(initialMedleys);
     const [searchTerm, setSearchTerm] = useState("");
     const [searchMode, setSearchMode] = useState<"medley" | "song">("medley");
@@ -28,6 +31,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     const [showStatistics, setShowStatistics] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(8);
     const [showCreateMedleyModal, setShowCreateMedleyModal] = useState(false);
+    const [showLoginModal, setShowLoginModal] = useState(false);
     const [deletingMedleyId, setDeletingMedleyId] = useState<string | null>(null);
 
     // Reset pagination when search term changes
@@ -63,6 +67,10 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     };
 
     const handleCreateMedleyClick = () => {
+        if (!isAuthenticated) {
+            setShowLoginModal(true);
+            return;
+        }
         setShowCreateMedleyModal(true);
     };
 
@@ -781,6 +789,16 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 isOpen={showCreateMedleyModal}
                 onClose={() => setShowCreateMedleyModal(false)}
                 onCreateMedley={handleCreateMedley}
+            />
+
+            {/* Login modal */}
+            <LoginModal
+                isOpen={showLoginModal}
+                onClose={() => setShowLoginModal(false)}
+                onLoginSuccess={() => {
+                    setShowLoginModal(false);
+                    setShowCreateMedleyModal(true);
+                }}
             />
         </div>
     );

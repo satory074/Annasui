@@ -54,3 +54,8 @@ firebase-debug.*.log
 
 # Playwright MCP screenshots
 .playwright-mcp/
+
+# Environment files with secrets
+.env.local
+.env.production
+.env*.local

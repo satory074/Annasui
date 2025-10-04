@@ -4,6 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 import VersionInfoModal from "@/components/ui/VersionInfoModal";
+import LoginModal from "@/components/features/auth/LoginModal";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AppHeaderProps {
   variant?: "home" | "player" | "default";
@@ -14,7 +16,9 @@ export default function AppHeader({
 }: AppHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const { isAuthenticated, nickname, logout } = useAuth();
 
   // Close mobile menu when clicking outside
   useEffect(() => {
@@ -87,6 +91,54 @@ export default function AppHeader({
           {/* Right side - Actions, User Profile */}
           <div className="flex items-center space-x-3">
 
+            {/* Auth Section */}
+            {isAuthenticated ? (
+              <>
+                {/* User Display */}
+                <div className={`hidden sm:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium ${
+                  variant === "home"
+                    ? "text-gray-700 bg-gray-100"
+                    : "text-gray-300 bg-gray-700"
+                }`}>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
+                  <span>{nickname}</span>
+                </div>
+                {/* Logout Button */}
+                <button
+                  onClick={logout}
+                  className={`hidden sm:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    variant === "home"
+                      ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50 border border-gray-200"
+                      : "text-gray-300 hover:text-white hover:bg-gray-700 bg-gray-700"
+                  }`}
+                  title="ログアウト"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                  </svg>
+                  <span>ログアウト</span>
+                </button>
+              </>
+            ) : (
+              /* Login Button */
+              <button
+                onClick={() => setLoginModalOpen(true)}
+                className={`hidden sm:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  variant === "home"
+                    ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50 border border-gray-200"
+                    : "text-gray-300 hover:text-white hover:bg-gray-700 bg-gray-700"
+                }`}
+                title="ログイン"
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                <span>ログイン</span>
+              </button>
+            )}
+
             {/* Feedback Button */}
             <a
               href="https://github.com/anthropics/claude-code/issues"
@@ -146,6 +198,58 @@ export default function AppHeader({
                 </Link>
               ))}
               
+              {/* Mobile Auth Section */}
+              {isAuthenticated ? (
+                <>
+                  {/* Mobile User Display */}
+                  <div className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium ${
+                    variant === "home"
+                      ? "text-gray-700 bg-gray-100"
+                      : "text-gray-300 bg-gray-700"
+                  }`}>
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                    <span>{nickname}</span>
+                  </div>
+                  {/* Mobile Logout Button */}
+                  <button
+                    onClick={() => {
+                      logout();
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
+                      variant === "home"
+                        ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
+                        : "text-gray-300 hover:text-white hover:bg-gray-700"
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
+                    </svg>
+                    <span>ログアウト</span>
+                  </button>
+                </>
+              ) : (
+                /* Mobile Login Button */
+                <button
+                  onClick={() => {
+                    setLoginModalOpen(true);
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
+                    variant === "home"
+                      ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
+                      : "text-gray-300 hover:text-white hover:bg-gray-700"
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                  <span>ログイン</span>
+                </button>
+              )}
+
               {/* Mobile Feedback Link */}
               <a
                 href="https://github.com/anthropics/claude-code/issues"
@@ -167,9 +271,17 @@ export default function AppHeader({
         )}
       </div>
       
-      <VersionInfoModal 
+      <VersionInfoModal
         isOpen={isVersionModalOpen}
         onClose={() => setIsVersionModalOpen(false)}
+      />
+
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        onLoginSuccess={() => {
+          setLoginModalOpen(false);
+        }}
       />
     </header>
   );

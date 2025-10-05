@@ -86,6 +86,17 @@ Pattern: Server-side fetch → Process response → Return to client
 - Validates songs before saving (no empty titles/artists)
 - Visual feedback with "自動保存中..." indicator
 - Requires authentication and nickname for operation
+- **CRITICAL**: Auto-save must NOT reset `hasChanges` flag - user stays in edit mode
+- **CRITICAL**: Auto-save must NOT call `onSaveSuccess` callback - prevents unwanted data reload
+
+### useMedleyEdit State Management
+- **Three state layers**: `originalSongs` (from parent/server), `editingSongs` (local edits), `hasChanges` (dirty flag)
+- **State synchronization**: useEffect syncs `originalSongs` → `editingSongs` only when:
+  1. Content actually differs (JSON.stringify comparison)
+  2. User is NOT editing (`editingSongs.length > 0 && originalSongs.length === 0` guard)
+- **Auto-save flow**: Save to server → Keep `hasChanges` true → User continues editing
+- **Manual save flow**: Save to server → Parent refetches → `originalSongs` updates → Sync to `editingSongs`
+- **Guard conditions prevent**: Race conditions between auto-save completion and parent refetch
 
 ### Keyboard Shortcuts
 - **Spacebar**: Play/pause (global, disabled in inputs/modals)
@@ -120,6 +131,8 @@ Pattern: Server-side fetch → Process response → Return to client
 - **Keyboard shortcuts not working**: Check edit mode active and no input focus
 - **Auto-save not triggering**: Verify authenticated and valid song data
 - **Undo/Redo broken**: Check keyboard listeners in edit mode only
+- **Songs disappearing after add**: Check auto-save doesn't reset `hasChanges` or call `onSaveSuccess`
+- **EditingSongs reset unexpectedly**: Verify useEffect guard condition for `originalSongs.length === 0`
 
 ### Production Issues
 - **Component missing**: Check displayName and module-level logging

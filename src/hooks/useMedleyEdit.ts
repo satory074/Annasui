@@ -127,13 +127,8 @@ export function useMedleyEdit(
       }
 
       if (result) {
-        setHasChanges(false);
+        // Don't reset hasChanges - user is still in edit mode
         logger.info('✅ Auto-save completed successfully');
-
-        // Trigger data refresh callback if provided
-        if (onSaveSuccess && typeof onSaveSuccess === 'function') {
-          onSaveSuccess();
-        }
       } else {
         logger.warn('⚠️ Auto-save failed');
       }
@@ -142,7 +137,8 @@ export function useMedleyEdit(
     } finally {
       setIsAutoSaving(false);
     }
-  }, [isAutoSaving, editingSongs, onSaveSuccess]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAutoSaving, editingSongs]);
 
   // デバウンス付き自動保存トリガー
   const triggerAutoSave = useCallback(() => {
@@ -521,26 +517,33 @@ export function useMedleyEdit(
     // 初回読み込み時、または実際にoriginalSongsの内容が変わった場合は更新
     const currentSongsString = JSON.stringify(editingSongs);
     const originalSongsString = JSON.stringify(originalSongs);
-    
-    // hasChangesがfalseの場合、または初回読み込みで内容が異なる場合
-    if (!hasChanges || currentSongsString !== originalSongsString) {
+
+    // 編集中の曲があり、originalSongsが空の場合は更新しない
+    // （ユーザーが編集中で、親コンポーネントがまだデータを取得していない状態）
+    if (editingSongs.length > 0 && originalSongs.length === 0) {
+      logger.debug('⏸️ Skipping update: user is editing and originalSongs is empty', {
+        editingSongsCount: editingSongs.length,
+        originalSongsCount: originalSongs.length
+      });
+      return;
+    }
+
+    // 初回読み込みで内容が異なる場合のみ更新
+    if (currentSongsString !== originalSongsString) {
       logger.debug('🔄 Updating editingSongs from originalSongs', {
         hasChanges,
         originalSongsCount: originalSongs.length,
         editingSongsCount: editingSongs.length,
         contentsMatch: currentSongsString === originalSongsString
       });
-      
+
       setEditingSongs(originalSongs);
-      
-      // 内容が変わった場合は履歴もリセット
-      if (currentSongsString !== originalSongsString) {
-        setHistory([originalSongs]);
-        setHistoryIndex(0);
-        setHasChanges(false);
-      }
+      setHistory([originalSongs]);
+      setHistoryIndex(0);
+      setHasChanges(false);
     }
-  }, [originalSongs, hasChanges, editingSongs]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [originalSongs]);
 
   return {
     editingSongs,

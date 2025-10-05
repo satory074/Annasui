@@ -244,21 +244,23 @@ export function useMedleyEdit(
 
   // 楽曲を追加
   const addSong = useCallback((newSong: Omit<SongSection, 'id'> | SongSection) => {
-    // CRITICAL FIX: If song already has an ID (from placeholder), preserve it
-    // Otherwise generate a new ID
-    const songWithId: SongSection = {
-      ...newSong,
-      id: 'id' in newSong && newSong.id ? newSong.id : Math.max(...editingSongs.map(s => s.id), 0) + 1
-    };
-
-    logger.info('🆕 addSong called', {
-      hasExistingId: 'id' in newSong && newSong.id !== undefined,
-      existingId: 'id' in newSong ? newSong.id : undefined,
-      finalId: songWithId.id,
-      title: songWithId.title
-    });
-
     setEditingSongs(prev => {
+      // CRITICAL FIX: Move ID generation inside setEditingSongs to use latest state
+      // If song already has an ID (from placeholder), preserve it
+      // Otherwise generate a new ID based on current state
+      const songWithId: SongSection = {
+        ...newSong,
+        id: 'id' in newSong && newSong.id ? newSong.id : Math.max(...prev.map(s => s.id), 0) + 1
+      };
+
+      logger.info('🆕 addSong called', {
+        hasExistingId: 'id' in newSong && newSong.id !== undefined,
+        existingId: 'id' in newSong ? newSong.id : undefined,
+        finalId: songWithId.id,
+        title: songWithId.title,
+        currentSongsCount: prev.length
+      });
+
       const newSongs = [...prev, songWithId].sort((a, b) => a.startTime - b.startTime);
       addToHistory(newSongs);
       detectChanges(newSongs);
@@ -268,7 +270,7 @@ export function useMedleyEdit(
 
       return newSongs;
     });
-  }, [editingSongs, detectChanges, addToHistory, triggerAutoSave]);
+  }, [detectChanges, addToHistory, triggerAutoSave]);
 
   // 楽曲を削除
   const deleteSong = useCallback((songId: number) => {

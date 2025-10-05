@@ -11,7 +11,7 @@ interface UseMedleyEditReturn {
   canUndo: boolean;
   canRedo: boolean;
   updateSong: (updatedSong: SongSection) => void;
-  addSong: (newSong: Omit<SongSection, 'id'>) => void;
+  addSong: (newSong: Omit<SongSection, 'id'> | SongSection) => void;
   deleteSong: (songId: number) => void;
   saveMedley: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number, editorNickname?: string) => Promise<boolean>;
   resetChanges: (originalSongs: SongSection[]) => void;
@@ -243,20 +243,29 @@ export function useMedleyEdit(
   }, [detectChanges, addToHistory, triggerAutoSave]);
 
   // 楽曲を追加
-  const addSong = useCallback((newSong: Omit<SongSection, 'id'>) => {
+  const addSong = useCallback((newSong: Omit<SongSection, 'id'> | SongSection) => {
+    // CRITICAL FIX: If song already has an ID (from placeholder), preserve it
+    // Otherwise generate a new ID
     const songWithId: SongSection = {
       ...newSong,
-      id: Math.max(...editingSongs.map(s => s.id), 0) + 1
+      id: 'id' in newSong && newSong.id ? newSong.id : Math.max(...editingSongs.map(s => s.id), 0) + 1
     };
-    
+
+    logger.info('🆕 addSong called', {
+      hasExistingId: 'id' in newSong && newSong.id !== undefined,
+      existingId: 'id' in newSong ? newSong.id : undefined,
+      finalId: songWithId.id,
+      title: songWithId.title
+    });
+
     setEditingSongs(prev => {
       const newSongs = [...prev, songWithId].sort((a, b) => a.startTime - b.startTime);
       addToHistory(newSongs);
       detectChanges(newSongs);
-      
+
       // 自動保存をトリガー
       triggerAutoSave();
-      
+
       return newSongs;
     });
   }, [editingSongs, detectChanges, addToHistory, triggerAutoSave]);

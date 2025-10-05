@@ -395,14 +395,18 @@ export default function MedleyPlayer({
         
         // 楽曲置換の判定を簡素化 - editingSongが存在する場合は常に置換
         if (editingSong) {
+            // editingSongsに既に存在するかチェック
+            const existsInTimeline = editingSongs.some(s => s.id === editingSong.id);
+
             logger.info('🔄 [REPLACEMENT PATH] Replacing existing song with database selection', {
                 preservedId: editingSong.id,
                 preservedStartTime: editingSong.startTime,
                 preservedEndTime: editingSong.endTime,
                 newTitle: songTemplate.title,
                 newArtist: songTemplate.artist,
-                replacingEmptySong: editingSong.title.startsWith('空の楽曲'),
-                idExistsInEditingSongs: editingSongs.some(s => s.id === editingSong.id)
+                replacingEmptySong: editingSong.title.startsWith('空の楽曲') || editingSong.title === '',
+                existsInTimeline: existsInTimeline,
+                isEmptyPlaceholder: editingSong.title === '' && editingSong.artist === ''
             });
 
             // 既存楽曲がある場合は必ず置換 - ID、時間情報を保持して楽曲情報のみ更新
@@ -420,11 +424,19 @@ export default function MedleyPlayer({
                 newEditingSongId: replacedSong.id,
                 newEditingSongTitle: replacedSong.title,
                 stillMatchesOriginalId: replacedSong.id === editingSong.id,
-                willFindInEditingSongs: editingSongs.some(s => s.id === replacedSong.id)
+                existsInTimeline: existsInTimeline
             });
 
-            // 置換時はisNewSongをfalseに設定して、必ずupdateSongが呼ばれるようにする
-            setIsNewSong(false);
+            // CRITICAL FIX: 空のプレースホルダーの場合（handleAddNewSongで作成されたもの）は
+            // isNewSongをtrueのままにして、addSongが呼ばれるようにする
+            // タイムラインに既に存在する楽曲の場合のみisNewSongをfalseにする
+            if (existsInTimeline) {
+                setIsNewSong(false);
+                logger.info('📝 Setting isNewSong=false (song exists in timeline - will call updateSong)');
+            } else {
+                setIsNewSong(true);
+                logger.info('📝 Keeping isNewSong=true (empty placeholder - will call addSong)');
+            }
             // NOTE: isChangingSongは保存完了後にリセットする（SongEditModalの保存ロジックで使用するため）
 
             // 編集モーダルを開く
@@ -922,7 +934,7 @@ export default function MedleyPlayer({
                 )}
 
                 {/* メドレーデータがない場合の表示 - 新規作成UI */}
-                {!loading && !error && medleySongs.length === 0 && (
+                {!loading && !error && medleySongs.length === 0 && editingSongs.length === 0 && (
                     <div className="p-6">
                         <div className="max-w-2xl mx-auto">
                             <div className="text-center mb-6">

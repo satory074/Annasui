@@ -330,10 +330,9 @@ export async function createMedley(
       last_edited_at: new Date().toISOString()
     }))
 
-    const { data: songs, error: songsError } = await supabase
+    const { error: songsError } = await supabase
       .from('songs')
       .insert(songsToInsert)
-      .select()
 
     if (songsError) {
       throw songsError
@@ -347,7 +346,16 @@ export async function createMedley(
       })
     }
 
-    return convertDbRowToMedleyData(medley as MedleyRow, (songs || []) as SongRow[])
+    // Convert the inserted songs data to SongRow format for the return value
+    const songRows: SongRow[] = songsToInsert.map((song, index) => ({
+      ...song,
+      id: `temp-${index}`, // Temporary ID since we didn't select back from DB
+      created_at: song.last_edited_at || new Date().toISOString(),
+      updated_at: song.last_edited_at || new Date().toISOString(),
+      genre: null
+    }))
+
+    return convertDbRowToMedleyData(medley as MedleyRow, songRows)
   } catch (error) {
     logger.error('Error creating medley:', error)
     return null
@@ -383,6 +391,11 @@ export async function updateMedley(
 
     // Update songs if provided
     if (updates.songs) {
+      logger.debug('🔍 updateMedley: About to save songs', {
+        medleyId: medley.id,
+        songsCount: updates.songs.length,
+        songs: updates.songs
+      });
       const success = await saveMedleySongs(medley.id as string, updates.songs, editorNickname);
       if (!success) {
         logger.error('Failed to update songs for medley:', medley.id);
@@ -499,6 +512,13 @@ export async function saveMedleySongs(
   }
 
   try {
+    logger.debug('🔍 saveMedleySongs called', {
+      medleyId,
+      songsCount: songs.length,
+      songs: songs,
+      editorNickname
+    });
+
     // Delete existing songs for this medley
     const { error: deleteError } = await supabase
       .from('songs')
@@ -509,8 +529,13 @@ export async function saveMedleySongs(
       throw deleteError
     }
 
+    logger.debug('✅ Deleted existing songs for medley:', medleyId);
+
     // Insert new songs
     if (songs.length > 0) {
+      logger.debug('📝 Preparing to insert songs:', {
+        songsCount: songs.length
+      });
       const songsToInsert = songs.map((song, index) => ({
         medley_id: medleyId,
         title: song.title,
@@ -520,18 +545,28 @@ export async function saveMedleySongs(
         color: song.color,
         original_link: song.originalLink || null,
         links: song.links ? JSON.stringify(song.links) : null,
-        order_index: index + 1,
+        order_index: index + 1,  // Re-added: database requires this field for ordering
         last_editor: editorNickname || null,
         last_edited_at: new Date().toISOString()
       }))
+
+      logger.debug('📤 Inserting songs into database:', {
+        songsToInsertCount: songsToInsert.length,
+        songsToInsert: songsToInsert
+      });
 
       const { error: insertError } = await supabase
         .from('songs')
         .insert(songsToInsert)
 
       if (insertError) {
+        logger.error('❌ Insert error:', insertError);
         throw insertError
       }
+
+      logger.info('✅ Successfully inserted songs:', songsToInsert.length);
+    } else {
+      logger.warn('⚠️ No songs to insert (songs.length = 0)');
     }
 
     logger.info('✅ Successfully saved medley songs')

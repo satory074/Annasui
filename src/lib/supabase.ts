@@ -112,6 +112,8 @@ export type Database = {
           original_link: string | null
           links: string | null
           order_index: number
+          last_editor: string | null
+          last_edited_at: string | null
           created_at: string
           updated_at: string
         }
@@ -127,6 +129,8 @@ export type Database = {
           original_link?: string | null
           links?: string | null
           order_index: number
+          last_editor?: string | null
+          last_edited_at?: string
           created_at?: string
           updated_at?: string
         }
@@ -142,6 +146,8 @@ export type Database = {
           original_link?: string | null
           links?: string | null
           order_index?: number
+          last_editor?: string | null
+          last_edited_at?: string
           created_at?: string
           updated_at?: string
         }

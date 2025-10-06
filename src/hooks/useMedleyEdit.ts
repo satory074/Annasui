@@ -95,16 +95,21 @@ export function useMedleyEdit(
       });
 
       // 楽曲データの準備（IDを除く）
-      const songsToSave = editingSongs.map((song, index) => ({
+      const songsToSave = editingSongs.map((song) => ({
         title: song.title,
         artist: song.artist,
         startTime: song.startTime,
         endTime: song.endTime,
         color: song.color,
         originalLink: song.originalLink,
-        links: song.links,
-        order_index: index + 1
+        links: song.links
       }));
+
+      logger.debug('🔍 Auto-save: prepared songs', {
+        editingSongsCount: editingSongs.length,
+        songsToSaveCount: songsToSave.length,
+        songsToSave: songsToSave
+      });
 
       // Try to update first, then create if it doesn't exist
       let result = await updateMedley(config.videoId, {
@@ -112,10 +117,11 @@ export function useMedleyEdit(
         creator: config.medleyCreator,
         duration: config.duration,
         songs: songsToSave
-      });
-      
+      }, config.editorNickname);
+
       if (!result) {
         // Create new medley if update failed (doesn't exist)
+        logger.info('📝 Medley does not exist, creating new medley');
         const medleyData: Omit<MedleyData, 'songs'> & { songs: Omit<SongSection, 'id'>[] } = {
           videoId: config.videoId,
           title: config.medleyTitle,
@@ -123,7 +129,7 @@ export function useMedleyEdit(
           duration: config.duration,
           songs: songsToSave
         };
-        result = await createMedley(medleyData);
+        result = await createMedley(medleyData, config.editorNickname);
       }
 
       if (result) {
@@ -401,15 +407,14 @@ export function useMedleyEdit(
       }
 
       // 楽曲データの準備（IDを除く）
-      const songsToSave = editingSongs.map((song, index) => ({
+      const songsToSave = editingSongs.map((song) => ({
         title: song.title,
         artist: song.artist,
         startTime: song.startTime,
         endTime: song.endTime,
         color: song.color,
         originalLink: song.originalLink,
-        links: song.links,
-        order_index: index + 1
+        links: song.links
       }));
 
       // Try to update first, then create if it doesn't exist

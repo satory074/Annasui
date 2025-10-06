@@ -371,7 +371,7 @@ export default function MedleyPlayer({
     const handleSelectSongFromDatabase = (dbSong: SongDatabaseEntry) => {
         setSongSearchModalOpen(false);
         setSelectedDatabaseSong(dbSong);
-        
+
         // デバッグ用ログ - 詳細な状態確認
         logger.info('🎵 handleSelectSongFromDatabase called - DETAILED STATE CHECK', {
             isChangingSong: isChangingSong,
@@ -389,10 +389,10 @@ export default function MedleyPlayer({
             condition2: !!editingSong,
             finalCondition: ((isChangingSong || (editModalOpen && editingSong)) && editingSong)
         });
-        
+
         // 楽曲DBから基本情報を取得
         const songTemplate = createSongFromDatabase(dbSong, 0, 0);
-        
+
         // 楽曲置換の判定を簡素化 - editingSongが存在する場合は常に置換
         if (editingSong) {
             // editingSongsに既に存在するかチェック
@@ -436,6 +436,13 @@ export default function MedleyPlayer({
             } else {
                 setIsNewSong(true);
                 logger.info('📝 Keeping isNewSong=true (empty placeholder - will call addSong)');
+
+                // 🔧 FIX: Immediately add the new song to editingSongs to ensure auto-save works
+                // This prevents the song from being lost if auto-save triggers before user clicks "Save"
+                logger.info('✅ [AUTO-ADD FIX] Immediately adding new song to timeline');
+                addSong(replacedSong);
+                // After adding, set isNewSong to false since it's now in the timeline
+                setIsNewSong(false);
             }
             // NOTE: isChangingSongは保存完了後にリセットする（SongEditModalの保存ロジックで使用するため）
 
@@ -451,7 +458,7 @@ export default function MedleyPlayer({
                 newTitle: songTemplate.title,
                 newArtist: songTemplate.artist
             });
-            
+
             // 新規追加の場合
             setEditingSong({
                 id: Date.now(), // 一時的なID
@@ -598,15 +605,22 @@ export default function MedleyPlayer({
             idMatch: editingSongs.some(s => s.id === song.id)
         });
 
-        if (isNewSong) {
+        // Check if song already exists in timeline (was already added)
+        const songExistsInTimeline = editingSongs.some(s => s.id === song.id);
+
+        if (songExistsInTimeline) {
+            // Song already exists - just update it
+            logger.info('🔄 Song already in timeline - calling updateSong');
+            updateSong(song);
+        } else if (isNewSong) {
+            // New song - add it
             logger.info('➕ Calling addSong - will create NEW song');
             addSong(song);
         } else {
-            logger.info('🔄 Calling updateSong - will replace EXISTING song', {
-                searchingForId: song.id,
-                availableIds: editingSongs.map(s => s.id),
-                wasChangingSong: isChangingSong,
-                exactMatch: editingSongs.find(s => s.id === song.id)?.title || 'NO_MATCH'
+            // This shouldn't happen, but log it for debugging
+            logger.warn('⚠️ Unexpected state: !isNewSong but song not in timeline', {
+                songId: song.id,
+                availableIds: editingSongs.map(s => s.id)
             });
             updateSong(song);
         }
@@ -616,7 +630,7 @@ export default function MedleyPlayer({
             logger.info('✅ Song replacement saved - resetting isChangingSong flag');
             setIsChangingSong(false);
         }
-        
+
         // 連続入力モードでない場合はモーダルを閉じる
         if (!continuousInputMode) {
             setEditModalOpen(false);

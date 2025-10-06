@@ -86,7 +86,7 @@ export default function MedleyPlayer({
     const { medleySongs, medleyTitle, medleyCreator, medleyDuration, medleyData, loading, error, refetch } = useMedleyData(videoId);
 
     // 即時保存コールバック（useMedleyEditより前に定義するため、saveMedleyとrefetchは後で設定）
-    const handleImmediateSaveRef = useRef<() => Promise<void>>(async () => {});
+    const handleImmediateSaveRef = useRef<(songs: SongSection[]) => Promise<void>>(async () => {});
 
     // 編集機能
     const {
@@ -103,14 +103,14 @@ export default function MedleyPlayer({
     } = useMedleyEdit({
         originalSongs: medleySongs,
         onSaveSuccess: refetch,
-        onAfterAdd: () => handleImmediateSaveRef.current?.(),
-        onAfterUpdate: () => handleImmediateSaveRef.current?.(),
-        onAfterDelete: () => handleImmediateSaveRef.current?.(),
-        onAfterBatchUpdate: () => handleImmediateSaveRef.current?.()
+        onAfterAdd: (songs) => handleImmediateSaveRef.current?.(songs),
+        onAfterUpdate: (songs) => handleImmediateSaveRef.current?.(songs),
+        onAfterDelete: (songs) => handleImmediateSaveRef.current?.(songs),
+        onAfterBatchUpdate: (songs) => handleImmediateSaveRef.current?.(songs)
     });
 
     // 即時保存の実装（useMedleyEditの後で設定）
-    handleImmediateSaveRef.current = async () => {
+    handleImmediateSaveRef.current = async (songsToSave: SongSection[]) => {
         if (!isAuthenticated || !nickname) {
             logger.debug('⏸️ Skipping immediate save: not authenticated');
             return;
@@ -118,7 +118,7 @@ export default function MedleyPlayer({
 
         logger.info('💾 Immediate save triggered', {
             videoId,
-            songCount: editingSongs.length,
+            songCount: songsToSave.length,
             editor: nickname
         });
 
@@ -127,7 +127,8 @@ export default function MedleyPlayer({
             medleyTitle,
             medleyCreator,
             medleyDuration,
-            nickname || undefined
+            nickname || undefined,
+            songsToSave // 最新の楽曲リストを渡す
         );
 
         if (success) {

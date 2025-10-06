@@ -13,7 +13,7 @@ interface UseMedleyEditReturn {
   updateSong: (updatedSong: SongSection) => void;
   addSong: (newSong: Omit<SongSection, 'id'> | SongSection) => void;
   deleteSong: (songId: number) => void;
-  saveMedley: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number, editorNickname?: string) => Promise<boolean>;
+  saveMedley: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number, editorNickname?: string, songsOverride?: SongSection[]) => Promise<boolean>;
   resetChanges: (originalSongs: SongSection[]) => void;
   reorderSongs: (fromIndex: number, toIndex: number) => void;
   batchUpdate: (songsToRemove: number[], songsToAdd: Omit<SongSection, 'id'>[]) => void;
@@ -24,10 +24,10 @@ interface UseMedleyEditReturn {
 interface UseMedleyEditProps {
   originalSongs: SongSection[];
   onSaveSuccess?: () => void;
-  onAfterAdd?: () => void;
-  onAfterUpdate?: () => void;
-  onAfterDelete?: () => void;
-  onAfterBatchUpdate?: () => void;
+  onAfterAdd?: (newSongs: SongSection[]) => void;
+  onAfterUpdate?: (newSongs: SongSection[]) => void;
+  onAfterDelete?: (newSongs: SongSection[]) => void;
+  onAfterBatchUpdate?: (newSongs: SongSection[]) => void;
 }
 
 export function useMedleyEdit(
@@ -133,9 +133,15 @@ export function useMedleyEdit(
       return newSongs;
     });
 
-    // 即時保存コールバックを呼び出す
+    // 即時保存コールバックを呼び出す（React state更新後に実行、新しい楽曲リストを渡す）
     if (onAfterUpdate) {
-      onAfterUpdate();
+      setTimeout(() => {
+        // setEditingSongs内のnewSongsをキャプチャするため、クロージャを使う
+        setEditingSongs(currentSongs => {
+          onAfterUpdate(currentSongs);
+          return currentSongs; // 状態は変更しない
+        });
+      }, 0);
     }
   }, [detectChanges, addToHistory, onAfterUpdate]);
 
@@ -165,9 +171,14 @@ export function useMedleyEdit(
       return newSongs;
     });
 
-    // 即時保存コールバックを呼び出す
+    // 即時保存コールバックを呼び出す（React state更新後に実行、新しい楽曲リストを渡す）
     if (onAfterAdd) {
-      onAfterAdd();
+      setTimeout(() => {
+        setEditingSongs(currentSongs => {
+          onAfterAdd(currentSongs);
+          return currentSongs;
+        });
+      }, 0);
     }
   }, [detectChanges, addToHistory, onAfterAdd]);
 
@@ -181,9 +192,14 @@ export function useMedleyEdit(
       return newSongs;
     });
 
-    // 即時保存コールバックを呼び出す
+    // 即時保存コールバックを呼び出す（React state更新後に実行、新しい楽曲リストを渡す）
     if (onAfterDelete) {
-      onAfterDelete();
+      setTimeout(() => {
+        setEditingSongs(currentSongs => {
+          onAfterDelete(currentSongs);
+          return currentSongs;
+        });
+      }, 0);
     }
   }, [detectChanges, addToHistory, onAfterDelete]);
 
@@ -199,9 +215,14 @@ export function useMedleyEdit(
       return newSongs;
     });
 
-    // 即時保存コールバックを呼び出す
+    // 即時保存コールバックを呼び出す（React state更新後に実行、新しい楽曲リストを渡す）
     if (onAfterUpdate) {
-      onAfterUpdate();
+      setTimeout(() => {
+        setEditingSongs(currentSongs => {
+          onAfterUpdate(currentSongs);
+          return currentSongs;
+        });
+      }, 0);
     }
   }, [detectChanges, addToHistory, onAfterUpdate]);
 
@@ -242,9 +263,14 @@ export function useMedleyEdit(
       return finalSongs;
     });
 
-    // 即時保存コールバックを呼び出す
+    // 即時保存コールバックを呼び出す（React state更新後に実行、新しい楽曲リストを渡す）
     if (onAfterBatchUpdate) {
-      onAfterBatchUpdate();
+      setTimeout(() => {
+        setEditingSongs(currentSongs => {
+          onAfterBatchUpdate(currentSongs);
+          return currentSongs;
+        });
+      }, 0);
     }
   }, [detectChanges, addToHistory, onAfterBatchUpdate]);
 
@@ -255,7 +281,8 @@ export function useMedleyEdit(
     medleyTitle: string,
     medleyCreator: string,
     duration: number,
-    editorNickname?: string
+    editorNickname?: string,
+    songsOverride?: SongSection[]
   ): Promise<boolean> => {
     setIsSaving(true);
 
@@ -275,9 +302,12 @@ export function useMedleyEdit(
       }
 
       // Database-only mode: no static data fallback needed
-      
+
+      // 使用する楽曲リスト（上書きがあれば使用、なければ現在の編集中楽曲を使用）
+      const songsToValidateAndSave = songsOverride ?? editingSongs;
+
       // 保存前に必須項目を一括チェック
-      const invalidSongs = editingSongs.filter(song => {
+      const invalidSongs = songsToValidateAndSave.filter(song => {
         const isTitleEmpty = !song.title || song.title.trim() === '' || song.title.startsWith('空の楽曲');
         const isArtistEmpty = !song.artist || song.artist.trim() === '' || song.artist === 'アーティスト未設定';
         return isTitleEmpty || isArtistEmpty;
@@ -310,7 +340,7 @@ export function useMedleyEdit(
       }
 
       // 楽曲データの準備（IDを除く）
-      const songsToSave = editingSongs.map((song) => ({
+      const songsToSave = songsToValidateAndSave.map((song) => ({
         title: song.title,
         artist: song.artist,
         startTime: song.startTime,

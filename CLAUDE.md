@@ -6,11 +6,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Prerequisites**: Node.js 18.0.0+, Firebase CLI (`npm install -g firebase-tools`)
 
-- `npm run dev` - Start development server
+### Development
+- `npm run dev` - Start development server (http://localhost:3000)
+- `ps aux | grep "next-server" | grep -v grep` - Check running dev servers
+- `lsof -ti:3000,3001,3002,3003,3004 | xargs kill -9` - Kill all dev servers
+
+### Build & Quality
 - `npm run build` - Build production app
-- `npm run lint` - Run ESLint checks
+- `npm run lint` - Run ESLint checks (note: ignored during builds via `ignoreDuringBuilds: true`)
 - `npx tsc --noEmit` - TypeScript type checking
+- `npm run build && npx tsc --noEmit && npm run lint` - Pre-deployment validation
+
+### Deployment
 - `firebase deploy --only hosting` - Deploy to production
+
+**IMPORTANT**: Always stop dev servers after testing to prevent performance issues
 
 ## Testing Strategy
 - No automated tests - manual testing only
@@ -20,7 +30,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Medlean** - Multi-platform medley annotation platform built with Next.js. Supports Niconico (full integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, auto-save system.
+**Medlean** - Multi-platform medley annotation platform built with Next.js. Supports Niconico (full integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, immediate save system.
 
 **Tech Stack**: Next.js 15.2.1 + React 19.0.0 + TypeScript, TailwindCSS 4, Supabase (auth/database), Firebase Hosting
 
@@ -37,9 +47,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **API verification**: `/api/auth/verify-password/` with rate limiting (5 attempts/10 min)
 
 ### Video Player Integration
-- **useNicoPlayer hook**: Manages Niconico iframe postMessage communication
-- **useMedleyEdit hook**: Handles timeline editing with auto-save system and editor tracking
+- **useNicoPlayer**: Manages Niconico iframe postMessage communication
+- **useMedleyEdit**: Timeline editing with immediate save system and editor tracking
 - **usePlayerPosition + useMousePosition**: Real-time collision detection for ActiveSongPopup
+- **useCurrentTrack**: Determines which song is playing based on current time
+- **useMedleyData + useMedleyDataApi**: Data fetching and state management for medley information
 - Platform-specific players in `app/[platform]/[videoId]/` routes
 
 ### API Proxy Pattern
@@ -64,7 +76,7 @@ Pattern: Server-side fetch → Process response → Return to client
 - **MUST** check `isAuthenticated` AND `authLoading` before showing edit UI
 - **MUST** pass `nickname` parameter to all save operations
 - Edit operations: `saveMedley(videoId, title, creator, duration, nickname)`
-- Auto-save enablement: `enableAutoSave(videoId, title, creator, duration, nickname)`
+- Immediate save callbacks: Provide `onAfterAdd`, `onAfterUpdate`, `onAfterDelete`, `onAfterBatchUpdate` to useMedleyEdit
 - Environment variable: `EDIT_PASSWORD` (server-side only, no `NEXT_PUBLIC_` prefix)
 - **CRITICAL**: Use `authLoading ? <Loading /> : isAuthenticated ? <EditUI /> : <LoginPrompt />` pattern to prevent UI flicker
 
@@ -81,22 +93,21 @@ Pattern: Server-side fetch → Process response → Return to client
 3. Contributors tracked: All edits record editor nickname
 4. Session persisted: Login state maintained across page loads
 
-### Auto-Save System
-- 2-second debounced auto-save when edit mode active
+### Immediate Save System
+- Operations (add/edit/delete) trigger immediate save to database
 - Validates songs before saving (no empty titles/artists)
-- Visual feedback with "自動保存中..." indicator
 - Requires authentication and nickname for operation
-- **CRITICAL**: Auto-save must NOT reset `hasChanges` flag - user stays in edit mode
-- **CRITICAL**: Auto-save must NOT call `onSaveSuccess` callback - prevents unwanted data reload
+- After save completes, data is refetched from database to ensure consistency
+- No debouncing - changes are saved instantly upon operation completion
 
 ### useMedleyEdit State Management
 - **Three state layers**: `originalSongs` (from parent/server), `editingSongs` (local edits), `hasChanges` (dirty flag)
 - **State synchronization**: useEffect syncs `originalSongs` → `editingSongs` only when:
   1. Content actually differs (JSON.stringify comparison)
   2. User is NOT editing (`editingSongs.length > 0 && originalSongs.length === 0` guard)
-- **Auto-save flow**: Save to server → Keep `hasChanges` true → User continues editing
-- **Manual save flow**: Save to server → Parent refetches → `originalSongs` updates → Sync to `editingSongs`
-- **Guard conditions prevent**: Race conditions between auto-save completion and parent refetch
+- **Immediate save flow**: Operation completes → Callback triggers → Save to DB → Refetch from DB → State updates
+- **Callback system**: Use `onAfterAdd`, `onAfterUpdate`, `onAfterDelete`, `onAfterBatchUpdate` props
+- **Guard conditions prevent**: Race conditions between save completion and parent refetch
 
 ### Keyboard Shortcuts
 - **Spacebar**: Play/pause (global, disabled in inputs/modals)
@@ -129,9 +140,9 @@ Pattern: Server-side fetch → Process response → Return to client
 
 ### Timeline Issues
 - **Keyboard shortcuts not working**: Check edit mode active and no input focus
-- **Auto-save not triggering**: Verify authenticated and valid song data
+- **Immediate save not triggering**: Verify authenticated, valid song data, and callbacks provided to useMedleyEdit
 - **Undo/Redo broken**: Check keyboard listeners in edit mode only
-- **Songs disappearing after add**: Check auto-save doesn't reset `hasChanges` or call `onSaveSuccess`
+- **Songs disappearing after operation**: Verify immediate save callback and refetch are working correctly
 - **EditingSongs reset unexpectedly**: Verify useEffect guard condition for `originalSongs.length === 0`
 
 ### Production Issues
@@ -177,18 +188,21 @@ src/
 
 ### Development (.env.local)
 ```bash
-EDIT_PASSWORD=Medlean2025!Secure#Edit
-NEXT_PUBLIC_SUPABASE_URL=https://dheairurkxjftugrwdjl.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[supabase-anon-key]
+EDIT_PASSWORD="your-secure-password-here"
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 ```
 
 ### Production (Firebase Console)
 Set via Firebase console or CLI:
-- `EDIT_PASSWORD` - Server-side password for authentication
+- `EDIT_PASSWORD` - Server-side password for authentication (DO NOT use `NEXT_PUBLIC_` prefix)
 - `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
 
-**IMPORTANT**: Never add `NEXT_PUBLIC_` prefix to `EDIT_PASSWORD` (server-side only)
+**IMPORTANT**:
+- Never add `NEXT_PUBLIC_` prefix to `EDIT_PASSWORD` (server-side only)
+- Actual values are in `.env.local` (not committed to git)
+- Production values fallback to hardcoded defaults in `next.config.ts` if env vars not set
 
 ## Database Setup
 
@@ -196,11 +210,16 @@ Run migrations in Supabase Dashboard (database/migrations/) **in order**:
 1. `003_fix_rick_astley_medley.sql` - Platform corrections
 2. `004_add_rick_astley_song_data.sql` - Sample data
 3. `006_create_medley_edit_history.sql` - Edit history tracking
-4. `011_add_contributor_tracking.sql` - Contributor tracking system
+4. `010_remove_auth_system.sql` - Remove Google OAuth authentication
+5. `011_add_contributor_tracking.sql` - Add password-based contributor tracking
 
-Core tables: `medleys`, `songs`, `medley_edits`, `medley_edit_history`
+Core tables: `medleys`, `songs`, `medley_edits`
 
-Configure OAuth providers (Google) in Supabase Auth settings if needed.
+**Authentication Evolution**:
+- Originally used Google OAuth (migrations 001-009)
+- Migration 010 removed OAuth system for open access
+- Migration 011 added password-based authentication with nickname tracking
+- Current system: Single shared password + user-provided nicknames
 
 ## Security Patterns
 
@@ -222,12 +241,22 @@ await saveMedley(videoId, title, creator, duration, nickname || undefined);
 onAddSong={isAuthenticated ? handleAddNewSong : undefined}
 onEditSong={isAuthenticated ? handleEditSongClick : undefined}
 
-// Auto-save pattern with authentication
-const triggerAutoSave = useCallback(() => {
+// Immediate save pattern with callbacks
+const handleImmediateSave = useCallback(async () => {
   if (!isAuthenticated || !nickname) return;
-  if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
-  autoSaveTimeoutRef.current = setTimeout(() => performAutoSave(nickname), 2000);
-}, [isAuthenticated, nickname, performAutoSave]);
+  const success = await saveMedley(videoId, title, creator, duration, nickname);
+  if (success) await refetch(); // Refetch latest data from DB
+}, [isAuthenticated, nickname, videoId, title, creator, duration, saveMedley, refetch]);
+
+// Pass callbacks to useMedleyEdit
+const { editingSongs, addSong, updateSong, deleteSong } = useMedleyEdit({
+  originalSongs: medleySongs,
+  onSaveSuccess: refetch,
+  onAfterAdd: handleImmediateSave,
+  onAfterUpdate: handleImmediateSave,
+  onAfterDelete: handleImmediateSave,
+  onAfterBatchUpdate: handleImmediateSave
+});
 ```
 
 ## Key Implementation Details

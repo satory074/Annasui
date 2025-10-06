@@ -19,15 +19,15 @@ interface UseMedleyEditReturn {
   batchUpdate: (songsToRemove: number[], songsToAdd: Omit<SongSection, 'id'>[]) => void;
   undo: () => void;
   redo: () => void;
-  // 自動保存機能
-  enableAutoSave: (videoId: string, medleyTitle: string, medleyCreator: string, duration: number, editorNickname?: string) => void;
-  disableAutoSave: () => void;
-  isAutoSaving: boolean;
 }
 
 interface UseMedleyEditProps {
   originalSongs: SongSection[];
   onSaveSuccess?: () => void;
+  onAfterAdd?: () => void;
+  onAfterUpdate?: () => void;
+  onAfterDelete?: () => void;
+  onAfterBatchUpdate?: () => void;
 }
 
 export function useMedleyEdit(
@@ -36,22 +36,13 @@ export function useMedleyEdit(
   // Handle both old and new API formats for backward compatibility
   const originalSongs = Array.isArray(props) ? props : props.originalSongs;
   const onSaveSuccess = Array.isArray(props) ? undefined : props.onSaveSuccess;
+  const onAfterAdd = Array.isArray(props) ? undefined : props.onAfterAdd;
+  const onAfterUpdate = Array.isArray(props) ? undefined : props.onAfterUpdate;
+  const onAfterDelete = Array.isArray(props) ? undefined : props.onAfterDelete;
+  const onAfterBatchUpdate = Array.isArray(props) ? undefined : props.onAfterBatchUpdate;
   const [editingSongs, setEditingSongs] = useState<SongSection[]>(originalSongs);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
-  
-  // 自動保存設定
-  const autoSaveConfigRef = useRef<{
-    enabled: boolean;
-    videoId: string;
-    medleyTitle: string;
-    medleyCreator: string;
-    duration: number;
-    editorNickname?: string;
-  }>({ enabled: false, videoId: '', medleyTitle: '', medleyCreator: '', duration: 0 });
-  
-  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   
   // Undo/Redo履歴管理
@@ -64,104 +55,6 @@ export function useMedleyEdit(
     const songsChanged = JSON.stringify(newSongs) !== JSON.stringify(originalSongs);
     setHasChanges(songsChanged);
   }, [originalSongs]);
-
-  // 自動保存処理
-  const performAutoSave = useCallback(async () => {
-    const config = autoSaveConfigRef.current;
-    if (!config.enabled || isAutoSaving || !config.videoId) {
-      return;
-    }
-
-    // 楽曲情報が不完全な楽曲がある場合は自動保存しない
-    const invalidSongs = editingSongs.filter(song => {
-      const isTitleEmpty = !song.title || song.title.trim() === '' || song.title.startsWith('空の楽曲');
-      const isArtistEmpty = !song.artist || song.artist.trim() === '' || song.artist === 'アーティスト未設定';
-      return isTitleEmpty || isArtistEmpty;
-    });
-
-    if (invalidSongs.length > 0) {
-      logger.debug('🔄 Skipping auto-save: invalid songs present', {
-        invalidCount: invalidSongs.length,
-        totalCount: editingSongs.length
-      });
-      return;
-    }
-
-    try {
-      setIsAutoSaving(true);
-      logger.info('🔄 Auto-saving medley changes...', {
-        videoId: config.videoId,
-        songCount: editingSongs.length
-      });
-
-      // 楽曲データの準備（IDを除く）
-      const songsToSave = editingSongs.map((song) => ({
-        title: song.title,
-        artist: song.artist,
-        startTime: song.startTime,
-        endTime: song.endTime,
-        color: song.color,
-        originalLink: song.originalLink,
-        links: song.links
-      }));
-
-      logger.debug('🔍 Auto-save: prepared songs', {
-        editingSongsCount: editingSongs.length,
-        songsToSaveCount: songsToSave.length,
-        songsToSave: songsToSave
-      });
-
-      // Try to update first, then create if it doesn't exist
-      let result = await updateMedley(config.videoId, {
-        title: config.medleyTitle,
-        creator: config.medleyCreator,
-        duration: config.duration,
-        songs: songsToSave
-      }, config.editorNickname);
-
-      if (!result) {
-        // Create new medley if update failed (doesn't exist)
-        logger.info('📝 Medley does not exist, creating new medley');
-        const medleyData: Omit<MedleyData, 'songs'> & { songs: Omit<SongSection, 'id'>[] } = {
-          videoId: config.videoId,
-          title: config.medleyTitle,
-          creator: config.medleyCreator,
-          duration: config.duration,
-          songs: songsToSave
-        };
-        result = await createMedley(medleyData, config.editorNickname);
-      }
-
-      if (result) {
-        // Don't reset hasChanges - user is still in edit mode
-        logger.info('✅ Auto-save completed successfully');
-      } else {
-        logger.warn('⚠️ Auto-save failed');
-      }
-    } catch (error) {
-      logger.error('❌ Auto-save error:', error);
-    } finally {
-      setIsAutoSaving(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAutoSaving, editingSongs]);
-
-  // デバウンス付き自動保存トリガー
-  const triggerAutoSave = useCallback(() => {
-    if (!autoSaveConfigRef.current.enabled) {
-      return;
-    }
-
-    // 既存のタイマーをクリア
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-
-    // 2秒のデバウンスで自動保存を実行
-    autoSaveTimeoutRef.current = setTimeout(() => {
-      performAutoSave();
-    }, 2000);
-  }, [performAutoSave]);
 
   // 履歴に新しい状態を追加
   const addToHistory = useCallback((newSongs: SongSection[]) => {
@@ -195,14 +88,14 @@ export function useMedleyEdit(
       updatedSongTitle: updatedSong.title,
       updatedSongArtist: updatedSong.artist
     });
-    
+
     setEditingSongs(prev => {
       logger.info('🔍 updateSong: searching in current songs', {
         searchingForId: updatedSong.id,
         currentSongs: prev.map(s => ({ id: s.id, title: s.title })),
         matchFound: prev.some(s => s.id === updatedSong.id)
       });
-      
+
       const newSongs = prev.map(song => {
         const isMatch = song.id === updatedSong.id;
         if (isMatch) {
@@ -215,11 +108,11 @@ export function useMedleyEdit(
         }
         return isMatch ? updatedSong : song;
       });
-      
-      const wasUpdated = newSongs.some((song, index) => 
+
+      const wasUpdated = newSongs.some((song, index) =>
         song.id === updatedSong.id && prev[index].title !== updatedSong.title
       );
-      
+
       if (!wasUpdated) {
         logger.warn('⚠️ updateSong: No song was actually updated - possible ID mismatch', {
           searchedForId: updatedSong.id,
@@ -228,21 +121,23 @@ export function useMedleyEdit(
           possibleDuplicate: 'This may result in duplicate songs being created'
         });
       }
-      
+
       logger.info('🔄 updateSong result', {
         wasUpdated: wasUpdated,
         resultingSongs: newSongs.map(s => ({ id: s.id, title: s.title }))
       });
-      
+
       addToHistory(newSongs);
       detectChanges(newSongs);
-      
-      // 自動保存をトリガー
-      triggerAutoSave();
-      
+
       return newSongs;
     });
-  }, [detectChanges, addToHistory, triggerAutoSave]);
+
+    // 即時保存コールバックを呼び出す
+    if (onAfterUpdate) {
+      onAfterUpdate();
+    }
+  }, [detectChanges, addToHistory, onAfterUpdate]);
 
   // 楽曲を追加
   const addSong = useCallback((newSong: Omit<SongSection, 'id'> | SongSection) => {
@@ -267,12 +162,14 @@ export function useMedleyEdit(
       addToHistory(newSongs);
       detectChanges(newSongs);
 
-      // 自動保存をトリガー
-      triggerAutoSave();
-
       return newSongs;
     });
-  }, [detectChanges, addToHistory, triggerAutoSave]);
+
+    // 即時保存コールバックを呼び出す
+    if (onAfterAdd) {
+      onAfterAdd();
+    }
+  }, [detectChanges, addToHistory, onAfterAdd]);
 
   // 楽曲を削除
   const deleteSong = useCallback((songId: number) => {
@@ -280,13 +177,15 @@ export function useMedleyEdit(
       const newSongs = prev.filter(song => song.id !== songId);
       addToHistory(newSongs);
       detectChanges(newSongs);
-      
-      // 自動保存をトリガー
-      triggerAutoSave();
-      
+
       return newSongs;
     });
-  }, [detectChanges, addToHistory, triggerAutoSave]);
+
+    // 即時保存コールバックを呼び出す
+    if (onAfterDelete) {
+      onAfterDelete();
+    }
+  }, [detectChanges, addToHistory, onAfterDelete]);
 
   // 楽曲の順序を変更
   const reorderSongs = useCallback((fromIndex: number, toIndex: number) => {
@@ -296,17 +195,19 @@ export function useMedleyEdit(
       newSongs.splice(toIndex, 0, movedSong);
       addToHistory(newSongs);
       detectChanges(newSongs);
-      
-      // 自動保存をトリガー
-      triggerAutoSave();
-      
+
       return newSongs;
     });
-  }, [detectChanges, addToHistory, triggerAutoSave]);
+
+    // 即時保存コールバックを呼び出す
+    if (onAfterUpdate) {
+      onAfterUpdate();
+    }
+  }, [detectChanges, addToHistory, onAfterUpdate]);
 
   // 一括更新（マルチセグメント対応）- 複数の削除と追加を一度に処理
   const batchUpdate = useCallback((
-    songsToRemove: number[], 
+    songsToRemove: number[],
     songsToAdd: Omit<SongSection, 'id'>[]
   ) => {
     logger.debug('🔄 batchUpdate called:', {
@@ -315,14 +216,14 @@ export function useMedleyEdit(
       songsToRemove,
       songsToAdd: songsToAdd.map(s => ({ title: s.title, startTime: s.startTime, endTime: s.endTime }))
     });
-    
+
     setEditingSongs(prev => {
       logger.debug('🔄 batchUpdate: current state:', prev.length, 'songs');
-      
+
       // 削除対象以外の楽曲を取得
       const remainingSongs = prev.filter(song => !songsToRemove.includes(song.id));
       logger.debug('🔄 batchUpdate: after removal:', remainingSongs.length, 'songs remain');
-      
+
       // 新しいIDを生成して追加する楽曲を準備
       const currentMaxId = Math.max(...prev.map(s => s.id), 0);
       const newSongs = songsToAdd.map((song, index) => ({
@@ -330,20 +231,22 @@ export function useMedleyEdit(
         id: currentMaxId + index + 1
       }));
       logger.debug('🔄 batchUpdate: new songs created:', newSongs.length, 'with IDs:', newSongs.map(s => s.id));
-      
+
       // 残りの楽曲と新しい楽曲を結合して時間順にソート
       const finalSongs = [...remainingSongs, ...newSongs].sort((a, b) => a.startTime - b.startTime);
       logger.debug('🔄 batchUpdate: final result:', finalSongs.length, 'songs total');
-      
+
       addToHistory(finalSongs);
       detectChanges(finalSongs);
-      
-      // 自動保存をトリガー
-      triggerAutoSave();
-      
+
       return finalSongs;
     });
-  }, [detectChanges, addToHistory, triggerAutoSave]);
+
+    // 即時保存コールバックを呼び出す
+    if (onAfterBatchUpdate) {
+      onAfterBatchUpdate();
+    }
+  }, [detectChanges, addToHistory, onAfterBatchUpdate]);
 
 
   // メドレーを保存
@@ -485,37 +388,6 @@ export function useMedleyEdit(
     }
   }, [canRedo, historyIndex, history, detectChanges]);
 
-  // 自動保存を有効化
-  const enableAutoSave = useCallback((videoId: string, medleyTitle: string, medleyCreator: string, duration: number, editorNickname?: string) => {
-    autoSaveConfigRef.current = {
-      enabled: true,
-      videoId,
-      medleyTitle,
-      medleyCreator,
-      duration,
-      editorNickname
-    };
-    logger.info('🔄 Auto-save enabled for medley:', { videoId, medleyTitle, editorNickname });
-  }, []);
-
-  // 自動保存を無効化
-  const disableAutoSave = useCallback(() => {
-    autoSaveConfigRef.current.enabled = false;
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-      autoSaveTimeoutRef.current = null;
-    }
-    logger.info('🔄 Auto-save disabled');
-  }, []);
-
-  // クリーンアップ
-  useEffect(() => {
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, []);
 
   // 元のsongs配列が変更された時に編集中の配列も更新
   useEffect(() => {
@@ -554,7 +426,6 @@ export function useMedleyEdit(
     editingSongs,
     hasChanges,
     isSaving,
-    isAutoSaving,
     canUndo,
     canRedo,
     updateSong,
@@ -566,7 +437,5 @@ export function useMedleyEdit(
     batchUpdate,
     undo,
     redo,
-    enableAutoSave,
-    disableAutoSave,
   };
 }

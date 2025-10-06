@@ -45,9 +45,8 @@ export default function MedleyPlayer({
     
     // プレイヤーコンテナの参照（ActiveSongPopupの位置調整用）
     const playerContainerRef = useRef<HTMLDivElement>(null);
-    
+
     // 編集モード関連の状態
-    const [autoSaveEnabled, setAutoSaveEnabled] = useState<boolean>(false);
     const [editModalOpen, setEditModalOpen] = useState<boolean>(false);
     const [editingSong, setEditingSong] = useState<SongSection | null>(null);
     const [isNewSong, setIsNewSong] = useState<boolean>(false);
@@ -85,13 +84,15 @@ export default function MedleyPlayer({
 
     // メドレーデータの取得
     const { medleySongs, medleyTitle, medleyCreator, medleyDuration, medleyData, loading, error, refetch } = useMedleyData(videoId);
-    
+
+    // 即時保存コールバック（useMedleyEditより前に定義するため、saveMedleyとrefetchは後で設定）
+    const handleImmediateSaveRef = useRef<() => Promise<void>>(async () => {});
+
     // 編集機能
     const {
         editingSongs,
         hasChanges,
         isSaving,
-        isAutoSaving,
         updateSong,
         addSong,
         deleteSong,
@@ -99,8 +100,43 @@ export default function MedleyPlayer({
         batchUpdate,
         undo,
         redo,
-        enableAutoSave,
-    } = useMedleyEdit({ originalSongs: medleySongs, onSaveSuccess: refetch });
+    } = useMedleyEdit({
+        originalSongs: medleySongs,
+        onSaveSuccess: refetch,
+        onAfterAdd: () => handleImmediateSaveRef.current?.(),
+        onAfterUpdate: () => handleImmediateSaveRef.current?.(),
+        onAfterDelete: () => handleImmediateSaveRef.current?.(),
+        onAfterBatchUpdate: () => handleImmediateSaveRef.current?.()
+    });
+
+    // 即時保存の実装（useMedleyEditの後で設定）
+    handleImmediateSaveRef.current = async () => {
+        if (!isAuthenticated || !nickname) {
+            logger.debug('⏸️ Skipping immediate save: not authenticated');
+            return;
+        }
+
+        logger.info('💾 Immediate save triggered', {
+            videoId,
+            songCount: editingSongs.length,
+            editor: nickname
+        });
+
+        const success = await saveMedley(
+            videoId,
+            medleyTitle,
+            medleyCreator,
+            medleyDuration,
+            nickname || undefined
+        );
+
+        if (success) {
+            logger.info('✅ Immediate save successful, refetching data');
+            await refetch();
+        } else {
+            logger.error('❌ Immediate save failed');
+        }
+    };
     
     // ニコニコプレイヤーの統合
     const {
@@ -173,23 +209,10 @@ export default function MedleyPlayer({
                     setFetchingMetadata(false);
                 }
             };
-            
+
             fetchMetadata();
         }
     }, [medleySongs.length, loading, error, platform, videoId]);
-
-    // 既存メドレー読み込み時に自動保存を有効化（認証済みユーザーのみ）
-    useEffect(() => {
-        if (isAuthenticated && medleySongs.length > 0 && !autoSaveEnabled && medleyTitle && medleyCreator) {
-            setAutoSaveEnabled(true);
-            enableAutoSave(videoId, medleyTitle, medleyCreator, medleyDuration, nickname || undefined);
-            logger.info('✅ Auto-save enabled for existing medley', {
-                videoId,
-                songCount: medleySongs.length,
-                editor: nickname
-            });
-        }
-    }, [isAuthenticated, nickname, medleySongs.length, medleyTitle, medleyCreator, medleyDuration, videoId, autoSaveEnabled, enableAutoSave]);
 
 
     // durationを決定（静的データを優先、プレイヤーデータはフォールバック）
@@ -978,15 +1001,6 @@ export default function MedleyPlayer({
                                         <>
                                             <button
                                                 onClick={() => {
-                                                    // Enable auto-save for existing medley
-                                                    enableAutoSave(
-                                                        videoId,
-                                                        medleyTitle || videoMetadata?.title || '',
-                                                        medleyCreator || videoMetadata?.creator || '',
-                                                        effectiveDuration,
-                                                        nickname || undefined
-                                                    );
-                                                    setAutoSaveEnabled(true);
                                                     // Open song search modal to add first song
                                                     handleAddNewSong();
                                                 }}
@@ -1077,38 +1091,17 @@ export default function MedleyPlayer({
                                                                 const success = await saveMedley(videoId, title, creator, effectiveDuration, nickname || undefined);
 
                                                                 if (success) {
-                                                                    // 保存成功時に自動保存を有効化
-                                                                    enableAutoSave(videoId, title, creator, effectiveDuration, nickname || undefined);
-                                                                    setAutoSaveEnabled(true);
-                                                                    
                                                                     alert('メドレーを保存しました！ページを再読み込みして通常の表示に切り替えます。');
                                                                     window.location.reload();
                                                                 } else {
                                                                     alert('メドレーの保存に失敗しました。しばらく時間をおいて再度お試しください。');
                                                                 }
                                                             }}
-                                                            disabled={isSaving || isAutoSaving}
-                                                            className={`px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-colors duration-200 font-medium ${(isSaving || isAutoSaving) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                            disabled={isSaving}
+                                                            className={`px-6 py-3 bg-gradient-to-r from-orange-400 to-orange-500 text-white rounded-lg hover:from-orange-500 hover:to-orange-600 transition-colors duration-200 font-medium ${isSaving ? 'opacity-50 cursor-not-allowed' : ''}`}
                                                         >
-                                                            {(isSaving || isAutoSaving) ? '保存中...' : 'メドレーを保存'}
+                                                            {isSaving ? '保存中...' : 'メドレーを保存'}
                                                         </button>
-                                                        
-                                                        {/* 自動保存ステータス表示 */}
-                                                        {autoSaveEnabled && (
-                                                            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                                                                <div className="flex items-center gap-2">
-                                                                    <svg className="w-4 h-4 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
-                                                                        <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
-                                                                    </svg>
-                                                                    <span className="text-sm font-medium text-blue-700">
-                                                                        {isAutoSaving ? '🖥️ 自動保存中...' : '✅ 自動保存が有効です'}
-                                                                    </span>
-                                                                </div>
-                                                                <p className="text-xs text-blue-600 mt-1">
-                                                                    楽曲情報を変更すると自動的にデータベースに保存されます
-                                                                </p>
-                                                            </div>
-                                                        )}
                                                         
                                                         <p className="text-xs text-gray-500 mt-2">
                                                             保存後はページが再読み込みされ、通常のタイムライン表示に変わります
@@ -1169,8 +1162,6 @@ export default function MedleyPlayer({
                 onSelectSong={handleSelectSongFromDatabase}
                 onManualAdd={handleManualAddSong}
                 onEditSong={handleEditSongFromDatabase}
-                autoSave={autoSaveEnabled}
-                onAutoSave={saveMedley}
                 videoId={videoId}
                 medleyTitle={medleyTitle}
                 medleyCreator={medleyCreator}
@@ -1273,11 +1264,6 @@ export default function MedleyPlayer({
                 onLoginSuccess={() => {
                     logger.info('✅ Login successful, enabling edit mode');
                     setLoginModalOpen(false);
-                    // ログイン成功後、自動保存を有効化
-                    if (medleySongs.length > 0 && medleyTitle && medleyCreator) {
-                        enableAutoSave(videoId, medleyTitle, medleyCreator, medleyDuration, nickname || undefined);
-                        setAutoSaveEnabled(true);
-                    }
                 }}
             />
         </div>

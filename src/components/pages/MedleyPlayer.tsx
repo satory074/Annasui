@@ -120,60 +120,62 @@ export default function MedleyPlayer({
         onAfterBatchUpdate: (songs) => handleImmediateSaveRef.current?.(songs)
     });
 
-    // 即時保存の実装（useMedleyEditの後で設定）
-    handleImmediateSaveRef.current = async (songsToSave: SongSection[]) => {
-        if (!isAuthenticated || !nickname) {
-            logger.debug('⏸️ Skipping immediate save: not authenticated');
-            return;
-        }
-
-        // For new medleys, wait for metadata if it's still loading
-        if (medleySongsRef.current.length === 0 && !videoMetadataRef.current && platform === 'niconico') {
-            logger.info('⏳ Waiting for metadata before save...');
-            // Wait up to 3 seconds for metadata
-            let attempts = 0;
-            while (!videoMetadataRef.current && attempts < 30) {
-                await new Promise(resolve => setTimeout(resolve, 100));
-                attempts++;
+    // 即時保存の実装（useEffectで設定して依存関係を適切に管理）
+    useEffect(() => {
+        handleImmediateSaveRef.current = async (songsToSave: SongSection[]) => {
+            if (!isAuthenticated || !nickname) {
+                logger.debug('⏸️ Skipping immediate save: not authenticated');
+                return;
             }
-            if (!videoMetadataRef.current) {
-                logger.warn('⚠️ Metadata fetch timed out, proceeding with fallback values');
+
+            // For new medleys, wait for metadata if it's still loading
+            if (medleySongsRef.current.length === 0 && !videoMetadataRef.current && platform === 'niconico') {
+                logger.info('⏳ Waiting for metadata before save...');
+                // Wait up to 3 seconds for metadata
+                let attempts = 0;
+                while (!videoMetadataRef.current && attempts < 30) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+                if (!videoMetadataRef.current) {
+                    logger.warn('⚠️ Metadata fetch timed out, proceeding with fallback values');
+                } else {
+                    logger.info('✅ Metadata loaded successfully after waiting');
+                }
+            }
+
+            // メタデータが取得できている場合はそれを使用、なければデフォルト値
+            const title = medleyTitle || videoMetadataRef.current?.title || `${videoId} メドレー`;
+            const creator = medleyCreator || videoMetadataRef.current?.creator || '匿名ユーザー';
+            const saveDuration = medleyDuration || duration || 0;
+
+            logger.info('💾 Immediate save triggered', {
+                videoId,
+                title,
+                creator,
+                duration: saveDuration,
+                songCount: songsToSave.length,
+                editor: nickname,
+                hasVideoMetadata: !!videoMetadataRef.current
+            });
+
+            const success = await saveMedley(
+                videoId,
+                title,
+                creator,
+                saveDuration,
+                nickname || undefined,
+                songsToSave // 最新の楽曲リストを渡す
+            );
+
+            if (success) {
+                logger.info('✅ Immediate save successful, refetching data');
+                await refetch();
             } else {
-                logger.info('✅ Metadata loaded successfully after waiting');
+                logger.error('❌ Immediate save failed');
             }
-        }
-
-        // メタデータが取得できている場合はそれを使用、なければデフォルト値
-        const title = medleyTitle || videoMetadataRef.current?.title || `${videoId} メドレー`;
-        const creator = medleyCreator || videoMetadataRef.current?.creator || '匿名ユーザー';
-        const saveDuration = medleyDuration || duration || 0;
-
-        logger.info('💾 Immediate save triggered', {
-            videoId,
-            title,
-            creator,
-            duration: saveDuration,
-            songCount: songsToSave.length,
-            editor: nickname,
-            hasVideoMetadata: !!videoMetadataRef.current
-        });
-
-        const success = await saveMedley(
-            videoId,
-            title,
-            creator,
-            saveDuration,
-            nickname || undefined,
-            songsToSave // 最新の楽曲リストを渡す
-        );
-
-        if (success) {
-            logger.info('✅ Immediate save successful, refetching data');
-            await refetch();
-        } else {
-            logger.error('❌ Immediate save failed');
-        }
-    };
+        };
+    }, [isAuthenticated, nickname, platform, medleyTitle, medleyCreator, medleyDuration, duration, videoId, saveMedley, refetch]);
     
     // ニコニコプレイヤーの統合
     const {

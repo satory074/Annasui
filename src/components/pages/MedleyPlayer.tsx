@@ -86,7 +86,12 @@ export default function MedleyPlayer({
     // メドレーデータの取得
     const { medleySongs, medleyTitle, medleyCreator, medleyDuration, medleyData, loading, error, refetch } = useMedleyData(videoId);
 
-    // videoMetadataRefを常に最新に保つ
+    // Refを常に最新に保つ
+    const medleySongsRef = useRef<SongSection[]>([]);
+    useEffect(() => {
+        medleySongsRef.current = medleySongs;
+    }, [medleySongs]);
+
     useEffect(() => {
         videoMetadataRef.current = videoMetadata;
     }, [videoMetadata]);
@@ -123,7 +128,7 @@ export default function MedleyPlayer({
         }
 
         // For new medleys, wait for metadata if it's still loading
-        if (medleySongs.length === 0 && !videoMetadataRef.current && platform === 'niconico') {
+        if (medleySongsRef.current.length === 0 && !videoMetadataRef.current && platform === 'niconico') {
             logger.info('⏳ Waiting for metadata before save...');
             // Wait up to 3 seconds for metadata
             let attempts = 0;

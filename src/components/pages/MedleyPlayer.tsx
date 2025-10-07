@@ -175,7 +175,7 @@ export default function MedleyPlayer({
                 logger.error('❌ Immediate save failed');
             }
         };
-    }, [isAuthenticated, nickname, platform, medleyTitle, medleyCreator, medleyDuration, duration, videoId, saveMedley, refetch]);
+    }, [isAuthenticated, nickname, platform, medleyTitle, medleyCreator, medleyDuration, videoId, saveMedley, refetch]);
     
     // ニコニコプレイヤーの統合
     const {

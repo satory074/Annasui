@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { SongSection, MedleyData } from '@/types';
 import { updateMedley, createMedley } from '@/lib/api/medleys';
 import { logger } from '@/lib/utils/logger';
@@ -35,7 +35,6 @@ export function useMedleyEdit(
 ): UseMedleyEditReturn {
   // Handle both old and new API formats for backward compatibility
   const originalSongs = Array.isArray(props) ? props : props.originalSongs;
-  const onSaveSuccess = Array.isArray(props) ? undefined : props.onSaveSuccess;
   const onAfterAdd = Array.isArray(props) ? undefined : props.onAfterAdd;
   const onAfterUpdate = Array.isArray(props) ? undefined : props.onAfterUpdate;
   const onAfterDelete = Array.isArray(props) ? undefined : props.onAfterDelete;

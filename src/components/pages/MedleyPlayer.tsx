@@ -67,6 +67,7 @@ export default function MedleyPlayer({
 
     // メタデータ関連の状態
     const [videoMetadata, setVideoMetadata] = useState<{title: string, creator: string} | null>(null);
+    const videoMetadataRef = useRef<{title: string, creator: string} | null>(null);
     const [, setFetchingMetadata] = useState<boolean>(false);
 
     // 楽曲選択とツールチップ関連の状態
@@ -84,6 +85,11 @@ export default function MedleyPlayer({
 
     // メドレーデータの取得
     const { medleySongs, medleyTitle, medleyCreator, medleyDuration, medleyData, loading, error, refetch } = useMedleyData(videoId);
+
+    // videoMetadataRefを常に最新に保つ
+    useEffect(() => {
+        videoMetadataRef.current = videoMetadata;
+    }, [videoMetadata]);
 
     // 即時保存コールバック（useMedleyEditより前に定義するため、saveMedleyとrefetchは後で設定）
     const handleImmediateSaveRef = useRef<(songs: SongSection[]) => Promise<void>>(async () => {});
@@ -116,17 +122,42 @@ export default function MedleyPlayer({
             return;
         }
 
+        // For new medleys, wait for metadata if it's still loading
+        if (medleySongs.length === 0 && !videoMetadataRef.current && platform === 'niconico') {
+            logger.info('⏳ Waiting for metadata before save...');
+            // Wait up to 3 seconds for metadata
+            let attempts = 0;
+            while (!videoMetadataRef.current && attempts < 30) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                attempts++;
+            }
+            if (!videoMetadataRef.current) {
+                logger.warn('⚠️ Metadata fetch timed out, proceeding with fallback values');
+            } else {
+                logger.info('✅ Metadata loaded successfully after waiting');
+            }
+        }
+
+        // メタデータが取得できている場合はそれを使用、なければデフォルト値
+        const title = medleyTitle || videoMetadataRef.current?.title || `${videoId} メドレー`;
+        const creator = medleyCreator || videoMetadataRef.current?.creator || '匿名ユーザー';
+        const saveDuration = medleyDuration || duration || 0;
+
         logger.info('💾 Immediate save triggered', {
             videoId,
+            title,
+            creator,
+            duration: saveDuration,
             songCount: songsToSave.length,
-            editor: nickname
+            editor: nickname,
+            hasVideoMetadata: !!videoMetadataRef.current
         });
 
         const success = await saveMedley(
             videoId,
-            medleyTitle,
-            medleyCreator,
-            medleyDuration,
+            title,
+            creator,
+            saveDuration,
             nickname || undefined,
             songsToSave // 最新の楽曲リストを渡す
         );

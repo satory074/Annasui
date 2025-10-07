@@ -17,6 +17,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npx tsc --noEmit` - TypeScript type checking
 - `npm run build && npx tsc --noEmit && npm run lint` - Pre-deployment validation
 
+**Dependency Management**:
+- Use exact versions (no `^` prefix) for critical dependencies like `@supabase/supabase-js` to prevent unexpected upgrades
+- After `npm install`, verify `package-lock.json` shows the exact intended version
+- Use `npm ci` instead of `npm install` in CI/CD to ensure lockfile is respected
+
 ### Deployment
 - `firebase deploy --only hosting` - Deploy to production
 
@@ -32,9 +37,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Medlean** - Multi-platform medley annotation platform built with Next.js. Supports Niconico (full integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, immediate save system.
 
-**Tech Stack**: Next.js 15.2.1 + React 19.0.0 + TypeScript, TailwindCSS 4, Supabase (auth/database), Firebase Hosting
+**Tech Stack**: Next.js 15.2.1 + React 19.0.0 + TypeScript, TailwindCSS 4, Supabase 2.45.0 (database), Firebase Hosting
 
 **Status**: Alpha v0.1.0-alpha.1 with password-protected editing
+
+**Supabase Client Version**: `@supabase/supabase-js@2.45.0` - Do NOT upgrade without testing thoroughly, as newer versions may have breaking type changes
 
 ## Core Architecture
 
@@ -138,6 +145,12 @@ Pattern: Server-side fetch → Process response → Return to client
 - **CORS errors**: Must use server-side proxy, not direct API calls
 - **Metadata fails**: Verify User-Agent header and regex parsing
 
+### Database Issues
+- **PGRST204 error ("column not found in schema cache")**: Check that INSERT/UPDATE operations don't reference non-existent columns (e.g., `links` column doesn't exist in `songs` table)
+- **400 Bad Request from Supabase**: Inspect network request URL for `?columns=...` parameter - ensure all column names exist in the actual database schema
+- **Type errors after Supabase client upgrade**: Update Database type definitions in `src/lib/supabase.ts` to match actual schema
+- **Schema mismatch**: Run `NOTIFY pgrst, 'reload schema';` in Supabase SQL editor to refresh PostgREST schema cache (though this won't fix code referencing non-existent columns)
+
 ### Timeline Issues
 - **Keyboard shortcuts not working**: Check edit mode active and no input focus
 - **Immediate save not triggering**: Verify authenticated, valid song data, and callbacks provided to useMedleyEdit
@@ -215,6 +228,13 @@ Run migrations in Supabase Dashboard (database/migrations/) **in order**:
 
 Core tables: `medleys`, `songs`, `medley_edits`
 
+**IMPORTANT**: The `songs` table does NOT have a `links` column. If you see PGRST204 errors mentioning "column not found in schema cache", verify that INSERT/UPDATE operations don't reference non-existent columns.
+
+**Database Schema Notes**:
+- `medleys`: video_id, title, creator, duration, user_id, last_editor, last_edited_at
+- `songs`: medley_id, title, artist, start_time, end_time, color, genre, original_link, order_index, last_editor, last_edited_at (NO `links` column)
+- `medley_edits`: medley_id, editor_nickname, edit_timestamp, edit_type
+
 **Authentication Evolution**:
 - Originally used Google OAuth (migrations 001-009)
 - Migration 010 removed OAuth system for open access
@@ -258,6 +278,36 @@ const { editingSongs, addSong, updateSong, deleteSong } = useMedleyEdit({
   onAfterBatchUpdate: handleImmediateSave
 });
 ```
+
+## Debugging Database Issues
+
+When encountering database errors, follow this systematic approach:
+
+1. **Check Network Tab in Browser DevTools**:
+   - Filter by "Fetch/XHR" to see Supabase API calls
+   - Look for failed requests (400, 404, 500 status codes)
+   - Inspect the request URL for `?columns=...` parameter
+   - Check response headers for `proxy-status` (e.g., `PostgREST; error=PGRST204`)
+
+2. **Verify Database Schema**:
+   - Open Supabase Dashboard → Database → Tables
+   - Compare INSERT/UPDATE operations in code with actual table columns
+   - Common issue: Code references columns that were removed or never existed
+
+3. **Check Supabase Client Version**:
+   - Inspect network request headers for `x-client-info: supabase-js-web/X.Y.Z`
+   - Verify it matches `package.json` version
+   - If mismatch, run `rm -rf node_modules package-lock.json && npm install`
+
+4. **Validate TypeScript Types**:
+   - Check `src/lib/supabase.ts` Database type definitions
+   - Ensure Row/Insert/Update types match actual schema
+   - Run `npx tsc --noEmit` to catch type errors before runtime
+
+5. **Test in Production**:
+   - Always verify fixes in production (https://anasui-e6f49.web.app)
+   - Production uses different Supabase instance and may have schema differences
+   - Check Chrome DevTools console for error messages
 
 ## Key Implementation Details
 

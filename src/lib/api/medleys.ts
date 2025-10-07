@@ -45,15 +45,6 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; erro
 
 // Database row to app type conversion
 function convertDbRowToSongSection(song: SongRow): SongSection {
-  // Parse links JSON field if it exists
-  let links;
-  try {
-    links = song.links ? JSON.parse(song.links as string) : undefined;
-  } catch (error) {
-    logger.warn('Failed to parse song links JSON:', error);
-    links = undefined;
-  }
-
   return {
     id: song.order_index, // Use order_index as the legacy id field
     title: song.title,
@@ -62,7 +53,7 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
     endTime: song.end_time,
     color: song.color,
     originalLink: song.original_link || undefined,
-    links: links
+    links: undefined // links field removed from database
   }
 }
 
@@ -173,12 +164,12 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
           return null
         }
 
-        const medley = medleys[0];
-        
+        const medley = medleys[0] as MedleyRow;
+
         const { data: songs, error: songsError } = await supabase
           .from('songs')
           .select('*')
-          .eq('medley_id', medley.id as string)
+          .eq('medley_id', medley.id)
           .order('order_index', { ascending: true });
 
         if (songsError) throw songsError;
@@ -263,12 +254,12 @@ export async function getAllMedleys(): Promise<MedleyData[]> {
     }
 
     // Get songs and tempo changes for each medley
-    const medleyDataPromises = medleys.map(async (medley) => {
+    const medleyDataPromises = (medleys as MedleyRow[]).map(async (medley) => {
       const songsResult = await
         supabase!
           .from('songs')
           .select('*')
-          .eq('medley_id', medley.id as string)
+          .eq('medley_id', medley.id)
           .order('order_index', { ascending: true })
 
       if (songsResult.error) {
@@ -276,7 +267,7 @@ export async function getAllMedleys(): Promise<MedleyData[]> {
       }
 
       return convertDbRowToMedleyData(
-        medley as MedleyRow, 
+        medley, 
         (songsResult.data || []) as SongRow[]
       )
     })
@@ -324,7 +315,6 @@ export async function createMedley(
       end_time: song.endTime,
       color: song.color,
       original_link: song.originalLink || null,
-      links: song.links ? JSON.stringify(song.links) : null,
       order_index: index + 1,
       last_editor: editorNickname || null,
       last_edited_at: new Date().toISOString()
@@ -544,7 +534,6 @@ export async function saveMedleySongs(
         end_time: song.endTime,
         color: song.color,
         original_link: song.originalLink || null,
-        links: song.links ? JSON.stringify(song.links) : null,
         order_index: index + 1,  // Re-added: database requires this field for ordering
         last_editor: editorNickname || null,
         last_edited_at: new Date().toISOString()

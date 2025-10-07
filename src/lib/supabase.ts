@@ -15,28 +15,6 @@ logger.debug('🔍 Supabase Environment Debug:', {
   isProduction: process.env.NODE_ENV === 'production'
 })
 
-// Only create client if properly configured
-let supabase: ReturnType<typeof createClient> | null = null
-
-if (supabaseUrl !== 'https://placeholder.supabase.co' && 
-    supabaseAnonKey !== 'placeholder-anon-key' &&
-    supabaseUrl !== 'your_supabase_url_here' &&
-    supabaseAnonKey !== 'your_supabase_anon_key_here' &&
-    supabaseUrl.length > 0 && supabaseAnonKey.length > 0) {
-  try {
-    logger.info('✅ Creating Supabase client...')
-    supabase = createClient(supabaseUrl, supabaseAnonKey)
-  } catch (error) {
-    logger.error('❌ Failed to create Supabase client:', error)
-    supabase = null
-  }
-} else {
-  logger.warn('❌ Supabase environment variables not properly configured')
-}
-
-// Export a safe client that checks for null
-export { supabase }
-
 // Database types will be generated later
 export type Database = {
   public: {
@@ -75,6 +53,8 @@ export type Database = {
           creator: string | null
           duration: number
           user_id: string | null
+          last_editor: string | null
+          last_edited_at: string | null
           created_at: string
           updated_at: string
         }
@@ -85,6 +65,8 @@ export type Database = {
           creator?: string | null
           duration: number
           user_id?: string | null
+          last_editor?: string | null
+          last_edited_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -95,6 +77,8 @@ export type Database = {
           creator?: string | null
           duration?: number
           user_id?: string | null
+          last_editor?: string | null
+          last_edited_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -110,7 +94,6 @@ export type Database = {
           color: string
           genre: string | null
           original_link: string | null
-          links: string | null
           order_index: number
           last_editor: string | null
           last_edited_at: string | null
@@ -127,7 +110,6 @@ export type Database = {
           color: string
           genre?: string | null
           original_link?: string | null
-          links?: string | null
           order_index: number
           last_editor?: string | null
           last_edited_at?: string
@@ -144,7 +126,6 @@ export type Database = {
           color?: string
           genre?: string | null
           original_link?: string | null
-          links?: string | null
           order_index?: number
           last_editor?: string | null
           last_edited_at?: string
@@ -164,3 +145,25 @@ export type Database = {
     }
   }
 }
+
+// Only create client if properly configured
+let supabase: ReturnType<typeof createClient> | null = null
+
+if (supabaseUrl !== 'https://placeholder.supabase.co' &&
+    supabaseAnonKey !== 'placeholder-anon-key' &&
+    supabaseUrl !== 'your_supabase_url_here' &&
+    supabaseAnonKey !== 'your_supabase_anon_key_here' &&
+    supabaseUrl.length > 0 && supabaseAnonKey.length > 0) {
+  try {
+    logger.info('✅ Creating Supabase client...')
+    supabase = createClient(supabaseUrl, supabaseAnonKey)
+  } catch (error) {
+    logger.error('❌ Failed to create Supabase client:', error)
+    supabase = null
+  }
+} else {
+  logger.warn('❌ Supabase environment variables not properly configured')
+}
+
+// Export a safe client that checks for null
+export { supabase }

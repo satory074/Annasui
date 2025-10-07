@@ -139,7 +139,7 @@ export async function GET(
     
     if (result.success && result.imageBuffer) {
       // 画像データをストリーミングで返す
-      const response = new NextResponse(result.imageBuffer, {
+      const response = new NextResponse(new Uint8Array(result.imageBuffer), {
         status: 200,
         headers: {
           'Content-Type': result.contentType || 'image/jpeg',

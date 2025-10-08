@@ -10,6 +10,7 @@ interface UseMedleyDataApiReturn {
   medleyDuration: number
   medleyData: MedleyData | null
   loading: boolean
+  isRefetching: boolean
   error: string | null
   refetch: () => void
 }
@@ -21,7 +22,9 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
   const [medleyDuration, setMedleyDuration] = useState<number>(0)
   const [medleyData, setMedleyData] = useState<MedleyData | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
+  const [isRefetching, setIsRefetching] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true)
 
   const fetchMedleyData = useCallback(async () => {
     let timeoutId: NodeJS.Timeout | undefined
@@ -33,11 +36,19 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
         setMedleyDuration(0)
         setMedleyData(null)
         setLoading(false)
+        setIsRefetching(false)
         setError(null)
         return
       }
 
-      setLoading(true)
+      // 初回ロード時のみloadingをtrue、refetch時はisRefetchingをtrue
+      if (isInitialLoad) {
+        setLoading(true)
+        logger.info('📥 Initial medley data load for:', videoId)
+      } else {
+        setIsRefetching(true)
+        logger.info('🔄 Refetching medley data for:', videoId)
+      }
       setError(null)
 
       // プロダクション環境での無限ローディング防止のためタイムアウトを設定
@@ -102,10 +113,16 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
         if (timeoutId) {
           clearTimeout(timeoutId)
         }
-        
+
+        // 初回ロード完了後はisInitialLoadをfalseにする
+        if (isInitialLoad) {
+          setIsInitialLoad(false)
+        }
+
         setLoading(false)
+        setIsRefetching(false)
       }
-    }, [videoId])
+    }, [videoId, isInitialLoad])
 
     useEffect(() => {
       fetchMedleyData()
@@ -118,6 +135,7 @@ export function useMedleyDataApi(videoId: string): UseMedleyDataApiReturn {
     medleyDuration,
     medleyData,
     loading,
+    isRefetching,
     error,
     refetch: fetchMedleyData,
   }

@@ -58,7 +58,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **useMedleyEdit**: Timeline editing with immediate save system and editor tracking
 - **usePlayerPosition + useMousePosition**: Real-time collision detection for ActiveSongPopup
 - **useCurrentTrack**: Determines which song is playing based on current time
-- **useMedleyData + useMedleyDataApi**: Data fetching and state management for medley information
+- **useMedleyData + useMedleyDataApi**: Data fetching with optimistic UI pattern
+  - `loading`: Initial page load only (triggers full loading screen)
+  - `isRefetching`: Background data sync (UI remains visible)
+  - `isInitialLoad`: Internal flag to distinguish first load from refetch
 - Platform-specific players in `app/[platform]/[videoId]/` routes
 
 ### API Proxy Pattern
@@ -106,6 +109,10 @@ Pattern: Server-side fetch → Process response → Return to client
 - Requires authentication and nickname for operation
 - After save completes, data is refetched from database to ensure consistency
 - No debouncing - changes are saved instantly upon operation completion
+- **Optimistic UI**: Uses `isRefetching` flag to prevent loading screen during refetch
+  - `loading`: Only true on initial page load
+  - `isRefetching`: True during background data sync (UI stays visible)
+  - Small blue banner shows "データを同期中..." during refetch
 
 ### useMedleyEdit State Management
 - **Three state layers**: `originalSongs` (from parent/server), `editingSongs` (local edits), `hasChanges` (dirty flag)
@@ -157,6 +164,7 @@ Pattern: Server-side fetch → Process response → Return to client
 - **Undo/Redo broken**: Check keyboard listeners in edit mode only
 - **Songs disappearing after operation**: Verify immediate save callback and refetch are working correctly
 - **EditingSongs reset unexpectedly**: Verify useEffect guard condition for `originalSongs.length === 0`
+- **Loading screen appears during song edit**: Ensure `isRefetching` flag is used (not `loading`) for background sync
 
 ### Production Issues
 - **Component missing**: Check displayName and module-level logging

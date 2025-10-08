@@ -37,9 +37,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Medlean** - Multi-platform medley annotation platform built with Next.js. Supports Niconico (full integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, immediate save system.
 
-**Tech Stack**: Next.js 15.2.1 + React 19.0.0 + TypeScript, TailwindCSS 4, Supabase 2.45.0 (database), Firebase Hosting
+**Tech Stack**: Next.js 15.5.4 + React 19.0.0 + TypeScript, TailwindCSS 4, Supabase 2.45.0 (database), Firebase Hosting
 
 **Status**: Alpha v0.1.0-alpha.1 with password-protected editing
+
+**Security Status**:
+- Next.js 15.5.4: CVE-2025-29927 (CVSS 9.1) fixed - Critical middleware auth bypass vulnerability
+- Supabase 2.45.0: Intentionally maintained (newer versions have breaking type changes)
+- Run `npm audit` regularly; 2 low-severity vulnerabilities (Supabase auth-js) are acceptable
 
 **Supabase Client Version**: `@supabase/supabase-js@2.45.0` - Do NOT upgrade without testing thoroughly, as newer versions may have breaking type changes
 

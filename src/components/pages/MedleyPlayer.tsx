@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useMedleyData } from "@/hooks/useMedleyData";
 import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import { useMedleyEdit } from "@/hooks/useMedleyEdit";
@@ -113,6 +113,7 @@ export default function MedleyPlayer({
         redo,
     } = useMedleyEdit({
         originalSongs: medleySongs,
+        isRefetching: isRefetching,
         onSaveSuccess: refetch,
         onAfterAdd: (songs) => handleImmediateSaveRef.current?.(songs),
         onAfterUpdate: (songs) => handleImmediateSaveRef.current?.(songs),
@@ -392,7 +393,15 @@ export default function MedleyPlayer({
     }, [isTooltipVisible, hideTooltipTimeout]);
     
     // 現在のトラックの追跡（編集中か元のデータかを切り替え）
-    const displaySongs = hasChanges ? editingSongs : medleySongs;
+    // hasChanges, isSaving, isRefetchingをチェックして、保存処理中もeditingSongsを表示し続ける（UIフリッカー防止＆即時反映）
+    const displaySongs = useMemo(() => {
+        // 編集中、保存中、refetch中はeditingSongsを使用（即時反映）
+        if (hasChanges || isSaving || isRefetching) {
+            return editingSongs;
+        }
+        // すべて完了したらmedleySongsに切り替え（DB同期済み）
+        return medleySongs;
+    }, [hasChanges, isSaving, isRefetching, editingSongs, medleySongs]);
     
     // Debug logging for displaySongs changes
     useEffect(() => {

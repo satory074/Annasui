@@ -303,7 +303,10 @@ export default function SongEditModal({
       }]);
     }
     setErrors({});
-  }, [song, isNew, isOpen, isSaving, currentTime, maxDuration, allSongs]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [song, isNew, isOpen, isSaving, maxDuration, allSongs]);
+  // currentTimeは新規作成時のline 299で直接参照されるため、依存配列には含めない
+  // （含めると再生中にuseEffectが繰り返し実行され、編集内容がリセットされる）
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -325,7 +328,7 @@ export default function SongEditModal({
     if (validateForm()) {
       setIsSaving(true);
       // セグメントから複数のSongSectionを作成（サニタイゼーション適用）
-      const songsToSave: SongSection[] = segments.map(segment => {
+      const songsToSave: SongSection[] = segments.map((segment, index) => {
         const songData = {
           title: formData.title,
           artist: formData.artist,
@@ -334,13 +337,16 @@ export default function SongEditModal({
           originalLink: formData.originalLink,
           color: segment.color || formData.color
         };
-        
+
         // サニタイゼーションを適用
         const sanitized = sanitizeSongSection(songData);
         logger.debug('Sanitized song data:', sanitized);
-        
+
+        // 既存楽曲の編集の場合は元のIDを保持、新規作成の場合は新しいIDを生成
+        const songId = !isNew && song?.id ? song.id : (Date.now() + index);
+
         return {
-          id: segment.id === formData.id ? formData.id : (Date.now() + Math.random()), // 新しいセグメントには新しいID
+          id: songId,
           ...sanitized,
           color: sanitized.color || "bg-blue-400", // デフォルトカラーを設定
           links: formData.links

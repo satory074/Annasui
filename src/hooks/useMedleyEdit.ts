@@ -23,6 +23,7 @@ interface UseMedleyEditReturn {
 
 interface UseMedleyEditProps {
   originalSongs: SongSection[];
+  isRefetching?: boolean;
   onSaveSuccess?: () => void;
   onAfterAdd?: (newSongs: SongSection[]) => void;
   onAfterUpdate?: (newSongs: SongSection[]) => void;
@@ -35,6 +36,7 @@ export function useMedleyEdit(
 ): UseMedleyEditReturn {
   // Handle both old and new API formats for backward compatibility
   const originalSongs = Array.isArray(props) ? props : props.originalSongs;
+  const isRefetching = Array.isArray(props) ? false : props.isRefetching;
   const onAfterAdd = Array.isArray(props) ? undefined : props.onAfterAdd;
   const onAfterUpdate = Array.isArray(props) ? undefined : props.onAfterUpdate;
   const onAfterDelete = Array.isArray(props) ? undefined : props.onAfterDelete;
@@ -435,9 +437,11 @@ export function useMedleyEdit(
     }
 
     // 初回読み込みで内容が異なる場合のみ更新
-    if (currentSongsString !== originalSongsString) {
+    // refetch中、編集中、保存中は更新しない（ユーザーの編集を保護）
+    if (currentSongsString !== originalSongsString && !isRefetching && !hasChanges && !isSaving) {
       logger.debug('🔄 Updating editingSongs from originalSongs', {
         hasChanges,
+        isSaving,
         originalSongsCount: originalSongs.length,
         editingSongsCount: editingSongs.length,
         contentsMatch: currentSongsString === originalSongsString

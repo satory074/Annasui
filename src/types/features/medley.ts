@@ -22,6 +22,15 @@ export type MedleyContributor = {
   lastEdit: Date;           // 最終編集日時
 };
 
+// 編集履歴のデータモデル
+export type MedleyEditHistory = {
+  id: string;                         // 編集履歴ID
+  editorNickname: string;             // 編集者のニックネーム
+  action: string;                     // アクション（create, update, add_song, delete_song, etc.）
+  changes: Record<string, unknown> | null;  // 変更内容（JSON形式）
+  createdAt: Date;                    // 編集日時
+};
+
 // メドレー情報全体のデータモデル
 export type MedleyData = {
   id?: string;          // データベースID（作成後に付与）

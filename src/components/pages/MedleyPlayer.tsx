@@ -16,8 +16,9 @@ import SongSearchModal from "@/components/features/medley/SongSearchModal";
 import ManualSongAddModal from "@/components/features/medley/ManualSongAddModal";
 import ContributorsDisplay from "@/components/features/medley/ContributorsDisplay";
 import LoginModal from "@/components/features/auth/LoginModal";
-import { SongSection } from "@/types";
+import { SongSection, MedleyEditHistory } from "@/types";
 import { SongDatabaseEntry, createSongFromDatabase, addManualSong } from "@/lib/utils/songDatabase";
+import { getMedleyEditHistory } from "@/lib/api/medleys";
 import { logger } from "@/lib/utils/logger";
 import { PlayerLoadingMessage } from "@/components/ui/loading/PlayerSkeleton";
 import { ActiveSongPopup } from "@/components/ui/song/ActiveSongPopup";
@@ -69,6 +70,9 @@ export default function MedleyPlayer({
     const [videoMetadata, setVideoMetadata] = useState<{title: string, creator: string} | null>(null);
     const videoMetadataRef = useRef<{title: string, creator: string} | null>(null);
     const [, setFetchingMetadata] = useState<boolean>(false);
+
+    // 編集履歴の状態
+    const [editHistory, setEditHistory] = useState<MedleyEditHistory[]>([]);
 
     // 楽曲選択とツールチップ関連の状態
     const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
@@ -254,6 +258,19 @@ export default function MedleyPlayer({
         }
     }, [medleySongs.length, loading, error, platform, videoId]);
 
+    // 編集履歴を取得
+    useEffect(() => {
+        const fetchEditHistory = async () => {
+            if (medleyData?.id) {
+                logger.debug('📜 Fetching edit history for medley:', medleyData.id);
+                const history = await getMedleyEditHistory(medleyData.id, 10);
+                setEditHistory(history);
+                logger.debug('✅ Edit history fetched:', history.length, 'entries');
+            }
+        };
+
+        fetchEditHistory();
+    }, [medleyData?.id]);
 
     // durationを決定（静的データを優先、プレイヤーデータはフォールバック）
     const effectiveDuration = medleyDuration || duration;
@@ -1019,13 +1036,13 @@ export default function MedleyPlayer({
                 )}
 
 
-                {/* Contributors Display */}
-                {!loading && !error && displaySongs.length > 0 && medleyData?.contributors && (
+                {/* Edit History Display */}
+                {!loading && !error && displaySongs.length > 0 && editHistory.length > 0 && (
                     <div className="p-6">
                         <ContributorsDisplay
-                            contributors={medleyData.contributors}
-                            lastEditor={medleyData.lastEditor}
-                            lastEditedAt={medleyData.lastEditedAt}
+                            editHistory={editHistory}
+                            lastEditor={medleyData?.lastEditor}
+                            lastEditedAt={medleyData?.lastEditedAt}
                             compact={false}
                         />
                     </div>

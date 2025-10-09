@@ -1,10 +1,10 @@
 'use client'
 
 import React from 'react'
-import { MedleyContributor } from '@/types'
+import { MedleyEditHistory } from '@/types'
 
 interface ContributorsDisplayProps {
-  contributors?: MedleyContributor[]
+  editHistory?: MedleyEditHistory[]
   lastEditor?: string
   lastEditedAt?: string
   showTitle?: boolean
@@ -43,32 +43,44 @@ function formatRelativeTime(date: Date | string): string {
   }
 }
 
+function formatActionText(action: string): { text: string; color: string } {
+  switch (action) {
+    case 'create':
+      return { text: 'メドレーを作成', color: 'text-green-700' }
+    case 'update':
+      return { text: 'メドレーを更新', color: 'text-blue-700' }
+    case 'song_add':
+      return { text: '楽曲を追加', color: 'text-orange-700' }
+    case 'song_update':
+      return { text: '楽曲を更新', color: 'text-blue-700' }
+    case 'song_delete':
+      return { text: '楽曲を削除', color: 'text-red-700' }
+    default:
+      return { text: '編集', color: 'text-gray-700' }
+  }
+}
+
 const ContributorsDisplay: React.FC<ContributorsDisplayProps> = ({
-  contributors = [],
+  editHistory = [],
   lastEditor,
   lastEditedAt,
   showTitle = true,
   compact = false
 }) => {
-  // Sort contributors by edit count
-  const sortedContributors = [...contributors].sort((a, b) => b.editCount - a.editCount)
-
-  const totalEdits = contributors.reduce((sum, c) => sum + c.editCount, 0)
-
   return (
     <div className={`${compact ? 'bg-gray-50 p-4 rounded-lg' : 'bg-white rounded-xl shadow-sm border border-gray-200 p-6'}`}>
       {showTitle && (
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
             <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-5.197a2.121 2.121 0 00-3-3m3 3a2.121 2.121 0 00-3 3m3-3h.01M9 12h3.75M12 12H15.75" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <h3 className={`${compact ? 'text-lg' : 'text-xl'} font-semibold text-gray-900`}>
-              コントリビューター
+              編集履歴
             </h3>
-            {contributors.length > 0 && (
+            {editHistory.length > 0 && (
               <span className="bg-gradient-to-r from-orange-400 to-orange-500 text-white text-xs font-medium px-2 py-1 rounded-full">
-                {contributors.length}
+                {editHistory.length}
               </span>
             )}
           </div>
@@ -81,61 +93,47 @@ const ContributorsDisplay: React.FC<ContributorsDisplayProps> = ({
         </div>
       )}
 
-      {contributors.length === 0 ? (
-        <p className="text-gray-500 text-sm">まだコントリビューターがいません</p>
+      {editHistory.length === 0 ? (
+        <p className="text-gray-500 text-sm">まだ編集履歴がありません</p>
       ) : (
-        <>
-          {/* Stats */}
-          {!compact && (
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border border-orange-200">
-                <div className="text-sm text-orange-900 font-medium mb-1">総編集回数</div>
-                <div className="text-2xl font-bold text-orange-600">{totalEdits}</div>
-              </div>
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border border-blue-200">
-                <div className="text-sm text-blue-900 font-medium mb-1">貢献者数</div>
-                <div className="text-2xl font-bold text-blue-600">{contributors.length}</div>
-              </div>
-            </div>
-          )}
-
-          {/* Contributors list */}
-          <div className="space-y-2">
-            {sortedContributors.map((contributor, index) => (
+        <div className="space-y-3">
+          {editHistory.map((edit, index) => {
+            const actionInfo = formatActionText(edit.action)
+            return (
               <div
-                key={`${contributor.nickname}-${index}`}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                key={`${edit.id}-${index}`}
+                className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
               >
-                <div className="flex items-center space-x-3">
-                  {/* Avatar */}
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold">
-                    {contributor.nickname.charAt(0).toUpperCase()}
-                  </div>
-
-                  {/* Name and stats */}
-                  <div>
-                    <div className="font-medium text-gray-900 flex items-center space-x-2">
-                      <span>{contributor.nickname}</span>
-                      {index === 0 && (
-                        <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
-                          トップ
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      {contributor.editCount}回編集 · 最終編集: {formatRelativeTime(contributor.lastEdit)}
-                    </div>
-                  </div>
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                  {edit.editorNickname.charAt(0).toUpperCase()}
                 </div>
 
-                {/* Edit count badge */}
-                <div className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded-full">
-                  {contributor.editCount}
+                {/* Edit info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium text-gray-900">{edit.editorNickname}</span>
+                    <span className={`text-sm ${actionInfo.color}`}>{actionInfo.text}</span>
+                  </div>
+                  <div className="text-sm text-gray-600 mt-1">
+                    {formatRelativeTime(edit.createdAt)}
+                  </div>
+                  {edit.changes && (typeof edit.changes.title === 'string' || typeof edit.changes.songCount === 'number') && (
+                    <div className="text-xs text-gray-500 mt-1 truncate">
+                      {typeof edit.changes.title === 'string' && `「${edit.changes.title}」`}
+                      {typeof edit.changes.songCount === 'number' && ` (${edit.changes.songCount}曲)`}
+                    </div>
+                  )}
                 </div>
+
+                {/* Timeline connector (vertical line) */}
+                {index < editHistory.length - 1 && (
+                  <div className="absolute left-8 top-14 w-0.5 h-3 bg-gray-300" />
+                )}
               </div>
-            ))}
-          </div>
-        </>
+            )
+          })}
+        </div>
       )}
     </div>
   )

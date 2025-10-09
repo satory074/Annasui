@@ -398,11 +398,17 @@ When encountering database errors, follow this systematic approach:
 - Usage: Show modal when unauthenticated users attempt edits
 - Callback: `onLoginSuccess` to proceed with edit action after successful login
 
-### Contributor Display
-- Component: `ContributorsDisplay` shows edit history
-- Data: Fetched via `getMedleyContributors(medleyId)` helper function
-- Display: Shows top 5 contributors with edit counts and last edit timestamp
+### Edit History Display
+- Component: `ContributorsDisplay` shows edit history timeline (not ranking)
+- Data: Fetched via `getMedleyEditHistory(medleyId, limit)` function
+- Display: Shows chronological timeline of edits (latest first) with:
+  - Editor nickname with avatar
+  - Action type (create, update, add_song, etc.) with color coding
+  - Relative timestamp
+  - Change details (title, song count)
+- **Important**: No ranking or competitive elements (no "top contributor" badges or edit count competition)
 - Location: Below song list in MedleyPlayer
+- Props: `editHistory` (MedleyEditHistory[]), `lastEditor`, `lastEditedAt`
 
 ### Rate Limiting
 - Server-side tracking via in-memory Map (per IP address)

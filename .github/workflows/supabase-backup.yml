@@ -1,0 +1,110 @@
+name: Supabase Database Backup
+
+on:
+  # 毎日午前3時（JST = UTC 18:00前日）に実行
+  schedule:
+    - cron: '0 18 * * *'
+
+  # 手動実行も可能
+  workflow_dispatch:
+
+  # プッシュ時にもバックアップ（重要な変更前）
+  push:
+    branches:
+      - main
+    paths:
+      - 'database/migrations/**'
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Install Supabase CLI
+        run: |
+          npm install -g supabase
+          supabase --version
+
+      - name: Create backup directory
+        run: mkdir -p database/backups
+
+      - name: Generate timestamp
+        id: timestamp
+        run: echo "timestamp=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
+
+      - name: Backup database roles
+        run: |
+          supabase db dump \
+            --db-url "${{ secrets.SUPABASE_DB_URL }}" \
+            -f database/backups/roles_${{ steps.timestamp.outputs.timestamp }}.sql \
+            --role-only
+        continue-on-error: true
+
+      - name: Backup database schema
+        run: |
+          supabase db dump \
+            --db-url "${{ secrets.SUPABASE_DB_URL }}" \
+            -f database/backups/schema_${{ steps.timestamp.outputs.timestamp }}.sql
+
+      - name: Backup database data
+        run: |
+          supabase db dump \
+            --db-url "${{ secrets.SUPABASE_DB_URL }}" \
+            -f database/backups/data_${{ steps.timestamp.outputs.timestamp }}.sql \
+            --data-only \
+            --use-copy
+
+      - name: Compress backup files
+        run: |
+          cd database/backups
+          tar -czf backup_${{ steps.timestamp.outputs.timestamp }}.tar.gz \
+            *_${{ steps.timestamp.outputs.timestamp }}.sql
+          rm *_${{ steps.timestamp.outputs.timestamp }}.sql
+
+      - name: Keep only last 30 backups
+        run: |
+          cd database/backups
+          ls -t backup_*.tar.gz | tail -n +31 | xargs -r rm --
+
+      - name: Commit backup to repository
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add database/backups/
+
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: automated database backup ${{ steps.timestamp.outputs.timestamp }}"
+            git push
+          fi
+
+      - name: Create backup summary
+        if: always()
+        run: |
+          echo "# Backup Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Timestamp**: ${{ steps.timestamp.outputs.timestamp }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f database/backups/backup_${{ steps.timestamp.outputs.timestamp }}.tar.gz ]; then
+            SIZE=$(du -h database/backups/backup_${{ steps.timestamp.outputs.timestamp }}.tar.gz | cut -f1)
+            echo "- **Backup Size**: $SIZE" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          BACKUP_COUNT=$(ls -1 database/backups/backup_*.tar.gz 2>/dev/null | wc -l)
+          echo "- **Total Backups**: $BACKUP_COUNT" >> $GITHUB_STEP_SUMMARY

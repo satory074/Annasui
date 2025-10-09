@@ -124,9 +124,44 @@ Pattern: Server-side fetch → Process response → Return to client
 - **State synchronization**: useEffect syncs `originalSongs` → `editingSongs` only when:
   1. Content actually differs (JSON.stringify comparison)
   2. User is NOT editing (`editingSongs.length > 0 && originalSongs.length === 0` guard)
+  3. NOT currently saving (`!isSaving` guard at line 441)
+  4. NOT currently refetching (`!isRefetching` guard at line 441)
 - **Immediate save flow**: Operation completes → Callback triggers → Save to DB → Refetch from DB → State updates
 - **Callback system**: Use `onAfterAdd`, `onAfterUpdate`, `onAfterDelete`, `onAfterBatchUpdate` props
 - **Guard conditions prevent**: Race conditions between save completion and parent refetch
+
+### React State Management with Continuous Updates
+**CRITICAL**: When components receive continuous prop updates (e.g., `currentTime` from video playback), carefully manage useEffect dependencies to prevent form state resets:
+
+- **Problem Pattern**: Including rapidly-updating props in useEffect dependency arrays causes the effect to run repeatedly, resetting form state
+- **Example**: `SongEditModal.tsx:307` previously had `currentTime` in dependency array, causing form inputs to reset every ~100ms during playback
+- **Solution**: Only include dependencies that should trigger re-initialization
+  - If a prop is only needed for initial render calculation, reference it directly without adding to dependency array
+  - Add `eslint-disable-next-line react-hooks/exhaustive-deps` with explanatory comment
+  - Document WHY the dependency is omitted (e.g., "currentTime only needed for initial render, not re-renders")
+
+**Pattern**:
+```typescript
+// ❌ BAD: currentTime causes form reset during playback
+useEffect(() => {
+  setFormData(song);
+}, [song, currentTime]); // currentTime updates every 100ms!
+
+// ✅ GOOD: currentTime used directly, not in deps
+useEffect(() => {
+  setFormData({
+    ...song,
+    startTime: isNew ? currentTime : song.startTime  // Direct reference
+  });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [song, isNew]); // currentTime NOT in deps - only for initial render
+```
+
+**When to be cautious**:
+- Video player `currentTime` updates (every ~100ms)
+- Mouse position tracking (continuous events)
+- Animation frame updates
+- Any prop that updates multiple times per second
 
 ### Keyboard Shortcuts
 - **Spacebar**: Play/pause (global, disabled in inputs/modals)
@@ -168,8 +203,10 @@ Pattern: Server-side fetch → Process response → Return to client
 - **Immediate save not triggering**: Verify authenticated, valid song data, and callbacks provided to useMedleyEdit
 - **Undo/Redo broken**: Check keyboard listeners in edit mode only
 - **Songs disappearing after operation**: Verify immediate save callback and refetch are working correctly
-- **EditingSongs reset unexpectedly**: Verify useEffect guard condition for `originalSongs.length === 0`
+- **EditingSongs reset unexpectedly**: Verify useEffect guard conditions (`!isSaving`, `!isRefetching`, `!hasChanges`) in useMedleyEdit:441
 - **Loading screen appears during song edit**: Ensure `isRefetching` flag is used (not `loading`) for background sync
+- **Form inputs reset during video playback**: Check that `currentTime` is NOT in useEffect dependency arrays for form initialization (see "React State Management with Continuous Updates" section)
+- **Edits not saving during playback**: Verify form state preservation and guard conditions in both SongEditModal and useMedleyEdit
 
 ### Production Issues
 - **Component missing**: Check displayName and module-level logging

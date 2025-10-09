@@ -428,39 +428,19 @@ export default function SongListGrouped({
                                overflow: 'visible',
                                position: 'relative'
                              }}>
-                          {/* 最初のセグメントのみタイトル表示、それ以外は番号のみ */}
-                          {segmentIndex === 0 ? (
-                            <span className="flex items-center gap-1">
-                              {song.title}
-                              {/* 空の楽曲の警告アイコン */}
-                              {(song.title?.startsWith('空の楽曲') || song.artist === 'アーティスト未設定') && (
-                                <span 
-                                  className="text-orange-600 text-sm font-bold"
-                                  title="未入力項目があります"
-                                >
-                                  ⚠️
-                                </span>
-                              )}
-                            </span>
-                          ) : ''}
-                          {(() => {
-                            const duplicateInfo = getDuplicateInfo(song, songs);
-                            if (duplicateInfo) {
-                              const circledNumbers = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
-                              const number = duplicateInfo.instanceNumber <= 10 
-                                ? circledNumbers[duplicateInfo.instanceNumber - 1] 
-                                : `(${duplicateInfo.instanceNumber})`;
-                              return (
-                                <span 
-                                  className="bg-orange-600 text-white text-xs px-1 rounded-full font-bold shadow-sm"
-                                  title={`重複楽曲 ${duplicateInfo.instanceNumber}/${duplicateInfo.totalInstances}`}
-                                >
-                                  {number}
-                                </span>
-                              );
-                            }
-                            return null;
-                          })()}
+                          {/* すべてのセグメントでタイトル表示 */}
+                          <span className="flex items-center gap-1">
+                            {song.title}
+                            {/* 空の楽曲の警告アイコン */}
+                            {(song.title?.startsWith('空の楽曲') || song.artist === 'アーティスト未設定') && (
+                              <span
+                                className="text-orange-600 text-sm font-bold"
+                                title="未入力項目があります"
+                              >
+                                ⚠️
+                              </span>
+                            )}
+                          </span>
                         </div>
                         {/* 重なり表示用の斜線パターン */}
                         {hasOverlap && (

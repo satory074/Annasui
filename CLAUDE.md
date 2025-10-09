@@ -163,6 +163,36 @@ useEffect(() => {
 - Animation frame updates
 - Any prop that updates multiple times per second
 
+### Timeline Rendering for Multi-Segment Songs
+**CRITICAL**: When a song appears multiple times in a medley, segments must be displayed in multiple rows within one section, NOT overlapping.
+
+- **Problem Pattern**: Fixed positioning (`top-1`) causes all segments to overlap when a song has multiple occurrences
+- **Solution**: Dynamic height calculation and vertical positioning based on segment index
+  - Container height: `${group.segments.length * 32}px` (32px per segment)
+  - Segment positioning: `top: ${segmentIndex * 32 + 2}px`
+  - Segment height: Fixed `h-7` (28px) with 4px total margin
+  - Location: `src/components/features/medley/SongListGrouped.tsx`
+
+**Pattern**:
+```typescript
+// ❌ BAD: Fixed positioning causes overlap
+<div className="h-8">
+  {segments.map(segment => (
+    <div className="absolute top-1 h-6" />
+  ))}
+</div>
+
+// ✅ GOOD: Dynamic positioning for multi-row layout
+<div style={{ height: `${group.segments.length * 32}px` }}>
+  {segments.map((segment, segmentIndex) => (
+    <div
+      className="absolute h-7"
+      style={{ top: `${segmentIndex * 32 + 2}px` }}
+    />
+  ))}
+</div>
+```
+
 ### Keyboard Shortcuts
 - **Spacebar**: Play/pause (global, disabled in inputs/modals)
 - **S/E/M keys**: Start/End time, Add song (edit mode only)
@@ -207,6 +237,7 @@ useEffect(() => {
 - **Loading screen appears during song edit**: Ensure `isRefetching` flag is used (not `loading`) for background sync
 - **Form inputs reset during video playback**: Check that `currentTime` is NOT in useEffect dependency arrays for form initialization (see "React State Management with Continuous Updates" section)
 - **Edits not saving during playback**: Verify form state preservation and guard conditions in both SongEditModal and useMedleyEdit
+- **Multiple segments overlapping**: For songs with multiple occurrences, ensure dynamic height and positioning (see "Timeline Rendering for Multi-Segment Songs" section in SongListGrouped.tsx)
 
 ### Production Issues
 - **Component missing**: Check displayName and module-level logging

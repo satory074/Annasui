@@ -363,31 +363,32 @@ export default function SongListGrouped({
               >
                 
                 {/* タイムライン */}
-                <div 
-                  className="timeline-container relative w-full h-8 ml-0 transition-colors bg-blue-50 rounded"
+                <div
+                  className="timeline-container relative w-full ml-0 transition-colors bg-blue-50 rounded"
+                  style={{ height: `${group.segments.length * 32}px` }}
                   onClick={handleTimelineClick}
                 >
                   {/* 時間グリッド（背景）- 固定10本 */}
                   <div className="absolute inset-0 flex">
                     {Array.from({ length: 11 }).map((_, i) => (
-                      <div 
-                        key={i} 
-                        className="border-l border-gray-200 opacity-50" 
+                      <div
+                        key={i}
+                        className="border-l border-gray-200 opacity-50"
                         style={{ left: `${(i / 10) * 100}%` }}
                       />
                     ))}
                   </div>
-                  
+
                   {/* 複数楽曲セグメントタイムラインバー */}
                   {group.segments.map((song, segmentIndex) => {
                     const { hasOverlap, overlappingSongs } = detectOverlaps(song);
                     const isCurrentlyPlaying = currentSongs_computed.some(s => s.id === song.id);
                     const isBeyondActualDuration = actualPlayerDuration && song.startTime >= actualPlayerDuration;
-                    
+
                     return (
                       <div
                         key={song.id}
-                        className={`absolute h-6 top-1 transition-all hover:h-7 hover:top-0 ${
+                        className={`absolute h-7 transition-all ${
                           // 空の楽曲のビジュアル強調
                           (song.title?.startsWith('空の楽曲') || song.artist === 'アーティスト未設定')
                             ? 'bg-yellow-400 border-2 border-orange-500 shadow-lg ring-1 ring-orange-300'
@@ -408,6 +409,7 @@ export default function SongListGrouped({
                         style={{
                           left: `${(song.startTime / effectiveTimelineDuration) * 100}%`,
                           width: `${((song.endTime - song.startTime) / effectiveTimelineDuration) * 100}%`,
+                          top: `${segmentIndex * 32 + 2}px`,
                         }}
                         onClick={(e) => handleSongClick(e, song)}
                         onDoubleClick={(e) => handleSongDoubleClick(e, song)}

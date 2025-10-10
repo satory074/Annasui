@@ -25,6 +25,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Deployment
 - `firebase deploy --only hosting` - Deploy to production
 
+### Database Backup & Recovery
+- `./scripts/backup-database.sh` - Create manual database backup
+- `./scripts/restore-database.sh database/backups/backup_YYYYMMDD_HHMMSS.tar.gz` - Restore from backup
+- **Automated backups**: Run daily at 3:00 AM JST via GitHub Actions
+- **Backup location**: `database/backups/` (30 most recent backups retained)
+- **Connection string**: Use Session Pooler (`aws-1-ap-northeast-1.pooler.supabase.com:5432`)
+- See [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md) for complete disaster recovery procedures
+
 **IMPORTANT**: Always stop dev servers after testing to prevent performance issues
 
 ## Testing Strategy
@@ -307,7 +315,32 @@ Run migrations in Supabase Dashboard (database/migrations/) **in order**:
 4. `010_remove_auth_system.sql` - Remove Google OAuth authentication
 5. `011_add_contributor_tracking.sql` - Add password-based contributor tracking
 
+**Optional migrations** (soft delete & enhanced audit logging):
+- `012_add_soft_delete.sql` - 30-day recovery window for deleted records
+- `013_enhance_audit_log.sql` - IP address, user agent, session tracking
+
 Core tables: `medleys`, `songs`, `medley_edits`
+
+### Backup & Recovery System
+
+**Automated backups** run daily at 3:00 AM JST via GitHub Actions:
+- Backs up schema, data, and roles
+- Stores in `database/backups/` (30 most recent kept)
+- Triggers: Daily schedule, manual via GitHub Actions, on migration changes
+
+**Manual operations**:
+```bash
+# Create backup
+./scripts/backup-database.sh
+
+# Restore from backup
+./scripts/restore-database.sh database/backups/backup_YYYYMMDD_HHMMSS.tar.gz
+```
+
+**GitHub Secret required**: `SUPABASE_DB_URL` (Session Pooler connection string)
+- Format: `postgresql://postgres.PROJECT_ID:PASSWORD@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres`
+- **Critical**: Must use Session Pooler (port 5432), not Direct Connection or Transaction Pooler
+- See [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md) for complete procedures
 
 **IMPORTANT**: The `songs` table does NOT have a `links` column. If you see PGRST204 errors mentioning "column not found in schema cache", verify that INSERT/UPDATE operations don't reference non-existent columns.
 

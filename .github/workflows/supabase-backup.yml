@@ -8,10 +8,7 @@ on:
   # 手動実行も可能
   workflow_dispatch:
 
-  # PRでワークフローを登録（初回のみ必要）
-  pull_request:
-
-  # プッシュ時にもバックアップ（重要な変更前）
+  # マイグレーションファイル変更時にもバックアップ
   push:
     branches:
       - main

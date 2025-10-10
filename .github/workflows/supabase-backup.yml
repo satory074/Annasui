@@ -28,15 +28,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
         with:
-          node-version: '18'
-
-      - name: Install Supabase CLI
-        run: |
-          npm install -g supabase
-          supabase --version
+          version: latest
 
       - name: Create backup directory
         run: mkdir -p database/backups

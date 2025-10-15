@@ -114,6 +114,21 @@ Local環境でエラーが解決困難な場合、production buildで先に検�
   - `isInitialLoad`: Internal flag to distinguish first load from refetch
 - Platform-specific players in `app/[platform]/[videoId]/` routes
 
+### Song Database System
+- **Purpose**: Persistent storage for manually added songs that can be reused across medleys
+- **Implementation**: `src/lib/utils/songDatabase.ts`
+- **Database table**: `song_data` (see migration `014_create_song_data_table.sql`)
+- **Key features**:
+  - **Normalized ID**: Uses `normalizeSongInfo()` for duplicate detection (converts katakana→hiragana, removes symbols, unifies music terms)
+  - **Search system**: Multi-tier matching (exact → startsWith → wordMatch → partialMatch → fuzzyMatch) with scoring
+  - **Persistence**: Songs saved to Supabase persist across page reloads
+  - **Integration**: Fetched via `buildSongDatabase()` which merges medley-extracted songs + manually added songs
+- **Functions**:
+  - `addManualSong()`: Save new song to database
+  - `getSongDatabase()`: Get all songs (cached, includes medley + manual songs)
+  - `searchSongs()`: Search with scoring and match type detection
+  - `createSongFromDatabase()`: Convert DB entry to timeline song
+
 ### API Proxy Pattern
 All external API calls must go through Next.js API routes due to CORS:
 - Niconico thumbnails: `/api/thumbnail/niconico/[videoId]/`
@@ -351,12 +366,13 @@ Run migrations in Supabase Dashboard (database/migrations/) **in order**:
 3. `006_create_medley_edit_history.sql` - Edit history tracking
 4. `010_remove_auth_system.sql` - Remove Google OAuth authentication
 5. `011_add_contributor_tracking.sql` - Add password-based contributor tracking
+6. `014_create_song_data_table.sql` - **Manual song database** for persistent song storage
 
 **Optional migrations** (soft delete & enhanced audit logging):
 - `012_add_soft_delete.sql` - 30-day recovery window for deleted records
 - `013_enhance_audit_log.sql` - IP address, user agent, session tracking
 
-Core tables: `medleys`, `songs`, `medley_edits`
+Core tables: `medleys`, `songs`, `medley_edits`, `song_data`
 
 ### Backup & Recovery System
 
@@ -385,6 +401,10 @@ Core tables: `medleys`, `songs`, `medley_edits`
 - `medleys`: video_id, title, creator, duration, user_id, last_editor, last_edited_at
 - `songs`: medley_id, title, artist, start_time, end_time, color, genre, original_link, order_index, last_editor, last_edited_at (NO `links` column)
 - `medley_edits`: medley_id, editor_nickname, edit_timestamp, edit_type
+- `song_data`: **Manual song database** - id, title, artist, original_link, links (JSONB), normalized_id (unique), created_at, updated_at
+  - Stores manually added songs for reuse across medleys
+  - Uses normalized_id for duplicate detection (see `src/lib/utils/songDatabase.ts`)
+  - Songs persist across page reloads and can be searched/selected for any medley
 
 **Authentication Evolution**:
 - Originally used Google OAuth (migrations 001-009)

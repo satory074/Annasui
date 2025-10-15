@@ -263,7 +263,7 @@ export default function ImportSetlistModal({
             value={textInput}
             onChange={(e) => setTextInput(e.target.value)}
             placeholder={`例:\n${sampleText}`}
-            className="w-full h-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+            className="w-full h-32 px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
           />
         </div>
 

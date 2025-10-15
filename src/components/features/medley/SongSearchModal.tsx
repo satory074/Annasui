@@ -249,7 +249,7 @@ export default function SongSearchModal({
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="楽曲名またはアーティスト名で検索..."
-            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-600"
+            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
             autoFocus
           />
           <svg 
@@ -332,7 +332,7 @@ export default function SongSearchModal({
                             type="text"
                             value={editFormData?.title || ''}
                             onChange={(e) => handleFormChange('title', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
                           />
                         </div>
                         <div>
@@ -343,7 +343,7 @@ export default function SongSearchModal({
                             type="text"
                             value={editFormData?.artist || ''}
                             onChange={(e) => handleFormChange('artist', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
                           />
                         </div>
                       </div>
@@ -361,7 +361,7 @@ export default function SongSearchModal({
                               value={editFormData?.links?.niconico || ''}
                               onChange={(e) => handleFormChange('links.niconico', e.target.value)}
                               placeholder="https://www.nicovideo.jp/watch/..."
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
                           </div>
                           <div>
@@ -373,7 +373,7 @@ export default function SongSearchModal({
                               value={editFormData?.links?.youtube || ''}
                               onChange={(e) => handleFormChange('links.youtube', e.target.value)}
                               placeholder="https://www.youtube.com/watch?v=..."
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
                           </div>
                           <div>
@@ -385,7 +385,7 @@ export default function SongSearchModal({
                               value={editFormData?.links?.spotify || ''}
                               onChange={(e) => handleFormChange('links.spotify', e.target.value)}
                               placeholder="https://open.spotify.com/track/..."
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
                           </div>
                           <div>
@@ -397,7 +397,7 @@ export default function SongSearchModal({
                               value={editFormData?.links?.appleMusic || ''}
                               onChange={(e) => handleFormChange('links.appleMusic', e.target.value)}
                               placeholder="https://music.apple.com/..."
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
                           </div>
                         </div>

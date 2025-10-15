@@ -207,7 +207,7 @@ export default function BulkEditModal({
                   value={bulkEditData.titleTemplate}
                   onChange={(e) => setBulkEditData({ ...bulkEditData, titleTemplate: e.target.value })}
                   placeholder="例: 楽曲{index} または {time}の楽曲"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 text-sm"
                   disabled={!bulkEditData.applyTitle}
                 />
                 <p className="text-xs text-gray-500 mt-1">
@@ -234,7 +234,7 @@ export default function BulkEditModal({
                   value={bulkEditData.artistTemplate}
                   onChange={(e) => setBulkEditData({ ...bulkEditData, artistTemplate: e.target.value })}
                   placeholder="例: Various Artists"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 text-sm"
                   disabled={!bulkEditData.applyArtist}
                 />
               </div>
@@ -261,7 +261,7 @@ export default function BulkEditModal({
                       step="0.1"
                       value={bulkEditData.adjustStartTime}
                       onChange={(e) => setBulkEditData({ ...bulkEditData, adjustStartTime: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-gray-900 text-sm"
                       disabled={!bulkEditData.applyTimeAdjustment}
                     />
                   </div>
@@ -272,7 +272,7 @@ export default function BulkEditModal({
                       step="0.1"
                       value={bulkEditData.adjustEndTime}
                       onChange={(e) => setBulkEditData({ ...bulkEditData, adjustEndTime: parseFloat(e.target.value) || 0 })}
-                      className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
+                      className="w-full px-2 py-1 border border-gray-300 rounded text-gray-900 text-sm"
                       disabled={!bulkEditData.applyTimeAdjustment}
                     />
                   </div>
@@ -299,7 +299,7 @@ export default function BulkEditModal({
                   min="0.1"
                   value={bulkEditData.setDuration}
                   onChange={(e) => setBulkEditData({ ...bulkEditData, setDuration: parseFloat(e.target.value) || 30 })}
-                  className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                  className="w-20 px-2 py-1 border border-gray-300 rounded text-gray-900 text-sm"
                   disabled={!bulkEditData.applyDuration}
                 />
                 <span className="text-sm text-gray-600 ml-2">秒</span>

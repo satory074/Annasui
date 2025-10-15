@@ -123,8 +123,11 @@ export default function ManualSongAddModal({
               value={formData.artist}
               onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
-              placeholder="アーティスト名を入力（省略可）"
+              placeholder="アーティスト名を入力（省略可 - 空欄の場合は「Unknown Artist」として保存）"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ※ 空欄の場合、自動的に「Unknown Artist」として登録されます
+            </p>
           </div>
 
           {/* 元動画リンク */}
@@ -139,6 +142,9 @@ export default function ManualSongAddModal({
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
               placeholder="https://... (省略可)"
             />
+            <p className="text-xs text-gray-500 mt-1">
+              ※ 元動画のURLがわかる場合は入力してください（任意）
+            </p>
           </div>
         </div>
 

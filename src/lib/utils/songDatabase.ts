@@ -23,6 +23,9 @@ export interface SongDatabaseEntry {
   }>;
 }
 
+// アーティスト名が空の場合のデフォルト値
+const DEFAULT_ARTIST = "Unknown Artist";
+
 // カタカナをひらがなに変換
 function katakanaToHiragana(text: string): string {
   return text.replace(/[\u30a1-\u30f6]/g, (match) => {
@@ -75,7 +78,7 @@ function normalizeSongInfo(title: string, artist: string): string {
       .replace(/[-－ー—–]/g, '')       // ハイフン類統一除去
       .replace(/[。、]/g, '');          // 句読点除去
   };
-  
+
   // カタカナ→ひらがな変換 + 全角→半角変換 + 音楽用語統一 + 正規化
   const normalizedTitle = normalizeText(
     normalizeMusicTerms(
@@ -84,15 +87,17 @@ function normalizeSongInfo(title: string, artist: string): string {
       )
     )
   );
-  
+
+  // アーティスト名が空の場合は"unknown"を使用
+  const effectiveArtist = artist && artist.trim() ? artist : "unknown";
   const normalizedArtist = normalizeText(
     normalizeMusicTerms(
       toHalfWidth(
-        katakanaToHiragana(artist)
+        katakanaToHiragana(effectiveArtist)
       )
     )
   );
-  
+
   return `${normalizedTitle}_${normalizedArtist}`;
 }
 
@@ -387,7 +392,9 @@ export async function getSongDatabase(): Promise<SongDatabaseEntry[]> {
 
 // 手動で楽曲を追加
 export async function addManualSong(songData: { title: string; artist: string; originalLink?: string }): Promise<SongDatabaseEntry> {
-  const normalizedId = normalizeSongInfo(songData.title, songData.artist);
+  // アーティスト名が空の場合はデフォルト値を使用
+  const effectiveArtist = songData.artist && songData.artist.trim() ? songData.artist.trim() : DEFAULT_ARTIST;
+  const normalizedId = normalizeSongInfo(songData.title, effectiveArtist);
 
   // 既存のデータベースで重複チェック
   const database = await getSongDatabase();
@@ -409,7 +416,7 @@ export async function addManualSong(songData: { title: string; artist: string; o
       .from('song_master')
       .insert({
         title: songData.title,
-        artist: songData.artist,
+        artist: effectiveArtist,
         original_link: songData.originalLink,
         normalized_id: normalizedId
       })
@@ -429,7 +436,7 @@ export async function addManualSong(songData: { title: string; artist: string; o
     const newSong: SongDatabaseEntry = {
       id: normalizedId,
       title: songData.title,
-      artist: songData.artist,
+      artist: effectiveArtist,
       originalLink: songData.originalLink,
       usageCount: 0,
       medleys: []

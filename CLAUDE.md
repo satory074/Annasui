@@ -41,6 +41,43 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **CRITICAL**: Always verify in production (https://anasui-e6f49.web.app)
 - Production differs in: SSR behavior, CORS policies, iframe communication
 
+### Local環境でエラーが発生した場合の対処
+**症状**: Local開発サーバー（`npm run dev`）でTypeError、ReferenceError、Fast Refresh警告が頻発する
+
+**原因**: Next.jsのHot Module Replacement (HMR)は開発用の機能で、以下の問題を引き起こす可能性があります:
+- Fast Refreshによる不完全なモジュール再読み込み
+- 初期化順序の不整合（例: `ReferenceError: Cannot access 'duration' before initialization`）
+- `TypeError: Cannot read properties of undefined`
+
+**対処法: Production-First Testing**
+
+Local環境でエラーが解決困難な場合、production buildで先に検証することで、Local環境特有の問題を切り分けできます:
+
+1. **Build確認**: `npm run build`
+   - Production buildが成功すれば、基本的な構文・型エラーはない証拠
+   - TypeScriptの型エラーが検出される
+   - ビルド失敗時はエラーメッセージに従って修正
+
+2. **Deploy**: `firebase deploy --only hosting`
+   - Production環境へデプロイ
+   - HMR/Fast Refreshは使用されない
+   - コードは最適化された状態で実行
+
+3. **Production検証**: https://anasui-e6f49.web.app
+   - ブラウザのDevToolsコンソールでログ確認
+   - 実際の動作をテスト
+   - SSR、CORS、iframe通信の実際の挙動を検証
+
+4. **必要に応じてLocal修正を継続**
+   - Production環境で問題が解決していれば、Local環境のHMR問題と判断
+   - Production環境でも問題があれば、コード自体の問題として修正
+
+**メリット**:
+- まだリリース前の段階では、production環境でのテストが安全に可能
+- データベースも独立しているため影響は限定的
+- Local環境とproduction環境の挙動の違いを早期に発見できる
+- HMRによる誤ったエラー報告に惑わされない
+
 ## Project Overview
 
 **Medlean** - Multi-platform medley annotation platform built with Next.js. Supports Niconico (full integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, immediate save system.

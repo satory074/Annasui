@@ -62,6 +62,16 @@ export default function MedleyPlayer({
     // 手動楽曲追加モーダル関連の状態
     const [manualAddModalOpen, setManualAddModalOpen] = useState<boolean>(false);
 
+    // 自動保存フラグ（重複保存防止用）- useRefで同期的に制御
+    const isAutoSavedRef = useRef<boolean>(false);
+
+    // 🔍 DEBUG: Call counters
+    const callCounters = useRef({
+        handleSelectSongFromDatabase: 0,
+        handleSaveSong: 0,
+        handleImmediateSave: 0
+    });
+
     // 認証関連の状態
     const { isAuthenticated, nickname, loading: authLoading } = useAuth();
     const [loginModalOpen, setLoginModalOpen] = useState<boolean>(false);
@@ -128,14 +138,17 @@ export default function MedleyPlayer({
     // 即時保存の実装（useEffectで設定して依存関係を適切に管理）
     useEffect(() => {
         handleImmediateSaveRef.current = async (songsToSave: SongSection[]) => {
+            callCounters.current.handleImmediateSave++;
+            const callId = `CALL-${callCounters.current.handleImmediateSave}`;
+
             if (!isAuthenticated || !nickname) {
-                logger.debug('⏸️ Skipping immediate save: not authenticated');
+                logger.debug(`⏸️ [${callId}] Skipping immediate save: not authenticated`);
                 return;
             }
 
             // For new medleys, wait for metadata if it's still loading
             if (medleySongsRef.current.length === 0 && !videoMetadataRef.current && platform === 'niconico') {
-                logger.info('⏳ Waiting for metadata before save...');
+                logger.info(`⏳ [${callId}] Waiting for metadata before save...`);
                 // Wait up to 3 seconds for metadata
                 let attempts = 0;
                 while (!videoMetadataRef.current && attempts < 30) {
@@ -143,9 +156,9 @@ export default function MedleyPlayer({
                     attempts++;
                 }
                 if (!videoMetadataRef.current) {
-                    logger.warn('⚠️ Metadata fetch timed out, proceeding with fallback values');
+                    logger.warn(`⚠️ [${callId}] Metadata fetch timed out, proceeding with fallback values`);
                 } else {
-                    logger.info('✅ Metadata loaded successfully after waiting');
+                    logger.info(`✅ [${callId}] Metadata loaded successfully after waiting`);
                 }
             }
 
@@ -154,7 +167,8 @@ export default function MedleyPlayer({
             const creator = medleyCreator || videoMetadataRef.current?.creator || '匿名ユーザー';
             const saveDuration = medleyDuration || duration || 0;
 
-            logger.info('💾 Immediate save triggered', {
+            logger.info(`💾 [${callId}] Immediate save triggered`, {
+                callNumber: callCounters.current.handleImmediateSave,
                 videoId,
                 title,
                 creator,
@@ -181,10 +195,11 @@ export default function MedleyPlayer({
             );
 
             if (success) {
-                logger.info('✅ Immediate save successful, refetching data');
+                logger.info(`✅ [${callId}] Immediate save successful, refetching data`);
                 await refetch();
+                logger.info(`✅ [${callId}] Refetch completed`);
             } else {
-                logger.error('❌ Immediate save failed', {
+                logger.error(`❌ [${callId}] Immediate save failed`, {
                     videoId,
                     songCount: songsToSave.length,
                     songs: songsToSave.map(s => ({ title: s.title, artist: s.artist }))
@@ -468,11 +483,15 @@ export default function MedleyPlayer({
     
     // 楽曲DB検索モーダルのハンドラ
     const handleSelectSongFromDatabase = (dbSong: SongDatabaseEntry) => {
+        callCounters.current.handleSelectSongFromDatabase++;
+        const callId = `CALL-${callCounters.current.handleSelectSongFromDatabase}`;
+
         setSongSearchModalOpen(false);
         setSelectedDatabaseSong(dbSong);
 
         // デバッグ用ログ - 詳細な状態確認
-        logger.info('🎵 handleSelectSongFromDatabase called - DETAILED STATE CHECK', {
+        logger.info(`🎵 [${callId}] handleSelectSongFromDatabase called - DETAILED STATE CHECK`, {
+            callNumber: callCounters.current.handleSelectSongFromDatabase,
             isChangingSong: isChangingSong,
             editModalOpen: editModalOpen,
             editingSong: editingSong ? {
@@ -537,20 +556,26 @@ export default function MedleyPlayer({
             // これにより、ユーザーが編集モーダルで「保存」ボタンを押さなくても、DBに保存される
             if (existsInTimeline) {
                 setIsNewSong(false);
-                logger.info('📝 Setting isNewSong=false (song exists in timeline - will call updateSong)');
+                logger.info(`📝 [${callId}] Setting isNewSong=false (song exists in timeline - will call updateSong)`);
                 // 既存楽曲を更新（これにより onAfterUpdate → saveMedley が呼ばれる）
-                logger.info('🔄 Calling updateSong to save changes immediately');
+                logger.info(`🔄 [${callId}] Calling updateSong to save changes immediately`);
                 updateSong(replacedSong);
+                // 自動保存が実行されたのでフラグを立てる（同期的）
+                isAutoSavedRef.current = true;
+                logger.info(`✅ [${callId}] Set isAutoSavedRef.current = true (after updateSong)`);
             } else {
                 setIsNewSong(true);
-                logger.info('📝 Keeping isNewSong=true (empty placeholder - will call addSong)');
+                logger.info(`📝 [${callId}] Keeping isNewSong=true (empty placeholder - will call addSong)`);
 
                 // 🔧 FIX: Immediately add the new song to editingSongs to ensure auto-save works
                 // This prevents the song from being lost if auto-save triggers before user clicks "Save"
-                logger.info('✅ [AUTO-ADD FIX] Immediately adding new song to timeline');
+                logger.info(`✅ [${callId}] [AUTO-ADD FIX] Immediately adding new song to timeline`);
                 addSong(replacedSong);
                 // After adding, set isNewSong to false since it's now in the timeline
                 setIsNewSong(false);
+                // 自動保存が実行されたのでフラグを立てる（同期的）
+                isAutoSavedRef.current = true;
+                logger.info(`✅ [${callId}] Set isAutoSavedRef.current = true (after addSong)`);
             }
             // NOTE: isChangingSongは保存完了後にリセットする（SongEditModalの保存ロジックで使用するため）
 
@@ -699,9 +724,14 @@ export default function MedleyPlayer({
     };
 
     const handleSaveSong = (song: SongSection) => {
-        logger.info('💾 handleSaveSong called - DETAILED ID TRACKING', {
+        callCounters.current.handleSaveSong++;
+        const callId = `CALL-${callCounters.current.handleSaveSong}`;
+
+        logger.info(`💾 [${callId}] handleSaveSong called - DETAILED ID TRACKING`, {
+            callNumber: callCounters.current.handleSaveSong,
             isNewSong: isNewSong,
             isChangingSong: isChangingSong,
+            isAutoSaved: isAutoSavedRef.current,
             songId: song.id,
             songTitle: song.title,
             songArtist: song.artist,
@@ -712,6 +742,24 @@ export default function MedleyPlayer({
             willCallUpdateSong: !isNewSong,
             idMatch: editingSongs.some(s => s.id === song.id)
         });
+
+        // 自動保存済みの場合は重複保存をスキップ
+        if (isAutoSavedRef.current) {
+            logger.info(`⏭️ [${callId}] Skipping save - song was already auto-saved in handleSelectSongFromDatabase`);
+
+            // 保存完了後にisChangingSongフラグをリセット
+            if (isChangingSong) {
+                logger.info('✅ Song replacement saved (auto-saved) - resetting isChangingSong flag');
+                setIsChangingSong(false);
+            }
+
+            // 連続入力モードでない場合はモーダルを閉じる
+            if (!continuousInputMode) {
+                setEditModalOpen(false);
+            }
+
+            return; // 重複保存を防ぐため、ここで処理を終了
+        }
 
         // Check if song already exists in timeline (was already added)
         const songExistsInTimeline = editingSongs.some(s => s.id === song.id);
@@ -1220,10 +1268,13 @@ export default function MedleyPlayer({
             <SongEditModal
                 isOpen={editModalOpen}
                 onClose={() => {
+                    logger.info('🚪 Modal closing - resetting flags');
                     setEditModalOpen(false);
                     setSelectedDatabaseSong(null);
                     setContinuousInputMode(false); // モーダルを閉じる時は連続モードもリセット
                     setIsChangingSong(false); // 楽曲変更モードもリセット
+                    isAutoSavedRef.current = false; // 自動保存フラグもリセット（同期的）
+                    logger.info('✅ Reset isAutoSavedRef.current = false');
                 }}
                 song={editingSong}
                 onSave={handleSaveSong}

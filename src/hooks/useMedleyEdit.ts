@@ -136,13 +136,21 @@ export function useMedleyEdit(
 
     // 即時保存コールバックを呼び出す（React state更新後に実行、新しい楽曲リストを渡す）
     if (onAfterUpdate) {
+      logger.info('🔔 updateSong: Scheduling onAfterUpdate callback');
       setTimeout(() => {
         // setEditingSongs内のnewSongsをキャプチャするため、クロージャを使う
         setEditingSongs(currentSongs => {
+          logger.info('📞 updateSong: Calling onAfterUpdate callback', {
+            songsCount: currentSongs.length,
+            songs: currentSongs.map(s => ({ id: s.id, title: s.title }))
+          });
           onAfterUpdate(currentSongs);
+          logger.info('✅ updateSong: onAfterUpdate callback completed');
           return currentSongs; // 状態は変更しない
         });
       }, 0);
+    } else {
+      logger.info('ℹ️ updateSong: No onAfterUpdate callback registered');
     }
   }, [detectChanges, addToHistory, onAfterUpdate]);
 
@@ -174,12 +182,20 @@ export function useMedleyEdit(
 
     // 即時保存コールバックを呼び出す（React state更新後に実行、新しい楽曲リストを渡す）
     if (onAfterAdd) {
+      logger.info('🔔 addSong: Scheduling onAfterAdd callback');
       setTimeout(() => {
         setEditingSongs(currentSongs => {
+          logger.info('📞 addSong: Calling onAfterAdd callback', {
+            songsCount: currentSongs.length,
+            songs: currentSongs.map(s => ({ id: s.id, title: s.title }))
+          });
           onAfterAdd(currentSongs);
+          logger.info('✅ addSong: onAfterAdd callback completed');
           return currentSongs;
         });
       }, 0);
+    } else {
+      logger.info('ℹ️ addSong: No onAfterAdd callback registered');
     }
   }, [detectChanges, addToHistory, onAfterAdd]);
 
@@ -195,12 +211,20 @@ export function useMedleyEdit(
 
     // 即時保存コールバックを呼び出す（React state更新後に実行、新しい楽曲リストを渡す）
     if (onAfterDelete) {
+      logger.info('🔔 deleteSong: Scheduling onAfterDelete callback');
       setTimeout(() => {
         setEditingSongs(currentSongs => {
+          logger.info('📞 deleteSong: Calling onAfterDelete callback', {
+            songsCount: currentSongs.length,
+            songs: currentSongs.map(s => ({ id: s.id, title: s.title }))
+          });
           onAfterDelete(currentSongs);
+          logger.info('✅ deleteSong: onAfterDelete callback completed');
           return currentSongs;
         });
       }, 0);
+    } else {
+      logger.info('ℹ️ deleteSong: No onAfterDelete callback registered');
     }
   }, [detectChanges, addToHistory, onAfterDelete]);
 
@@ -266,12 +290,20 @@ export function useMedleyEdit(
 
     // 即時保存コールバックを呼び出す（React state更新後に実行、新しい楽曲リストを渡す）
     if (onAfterBatchUpdate) {
+      logger.info('🔔 batchUpdate: Scheduling onAfterBatchUpdate callback');
       setTimeout(() => {
         setEditingSongs(currentSongs => {
+          logger.info('📞 batchUpdate: Calling onAfterBatchUpdate callback', {
+            songsCount: currentSongs.length,
+            songs: currentSongs.map(s => ({ id: s.id, title: s.title }))
+          });
           onAfterBatchUpdate(currentSongs);
+          logger.info('✅ batchUpdate: onAfterBatchUpdate callback completed');
           return currentSongs;
         });
       }, 0);
+    } else {
+      logger.info('ℹ️ batchUpdate: No onAfterBatchUpdate callback registered');
     }
   }, [detectChanges, addToHistory, onAfterBatchUpdate]);
 
@@ -347,8 +379,7 @@ export function useMedleyEdit(
         startTime: song.startTime,
         endTime: song.endTime,
         color: song.color,
-        originalLink: song.originalLink,
-        links: song.links
+        originalLink: song.originalLink
       }));
 
       // Try to update first, then create if it doesn't exist

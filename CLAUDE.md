@@ -266,6 +266,10 @@ useEffect(() => {
 - Always include `displayName` for production builds
 - Use unique keys for dynamic components
 - Check authentication before rendering edit controls
+- **CRITICAL**: Always add explicit text color class (`text-gray-900`) to all `input` and `textarea` elements
+  - Reason: TailwindCSS 4 default styles may cause input text to be invisible (white/transparent)
+  - Pattern: `className="... text-gray-900 ..."`
+  - Applies to: All form inputs, search boxes, textareas in modals and forms
 
 ## Common Issues
 
@@ -306,6 +310,13 @@ useEffect(() => {
 - **Component missing**: Check displayName and module-level logging
 - **ActiveSongPopup hidden**: Verify collision detection uses 116px popup zone
 - **Build failures**: Run `npm run build + npx tsc --noEmit + npm run lint`
+
+### UI/Styling Issues
+- **Input text invisible**: Add `text-gray-900` class to all `input`/`textarea` elements
+  - Affected components: All modals (SongSearchModal, ManualSongAddModal, BulkEditModal, ImportSetlistModal, LoginModal)
+  - Reason: TailwindCSS 4 may not apply default text color, causing white/transparent text on white background
+  - Solution: Explicitly add `text-gray-900` to className prop
+  - Example: `className="w-full px-3 py-2 border border-gray-300 text-gray-900 ..."`
 
 ## File Structure
 

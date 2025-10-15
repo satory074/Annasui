@@ -113,7 +113,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
               maxLength={50}
               required
               disabled={isLoading}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
             <p className="mt-1 text-xs text-gray-500">
               {nickname.length}/50文字
@@ -133,7 +133,7 @@ export default function LoginModal({ isOpen, onClose, onLoginSuccess }: LoginMod
               placeholder="編集用パスワード"
               required
               disabled={isLoading}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
 

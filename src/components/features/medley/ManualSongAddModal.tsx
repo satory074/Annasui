@@ -102,7 +102,7 @@ export default function ManualSongAddModal({
               type="text"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
+              className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 ${
                 errors.title ? 'border-red-500' : 'border-gray-300'
               }`}
               placeholder="楽曲名を入力"
@@ -122,7 +122,7 @@ export default function ManualSongAddModal({
               type="text"
               value={formData.artist}
               onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
               placeholder="アーティスト名を入力（省略可 - 空欄の場合は「Unknown Artist」として保存）"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -139,7 +139,7 @@ export default function ManualSongAddModal({
               type="url"
               value={formData.originalLink}
               onChange={(e) => setFormData({ ...formData, originalLink: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
               placeholder="https://... (省略可)"
             />
             <p className="text-xs text-gray-500 mt-1">

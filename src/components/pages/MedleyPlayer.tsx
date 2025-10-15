@@ -1291,7 +1291,7 @@ export default function MedleyPlayer({
                 }}
                 song={editingSong}
                 onSave={handleSaveSong}
-                onDelete={undefined}
+                onDelete={deleteSong}
                 isNew={isNewSong}
                 maxDuration={effectiveDuration}
                 currentTime={currentTime}

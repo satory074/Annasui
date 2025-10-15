@@ -147,14 +147,20 @@ export function sanitizeSongSection(song: {
   artist?: string;
   startTime?: number | string;
   endTime?: number | string;
-  originalLink?: string;
+  niconicoLink?: string;
+  youtubeLink?: string;
+  spotifyLink?: string;
+  applemusicLink?: string;
   color?: string;
 }): {
   title: string;
   artist: string;
   startTime: number;
   endTime: number;
-  originalLink?: string;
+  niconicoLink?: string;
+  youtubeLink?: string;
+  spotifyLink?: string;
+  applemusicLink?: string;
   color?: string;
 } {
   const sanitized = {
@@ -166,14 +172,39 @@ export function sanitizeSongSection(song: {
 
   // Optional fields
   const result: typeof sanitized & {
-    originalLink?: string;
+    niconicoLink?: string;
+    youtubeLink?: string;
+    spotifyLink?: string;
+    applemusicLink?: string;
     color?: string;
   } = sanitized;
-  
-  if (song.originalLink) {
-    const sanitizedUrl = sanitizeUrl(song.originalLink);
+
+  // Sanitize platform-specific links
+  if (song.niconicoLink) {
+    const sanitizedUrl = sanitizeUrl(song.niconicoLink);
     if (sanitizedUrl) {
-      result.originalLink = sanitizedUrl;
+      result.niconicoLink = sanitizedUrl;
+    }
+  }
+
+  if (song.youtubeLink) {
+    const sanitizedUrl = sanitizeUrl(song.youtubeLink);
+    if (sanitizedUrl) {
+      result.youtubeLink = sanitizedUrl;
+    }
+  }
+
+  if (song.spotifyLink) {
+    const sanitizedUrl = sanitizeUrl(song.spotifyLink);
+    if (sanitizedUrl) {
+      result.spotifyLink = sanitizedUrl;
+    }
+  }
+
+  if (song.applemusicLink) {
+    const sanitizedUrl = sanitizeUrl(song.applemusicLink);
+    if (sanitizedUrl) {
+      result.applemusicLink = sanitizedUrl;
     }
   }
 

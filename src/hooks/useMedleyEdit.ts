@@ -379,7 +379,10 @@ export function useMedleyEdit(
         startTime: song.startTime,
         endTime: song.endTime,
         color: song.color,
-        originalLink: song.originalLink
+        niconicoLink: song.niconicoLink,
+        youtubeLink: song.youtubeLink,
+        spotifyLink: song.spotifyLink,
+        applemusicLink: song.applemusicLink
       }));
 
       // Try to update first, then create if it doesn't exist

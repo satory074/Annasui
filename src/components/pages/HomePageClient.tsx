@@ -6,7 +6,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createMedley, deleteMedley } from "@/lib/api/medleys";
 import { MedleyData, SongSection } from "@/types";
-import MedleyStatistics from "@/components/features/statistics/MedleyStatistics";
 import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
 import AppHeader from "@/components/layout/AppHeader";
 import LoginModal from "@/components/features/auth/LoginModal";
@@ -28,7 +27,6 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     const [sortBy, setSortBy] = useState<"title" | "creator" | "duration" | "songCount" | "createdAt" | "updatedAt" | "viewCount" | "random">("createdAt");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
     const [currentPage, setCurrentPage] = useState(1);
-    const [showStatistics, setShowStatistics] = useState(false);
     const [itemsPerPage, setItemsPerPage] = useState(8);
     const [showCreateMedleyModal, setShowCreateMedleyModal] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -275,20 +273,6 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             </p>
                         </div>
                         <div className="flex items-center gap-3">
-                            {/* Statistics button */}
-                            <button
-                                onClick={() => setShowStatistics(!showStatistics)}
-                                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-                            >
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z" />
-                                </svg>
-                                統計情報
-                                <span className="text-xs bg-gray-100 px-2 py-1 rounded">
-                                    {showStatistics ? '隠す' : '表示'}
-                                </span>
-                            </button>
-
                             {/* New medley registration button */}
                             <button
                                 onClick={handleCreateMedleyClick}
@@ -311,11 +295,6 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                         </div>
                     </div>
                 </div>
-
-                {/* Statistics */}
-                {showStatistics && medleys.length > 0 && (
-                    <MedleyStatistics medleys={medleys} />
-                )}
 
                 {/* Filter UI */}
                 <div className="mb-8">

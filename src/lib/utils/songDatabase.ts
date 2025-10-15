@@ -1,5 +1,7 @@
 import { SongSection, MedleyData } from "../../types";
 import { getAllMedleys } from "../api/medleys";
+import { supabase } from "../supabase";
+import { logger } from "./logger";
 
 // 楽曲DBエントリの型定義
 export interface SongDatabaseEntry {
@@ -104,7 +106,7 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
   allMedleys.forEach(medley => {
     medley.songs.forEach(song => {
       const normalizedId = normalizeSongInfo(song.title, song.artist);
-      
+
       if (songMap.has(normalizedId)) {
         // 既存の楽曲エントリを更新
         const existingEntry = songMap.get(normalizedId)!;
@@ -114,7 +116,7 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
           videoId: medley.videoId,
           platform: medley.platform || 'niconico'
         });
-        
+
         // より詳細な情報があれば更新（originalLink、linksなど）
         if (song.originalLink && !existingEntry.originalLink) {
           existingEntry.originalLink = song.originalLink;
@@ -140,6 +142,47 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
       }
     });
   });
+
+  // song_dataテーブルから手動追加された楽曲を取得
+  if (supabase) {
+    try {
+      const { data: manualSongs, error } = await supabase
+        .from('song_data')
+        .select('*');
+
+      if (error) {
+        logger.error('Failed to fetch manual songs from song_data:', error);
+      } else if (manualSongs) {
+        // 手動追加された楽曲をマップに追加
+        type SongDataRow = {
+          normalized_id: string;
+          title: string;
+          artist: string;
+          original_link: string | null;
+          links: any;
+        };
+
+        (manualSongs as SongDataRow[]).forEach((song) => {
+          if (songMap.has(song.normalized_id)) {
+            // 既に存在する場合はスキップ（メドレーから追加された楽曲が優先）
+            return;
+          }
+
+          songMap.set(song.normalized_id, {
+            id: song.normalized_id,
+            title: song.title,
+            artist: song.artist,
+            originalLink: song.original_link || undefined,
+            links: song.links || undefined,
+            usageCount: 0, // 手動追加のみでメドレーに未使用
+            medleys: []
+          });
+        });
+      }
+    } catch (error) {
+      logger.error('Error fetching song_data:', error);
+    }
+  }
 
   // 使用回数順でソートして配列として返す
   return Array.from(songMap.values()).sort((a, b) => b.usageCount - a.usageCount);
@@ -333,63 +376,73 @@ export function createSongFromDatabase(
 
 // 楽曲DBを取得（キャッシュ付き）
 let cachedSongDatabase: SongDatabaseEntry[] | null = null;
-let manuallyAddedSongs: SongDatabaseEntry[] = [];
 
 export async function getSongDatabase(): Promise<SongDatabaseEntry[]> {
   if (!cachedSongDatabase) {
     cachedSongDatabase = await buildSongDatabase();
   }
-  
-  // 手動で追加された楽曲と統合
-  const combinedDatabase = [...cachedSongDatabase, ...manuallyAddedSongs];
-  
-  // 重複排除（同じIDの楽曲がある場合は使用回数を合算）
-  const songMap = new Map<string, SongDatabaseEntry>();
-  combinedDatabase.forEach(song => {
-    if (songMap.has(song.id)) {
-      const existing = songMap.get(song.id)!;
-      existing.usageCount += song.usageCount;
-      existing.medleys = [...existing.medleys, ...song.medleys];
-    } else {
-      songMap.set(song.id, { ...song });
-    }
-  });
-  
-  return Array.from(songMap.values()).sort((a, b) => b.usageCount - a.usageCount);
+
+  return cachedSongDatabase;
 }
 
 // 手動で楽曲を追加
 export async function addManualSong(songData: { title: string; artist: string; originalLink?: string }): Promise<SongDatabaseEntry> {
   const normalizedId = normalizeSongInfo(songData.title, songData.artist);
-  
-  // 既に存在するかチェック
-  const existingManualSong = manuallyAddedSongs.find(song => song.id === normalizedId);
-  if (existingManualSong) {
-    return existingManualSong;
-  }
-  
-  // 既存のデータベースでも重複チェック
+
+  // 既存のデータベースで重複チェック
   const database = await getSongDatabase();
   const existingDbSong = database.find(song => song.id === normalizedId);
   if (existingDbSong) {
+    logger.info('Song already exists in database:', existingDbSong);
     return existingDbSong;
   }
-  
-  const newSong: SongDatabaseEntry = {
-    id: normalizedId,
-    title: songData.title,
-    artist: songData.artist,
-    originalLink: songData.originalLink,
-    usageCount: 0,
-    medleys: []
-  };
-  
-  manuallyAddedSongs.push(newSong);
-  return newSong;
+
+  // Supabaseのsong_dataテーブルに保存
+  if (!supabase) {
+    const error = new Error('Supabase client is not initialized');
+    logger.error('Cannot add manual song: Supabase client is null');
+    throw error;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('song_data')
+      .insert({
+        title: songData.title,
+        artist: songData.artist,
+        original_link: songData.originalLink,
+        normalized_id: normalizedId
+      })
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Failed to save manual song to database:', error);
+      throw error;
+    }
+
+    logger.info('Manual song saved to database:', data);
+
+    // キャッシュをクリアして次回のgetSongDatabaseで最新データを取得
+    clearSongDatabaseCache();
+
+    const newSong: SongDatabaseEntry = {
+      id: normalizedId,
+      title: songData.title,
+      artist: songData.artist,
+      originalLink: songData.originalLink,
+      usageCount: 0,
+      medleys: []
+    };
+
+    return newSong;
+  } catch (error) {
+    logger.error('Error adding manual song:', error);
+    throw error;
+  }
 }
 
 // キャッシュをクリア（開発用）
 export function clearSongDatabaseCache(): void {
   cachedSongDatabase = null;
-  manuallyAddedSongs = [];
 }

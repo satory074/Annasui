@@ -491,41 +491,51 @@ export async function deleteMedley(videoId: string): Promise<boolean> {
   }
 }
 
+// Call counter for saveMedleySongs (module-level)
+let saveMedleySongsCallCount = 0;
+
 // Songs management functions
 export async function saveMedleySongs(
   medleyId: string,
   songs: Omit<SongSection, 'id'>[],
   editorNickname?: string
 ): Promise<boolean> {
+  saveMedleySongsCallCount++;
+  const callId = `SAVE-${saveMedleySongsCallCount}`;
+
   if (!supabase) {
     return false
   }
 
   try {
-    logger.debug('🔍 saveMedleySongs called', {
+    logger.info(`🗄️ [${callId}] saveMedleySongs called`, {
+      callNumber: saveMedleySongsCallCount,
       medleyId,
       songsCount: songs.length,
-      songs: songs,
-      editorNickname
+      songs: songs.map(s => ({ title: s.title, artist: s.artist, start: s.startTime, end: s.endTime })),
+      editorNickname,
+      timestamp: new Date().toISOString()
     });
 
+    logger.info(`🗑️ [${callId}] Executing DELETE for medley:`, medleyId);
     // Delete existing songs for this medley
+    const deleteStartTime = Date.now();
     const { error: deleteError } = await supabase
       .from('songs')
       .delete()
       .eq('medley_id', medleyId)
 
     if (deleteError) {
+      logger.error(`❌ [${callId}] DELETE failed:`, deleteError);
       throw deleteError
     }
 
-    logger.debug('✅ Deleted existing songs for medley:', medleyId);
+    const deleteDuration = Date.now() - deleteStartTime;
+    logger.info(`✅ [${callId}] DELETE completed in ${deleteDuration}ms`);
 
     // Insert new songs
     if (songs.length > 0) {
-      logger.debug('📝 Preparing to insert songs:', {
-        songsCount: songs.length
-      });
+      logger.info(`📝 [${callId}] Preparing to INSERT ${songs.length} songs`);
       const songsToInsert = songs.map((song, index) => ({
         medley_id: medleyId,
         title: song.title,
@@ -539,29 +549,30 @@ export async function saveMedleySongs(
         last_edited_at: new Date().toISOString()
       }))
 
-      logger.debug('📤 Inserting songs into database:', {
-        songsToInsertCount: songsToInsert.length,
-        songsToInsert: songsToInsert
+      logger.info(`📤 [${callId}] Executing INSERT for ${songsToInsert.length} songs`, {
+        songs: songsToInsert.map(s => ({ title: s.title, artist: s.artist, order: s.order_index }))
       });
 
+      const insertStartTime = Date.now();
       const { error: insertError } = await supabase
         .from('songs')
         .insert(songsToInsert)
 
       if (insertError) {
-        logger.error('❌ Insert error:', insertError);
+        logger.error(`❌ [${callId}] INSERT failed:`, insertError);
         throw insertError
       }
 
-      logger.info('✅ Successfully inserted songs:', songsToInsert.length);
+      const insertDuration = Date.now() - insertStartTime;
+      logger.info(`✅ [${callId}] INSERT completed in ${insertDuration}ms - ${songsToInsert.length} songs saved`);
     } else {
-      logger.warn('⚠️ No songs to insert (songs.length = 0)');
+      logger.warn(`⚠️ [${callId}] No songs to insert (songs.length = 0)`);
     }
 
-    logger.info('✅ Successfully saved medley songs')
+    logger.info(`✅ [${callId}] saveMedleySongs completed successfully`)
     return true
   } catch (error) {
-    logger.error('❌ Error saving medley songs:', error)
+    logger.error(`❌ [${callId}] Error saving medley songs:`, error)
     return false
   }
 }

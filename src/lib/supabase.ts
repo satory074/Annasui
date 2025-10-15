@@ -15,122 +15,160 @@ logger.debug('🔍 Supabase Environment Debug:', {
   isProduction: process.env.NODE_ENV === 'production'
 })
 
-// Database types will be generated later
+// Database types based on new structure
 export type Database = {
   public: {
     Tables: {
-      users: {
-        Row: {
-          id: string
-          email: string
-          name: string | null
-          avatar_url: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id: string
-          email: string
-          name?: string | null
-          avatar_url?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          email?: string
-          name?: string | null
-          avatar_url?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
       medleys: {
         Row: {
           id: string
           video_id: string
+          platform: string
           title: string
           creator: string | null
           duration: number
-          user_id: string | null
-          last_editor: string | null
-          last_edited_at: string | null
           created_at: string
           updated_at: string
+          last_editor: string | null
+          last_edited_at: string | null
         }
         Insert: {
           id?: string
           video_id: string
+          platform?: string
           title: string
           creator?: string | null
           duration: number
-          user_id?: string | null
-          last_editor?: string | null
-          last_edited_at?: string | null
           created_at?: string
           updated_at?: string
+          last_editor?: string | null
+          last_edited_at?: string | null
         }
         Update: {
           id?: string
           video_id?: string
+          platform?: string
           title?: string
           creator?: string | null
           duration?: number
-          user_id?: string | null
-          last_editor?: string | null
-          last_edited_at?: string | null
           created_at?: string
           updated_at?: string
+          last_editor?: string | null
+          last_edited_at?: string | null
         }
       }
-      songs: {
+      song_master: {
         Row: {
           id: string
-          medley_id: string
           title: string
-          artist: string | null
-          start_time: number
-          end_time: number
-          color: string
-          genre: string | null
+          artist: string
+          normalized_id: string
           original_link: string | null
-          order_index: number
-          last_editor: string | null
-          last_edited_at: string | null
+          links: Record<string, unknown> | null
+          description: string | null
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: string
-          medley_id: string
           title: string
-          artist?: string | null
-          start_time: number
-          end_time: number
-          color: string
-          genre?: string | null
+          artist: string
+          normalized_id: string
           original_link?: string | null
-          order_index: number
-          last_editor?: string | null
-          last_edited_at?: string
+          links?: Record<string, unknown> | null
+          description?: string | null
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: string
-          medley_id?: string
           title?: string
-          artist?: string | null
-          start_time?: number
-          end_time?: number
-          color?: string
-          genre?: string | null
+          artist?: string
+          normalized_id?: string
           original_link?: string | null
-          order_index?: number
-          last_editor?: string | null
-          last_edited_at?: string
+          links?: Record<string, unknown> | null
+          description?: string | null
           created_at?: string
           updated_at?: string
+        }
+      }
+      medley_songs: {
+        Row: {
+          id: string
+          medley_id: string
+          song_id: string | null
+          start_time: number
+          end_time: number
+          order_index: number
+          title: string
+          artist: string
+          color: string
+          original_link: string | null
+          created_at: string
+          updated_at: string
+          last_editor: string | null
+          last_edited_at: string | null
+        }
+        Insert: {
+          id?: string
+          medley_id: string
+          song_id?: string | null
+          start_time: number
+          end_time: number
+          order_index: number
+          title: string
+          artist: string
+          color?: string
+          original_link?: string | null
+          created_at?: string
+          updated_at?: string
+          last_editor?: string | null
+          last_edited_at?: string | null
+        }
+        Update: {
+          id?: string
+          medley_id?: string
+          song_id?: string | null
+          start_time?: number
+          end_time?: number
+          order_index?: number
+          title?: string
+          artist?: string
+          color?: string
+          original_link?: string | null
+          created_at?: string
+          updated_at?: string
+          last_editor?: string | null
+          last_edited_at?: string | null
+        }
+      }
+      medley_edits: {
+        Row: {
+          id: string
+          medley_id: string | null
+          song_id: string | null
+          editor_nickname: string
+          action: string
+          changes: Record<string, unknown> | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          medley_id?: string | null
+          song_id?: string | null
+          editor_nickname: string
+          action: string
+          changes?: Record<string, unknown> | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          medley_id?: string | null
+          song_id?: string | null
+          editor_nickname?: string
+          action?: string
+          changes?: Record<string, unknown> | null
+          created_at?: string
         }
       }
     }
@@ -138,7 +176,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_medley_contributors: {
+        Args: {
+          medley_uuid: string
+          limit_count?: number
+        }
+        Returns: Array<{
+          editor_nickname: string
+          edit_count: number
+          last_edit: string
+        }>
+      }
     }
     Enums: {
       [_ in never]: never

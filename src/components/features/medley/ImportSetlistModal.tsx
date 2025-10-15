@@ -187,9 +187,12 @@ export default function ImportSetlistModal({
       startTime: Math.round(entry.startTime * 10) / 10,
       endTime: Math.round((entry.endTime || entry.startTime + 30) * 10) / 10,
       color: `bg-${['blue', 'green', 'purple', 'yellow', 'pink', 'indigo'][index % 6]}-400`,
-      originalLink: ""
+      niconicoLink: "",
+      youtubeLink: "",
+      spotifyLink: "",
+      applemusicLink: ""
     }));
-    
+
     onImport(songs);
     onClose();
     setTextInput("");

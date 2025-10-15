@@ -294,6 +294,11 @@ useEffect(() => {
 - **400 Bad Request from Supabase**: Inspect network request URL for `?columns=...` parameter - ensure all column names exist in the actual database schema
 - **Type errors after Supabase client upgrade**: Update Database type definitions in `src/lib/supabase.ts` to match actual schema
 - **Schema mismatch**: Run `NOTIFY pgrst, 'reload schema';` in Supabase SQL editor to refresh PostgREST schema cache
+- **Migration-induced save failures**: After schema migrations (especially column renames/additions), systematically search codebase for old field references:
+  - Use `grep -r "oldFieldName" src/` to find all references
+  - Check: Type definitions, API calls, sanitization functions, component props, hooks
+  - Example: Migration 017 replaced `originalLink` with `niconicoLink`/`youtubeLink`/`spotifyLink`/`applemusicLink` - required updating 4+ files
+  - After fixes, verify production deployment with cache-cleared browser test
 
 ### Timeline Issues
 - **Keyboard shortcuts not working**: Check edit mode active and no input focus
@@ -351,6 +356,34 @@ src/
 5. **Verify**: Test on https://anasui-e6f49.web.app
 
 **CRITICAL**: Always test features in production - SSR/CORS/iframe behavior differs from local.
+
+### Production Deployment Verification
+
+After deploying fixes (especially for save/database operations):
+
+1. **Clear Browser Cache**:
+   - Firebase caches JavaScript bundles aggressively
+   - Hard refresh (Cmd+Shift+R) may not be sufficient
+   - Use Chrome DevTools: "Disable cache" + reload, or open incognito window
+   - Or use JavaScript to force cache clear: `caches.keys().then(names => names.forEach(name => caches.delete(name)))`
+
+2. **Verify Network Requests**:
+   - Open Chrome DevTools → Network tab → Filter by "Fetch/XHR"
+   - Look for successful POST/PATCH/DELETE requests to Supabase
+   - Check request payload in "Payload" tab - verify correct field names
+   - Example: After Migration 017, confirm `niconicoLink` (not `originalLink`) in POST body
+
+3. **Test Complete Flow**:
+   - Login with test credentials
+   - Perform operation that was failing (e.g., add song)
+   - Verify no error dialog appears
+   - Check browser console for errors
+   - Reload page to confirm data persistence
+
+4. **Common Deployment Issues**:
+   - **Stale JavaScript**: Even after deployment, browser may serve old bundle
+   - **Session state**: sessionStorage persists across reloads but NOT after cache clear
+   - **Database propagation**: Supabase schema changes may take ~30 seconds to propagate
 
 ## Environment Variables
 

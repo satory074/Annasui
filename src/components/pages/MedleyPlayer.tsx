@@ -539,8 +539,10 @@ export default function MedleyPlayer({
                 ...editingSong,
                 title: songTemplate.title,
                 artist: songTemplate.artist,
-                originalLink: songTemplate.originalLink,
-                links: songTemplate.links
+                niconicoLink: songTemplate.niconicoLink,
+                youtubeLink: songTemplate.youtubeLink,
+                spotifyLink: songTemplate.spotifyLink,
+                applemusicLink: songTemplate.applemusicLink
             };
 
             setEditingSong(replacedSong);
@@ -665,13 +667,10 @@ export default function MedleyPlayer({
             startTime: currentTime || 0,
             endTime: Math.min((currentTime || 0) + 30, duration),
             color: "bg-orange-400",
-            originalLink: "",
-            links: {
-                niconico: "",
-                youtube: "",
-                spotify: "",
-                appleMusic: ""
-            }
+            niconicoLink: "",
+            youtubeLink: "",
+            spotifyLink: "",
+            applemusicLink: ""
         };
 
         // 新規楽曲として編集状態にセット
@@ -720,12 +719,14 @@ export default function MedleyPlayer({
                 ...editingSong,
                 title: updatedSong.title,
                 artist: updatedSong.artist,
-                originalLink: updatedSong.originalLink || "",
-                links: updatedSong.links
+                niconicoLink: updatedSong.niconicoLink || "",
+                youtubeLink: updatedSong.youtubeLink || "",
+                spotifyLink: updatedSong.spotifyLink || "",
+                applemusicLink: updatedSong.applemusicLink || ""
             };
             setEditingSong(updatedSongSection);
         }
-        
+
         // Todo: 実際のデータベース更新ロジックも必要に応じて実装
         logger.debug('楽曲情報を更新:', updatedSong);
     };
@@ -816,7 +817,10 @@ export default function MedleyPlayer({
             startTime: Math.round(nextStartTime * 10) / 10,
             endTime: Math.round((nextStartTime + 30) * 10) / 10, // デフォルト30秒
             color: "bg-blue-400",
-                originalLink: ""
+            niconicoLink: "",
+            youtubeLink: "",
+            spotifyLink: "",
+            applemusicLink: ""
         };
         
         setEditingSong(nextSong);
@@ -850,8 +854,10 @@ export default function MedleyPlayer({
                 startTime: song.startTime,
                 endTime: song.endTime,
                 color: song.color,
-                originalLink: song.originalLink,
-                links: song.links
+                niconicoLink: song.niconicoLink,
+                youtubeLink: song.youtubeLink,
+                spotifyLink: song.spotifyLink,
+                applemusicLink: song.applemusicLink
             }));
 
             // 一括更新を実行（アトミック操作）

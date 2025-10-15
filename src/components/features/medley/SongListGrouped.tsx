@@ -42,6 +42,7 @@ export default function SongListGrouped({
   currentTime,
   onTimelineClick,
   onSeek,
+  onDeleteSong,
   onTogglePlayPause,
   isPlaying,
   selectedSong,
@@ -392,8 +393,8 @@ export default function SongListGrouped({
                           // 空の楽曲のビジュアル強調
                           (song.title?.startsWith('空の楽曲') || song.artist === 'アーティスト未設定')
                             ? 'bg-yellow-400 border-2 border-orange-500 shadow-lg ring-1 ring-orange-300'
-                            : isBeyondActualDuration 
-                              ? 'bg-red-400 opacity-50' 
+                            : isBeyondActualDuration
+                              ? 'bg-red-400 opacity-50'
                               : 'bg-orange-600'
                         } ${
                           hasOverlap ? 'opacity-80' : ''

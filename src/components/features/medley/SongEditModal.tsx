@@ -643,6 +643,10 @@ export default function SongEditModal({
               allSongs={allSongs}
               currentSongTitle={formData.title}
               currentSongArtist={formData.artist}
+              onDeleteSong={!isNew && onDelete && song ? () => {
+                onDelete(song.id);
+                onClose();
+              } : undefined}
             />
             {errors.segments && (
               <p className="text-red-500 text-sm mt-1">{errors.segments}</p>

@@ -25,6 +25,7 @@ interface SegmentListProps {
   onSetTempTimeValue: (value: string) => void;
   onSeek?: (time: number) => void;
   onTogglePlayPause?: () => void;
+  onDeleteSong?: () => void;
 }
 
 function SegmentList({
@@ -39,7 +40,8 @@ function SegmentList({
   onFinishEditing,
   onSetTempTimeValue,
   onSeek,
-  onTogglePlayPause
+  onTogglePlayPause,
+  onDeleteSong
 }: SegmentListProps) {
 
   // キーボード処理
@@ -159,9 +161,10 @@ function SegmentList({
                     )}
                   </button>
                 )}
-                
-                {/* 削除ボタン（2個以上の場合のみ） */}
-                {segments.length > 1 && (
+
+                {/* 削除ボタン */}
+                {segments.length > 1 ? (
+                  // 区間が2個以上の場合：区間のみを削除
                   <button
                     onClick={() => onRemoveSegment(segment.id)}
                     className="p-1 text-xs bg-brick-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-brick-600"
@@ -171,7 +174,22 @@ function SegmentList({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                     </svg>
                   </button>
-                )}
+                ) : onDeleteSong ? (
+                  // 区間が1個の場合：楽曲全体を削除
+                  <button
+                    onClick={() => {
+                      if (window.confirm('この楽曲をタイムラインから削除しますか？\n\nこの操作は取り消せません。')) {
+                        onDeleteSong();
+                      }
+                    }}
+                    className="p-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-red-600"
+                    title="楽曲を削除"
+                  >
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                ) : null}
               </div>
             </div>
           );
@@ -220,6 +238,7 @@ interface MultiSegmentTimeEditorProps {
   allSongs?: SongSection[]; // 重複検証用
   currentSongTitle?: string;
   currentSongArtist?: string;
+  onDeleteSong?: () => void; // 楽曲全体を削除
 }
 
 export default function MultiSegmentTimeEditor({
@@ -232,7 +251,8 @@ export default function MultiSegmentTimeEditor({
   onTogglePlayPause,
   allSongs = [],
   currentSongTitle = "",
-  currentSongArtist = ""
+  currentSongArtist = "",
+  onDeleteSong
 }: MultiSegmentTimeEditorProps) {
   const [errors, setErrors] = useState<Record<number, { startTime?: string; endTime?: string }>>({});
   const [previewingSegmentId, setPreviewingSegmentId] = useState<number | null>(null);
@@ -476,8 +496,8 @@ export default function MultiSegmentTimeEditor({
       </div>
 
       {/* 統合セグメント表示 - 1行レイアウト */}
-      <SegmentList 
-        segments={segments} 
+      <SegmentList
+        segments={segments}
         errors={errors}
         previewingSegmentId={previewingSegmentId}
         editingSegment={editingSegment}
@@ -489,6 +509,7 @@ export default function MultiSegmentTimeEditor({
         onSetTempTimeValue={setTempTimeValue}
         onSeek={onSeek}
         onTogglePlayPause={onTogglePlayPause}
+        onDeleteSong={onDeleteSong}
       />
 
     </div>

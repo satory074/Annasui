@@ -466,8 +466,12 @@ Run this migration in Supabase Dashboard to set up the database from scratch:
   - Shows placeholder text explaining optional fields
   - Displays help text: "※ 空欄の場合、自動的に「Unknown Artist」として登録されます"
   - Validation only checks that title is not empty
-- **Data flow**: User input → `addManualSong()` → Database → Song search cache cleared
+- **Data flow**: User input → `addManualSong()` → Database → Song search cache cleared → **Auto-select added song**
+  - After successful save, `handleSelectSongFromDatabase(addedSong)` is called automatically
+  - This opens the edit modal with the newly added song pre-selected
+  - User can immediately set time information without searching again
 - **Usage**: Accessed via "手動で新しい楽曲を追加" button in SongSearchModal
+- **Implementation**: `MedleyPlayer.tsx:handleManualSongSave` - Both replacement and new addition modes auto-select the added song
 
 ## Security Patterns
 

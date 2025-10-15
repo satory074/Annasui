@@ -629,9 +629,9 @@ export default function MedleyPlayer({
                 // 直接置換処理を実行（SongSearchModalを再開せずに）
                 handleSelectSongFromDatabase(addedSong);
             } else {
-                // 新規追加の場合のみ楽曲検索モーダルを開き直す
-                logger.info('➕ Manual song added in new song context - reopening search modal');
-                setSongSearchModalOpen(true);
+                // 新規追加の場合も、追加した楽曲を自動的に選択
+                logger.info('➕ Manual song added in new song context - auto-selecting added song');
+                handleSelectSongFromDatabase(addedSong);
             }
             
             // 成功メッセージ（オプション）

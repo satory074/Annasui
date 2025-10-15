@@ -114,10 +114,11 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
 
     // 重複を除去（同じ楽曲が複数セグメントで同時に再生される場合）
     const uniqueActiveSongs = currentActiveSongs.reduce((acc: ActiveSong[], current) => {
-      const existing = acc.find(song => 
-        song.title === current.title && 
+      const existing = acc.find(song =>
+        song.title === current.title &&
         song.artist === current.artist &&
-        song.originalLink === current.originalLink
+        song.niconicoLink === current.niconicoLink &&
+        song.youtubeLink === current.youtubeLink
       );
       if (!existing) {
         acc.push(current);
@@ -318,8 +319,10 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
               <div className="flex-shrink-0">
                 <SongThumbnail
                   title={song.title}
-                  originalLink={song.originalLink}
-                  links={song.links}
+                  niconicoLink={song.niconicoLink}
+                  youtubeLink={song.youtubeLink}
+                  spotifyLink={song.spotifyLink}
+                  applemusicLink={song.applemusicLink}
                   size="sm"
                   className="w-12 h-12 rounded-md"
                   isClickable={false}

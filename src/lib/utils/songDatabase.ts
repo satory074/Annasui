@@ -8,13 +8,10 @@ export interface SongDatabaseEntry {
   id: string; // 楽曲名_アーティスト名をベースにした一意ID
   title: string;
   artist: string;
-  originalLink?: string;
-  links?: {
-    niconico?: string;
-    youtube?: string;
-    spotify?: string;
-    appleMusic?: string;
-  };
+  niconicoLink?: string;
+  youtubeLink?: string;
+  spotifyLink?: string;
+  applemusicLink?: string;
   usageCount: number; // この楽曲が使用されている回数
   medleys: Array<{ // 使用されているメドレー情報
     medleyTitle: string;
@@ -122,12 +119,18 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
           platform: medley.platform || 'niconico'
         });
 
-        // より詳細な情報があれば更新（originalLink、linksなど）
-        if (song.originalLink && !existingEntry.originalLink) {
-          existingEntry.originalLink = song.originalLink;
+        // より詳細な情報があれば更新（各プラットフォームのリンク）
+        if (song.niconicoLink && !existingEntry.niconicoLink) {
+          existingEntry.niconicoLink = song.niconicoLink;
         }
-        if (song.links && !existingEntry.links) {
-          existingEntry.links = song.links;
+        if (song.youtubeLink && !existingEntry.youtubeLink) {
+          existingEntry.youtubeLink = song.youtubeLink;
+        }
+        if (song.spotifyLink && !existingEntry.spotifyLink) {
+          existingEntry.spotifyLink = song.spotifyLink;
+        }
+        if (song.applemusicLink && !existingEntry.applemusicLink) {
+          existingEntry.applemusicLink = song.applemusicLink;
         }
       } else {
         // 新しい楽曲エントリを作成
@@ -135,8 +138,10 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
           id: normalizedId,
           title: song.title,
           artist: song.artist,
-          originalLink: song.originalLink,
-          links: song.links,
+          niconicoLink: song.niconicoLink,
+          youtubeLink: song.youtubeLink,
+          spotifyLink: song.spotifyLink,
+          applemusicLink: song.applemusicLink,
           usageCount: 1,
           medleys: [{
             medleyTitle: medley.title,
@@ -162,9 +167,11 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
         type SongDataRow = {
           normalized_id: string;
           title: string;
-          artist: string;
-          original_link: string | null;
-          links: any;
+          artist: string | null;
+          niconico_link: string | null;
+          youtube_link: string | null;
+          spotify_link: string | null;
+          applemusic_link: string | null;
         };
 
         (manualSongs as SongDataRow[]).forEach((song) => {
@@ -176,9 +183,11 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
           songMap.set(song.normalized_id, {
             id: song.normalized_id,
             title: song.title,
-            artist: song.artist,
-            originalLink: song.original_link || undefined,
-            links: song.links || undefined,
+            artist: song.artist || DEFAULT_ARTIST,
+            niconicoLink: song.niconico_link || undefined,
+            youtubeLink: song.youtube_link || undefined,
+            spotifyLink: song.spotify_link || undefined,
+            applemusicLink: song.applemusic_link || undefined,
             usageCount: 0, // 手動追加のみでメドレーに未使用
             medleys: []
           });
@@ -364,8 +373,8 @@ export function searchSongs(
 
 // 楽曲DBからSongSectionを生成（時間は0で初期化）
 export function createSongFromDatabase(
-  dbEntry: SongDatabaseEntry, 
-  startTime: number = 0, 
+  dbEntry: SongDatabaseEntry,
+  startTime: number = 0,
   endTime: number = 0
 ): Omit<SongSection, 'id'> {
   return {
@@ -374,8 +383,10 @@ export function createSongFromDatabase(
     startTime,
     endTime,
     color: "bg-blue-500", // 統一カラー
-    originalLink: dbEntry.originalLink || "",
-    links: dbEntry.links
+    niconicoLink: dbEntry.niconicoLink || "",
+    youtubeLink: dbEntry.youtubeLink || "",
+    spotifyLink: dbEntry.spotifyLink || "",
+    applemusicLink: dbEntry.applemusicLink || ""
   };
 }
 
@@ -391,7 +402,14 @@ export async function getSongDatabase(): Promise<SongDatabaseEntry[]> {
 }
 
 // 手動で楽曲を追加
-export async function addManualSong(songData: { title: string; artist: string; originalLink?: string }): Promise<SongDatabaseEntry> {
+export async function addManualSong(songData: {
+  title: string;
+  artist: string;
+  niconicoLink?: string;
+  youtubeLink?: string;
+  spotifyLink?: string;
+  applemusicLink?: string;
+}): Promise<SongDatabaseEntry> {
   // アーティスト名が空の場合はデフォルト値を使用
   const effectiveArtist = songData.artist && songData.artist.trim() ? songData.artist.trim() : DEFAULT_ARTIST;
   const normalizedId = normalizeSongInfo(songData.title, effectiveArtist);
@@ -417,7 +435,10 @@ export async function addManualSong(songData: { title: string; artist: string; o
       .insert({
         title: songData.title,
         artist: effectiveArtist,
-        original_link: songData.originalLink,
+        niconico_link: songData.niconicoLink || null,
+        youtube_link: songData.youtubeLink || null,
+        spotify_link: songData.spotifyLink || null,
+        applemusic_link: songData.applemusicLink || null,
         normalized_id: normalizedId
       })
       .select()
@@ -437,7 +458,10 @@ export async function addManualSong(songData: { title: string; artist: string; o
       id: normalizedId,
       title: songData.title,
       artist: effectiveArtist,
-      originalLink: songData.originalLink,
+      niconicoLink: songData.niconicoLink,
+      youtubeLink: songData.youtubeLink,
+      spotifyLink: songData.spotifyLink,
+      applemusicLink: songData.applemusicLink,
       usageCount: 0,
       medleys: []
     };

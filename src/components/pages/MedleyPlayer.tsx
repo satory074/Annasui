@@ -608,7 +608,14 @@ export default function MedleyPlayer({
     };
 
     // 手動楽曲追加モーダルから楽曲を保存
-    const handleManualSongSave = async (songData: { title: string; artist: string; originalLink?: string }) => {
+    const handleManualSongSave = async (songData: {
+        title: string;
+        artist: string;
+        niconicoLink?: string;
+        youtubeLink?: string;
+        spotifyLink?: string;
+        applemusicLink?: string;
+    }) => {
         try {
             // 楽曲をデータベースに追加
             const addedSong = await addManualSong(songData);

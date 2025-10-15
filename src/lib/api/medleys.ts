@@ -52,8 +52,10 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
     startTime: song.start_time,
     endTime: song.end_time,
     color: song.color,
-    originalLink: song.original_link || undefined,
-    links: undefined // links field removed from database
+    niconicoLink: song.niconico_link || undefined,
+    youtubeLink: song.youtube_link || undefined,
+    spotifyLink: song.spotify_link || undefined,
+    applemusicLink: song.applemusic_link || undefined
   }
 }
 
@@ -303,7 +305,10 @@ export async function createMedley(
       start_time: song.startTime,
       end_time: song.endTime,
       color: song.color,
-      original_link: song.originalLink || null,
+      niconico_link: song.niconicoLink || null,
+      youtube_link: song.youtubeLink || null,
+      spotify_link: song.spotifyLink || null,
+      applemusic_link: song.applemusicLink || null,
       order_index: index + 1,
       last_editor: editorNickname || null,
       last_edited_at: new Date().toISOString()
@@ -532,7 +537,10 @@ export async function saveMedleySongs(
         start_time: song.startTime,
         end_time: song.endTime,
         color: song.color,
-        original_link: song.originalLink || null,
+        niconico_link: song.niconicoLink || null,
+        youtube_link: song.youtubeLink || null,
+        spotify_link: song.spotifyLink || null,
+        applemusic_link: song.applemusicLink || null,
         order_index: index + 1,  // Re-added: database requires this field for ordering
         last_editor: editorNickname || null,
         last_edited_at: new Date().toISOString()

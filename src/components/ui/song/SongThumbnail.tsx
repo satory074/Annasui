@@ -7,26 +7,25 @@ import { SkeletonThumbnail } from "@/components/ui/LoadingSkeleton";
 import { logger } from '@/lib/utils/logger';
 
 interface SongThumbnailProps {
-  originalLink?: string;
   title: string;
   size?: "sm" | "md" | "lg";
   className?: string;
   isClickable?: boolean;
-  links?: {
-    niconico?: string;
-    youtube?: string;
-    spotify?: string;
-    appleMusic?: string;
-  };
+  niconicoLink?: string;
+  youtubeLink?: string;
+  spotifyLink?: string;
+  applemusicLink?: string;
 }
 
 export default function SongThumbnail({
-  originalLink,
   title,
   size = "md",
   className = "",
   isClickable = true,
-  links
+  niconicoLink,
+  youtubeLink,
+  spotifyLink,
+  applemusicLink
 }: SongThumbnailProps) {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [primaryLink, setPrimaryLink] = useState<string | null>(null);
@@ -42,26 +41,29 @@ export default function SongThumbnail({
       setHasError(false);
       setThumbnailUrl(null);
       setPrimaryLink(null);
-      
+
       // 新しい楽曲の場合はリトライカウントをリセット
       if (retryCount > 0) {
         setRetryCount(0);
       }
 
       try {
-        if (links) {
-          // 新しいlinksフィールドを使用
-          const thumbnail = await getBestThumbnailFromLinks(links, originalLink);
+        // プラットフォームリンクをオブジェクトにまとめる
+        const links = {
+          niconico: niconicoLink,
+          youtube: youtubeLink,
+          spotify: spotifyLink,
+          appleMusic: applemusicLink
+        };
+
+        // 利用可能なリンクがある場合
+        if (niconicoLink || youtubeLink || spotifyLink || applemusicLink) {
+          const thumbnail = await getBestThumbnailFromLinks(links);
           setThumbnailUrl(thumbnail);
-          
+
           // クリック時のリンクを優先度に基づいて設定
-          const bestLink = links.niconico || links.youtube || links.spotify || links.appleMusic || originalLink;
+          const bestLink = niconicoLink || youtubeLink || spotifyLink || applemusicLink;
           setPrimaryLink(bestLink || null);
-        } else if (originalLink) {
-          // 後方互換性のためのoriginalLink対応
-          const thumbnail = getThumbnailUrl(originalLink);
-          setThumbnailUrl(thumbnail);
-          setPrimaryLink(originalLink);
         }
       } catch (error) {
         logger.error('Thumbnail loading error:', error);
@@ -70,7 +72,7 @@ export default function SongThumbnail({
           logger.warn(`サムネイル読み込み失敗。リトライします... (${retryCount + 1}/${maxRetries})`);
           setRetryCount(prev => prev + 1);
           setIsLoading(false);
-          
+
           // 1.5秒後にリトライ
           setTimeout(() => {
             setIsLoading(true);
@@ -89,7 +91,7 @@ export default function SongThumbnail({
     };
 
     loadThumbnail();
-  }, [links, originalLink, title, retryCount, thumbnailUrl]);
+  }, [niconicoLink, youtubeLink, spotifyLink, applemusicLink, title, retryCount, thumbnailUrl]);
 
   const sizeClasses = {
     sm: "w-32 h-18",

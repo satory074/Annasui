@@ -160,6 +160,13 @@ export default function MedleyPlayer({
                 creator,
                 duration: saveDuration,
                 songCount: songsToSave.length,
+                songs: songsToSave.map(s => ({
+                    id: s.id,
+                    title: s.title,
+                    artist: s.artist,
+                    startTime: s.startTime,
+                    endTime: s.endTime
+                })),
                 editor: nickname,
                 hasVideoMetadata: !!videoMetadataRef.current
             });
@@ -177,7 +184,11 @@ export default function MedleyPlayer({
                 logger.info('✅ Immediate save successful, refetching data');
                 await refetch();
             } else {
-                logger.error('❌ Immediate save failed');
+                logger.error('❌ Immediate save failed', {
+                    videoId,
+                    songCount: songsToSave.length,
+                    songs: songsToSave.map(s => ({ title: s.title, artist: s.artist }))
+                });
             }
         };
     }, [isAuthenticated, nickname, platform, medleyTitle, medleyCreator, medleyDuration, videoId, saveMedley, refetch]);
@@ -486,6 +497,13 @@ export default function MedleyPlayer({
             // editingSongsに既に存在するかチェック
             const existsInTimeline = editingSongs.some(s => s.id === editingSong.id);
 
+            logger.info('🔍 [DEBUG] Checking if song exists in timeline', {
+                editingSongId: editingSong.id,
+                editingSongsIds: editingSongs.map(s => s.id),
+                existsInTimeline: existsInTimeline,
+                editingSongsCount: editingSongs.length
+            });
+
             logger.info('🔄 [REPLACEMENT PATH] Replacing existing song with database selection', {
                 preservedId: editingSong.id,
                 preservedStartTime: editingSong.startTime,
@@ -515,12 +533,14 @@ export default function MedleyPlayer({
                 existsInTimeline: existsInTimeline
             });
 
-            // CRITICAL FIX: 空のプレースホルダーの場合（handleAddNewSongで作成されたもの）は
-            // isNewSongをtrueのままにして、addSongが呼ばれるようにする
-            // タイムラインに既に存在する楽曲の場合のみisNewSongをfalseにする
+            // CRITICAL FIX: タイムラインに存在するかどうかに関わらず、楽曲を保存する
+            // これにより、ユーザーが編集モーダルで「保存」ボタンを押さなくても、DBに保存される
             if (existsInTimeline) {
                 setIsNewSong(false);
                 logger.info('📝 Setting isNewSong=false (song exists in timeline - will call updateSong)');
+                // 既存楽曲を更新（これにより onAfterUpdate → saveMedley が呼ばれる）
+                logger.info('🔄 Calling updateSong to save changes immediately');
+                updateSong(replacedSong);
             } else {
                 setIsNewSong(true);
                 logger.info('📝 Keeping isNewSong=true (empty placeholder - will call addSong)');

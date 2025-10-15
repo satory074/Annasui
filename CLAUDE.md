@@ -117,14 +117,17 @@ Local環境でエラーが解決困難な場合、production buildで先に検�
 ### Song Database System
 - **Purpose**: Persistent storage for manually added songs that can be reused across medleys
 - **Implementation**: `src/lib/utils/songDatabase.ts`
-- **Database table**: `song_master` (see migration `015_rebuild_database_structure.sql`)
+- **Database table**: `song_master` (see migrations `015_rebuild_database_structure.sql`, `016_make_artist_optional.sql`)
 - **Key features**:
   - **Normalized ID**: Uses `normalizeSongInfo()` for duplicate detection (converts katakana→hiragana, removes symbols, unifies music terms)
   - **Search system**: Multi-tier matching (exact → startsWith → wordMatch → partialMatch → fuzzyMatch) with scoring
   - **Persistence**: Songs saved to Supabase persist across page reloads
   - **Integration**: Fetched via `buildSongDatabase()` which merges medley-extracted songs + manually added songs
+  - **Optional fields**: Artist name and original link are optional (Migration 016)
+    - Empty artist → automatically converted to "Unknown Artist"
+    - Empty original_link → stored as NULL
 - **Functions**:
-  - `addManualSong()`: Save new song to database
+  - `addManualSong()`: Save new song to database (title required, artist/link optional)
   - `getSongDatabase()`: Get all songs (cached, includes medley + manual songs)
   - `searchSongs()`: Search with scoring and match type detection
   - `createSongFromDatabase()`: Convert DB entry to timeline song
@@ -411,11 +414,12 @@ Run this migration in Supabase Dashboard to set up the database from scratch:
 
 **2. song_master** (Song master data - reusable across medleys)
 - `id` (UUID, primary key)
-- `title`, `artist`, `normalized_id` (unique) - Song identification
-- `original_link` (TEXT), `links` (JSONB) - Multiple platform links
+- `title` (TEXT, NOT NULL), `artist` (TEXT, NULL allowed), `normalized_id` (TEXT, unique) - Song identification
+- `original_link` (TEXT, NULL allowed), `links` (JSONB) - Multiple platform links
 - `description` (TEXT) - Optional song description
 - `created_at`, `updated_at` (TIMESTAMPTZ)
 - **Note**: Uses `normalized_id` for duplicate detection (see `src/lib/utils/songDatabase.ts`)
+- **Migration 016**: Made `artist` optional - empty values are converted to "Unknown Artist" by application code
 
 **3. medley_songs** (Song placement within medleys)
 - `id` (UUID, primary key)
@@ -437,7 +441,22 @@ Run this migration in Supabase Dashboard to set up the database from scratch:
 - Migration 010 removed OAuth system for open access
 - Migration 011 added password-based authentication with nickname tracking
 - Migration 015 rebuilt database with ideal structure (4 tables)
+- Migration 016 made artist field optional in song_master
 - Current system: Single shared password + user-provided nicknames
+
+### Manual Song Addition
+- **Component**: `ManualSongAddModal.tsx` - Form for adding songs to database
+- **Required fields**:
+  - `title` (楽曲名) - MUST NOT be empty
+- **Optional fields**:
+  - `artist` (アーティスト名) - If empty, automatically converted to "Unknown Artist"
+  - `originalLink` (元動画リンク) - Can be empty (stored as NULL)
+- **UI behavior**:
+  - Shows placeholder text explaining optional fields
+  - Displays help text: "※ 空欄の場合、自動的に「Unknown Artist」として登録されます"
+  - Validation only checks that title is not empty
+- **Data flow**: User input → `addManualSong()` → Database → Song search cache cleared
+- **Usage**: Accessed via "手動で新しい楽曲を追加" button in SongSearchModal
 
 ## Security Patterns
 

@@ -380,11 +380,11 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                             setSearchTerm("");
                                         }
                                     }}
-                                    placeholder={searchMode === "medley" 
-                                        ? "メドレー名または作者名で検索..." 
+                                    placeholder={searchMode === "medley"
+                                        ? "メドレー名または作者名で検索..."
                                         : "楽曲名またはアーティスト名で検索..."
                                     }
-                                    className="block w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent bg-gray-50"
+                                    className="block w-full pl-10 pr-12 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-600 focus:border-transparent bg-gray-50 text-gray-900"
                                 />
                                 {searchTerm && (
                                     <button
@@ -414,7 +414,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                             setSortOrder(newSortOrder);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
                                     >
                                         <option value="createdAt-desc">🆕 新着順</option>
                                         <option value="viewCount-desc">🔥 人気順（再生回数）</option>
@@ -444,7 +444,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                             setItemsPerPage(newItemsPerPage);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
                                     >
                                         <option value={8}>8件</option>
                                         <option value={16}>16件</option>

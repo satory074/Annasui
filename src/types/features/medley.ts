@@ -1,18 +1,15 @@
 // 楽曲セクションのデータモデル
 export type SongSection = {
   id: number;
-  title: string;        // 曲名
-  artist: string;       // アーティスト名
-  startTime: number;    // 開始時間（秒）
-  endTime: number;      // 終了時間（秒）
-  color: string;        // 表示色（CSS color code）
-  originalLink?: string; // 原曲へのリンク（後方互換性のため維持）
-  links?: {             // 複数プラットフォーム対応
-    niconico?: string;  // ニコニコ動画URL
-    youtube?: string;   // YouTubeURL
-    spotify?: string;   // SpotifyURL
-    appleMusic?: string; // Apple MusicURL
-  };
+  title: string;           // 曲名
+  artist: string;          // アーティスト名
+  startTime: number;       // 開始時間（秒）
+  endTime: number;         // 終了時間（秒）
+  color: string;           // 表示色（CSS color code）
+  niconicoLink?: string;   // ニコニコ動画URL
+  youtubeLink?: string;    // YouTubeURL
+  spotifyLink?: string;    // SpotifyURL
+  applemusicLink?: string; // Apple MusicURL
 };
 
 // コントリビューター情報のデータモデル（ニックネームベース認証用）

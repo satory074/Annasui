@@ -44,13 +44,10 @@ export default function SongSearchModal({
   const [editFormData, setEditFormData] = useState<{
     title: string;
     artist: string;
-    originalLink?: string;
-    links?: {
-      niconico?: string;
-      youtube?: string;
-      spotify?: string;
-      appleMusic?: string;
-    };
+    niconicoLink?: string;
+    youtubeLink?: string;
+    spotifyLink?: string;
+    applemusicLink?: string;
   } | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
 
@@ -114,8 +111,10 @@ export default function SongSearchModal({
     setEditFormData({
       title: song.title,
       artist: song.artist,
-      originalLink: song.originalLink,
-      links: song.links
+      niconicoLink: song.niconicoLink,
+      youtubeLink: song.youtubeLink,
+      spotifyLink: song.spotifyLink,
+      applemusicLink: song.applemusicLink
     });
   };
 
@@ -136,8 +135,10 @@ export default function SongSearchModal({
       ...originalSong,
       title: editFormData.title,
       artist: editFormData.artist,
-      originalLink: editFormData.originalLink,
-      links: editFormData.links
+      niconicoLink: editFormData.niconicoLink,
+      youtubeLink: editFormData.youtubeLink,
+      spotifyLink: editFormData.spotifyLink,
+      applemusicLink: editFormData.applemusicLink
     };
 
     // 編集コールバックを呼び出し
@@ -152,22 +153,11 @@ export default function SongSearchModal({
   // フォーム入力ハンドラ
   const handleFormChange = (field: string, value: string) => {
     if (!editFormData) return;
-    
-    if (field.startsWith('links.')) {
-      const linkField = field.split('.')[1] as keyof NonNullable<typeof editFormData.links>;
-      setEditFormData({
-        ...editFormData,
-        links: {
-          ...editFormData.links,
-          [linkField]: value || undefined
-        }
-      });
-    } else {
-      setEditFormData({
-        ...editFormData,
-        [field]: value
-      });
-    }
+
+    setEditFormData({
+      ...editFormData,
+      [field]: value || undefined
+    });
   };
 
   if (!isOpen) return null;
@@ -358,20 +348,20 @@ export default function SongSearchModal({
                             </label>
                             <input
                               type="url"
-                              value={editFormData?.links?.niconico || ''}
-                              onChange={(e) => handleFormChange('links.niconico', e.target.value)}
+                              value={editFormData?.niconicoLink || ''}
+                              onChange={(e) => handleFormChange('niconicoLink', e.target.value)}
                               placeholder="https://www.nicovideo.jp/watch/..."
                               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
                           </div>
                           <div>
                             <label className="block text-xs text-gray-600 mb-1">
-                              📺 YouTube
+                              ▶️ YouTube
                             </label>
                             <input
                               type="url"
-                              value={editFormData?.links?.youtube || ''}
-                              onChange={(e) => handleFormChange('links.youtube', e.target.value)}
+                              value={editFormData?.youtubeLink || ''}
+                              onChange={(e) => handleFormChange('youtubeLink', e.target.value)}
                               placeholder="https://www.youtube.com/watch?v=..."
                               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
@@ -382,8 +372,8 @@ export default function SongSearchModal({
                             </label>
                             <input
                               type="url"
-                              value={editFormData?.links?.spotify || ''}
-                              onChange={(e) => handleFormChange('links.spotify', e.target.value)}
+                              value={editFormData?.spotifyLink || ''}
+                              onChange={(e) => handleFormChange('spotifyLink', e.target.value)}
                               placeholder="https://open.spotify.com/track/..."
                               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />
@@ -394,8 +384,8 @@ export default function SongSearchModal({
                             </label>
                             <input
                               type="url"
-                              value={editFormData?.links?.appleMusic || ''}
-                              onChange={(e) => handleFormChange('links.appleMusic', e.target.value)}
+                              value={editFormData?.applemusicLink || ''}
+                              onChange={(e) => handleFormChange('applemusicLink', e.target.value)}
                               placeholder="https://music.apple.com/..."
                               className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
                             />

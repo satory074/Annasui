@@ -175,41 +175,33 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
 
     // Helper function to get thumbnail URL for individual songs
     const getSongThumbnailUrl = (song: SongSection, medley: MedleyData): string => {
-        // Priority 1: Try to get thumbnail from song's own links first
-        if (song.links) {
-            // Use the priority system: niconico > youtube > spotify > appleMusic
-            if (song.links.niconico) {
-                const thumbnailUrl = getThumbnailUrl(song.links.niconico);
-                if (thumbnailUrl) return thumbnailUrl;
-            }
-            if (song.links.youtube) {
-                const thumbnailUrl = getThumbnailUrl(song.links.youtube);
-                if (thumbnailUrl) return thumbnailUrl;
-            }
-            if (song.links.spotify) {
-                // For Spotify, use placeholder for now (could be enhanced with async call later)
-                return getThumbnailUrl(song.links.spotify) || '/default-thumbnail.svg';
-            }
-            if (song.links.appleMusic) {
-                // For Apple Music, use placeholder for now (could be enhanced with async call later)
-                return getThumbnailUrl(song.links.appleMusic) || '/default-thumbnail.svg';
-            }
-        }
-        
-        // Priority 2: Fallback to originalLink if links are not available
-        if (song.originalLink) {
-            const thumbnailUrl = getThumbnailUrl(song.originalLink);
+        // Priority 1: Try to get thumbnail from song's platform links
+        // Use the priority system: niconico > youtube > spotify > appleMusic
+        if (song.niconicoLink) {
+            const thumbnailUrl = getThumbnailUrl(song.niconicoLink);
             if (thumbnailUrl) return thumbnailUrl;
         }
-        
-        // Priority 3: Fallback to medley's thumbnail
+        if (song.youtubeLink) {
+            const thumbnailUrl = getThumbnailUrl(song.youtubeLink);
+            if (thumbnailUrl) return thumbnailUrl;
+        }
+        if (song.spotifyLink) {
+            // For Spotify, use placeholder for now (could be enhanced with async call later)
+            return getThumbnailUrl(song.spotifyLink) || '/default-thumbnail.svg';
+        }
+        if (song.applemusicLink) {
+            // For Apple Music, use placeholder for now (could be enhanced with async call later)
+            return getThumbnailUrl(song.applemusicLink) || '/default-thumbnail.svg';
+        }
+
+        // Priority 2: Fallback to medley's thumbnail
         if (medley.platform === 'youtube') {
             return getYouTubeThumbnail(medley.videoId, 'default');
         } else {
             const medleyThumbnail = getThumbnailUrl(`https://www.nicovideo.jp/watch/${medley.videoId}`);
             if (medleyThumbnail) return medleyThumbnail;
         }
-        
+
         // Final fallback to default thumbnail
         return '/default-thumbnail.svg';
     };

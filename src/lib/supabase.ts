@@ -61,10 +61,12 @@ export type Database = {
         Row: {
           id: string
           title: string
-          artist: string
+          artist: string | null
           normalized_id: string
-          original_link: string | null
-          links: Record<string, unknown> | null
+          niconico_link: string | null
+          youtube_link: string | null
+          spotify_link: string | null
+          applemusic_link: string | null
           description: string | null
           created_at: string
           updated_at: string
@@ -72,10 +74,12 @@ export type Database = {
         Insert: {
           id?: string
           title: string
-          artist: string
+          artist?: string | null
           normalized_id: string
-          original_link?: string | null
-          links?: Record<string, unknown> | null
+          niconico_link?: string | null
+          youtube_link?: string | null
+          spotify_link?: string | null
+          applemusic_link?: string | null
           description?: string | null
           created_at?: string
           updated_at?: string
@@ -83,10 +87,12 @@ export type Database = {
         Update: {
           id?: string
           title?: string
-          artist?: string
+          artist?: string | null
           normalized_id?: string
-          original_link?: string | null
-          links?: Record<string, unknown> | null
+          niconico_link?: string | null
+          youtube_link?: string | null
+          spotify_link?: string | null
+          applemusic_link?: string | null
           description?: string | null
           created_at?: string
           updated_at?: string
@@ -103,7 +109,10 @@ export type Database = {
           title: string
           artist: string
           color: string
-          original_link: string | null
+          niconico_link: string | null
+          youtube_link: string | null
+          spotify_link: string | null
+          applemusic_link: string | null
           created_at: string
           updated_at: string
           last_editor: string | null
@@ -119,7 +128,10 @@ export type Database = {
           title: string
           artist: string
           color?: string
-          original_link?: string | null
+          niconico_link?: string | null
+          youtube_link?: string | null
+          spotify_link?: string | null
+          applemusic_link?: string | null
           created_at?: string
           updated_at?: string
           last_editor?: string | null
@@ -135,7 +147,10 @@ export type Database = {
           title?: string
           artist?: string
           color?: string
-          original_link?: string | null
+          niconico_link?: string | null
+          youtube_link?: string | null
+          spotify_link?: string | null
+          applemusic_link?: string | null
           created_at?: string
           updated_at?: string
           last_editor?: string | null

@@ -96,13 +96,10 @@ export default function SongEditModal({
     startTime: 0,
     endTime: 0,
     color: "bg-blue-400",
-    originalLink: "",
-    links: {
-      niconico: "",
-      youtube: "",
-      spotify: "",
-      appleMusic: ""
-    }
+    niconicoLink: "",
+    youtubeLink: "",
+    spotifyLink: "",
+    applemusicLink: ""
   });
 
   const [segments, setSegments] = useState<TimeSegment[]>([]);
@@ -168,17 +165,19 @@ export default function SongEditModal({
           artist: formData.artist,
           startTime: segment.startTime,
           endTime: segment.endTime,
-          originalLink: formData.originalLink,
+          niconicoLink: formData.niconicoLink,
+          youtubeLink: formData.youtubeLink,
+          spotifyLink: formData.spotifyLink,
+          applemusicLink: formData.applemusicLink,
           color: segment.color || formData.color
         };
-        
+
         const sanitized = sanitizeSongSection(songData);
-        
+
         return {
           id: segment.id === formData.id ? formData.id : (Date.now() + Math.random()),
           ...sanitized,
-          color: sanitized.color || "bg-blue-400",
-          links: formData.links
+          color: sanitized.color || "bg-blue-400"
         };
       });
 
@@ -285,13 +284,10 @@ export default function SongEditModal({
         startTime: 0,
         endTime: 0,
         color: "bg-blue-400",
-        originalLink: "",
-        links: {
-          niconico: "",
-          youtube: "",
-          spotify: "",
-          appleMusic: ""
-        }
+        niconicoLink: "",
+        youtubeLink: "",
+        spotifyLink: "",
+        applemusicLink: ""
       });
       // 新規作成の場合はデフォルトセグメント
       setSegments([{
@@ -334,7 +330,10 @@ export default function SongEditModal({
           artist: formData.artist,
           startTime: segment.startTime,
           endTime: segment.endTime,
-          originalLink: formData.originalLink,
+          niconicoLink: formData.niconicoLink,
+          youtubeLink: formData.youtubeLink,
+          spotifyLink: formData.spotifyLink,
+          applemusicLink: formData.applemusicLink,
           color: segment.color || formData.color
         };
 
@@ -348,8 +347,7 @@ export default function SongEditModal({
         return {
           id: songId,
           ...sanitized,
-          color: sanitized.color || "bg-blue-400", // デフォルトカラーを設定
-          links: formData.links
+          color: sanitized.color || "bg-blue-400" // デフォルトカラーを設定
         };
       });
 
@@ -412,21 +410,23 @@ export default function SongEditModal({
         artist: formData.artist,
         startTime: segments[0]?.startTime || 0,
         endTime: segments[0]?.endTime || 30,
-        originalLink: formData.originalLink,
+        niconicoLink: formData.niconicoLink,
+        youtubeLink: formData.youtubeLink,
+        spotifyLink: formData.spotifyLink,
+        applemusicLink: formData.applemusicLink,
         color: formData.color
       };
-      
+
       // サニタイゼーションを適用
       const sanitized = sanitizeSongSection(songData);
       logger.debug('Sanitized song data (save and next):', sanitized);
-      
+
       const representativeSong: SongSection = {
         ...formData,
         ...sanitized,
-        color: sanitized.color || formData.color || "bg-blue-400", // デフォルトカラーを設定
-        links: formData.links
+        color: sanitized.color || formData.color || "bg-blue-400" // デフォルトカラーを設定
       };
-      
+
       if (onSaveAndNext) {
         onSaveAndNext(representativeSong);
       } else {
@@ -525,11 +525,13 @@ export default function SongEditModal({
                   {/* サムネイル表示 */}
                   <div className="flex-shrink-0">
                     <SongThumbnail
-                      key={`${formData.title}-${formData.originalLink || JSON.stringify(formData.links)}`}
-                      originalLink={formData.originalLink}
+                      key={`${formData.title}-${formData.niconicoLink || formData.youtubeLink || formData.spotifyLink || formData.applemusicLink}`}
                       title={formData.title}
                       size="md"
-                      links={formData.links}
+                      niconicoLink={formData.niconicoLink}
+                      youtubeLink={formData.youtubeLink}
+                      spotifyLink={formData.spotifyLink}
+                      applemusicLink={formData.applemusicLink}
                     />
                   </div>
                   
@@ -598,14 +600,16 @@ export default function SongEditModal({
                 {/* サムネイル表示 */}
                 <div className="flex-shrink-0">
                   <SongThumbnail
-                    key={`${formData.title}-${formData.originalLink || JSON.stringify(formData.links)}`}
-                    originalLink={formData.originalLink}
+                    key={`${formData.title}-${formData.niconicoLink || formData.youtubeLink || formData.spotifyLink || formData.applemusicLink}`}
                     title={formData.title}
                     size="md"
-                    links={formData.links}
+                    niconicoLink={formData.niconicoLink}
+                    youtubeLink={formData.youtubeLink}
+                    spotifyLink={formData.spotifyLink}
+                    applemusicLink={formData.applemusicLink}
                   />
                 </div>
-                
+
                 {/* 楽曲情報 */}
                 <div className="flex-1 space-y-3">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">

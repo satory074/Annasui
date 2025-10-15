@@ -13,33 +13,26 @@ const PLATFORM_CONFIG = {
 };
 
 // 複数リンクを表示するコンポーネント
-function PlatformLinks({ song, variant = "detailed" }: { 
-  song: SongSection; 
+function PlatformLinks({ song, variant = "detailed" }: {
+  song: SongSection;
   variant?: "detailed" | "compact" | "card";
 }) {
   const links = [];
-  
-  // links配列から利用可能なリンクを収集
-  if (song.links) {
-    if (song.links.niconico) {
-      links.push({ platform: 'niconico', url: song.links.niconico });
-    }
-    if (song.links.youtube) {
-      links.push({ platform: 'youtube', url: song.links.youtube });
-    }
-    if (song.links.spotify) {
-      links.push({ platform: 'spotify', url: song.links.spotify });
-    }
-    if (song.links.appleMusic) {
-      links.push({ platform: 'appleMusic', url: song.links.appleMusic });
-    }
+
+  // 各プラットフォームのリンクを収集
+  if (song.niconicoLink) {
+    links.push({ platform: 'niconico', url: song.niconicoLink });
   }
-  
-  // 後方互換性のためoriginalLinkもチェック
-  if (song.originalLink && links.length === 0) {
-    links.push({ platform: 'niconico', url: song.originalLink });
+  if (song.youtubeLink) {
+    links.push({ platform: 'youtube', url: song.youtubeLink });
   }
-  
+  if (song.spotifyLink) {
+    links.push({ platform: 'spotify', url: song.spotifyLink });
+  }
+  if (song.applemusicLink) {
+    links.push({ platform: 'appleMusic', url: song.applemusicLink });
+  }
+
   if (links.length === 0) return null;
 
   if (variant === "compact") {
@@ -137,11 +130,13 @@ export default function SongInfoDisplay({
         <div className="flex flex-col items-center gap-3">
           {showThumbnail && (
             <SongThumbnail
-              key={`${song.title}-${song.originalLink || JSON.stringify(song.links)}`}
-              originalLink={song.originalLink}
+              key={`${song.title}-${song.niconicoLink || song.youtubeLink || song.spotifyLink || song.applemusicLink}`}
               title={song.title}
               size="md"
-              links={song.links}
+              niconicoLink={song.niconicoLink}
+              youtubeLink={song.youtubeLink}
+              spotifyLink={song.spotifyLink}
+              applemusicLink={song.applemusicLink}
             />
           )}
           <div className="text-sm text-gray-600 font-medium">楽曲詳細</div>
@@ -227,13 +222,15 @@ export default function SongInfoDisplay({
       <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex gap-4">
         {showThumbnail && (
           <SongThumbnail
-            originalLink={song.originalLink}
             title={song.title}
             size="sm"
-            links={song.links}
+            niconicoLink={song.niconicoLink}
+            youtubeLink={song.youtubeLink}
+            spotifyLink={song.spotifyLink}
+            applemusicLink={song.applemusicLink}
           />
         )}
-        
+
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-gray-900 text-lg mb-1 truncate">
             {song.title}
@@ -241,9 +238,9 @@ export default function SongInfoDisplay({
           <p className="text-gray-600 text-sm mb-3 truncate">
             {song.artist}
           </p>
-          
+
           <div className="flex items-center gap-4 text-xs">
-            {(song.links || song.originalLink) && (
+            {(song.niconicoLink || song.youtubeLink || song.spotifyLink || song.applemusicLink) && (
               <div className="flex flex-wrap gap-1">
                 <PlatformLinks song={song} variant="compact" />
               </div>
@@ -258,10 +255,12 @@ export default function SongInfoDisplay({
     <div className="space-y-4">
       {showThumbnail && (
         <SongThumbnail
-          originalLink={song.originalLink}
           title={song.title}
           size="lg"
-          links={song.links}
+          niconicoLink={song.niconicoLink}
+          youtubeLink={song.youtubeLink}
+          spotifyLink={song.spotifyLink}
+          applemusicLink={song.applemusicLink}
         />
       )}
 

@@ -426,11 +426,16 @@ Run this migration in Supabase Dashboard to set up the database from scratch:
 **2. song_master** (Song master data - reusable across medleys)
 - `id` (UUID, primary key)
 - `title` (TEXT, NOT NULL), `artist` (TEXT, NULL allowed), `normalized_id` (TEXT, unique) - Song identification
-- `original_link` (TEXT, NULL allowed), `links` (JSONB) - Multiple platform links
+- Platform-specific links (all TEXT, NULL allowed):
+  - `niconico_link` - Niconico video URL
+  - `youtube_link` - YouTube video URL
+  - `spotify_link` - Spotify track URL
+  - `applemusic_link` - Apple Music track URL
 - `description` (TEXT) - Optional song description
 - `created_at`, `updated_at` (TIMESTAMPTZ)
 - **Note**: Uses `normalized_id` for duplicate detection (see `src/lib/utils/songDatabase.ts`)
 - **Migration 016**: Made `artist` optional - empty values are converted to "Unknown Artist" by application code
+- **Migration 017**: Replaced `original_link` (TEXT) and `links` (JSONB) with individual platform columns for better type safety
 
 **3. medley_songs** (Song placement within medleys)
 - `id` (UUID, primary key)
@@ -438,8 +443,11 @@ Run this migration in Supabase Dashboard to set up the database from scratch:
 - `song_id` (UUID, FK → song_master, nullable) - Reference to master data
 - `start_time`, `end_time`, `order_index` - Timeline placement
 - `title`, `artist`, `color` - Cached display data
+- Platform-specific links (all TEXT, NULL allowed):
+  - `niconico_link`, `youtube_link`, `spotify_link`, `applemusic_link`
 - `created_at`, `updated_at`, `last_editor`, `last_edited_at` (TIMESTAMPTZ)
 - **Note**: `title`/`artist` are cached from `song_master` for display even if master is deleted
+- **Migration 017**: Replaced `original_link` with individual platform columns
 
 **4. medley_edits** (Edit history)
 - `id` (UUID, primary key)
@@ -447,13 +455,14 @@ Run this migration in Supabase Dashboard to set up the database from scratch:
 - `editor_nickname`, `action`, `changes` (JSONB)
 - `created_at` (TIMESTAMPTZ)
 
-**Authentication Evolution**:
+**Database Evolution**:
 - Originally used Google OAuth (migrations 001-009)
 - Migration 010 removed OAuth system for open access
 - Migration 011 added password-based authentication with nickname tracking
 - Migration 015 rebuilt database with ideal structure (4 tables)
 - Migration 016 made artist field optional in song_master
-- Current system: Single shared password + user-provided nicknames
+- Migration 017 replaced JSONB `links` with platform-specific columns (`niconico_link`, `youtube_link`, `spotify_link`, `applemusic_link`)
+- Current system: Single shared password + user-provided nicknames + platform-specific links
 
 ### Manual Song Addition
 - **Component**: `ManualSongAddModal.tsx` - Form for adding songs to database
@@ -461,7 +470,11 @@ Run this migration in Supabase Dashboard to set up the database from scratch:
   - `title` (楽曲名) - MUST NOT be empty
 - **Optional fields**:
   - `artist` (アーティスト名) - If empty, automatically converted to "Unknown Artist"
-  - `originalLink` (元動画リンク) - Can be empty (stored as NULL)
+  - Platform-specific links (all optional, can be empty/NULL):
+    - `niconicoLink` (🎬 ニコニコ動画)
+    - `youtubeLink` (▶️ YouTube)
+    - `spotifyLink` (🎵 Spotify)
+    - `applemusicLink` (🍎 Apple Music)
 - **UI behavior**:
   - Shows placeholder text explaining optional fields
   - Displays help text: "※ 空欄の場合、自動的に「Unknown Artist」として登録されます"

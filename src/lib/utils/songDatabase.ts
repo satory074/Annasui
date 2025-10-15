@@ -143,15 +143,15 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
     });
   });
 
-  // song_dataテーブルから手動追加された楽曲を取得
+  // song_masterテーブルから手動追加された楽曲を取得
   if (supabase) {
     try {
       const { data: manualSongs, error } = await supabase
-        .from('song_data')
+        .from('song_master')
         .select('*');
 
       if (error) {
-        logger.error('Failed to fetch manual songs from song_data:', error);
+        logger.error('Failed to fetch manual songs from song_master:', error);
       } else if (manualSongs) {
         // 手動追加された楽曲をマップに追加
         type SongDataRow = {
@@ -180,7 +180,7 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
         });
       }
     } catch (error) {
-      logger.error('Error fetching song_data:', error);
+      logger.error('Error fetching song_master:', error);
     }
   }
 
@@ -397,7 +397,7 @@ export async function addManualSong(songData: { title: string; artist: string; o
     return existingDbSong;
   }
 
-  // Supabaseのsong_dataテーブルに保存
+  // Supabaseのsong_masterテーブルに保存
   if (!supabase) {
     const error = new Error('Supabase client is not initialized');
     logger.error('Cannot add manual song: Supabase client is null');
@@ -406,7 +406,7 @@ export async function addManualSong(songData: { title: string; artist: string; o
 
   try {
     const { data, error } = await supabase
-      .from('song_data')
+      .from('song_master')
       .insert({
         title: songData.title,
         artist: songData.artist,

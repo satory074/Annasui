@@ -3,7 +3,7 @@ import type { MedleyData, SongSection, MedleyContributor } from '@/types'
 import { logger } from '@/lib/utils/logger'
 
 type MedleyRow = Database['public']['Tables']['medleys']['Row']
-type SongRow = Database['public']['Tables']['songs']['Row']
+type SongRow = Database['public']['Tables']['medley_songs']['Row']
 
 // Test function to verify API key
 export async function testSupabaseConnection(): Promise<{ success: boolean; error?: string }> {
@@ -61,28 +61,17 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
 function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyData {
   const sortedSongs = [...songs].sort((a, b) => a.order_index - b.order_index)
 
-  // Auto-detect platform based on video_id pattern
-  let platform: 'niconico' | 'youtube' = 'niconico'; // Default to niconico for backwards compatibility
-
-  if (medley.video_id) {
-    if (medley.video_id.match(/^sm\d+$/)) {
-      platform = 'niconico';
-    } else if (medley.video_id.match(/^[a-zA-Z0-9_-]{11}$/)) {
-      platform = 'youtube';
-    }
-  }
-
   return {
     id: medley.id,
     videoId: medley.video_id,
     title: medley.title,
     creator: medley.creator || '',
     duration: medley.duration,
-    platform: platform,
+    platform: medley.platform as 'niconico' | 'youtube',
     createdAt: medley.created_at,
     updatedAt: medley.updated_at,
-    lastEditor: (medley as Record<string, unknown>).last_editor as string | undefined,
-    lastEditedAt: (medley as Record<string, unknown>).last_edited_at as string | undefined,
+    lastEditor: medley.last_editor || undefined,
+    lastEditedAt: medley.last_edited_at || undefined,
     songs: sortedSongs.map(convertDbRowToSongSection)
   }
 }
@@ -167,7 +156,7 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
         const medley = medleys[0] as MedleyRow;
 
         const { data: songs, error: songsError } = await supabase
-          .from('songs')
+          .from('medley_songs')
           .select('*')
           .eq('medley_id', medley.id)
           .order('order_index', { ascending: true });
@@ -209,7 +198,7 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
 
     // Get the songs for this medley using direct fetch
     const songDataDirect = await directFetch(
-      `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/songs?select=*&medley_id=eq.${medley.id}&order=order_index`
+      `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/medley_songs?select=*&medley_id=eq.${medley.id}&order=order_index`
     ) as unknown[];
 
     logger.debug('✅ Successfully fetched medley data via direct fetch:', {
@@ -257,7 +246,7 @@ export async function getAllMedleys(): Promise<MedleyData[]> {
     const medleyDataPromises = (medleys as MedleyRow[]).map(async (medley) => {
       const songsResult = await
         supabase!
-          .from('songs')
+          .from('medley_songs')
           .select('*')
           .eq('medley_id', medley.id)
           .order('order_index', { ascending: true })
@@ -310,7 +299,7 @@ export async function createMedley(
     const songsToInsert = medleyData.songs.map((song, index) => ({
       medley_id: medley.id as string,
       title: song.title,
-      artist: song.artist || null,
+      artist: song.artist || '',
       start_time: song.startTime,
       end_time: song.endTime,
       color: song.color,
@@ -321,7 +310,7 @@ export async function createMedley(
     }))
 
     const { error: songsError } = await supabase
-      .from('songs')
+      .from('medley_songs')
       .insert(songsToInsert)
 
     if (songsError) {
@@ -340,9 +329,9 @@ export async function createMedley(
     const songRows: SongRow[] = songsToInsert.map((song, index) => ({
       ...song,
       id: `temp-${index}`, // Temporary ID since we didn't select back from DB
+      song_id: null, // New songs don't have a song_master reference yet
       created_at: song.last_edited_at || new Date().toISOString(),
-      updated_at: song.last_edited_at || new Date().toISOString(),
-      genre: null
+      updated_at: song.last_edited_at || new Date().toISOString()
     }))
 
     return convertDbRowToMedleyData(medley as MedleyRow, songRows)
@@ -404,7 +393,7 @@ export async function updateMedley(
 
     // Get updated data
     const songsResult = await supabase
-      .from('songs')
+      .from('medley_songs')
       .select('*')
       .eq('medley_id', medley.id as string)
       .order('order_index', { ascending: true })
@@ -447,7 +436,7 @@ export async function getUserMedleys(userId: string): Promise<MedleyData[]> {
     // Get songs for each medley
     const medleyDataPromises = medleys.map(async (medley) => {
       const songsResult = await supabase!
-        .from('songs')
+        .from('medley_songs')
         .select('*')
         .eq('medley_id', medley.id as string)
         .order('order_index', { ascending: true })
@@ -521,7 +510,7 @@ export async function saveMedleySongs(
     // Delete existing songs for this medley
     const deleteStartTime = Date.now();
     const { error: deleteError } = await supabase
-      .from('songs')
+      .from('medley_songs')
       .delete()
       .eq('medley_id', medleyId)
 
@@ -539,7 +528,7 @@ export async function saveMedleySongs(
       const songsToInsert = songs.map((song, index) => ({
         medley_id: medleyId,
         title: song.title,
-        artist: song.artist || null,
+        artist: song.artist || '',
         start_time: song.startTime,
         end_time: song.endTime,
         color: song.color,
@@ -555,7 +544,7 @@ export async function saveMedleySongs(
 
       const insertStartTime = Date.now();
       const { error: insertError } = await supabase
-        .from('songs')
+        .from('medley_songs')
         .insert(songsToInsert)
 
       if (insertError) {

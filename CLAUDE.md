@@ -117,7 +117,7 @@ Local環境でエラーが解決困難な場合、production buildで先に検�
 ### Song Database System
 - **Purpose**: Persistent storage for manually added songs that can be reused across medleys
 - **Implementation**: `src/lib/utils/songDatabase.ts`
-- **Database table**: `song_data` (see migration `014_create_song_data_table.sql`)
+- **Database table**: `song_master` (see migration `015_rebuild_database_structure.sql`)
 - **Key features**:
   - **Normalized ID**: Uses `normalizeSongInfo()` for duplicate detection (converts katakana→hiragana, removes symbols, unifies music terms)
   - **Search system**: Multi-tier matching (exact → startsWith → wordMatch → partialMatch → fuzzyMatch) with scoring
@@ -283,10 +283,10 @@ useEffect(() => {
 - **Metadata fails**: Verify User-Agent header and regex parsing
 
 ### Database Issues
-- **PGRST204 error ("column not found in schema cache")**: Check that INSERT/UPDATE operations don't reference non-existent columns (e.g., `links` column doesn't exist in `songs` table)
+- **PGRST204 error ("column not found in schema cache")**: Check that INSERT/UPDATE operations don't reference non-existent columns
 - **400 Bad Request from Supabase**: Inspect network request URL for `?columns=...` parameter - ensure all column names exist in the actual database schema
 - **Type errors after Supabase client upgrade**: Update Database type definitions in `src/lib/supabase.ts` to match actual schema
-- **Schema mismatch**: Run `NOTIFY pgrst, 'reload schema';` in Supabase SQL editor to refresh PostgREST schema cache (though this won't fix code referencing non-existent columns)
+- **Schema mismatch**: Run `NOTIFY pgrst, 'reload schema';` in Supabase SQL editor to refresh PostgREST schema cache
 
 ### Timeline Issues
 - **Keyboard shortcuts not working**: Check edit mode active and no input focus
@@ -360,19 +360,24 @@ Set via Firebase console or CLI:
 
 ## Database Setup
 
-Run migrations in Supabase Dashboard (database/migrations/) **in order**:
-1. `003_fix_rick_astley_medley.sql` - Platform corrections
-2. `004_add_rick_astley_song_data.sql` - Sample data
-3. `006_create_medley_edit_history.sql` - Edit history tracking
-4. `010_remove_auth_system.sql` - Remove Google OAuth authentication
-5. `011_add_contributor_tracking.sql` - Add password-based contributor tracking
-6. `014_create_song_data_table.sql` - **Manual song database** for persistent song storage
+**Current Structure**: Migration `015_rebuild_database_structure.sql` - Complete database rebuild with ideal structure (4 tables)
 
-**Optional migrations** (soft delete & enhanced audit logging):
-- `012_add_soft_delete.sql` - 30-day recovery window for deleted records
-- `013_enhance_audit_log.sql` - IP address, user agent, session tracking
+Run this migration in Supabase Dashboard to set up the database from scratch:
+- `015_rebuild_database_structure.sql` - **Complete rebuild** with optimized structure
 
-Core tables: `medleys`, `songs`, `medley_edits`, `song_data`
+**Core tables** (4 tables):
+1. `medleys` - Medley basic information with platform support
+2. `song_master` - Song master data for reuse across medleys
+3. `medley_songs` - Song placement within medleys (timeline data)
+4. `medley_edits` - Edit history tracking
+
+**Key improvements** from previous structure:
+- Added `platform` column to medleys (niconico/youtube/spotify/appleMusic)
+- Renamed `songs` → `medley_songs` with foreign key to `song_master`
+- Renamed `song_data` → `song_master` (structure unchanged)
+- Added `song_id` to `medley_edits` for granular tracking
+- Unified all timestamps to TIMESTAMPTZ
+- Removed unused `tempo_changes` table
 
 ### Backup & Recovery System
 
@@ -395,21 +400,43 @@ Core tables: `medleys`, `songs`, `medley_edits`, `song_data`
 - **Critical**: Must use Session Pooler (port 5432), not Direct Connection or Transaction Pooler
 - See [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md) for complete procedures
 
-**IMPORTANT**: The `songs` table does NOT have a `links` column. If you see PGRST204 errors mentioning "column not found in schema cache", verify that INSERT/UPDATE operations don't reference non-existent columns.
+**Database Schema**:
 
-**Database Schema Notes**:
-- `medleys`: video_id, title, creator, duration, user_id, last_editor, last_edited_at
-- `songs`: medley_id, title, artist, start_time, end_time, color, genre, original_link, order_index, last_editor, last_edited_at (NO `links` column)
-- `medley_edits`: medley_id, editor_nickname, edit_timestamp, edit_type
-- `song_data`: **Manual song database** - id, title, artist, original_link, links (JSONB), normalized_id (unique), created_at, updated_at
-  - Stores manually added songs for reuse across medleys
-  - Uses normalized_id for duplicate detection (see `src/lib/utils/songDatabase.ts`)
-  - Songs persist across page reloads and can be searched/selected for any medley
+**1. medleys** (Medley basic information)
+- `id` (UUID, primary key)
+- `video_id` (VARCHAR, unique) - Video ID (sm12345, etc.)
+- `platform` (VARCHAR) - Platform type (niconico/youtube/spotify/appleMusic)
+- `title`, `creator`, `duration` - Medley metadata
+- `created_at`, `updated_at`, `last_editor`, `last_edited_at` (all TIMESTAMPTZ)
+
+**2. song_master** (Song master data - reusable across medleys)
+- `id` (UUID, primary key)
+- `title`, `artist`, `normalized_id` (unique) - Song identification
+- `original_link` (TEXT), `links` (JSONB) - Multiple platform links
+- `description` (TEXT) - Optional song description
+- `created_at`, `updated_at` (TIMESTAMPTZ)
+- **Note**: Uses `normalized_id` for duplicate detection (see `src/lib/utils/songDatabase.ts`)
+
+**3. medley_songs** (Song placement within medleys)
+- `id` (UUID, primary key)
+- `medley_id` (UUID, FK → medleys) - Parent medley
+- `song_id` (UUID, FK → song_master, nullable) - Reference to master data
+- `start_time`, `end_time`, `order_index` - Timeline placement
+- `title`, `artist`, `color` - Cached display data
+- `created_at`, `updated_at`, `last_editor`, `last_edited_at` (TIMESTAMPTZ)
+- **Note**: `title`/`artist` are cached from `song_master` for display even if master is deleted
+
+**4. medley_edits** (Edit history)
+- `id` (UUID, primary key)
+- `medley_id` (UUID, FK → medleys), `song_id` (UUID, FK → medley_songs)
+- `editor_nickname`, `action`, `changes` (JSONB)
+- `created_at` (TIMESTAMPTZ)
 
 **Authentication Evolution**:
 - Originally used Google OAuth (migrations 001-009)
 - Migration 010 removed OAuth system for open access
 - Migration 011 added password-based authentication with nickname tracking
+- Migration 015 rebuilt database with ideal structure (4 tables)
 - Current system: Single shared password + user-provided nicknames
 
 ## Security Patterns

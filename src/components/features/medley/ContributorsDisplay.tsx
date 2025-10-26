@@ -9,6 +9,8 @@ interface ContributorsDisplayProps {
   lastEditedAt?: string
   showTitle?: boolean
   compact?: boolean
+  isAuthenticated?: boolean
+  onRestore?: (editHistoryId: string) => void
 }
 
 function formatRelativeTime(date: Date | string): string {
@@ -45,16 +47,20 @@ function formatRelativeTime(date: Date | string): string {
 
 function formatActionText(action: string): { text: string; color: string } {
   switch (action) {
-    case 'create':
+    case 'create_medley':
       return { text: 'メドレーを作成', color: 'text-green-700' }
-    case 'update':
+    case 'update_medley':
       return { text: 'メドレーを更新', color: 'text-blue-700' }
-    case 'song_add':
+    case 'delete_medley':
+      return { text: 'メドレーを削除', color: 'text-red-700' }
+    case 'add_song':
       return { text: '楽曲を追加', color: 'text-orange-700' }
-    case 'song_update':
+    case 'update_song':
       return { text: '楽曲を更新', color: 'text-blue-700' }
-    case 'song_delete':
+    case 'delete_song':
       return { text: '楽曲を削除', color: 'text-red-700' }
+    case 'reorder_songs':
+      return { text: '楽曲を並び替え', color: 'text-purple-700' }
     default:
       return { text: '編集', color: 'text-gray-700' }
   }
@@ -65,7 +71,9 @@ const ContributorsDisplay: React.FC<ContributorsDisplayProps> = ({
   lastEditor,
   lastEditedAt,
   showTitle = true,
-  compact = false
+  compact = false,
+  isAuthenticated = false,
+  onRestore
 }) => {
   return (
     <div className={`${compact ? 'bg-gray-50 p-4 rounded-lg' : 'bg-white rounded-xl shadow-sm border border-gray-200 p-6'}`}>
@@ -99,6 +107,8 @@ const ContributorsDisplay: React.FC<ContributorsDisplayProps> = ({
         <div className="space-y-3">
           {editHistory.map((edit, index) => {
             const actionInfo = formatActionText(edit.action)
+            const hasSnapshot = edit.changes && typeof edit.changes.snapshot === 'object' && edit.changes.snapshot !== null
+
             return (
               <div
                 key={`${edit.id}-${index}`}
@@ -114,6 +124,11 @@ const ContributorsDisplay: React.FC<ContributorsDisplayProps> = ({
                   <div className="flex items-center space-x-2">
                     <span className="font-medium text-gray-900">{edit.editorNickname}</span>
                     <span className={`text-sm ${actionInfo.color}`}>{actionInfo.text}</span>
+                    {hasSnapshot && (
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                        📸 復元可能
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-gray-600 mt-1">
                     {formatRelativeTime(edit.createdAt)}
@@ -125,6 +140,20 @@ const ContributorsDisplay: React.FC<ContributorsDisplayProps> = ({
                     </div>
                   )}
                 </div>
+
+                {/* Restore button */}
+                {isAuthenticated && hasSnapshot && onRestore && (
+                  <button
+                    onClick={() => onRestore(edit.id)}
+                    className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-1 flex-shrink-0"
+                    title="この時点に復元"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>復元</span>
+                  </button>
+                )}
 
                 {/* Timeline connector (vertical line) */}
                 {index < editHistory.length - 1 && (

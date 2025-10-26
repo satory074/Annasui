@@ -8,6 +8,8 @@ interface UseMedleyEditReturn {
   editingSongs: SongSection[];
   hasChanges: boolean;
   isSaving: boolean;
+  saveFailed: boolean;
+  saveError: string | null;
   canUndo: boolean;
   canRedo: boolean;
   updateSong: (updatedSong: SongSection) => void;
@@ -19,6 +21,7 @@ interface UseMedleyEditReturn {
   batchUpdate: (songsToRemove: number[], songsToAdd: Omit<SongSection, 'id'>[]) => void;
   undo: () => void;
   redo: () => void;
+  resetSaveError: () => void;
 }
 
 interface UseMedleyEditProps {
@@ -44,6 +47,8 @@ export function useMedleyEdit(
   const [editingSongs, setEditingSongs] = useState<SongSection[]>(originalSongs);
   const [hasChanges, setHasChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   
   
   // Undo/Redo履歴管理
@@ -318,6 +323,8 @@ export function useMedleyEdit(
     songsOverride?: SongSection[]
   ): Promise<boolean> => {
     setIsSaving(true);
+    setSaveFailed(false); // 保存開始時にエラー状態をクリア
+    setSaveError(null);
 
     try {
       // Supabaseが設定されているかチェック
@@ -407,16 +414,33 @@ export function useMedleyEdit(
 
       if (result) {
         setHasChanges(false);
+        setSaveFailed(false);
+        setSaveError(null);
         logger.info('Medley saved successfully:', result);
         return true;
       } else {
-        logger.error('Failed to save medley');
-        alert('メドレーの保存に失敗しました。');
+        // 保存失敗時の状態保護
+        setSaveFailed(true);
+        const errorMsg = 'メドレーの保存に失敗しました。編集内容は保持されています。';
+        setSaveError(errorMsg);
+        logger.error('Failed to save medley - data preserved in editingSongs', {
+          editingSongsCount: editingSongs.length,
+          songsData: editingSongs.map(s => ({ id: s.id, title: s.title }))
+        });
+        alert(`${errorMsg}\n\nもう一度保存ボタンを押すか、ページを再読み込みせずに編集を続けることができます。`);
         return false;
       }
     } catch (error) {
-      logger.error('Error saving medley:', error);
-      alert('メドレーの保存中にエラーが発生しました。');
+      // エラー時の状態保護
+      setSaveFailed(true);
+      const errorMsg = error instanceof Error ? error.message : 'メドレーの保存中にエラーが発生しました。';
+      setSaveError(errorMsg);
+      logger.error('Error saving medley - data preserved in editingSongs', {
+        error,
+        editingSongsCount: editingSongs.length,
+        songsData: editingSongs.map(s => ({ id: s.id, title: s.title }))
+      });
+      alert(`保存中にエラーが発生しました: ${errorMsg}\n\n編集内容は保持されています。もう一度保存ボタンを押すか、ページを再読み込みせずに編集を続けることができます。`);
       return false;
     } finally {
       setIsSaving(false);
@@ -427,8 +451,17 @@ export function useMedleyEdit(
   const resetChanges = useCallback((originalSongs: SongSection[]) => {
     setEditingSongs(originalSongs);
     setHasChanges(false);
+    setSaveFailed(false);
+    setSaveError(null);
     setHistory([originalSongs]);
     setHistoryIndex(0);
+  }, []);
+
+  // 保存エラーをリセット（ユーザーが編集を続ける場合）
+  const resetSaveError = useCallback(() => {
+    setSaveFailed(false);
+    setSaveError(null);
+    logger.info('Save error state reset - user continuing to edit');
   }, []);
 
   // Undo機能
@@ -471,8 +504,8 @@ export function useMedleyEdit(
     }
 
     // 初回読み込みで内容が異なる場合のみ更新
-    // refetch中、編集中、保存中は更新しない（ユーザーの編集を保護）
-    if (currentSongsString !== originalSongsString && !isRefetching && !hasChanges && !isSaving) {
+    // refetch中、編集中、保存中、保存失敗後は更新しない（ユーザーの編集を保護）
+    if (currentSongsString !== originalSongsString && !isRefetching && !hasChanges && !isSaving && !saveFailed) {
       logger.debug('🔄 Updating editingSongs from originalSongs', {
         hasChanges,
         isSaving,
@@ -493,6 +526,8 @@ export function useMedleyEdit(
     editingSongs,
     hasChanges,
     isSaving,
+    saveFailed,
+    saveError,
     canUndo,
     canRedo,
     updateSong,
@@ -504,5 +539,6 @@ export function useMedleyEdit(
     batchUpdate,
     undo,
     redo,
+    resetSaveError,
   };
 }

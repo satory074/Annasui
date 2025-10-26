@@ -1,5 +1,5 @@
 import { supabase, type Database } from '@/lib/supabase'
-import type { MedleyData, SongSection, MedleyContributor } from '@/types'
+import type { MedleyData, SongSection, MedleyContributor, MedleySnapshot } from '@/types'
 import { logger } from '@/lib/utils/logger'
 
 type MedleyRow = Database['public']['Tables']['medleys']['Row']
@@ -324,7 +324,7 @@ export async function createMedley(
 
     // Record edit history
     if (editorNickname) {
-      await recordMedleyEdit(medley.id as string, editorNickname, 'create', {
+      await recordMedleyEdit(medley.id as string, editorNickname, 'create_medley', {
         title: medleyData.title,
         songCount: medleyData.songs.length
       })
@@ -380,7 +380,12 @@ export async function updateMedley(
         songsCount: updates.songs.length,
         songs: updates.songs
       });
-      const success = await saveMedleySongs(medley.id as string, updates.songs, editorNickname);
+      const medleyInfo = {
+        title: (updates.title ?? medley.title) as string,
+        creator: (updates.creator ?? medley.creator ?? undefined) as string | undefined,
+        duration: (updates.duration ?? medley.duration) as number
+      };
+      const success = await saveMedleySongs(medley.id as string, updates.songs, editorNickname, medleyInfo);
       if (!success) {
         logger.error('Failed to update songs for medley:', medley.id);
         throw new Error('Failed to update songs');
@@ -388,13 +393,8 @@ export async function updateMedley(
       logger.info('Successfully updated songs for medley:', medley.id);
     }
 
-    // Record edit history
-    if (editorNickname) {
-      await recordMedleyEdit(medley.id as string, editorNickname, 'update', {
-        title: updates.title,
-        songCount: updates.songs?.length
-      })
-    }
+    // Note: Edit history is now recorded in saveMedleySongs() with snapshot
+    // This prevents duplicate entries and ensures snapshot is included for restoration
 
     // Get updated data
     const songsResult = await supabase
@@ -492,7 +492,8 @@ let saveMedleySongsCallCount = 0;
 export async function saveMedleySongs(
   medleyId: string,
   songs: Omit<SongSection, 'id'>[],
-  editorNickname?: string
+  editorNickname?: string,
+  medleyInfo?: { title: string; creator?: string; duration: number }
 ): Promise<boolean> {
   saveMedleySongsCallCount++;
   const callId = `SAVE-${saveMedleySongsCallCount}`;
@@ -566,6 +567,21 @@ export async function saveMedleySongs(
       logger.warn(`⚠️ [${callId}] No songs to insert (songs.length = 0)`);
     }
 
+    // Record snapshot in edit history
+    if (editorNickname && medleyInfo) {
+      const snapshot: MedleySnapshot = {
+        title: medleyInfo.title,
+        creator: medleyInfo.creator,
+        duration: medleyInfo.duration,
+        songs: songs
+      };
+      await recordMedleyEdit(medleyId, editorNickname, 'update_medley', {
+        snapshot,
+        songCount: songs.length
+      });
+      logger.info(`📸 [${callId}] Snapshot recorded in edit history`);
+    }
+
     logger.info(`✅ [${callId}] saveMedleySongs completed successfully`)
     return true
   } catch (error) {
@@ -578,7 +594,7 @@ export async function saveMedleySongs(
 export async function recordMedleyEdit(
   medleyId: string,
   editorNickname: string,
-  action: 'create' | 'update' | 'delete' | 'song_add' | 'song_update' | 'song_delete',
+  action: 'create_medley' | 'update_medley' | 'delete_medley' | 'add_song' | 'update_song' | 'delete_song' | 'reorder_songs',
   changes?: Record<string, unknown>
 ): Promise<boolean> {
   if (!supabase) {
@@ -671,5 +687,114 @@ export async function getMedleyEditHistory(medleyId: string, limit = 10): Promis
   } catch (error) {
     logger.error('Error fetching edit history:', error)
     return []
+  }
+}
+
+// Restore medley from edit history snapshot
+export async function restoreFromEditHistory(
+  editHistoryId: string,
+  editorNickname: string
+): Promise<MedleyData | null> {
+  if (!supabase) {
+    logger.error('Supabase client not initialized')
+    return null
+  }
+
+  try {
+    logger.info('🔄 Starting restore from edit history:', editHistoryId)
+
+    // Get the edit history entry
+    const { data: editHistory, error: historyError } = await supabase
+      .from('medley_edits')
+      .select('*')
+      .eq('id', editHistoryId)
+      .single()
+
+    if (historyError) {
+      logger.error('Error fetching edit history:', historyError)
+      return null
+    }
+
+    if (!editHistory) {
+      logger.error('Edit history not found:', editHistoryId)
+      return null
+    }
+
+    // Extract snapshot from changes
+    const changes = editHistory.changes as Record<string, unknown> | null
+    const snapshot = changes?.snapshot as MedleySnapshot | undefined
+
+    if (!snapshot) {
+      logger.error('No snapshot found in edit history:', editHistoryId)
+      return null
+    }
+
+    const medleyId = editHistory.medley_id as string
+
+    logger.info('📸 Snapshot found, restoring medley:', {
+      medleyId,
+      songCount: snapshot.songs.length,
+      title: snapshot.title
+    })
+
+    // Get current medley data
+    const { data: currentMedley, error: medleyError } = await supabase
+      .from('medleys')
+      .select('*')
+      .eq('id', medleyId)
+      .single()
+
+    if (medleyError) {
+      logger.error('Error fetching current medley:', medleyError)
+      return null
+    }
+
+    // Update medley metadata
+    const { error: updateError } = await supabase
+      .from('medleys')
+      .update({
+        title: snapshot.title,
+        creator: snapshot.creator || null,
+        duration: snapshot.duration,
+        last_editor: editorNickname,
+        last_edited_at: new Date().toISOString()
+      })
+      .eq('id', medleyId)
+
+    if (updateError) {
+      logger.error('Error updating medley metadata:', updateError)
+      return null
+    }
+
+    // Restore songs using saveMedleySongs
+    const medleyInfo = {
+      title: snapshot.title,
+      creator: snapshot.creator,
+      duration: snapshot.duration
+    }
+
+    const success = await saveMedleySongs(medleyId, snapshot.songs, editorNickname, medleyInfo)
+
+    if (!success) {
+      logger.error('Failed to restore songs')
+      return null
+    }
+
+    // Record the restore action in edit history
+    await recordMedleyEdit(medleyId, editorNickname, 'update_medley', {
+      action: 'restore',
+      restoredFromEditId: editHistoryId,
+      restoredFromDate: editHistory.created_at,
+      songCount: snapshot.songs.length
+    })
+
+    logger.info('✅ Successfully restored medley from edit history')
+
+    // Fetch and return the restored data
+    const restoredData = await getMedleyByVideoId(currentMedley.video_id as string)
+    return restoredData
+  } catch (error) {
+    logger.error('Error restoring from edit history:', error)
+    return null
   }
 }

@@ -15,10 +15,11 @@ import SongDetailTooltip from "@/components/features/medley/SongDetailTooltip";
 import SongSearchModal from "@/components/features/medley/SongSearchModal";
 import ManualSongAddModal from "@/components/features/medley/ManualSongAddModal";
 import ContributorsDisplay from "@/components/features/medley/ContributorsDisplay";
+import RestoreConfirmModal from "@/components/features/medley/RestoreConfirmModal";
 import LoginModal from "@/components/features/auth/LoginModal";
-import { SongSection, MedleyEditHistory } from "@/types";
+import { SongSection, MedleyEditHistory, MedleySnapshot } from "@/types";
 import { SongDatabaseEntry, createSongFromDatabase, addManualSong } from "@/lib/utils/songDatabase";
-import { getMedleyEditHistory } from "@/lib/api/medleys";
+import { getMedleyEditHistory, restoreFromEditHistory } from "@/lib/api/medleys";
 import { logger } from "@/lib/utils/logger";
 import { PlayerLoadingMessage } from "@/components/ui/loading/PlayerSkeleton";
 import { ActiveSongPopup } from "@/components/ui/song/ActiveSongPopup";
@@ -84,6 +85,13 @@ export default function MedleyPlayer({
     // 編集履歴の状態
     const [editHistory, setEditHistory] = useState<MedleyEditHistory[]>([]);
 
+    // 復元関連の状態
+    const [restoreModalOpen, setRestoreModalOpen] = useState<boolean>(false);
+    const [restoringEditHistoryId, setRestoringEditHistoryId] = useState<string | null>(null);
+    const [restoreSnapshot, setRestoreSnapshot] = useState<MedleySnapshot | null>(null);
+    const [restoreCreatedAt, setRestoreCreatedAt] = useState<Date | null>(null);
+    const [isRestoring, setIsRestoring] = useState<boolean>(false);
+
     // 楽曲選択とツールチップ関連の状態
     const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
     // ツールチップ関連の状態
@@ -118,6 +126,8 @@ export default function MedleyPlayer({
         editingSongs,
         hasChanges,
         isSaving,
+        saveFailed,
+        saveError,
         updateSong,
         addSong,
         deleteSong,
@@ -125,6 +135,7 @@ export default function MedleyPlayer({
         batchUpdate,
         undo,
         redo,
+        resetSaveError,
     } = useMedleyEdit({
         originalSongs: medleySongs,
         isRefetching: isRefetching,
@@ -197,6 +208,14 @@ export default function MedleyPlayer({
             if (success) {
                 logger.info(`✅ [${callId}] Immediate save successful, refetching data`);
                 await refetch();
+
+                // 編集履歴も再取得
+                if (medleyData?.id) {
+                    const history = await getMedleyEditHistory(medleyData.id, 10);
+                    setEditHistory(history);
+                    logger.debug('✅ Edit history refetched after immediate save');
+                }
+
                 logger.info(`✅ [${callId}] Refetch completed`);
             } else {
                 logger.error(`❌ [${callId}] Immediate save failed`, {
@@ -436,15 +455,15 @@ export default function MedleyPlayer({
     }, [isTooltipVisible, hideTooltipTimeout]);
     
     // 現在のトラックの追跡（編集中か元のデータかを切り替え）
-    // hasChanges, isSaving, isRefetchingをチェックして、保存処理中もeditingSongsを表示し続ける（UIフリッカー防止＆即時反映）
+    // hasChanges, isSaving, isRefetching, saveFailedをチェックして、保存処理中もeditingSongsを表示し続ける（UIフリッカー防止＆即時反映）
     const displaySongs = useMemo(() => {
-        // 編集中、保存中、refetch中はeditingSongsを使用（即時反映）
-        if (hasChanges || isSaving || isRefetching) {
+        // 編集中、保存中、refetch中、保存失敗後はeditingSongsを使用（即時反映＆データ保護）
+        if (hasChanges || isSaving || isRefetching || saveFailed) {
             return editingSongs;
         }
         // すべて完了したらmedleySongsに切り替え（DB同期済み）
         return medleySongs;
-    }, [hasChanges, isSaving, isRefetching, editingSongs, medleySongs]);
+    }, [hasChanges, isSaving, isRefetching, saveFailed, editingSongs, medleySongs]);
     
     // Debug logging for displaySongs changes
     useEffect(() => {
@@ -968,6 +987,79 @@ export default function MedleyPlayer({
         logger.info('編集モーダルをダブルクリックから開きました:', { songTitle: song.title, songId: song.id });
     };
 
+    // 編集履歴から復元
+    const handleRestoreRequest = (editHistoryId: string) => {
+        if (!isAuthenticated) {
+            setLoginModalOpen(true);
+            return;
+        }
+
+        logger.info('🔄 Restore requested for edit history:', editHistoryId);
+
+        // 編集履歴を取得してスナップショットを確認
+        const edit = editHistory.find(e => e.id === editHistoryId);
+        if (!edit) {
+            logger.error('Edit history not found:', editHistoryId);
+            return;
+        }
+
+        const snapshot = edit.changes?.snapshot as MedleySnapshot | undefined;
+        if (!snapshot) {
+            logger.error('No snapshot found in edit history:', editHistoryId);
+            return;
+        }
+
+        logger.info('📸 Snapshot found, opening restore confirmation modal', {
+            songCount: snapshot.songs.length,
+            title: snapshot.title
+        });
+
+        setRestoringEditHistoryId(editHistoryId);
+        setRestoreSnapshot(snapshot);
+        setRestoreCreatedAt(edit.createdAt);
+        setRestoreModalOpen(true);
+    };
+
+    const handleRestoreConfirm = async () => {
+        if (!restoringEditHistoryId || !nickname) {
+            logger.error('Cannot restore: missing edit history ID or nickname');
+            return;
+        }
+
+        setIsRestoring(true);
+        logger.info('🔄 Executing restore from edit history:', restoringEditHistoryId);
+
+        try {
+            const restoredData = await restoreFromEditHistory(restoringEditHistoryId, nickname);
+
+            if (restoredData) {
+                logger.info('✅ Restore successful, refetching data');
+                await refetch();
+
+                // 編集履歴も再取得
+                if (medleyData?.id) {
+                    const history = await getMedleyEditHistory(medleyData.id, 10);
+                    setEditHistory(history);
+                }
+
+                setRestoreModalOpen(false);
+                setRestoringEditHistoryId(null);
+                setRestoreSnapshot(null);
+                setRestoreCreatedAt(null);
+
+                logger.info('✅ Restore completed successfully');
+            } else {
+                logger.error('❌ Restore failed');
+                alert('復元に失敗しました。もう一度お試しください。');
+            }
+        } catch (error) {
+            logger.error('❌ Error during restore:', error);
+            alert('復元中にエラーが発生しました。');
+        } finally {
+            setIsRestoring(false);
+        }
+    };
+
 
 
 
@@ -1075,6 +1167,49 @@ export default function MedleyPlayer({
                     </div>
                 )}
 
+                {/* 保存失敗時のエラーバナー */}
+                {saveFailed && saveError && (
+                    <div className="px-4 py-3 bg-red-50 border-b border-red-200">
+                        <div className="flex items-center justify-between gap-4">
+                            <div className="flex items-start gap-3 flex-1">
+                                <svg className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                </svg>
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-medium text-red-900 mb-1">保存に失敗しました</h4>
+                                    <p className="text-xs text-red-800 mb-2">{saveError}</p>
+                                    <p className="text-xs text-red-700">✅ 編集内容は保持されています。もう一度保存を試すか、編集を続けることができます。</p>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={async () => {
+                                        logger.info('🔄 User requested save retry');
+                                        const title = medleyTitle || videoMetadataRef.current?.title || `${videoId} メドレー`;
+                                        const creator = medleyCreator || videoMetadataRef.current?.creator || '匿名ユーザー';
+                                        const success = await saveMedley(videoId, title, creator, medleyDuration || duration || 0, nickname || undefined);
+                                        if (success) {
+                                            await refetch();
+                                        }
+                                    }}
+                                    className="px-3 py-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm font-medium"
+                                >
+                                    再試行
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        logger.info('🔕 User dismissed save error banner');
+                                        resetSaveError();
+                                    }}
+                                    className="px-3 py-1.5 bg-white border border-red-300 text-red-700 rounded hover:bg-red-50 transition-colors text-sm"
+                                >
+                                    閉じる
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* メドレー基本情報 - 常に表示 */}
                 {!loading && !error && (
                     <MedleyHeader
@@ -1125,6 +1260,8 @@ export default function MedleyPlayer({
                             lastEditor={medleyData?.lastEditor}
                             lastEditedAt={medleyData?.lastEditedAt}
                             compact={false}
+                            isAuthenticated={isAuthenticated}
+                            onRestore={handleRestoreRequest}
                         />
                     </div>
                 )}
@@ -1427,6 +1564,22 @@ export default function MedleyPlayer({
                     logger.info('✅ Login successful, enabling edit mode');
                     setLoginModalOpen(false);
                 }}
+            />
+
+            {/* 復元確認モーダル */}
+            <RestoreConfirmModal
+                isOpen={restoreModalOpen}
+                onClose={() => {
+                    setRestoreModalOpen(false);
+                    setRestoringEditHistoryId(null);
+                    setRestoreSnapshot(null);
+                    setRestoreCreatedAt(null);
+                }}
+                onConfirm={handleRestoreConfirm}
+                snapshot={restoreSnapshot}
+                currentSongCount={displaySongs.length}
+                restoredAt={restoreCreatedAt}
+                isLoading={isRestoring}
             />
         </div>
     );

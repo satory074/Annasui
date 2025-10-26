@@ -490,7 +490,15 @@ export default function MultiSegmentTimeEditor({
       {/* タイムラインプレビューを上部に移動 */}
       {maxDuration > 0 && (
         <div className="p-4 bg-white border border-gray-200 rounded-md">
-          <h4 className="text-base font-medium text-gray-700 mb-4">タイムラインプレビュー</h4>
+          <div className="flex items-center justify-between mb-4">
+            <h4 className="text-base font-medium text-gray-700">タイムラインプレビュー</h4>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">📍 現在:</span>
+              <span className="text-lg font-bold text-blue-600 tabular-nums">
+                {formatTimeSimple(currentTime)}
+              </span>
+            </div>
+          </div>
           <div className="relative w-full h-12 bg-gray-100 rounded-md overflow-hidden shadow-inner">
             {/* 既存の他の楽曲（薄いグレー） */}
             {allSongs

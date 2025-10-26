@@ -19,6 +19,7 @@ interface SegmentListProps {
   editingSegment: SegmentEditState;
   tempTimeValue: string;
   onTogglePreview: (segmentId: number) => void;
+  onToggleEndPreview: (segmentId: number) => void;
   onRemoveSegment: (segmentId: number) => void;
   onStartEditing: (segmentId: number, field: 'startTime' | 'endTime', currentValue: number) => void;
   onFinishEditing: () => void;
@@ -35,6 +36,7 @@ function SegmentList({
   editingSegment,
   tempTimeValue,
   onTogglePreview,
+  onToggleEndPreview,
   onRemoveSegment,
   onStartEditing,
   onFinishEditing,
@@ -142,12 +144,12 @@ function SegmentList({
 
               {/* 操作ボタン */}
               <div className="flex items-center gap-1 ml-1">
-                {/* プレビューボタン */}
+                {/* プレビューボタン（開始から） */}
                 {onSeek && onTogglePlayPause && (
                   <button
                     onClick={() => onTogglePreview(segment.id)}
                     className="p-1 text-xs bg-mint-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-1 focus:ring-mint-600"
-                    title={isPreviewPlaying ? "プレビュー停止" : "プレビュー再生"}
+                    title={isPreviewPlaying ? "プレビュー停止" : "区間の最初から再生"}
                   >
                     {isPreviewPlaying ? (
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
@@ -158,6 +160,29 @@ function SegmentList({
                       <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M8 5v14l11-7z"/>
                       </svg>
+                    )}
+                  </button>
+                )}
+
+                {/* プレビューボタン（ラスト5秒前から） */}
+                {onSeek && onTogglePlayPause && (
+                  <button
+                    onClick={() => onToggleEndPreview(segment.id)}
+                    className="p-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-600 relative"
+                    title={isPreviewPlaying ? "プレビュー停止" : "ラスト5秒前から再生"}
+                  >
+                    {isPreviewPlaying ? (
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <rect x="6" y="4" width="4" height="16" />
+                        <rect x="14" y="4" width="4" height="16" />
+                      </svg>
+                    ) : (
+                      <div className="relative">
+                        <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                        <span className="absolute -bottom-0.5 -right-1 text-[6px] font-bold">-5s</span>
+                      </div>
                     )}
                   </button>
                 )}
@@ -390,7 +415,7 @@ export default function MultiSegmentTimeEditor({
 
     setPreviewingSegmentId(segmentId);
     onSeek(segment.startTime);
-    
+
     if (!isPlaying) {
       onTogglePlayPause();
     }
@@ -399,7 +424,45 @@ export default function MultiSegmentTimeEditor({
     const interval = setInterval(() => {
       onSeek(segment.startTime);
     }, (segment.endTime - segment.startTime + 1) * 1000);
-    
+
+    setPreviewInterval(interval);
+  };
+
+  // セグメント終了5秒前からのプレビュー再生
+  const toggleSegmentEndPreview = (segmentId: number) => {
+    if (previewingSegmentId === segmentId) {
+      // プレビュー停止
+      setPreviewingSegmentId(null);
+      if (previewInterval) {
+        clearInterval(previewInterval);
+        setPreviewInterval(null);
+      }
+      return;
+    }
+
+    const segment = segments.find(s => s.id === segmentId);
+    if (!segment || !onSeek || !onTogglePlayPause) return;
+
+    // 既存のプレビューを停止
+    if (previewInterval) {
+      clearInterval(previewInterval);
+    }
+
+    // 終了5秒前の時刻を計算（開始時刻より前にはならないように）
+    const startFrom = Math.max(segment.startTime, segment.endTime - 5);
+
+    setPreviewingSegmentId(segmentId);
+    onSeek(startFrom);
+
+    if (!isPlaying) {
+      onTogglePlayPause();
+    }
+
+    // ループ再生の設定（終了5秒前から開始）
+    const interval = setInterval(() => {
+      onSeek(startFrom);
+    }, (segment.endTime - startFrom + 1) * 1000);
+
     setPreviewInterval(interval);
   };
 
@@ -503,6 +566,7 @@ export default function MultiSegmentTimeEditor({
         editingSegment={editingSegment}
         tempTimeValue={tempTimeValue}
         onTogglePreview={toggleSegmentPreview}
+        onToggleEndPreview={toggleSegmentEndPreview}
         onRemoveSegment={removeSegment}
         onStartEditing={startEditing}
         onFinishEditing={finishEditing}

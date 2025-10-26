@@ -48,7 +48,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
   }
 
   return (
-    <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col fixed right-0 top-16 bottom-24 overflow-hidden">
+    <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col sticky top-16 h-[calc(100vh-10rem)] overflow-hidden">
       {/* 現在再生中セクション */}
       <div className="border-b border-gray-700 flex flex-col" style={{ maxHeight: '450px' }}>
         <div className="p-4 pb-2">

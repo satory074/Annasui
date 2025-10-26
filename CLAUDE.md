@@ -319,6 +319,8 @@ useEffect(() => {
 
 ### Authentication Issues
 - **Edit buttons missing**: Verify user is authenticated via `useAuth()`
+- **Edit buttons appearing when not authenticated**: Check that edit callbacks are conditionally passed (e.g., `onEdit={isAuthenticated ? handleEdit : undefined}`)
+- **Tooltip edit button bypassing authentication**: Ensure `handleEditFromTooltip` includes authentication check before opening modal
 - **Password verification fails**: Check `EDIT_PASSWORD` in `.env.local` (dev) or Firebase env (prod)
 - **Session lost**: sessionStorage clears on browser close (expected behavior)
 - **Rate limiting**: Max 5 login attempts per 10 minutes
@@ -580,6 +582,16 @@ await saveMedley(videoId, title, creator, duration, nickname || undefined);
 // Conditional edit UI rendering
 onAddSong={isAuthenticated ? handleAddNewSong : undefined}
 onEditSong={isAuthenticated ? handleEditSongClick : undefined}
+onEdit={isAuthenticated ? handleEditFromTooltip : undefined}
+
+// Authentication check in event handlers (defensive programming)
+const handleEditFromTooltip = (song: SongSection) => {
+  if (!isAuthenticated) {
+    setLoginModalOpen(true);
+    return;
+  }
+  // ... proceed with edit
+};
 
 // Immediate save pattern with callbacks
 const handleImmediateSave = useCallback(async () => {

@@ -966,6 +966,12 @@ export default function MedleyPlayer({
 
     // ツールチップから編集ボタンがクリックされた時の処理
     const handleEditFromTooltip = (song: SongSection) => {
+        // 認証チェック
+        if (!isAuthenticated) {
+            setLoginModalOpen(true);
+            return;
+        }
+
         // ツールチップを閉じる
         setIsTooltipVisible(false);
         setTooltipSong(null);
@@ -1493,7 +1499,7 @@ export default function MedleyPlayer({
                 isVisible={isTooltipVisible}
                 position={tooltipPosition}
                 onSeek={seek}
-                onEdit={handleEditFromTooltip}
+                onEdit={isAuthenticated ? handleEditFromTooltip : undefined}
                 onMouseEnter={handleTooltipMouseEnter}
                 onMouseLeave={handleTooltipMouseLeave}
             />

@@ -780,13 +780,8 @@ export async function restoreFromEditHistory(
       return null
     }
 
-    // Record the restore action in edit history
-    await recordMedleyEdit(medleyId, editorNickname, 'update_medley', {
-      action: 'restore',
-      restoredFromEditId: editHistoryId,
-      restoredFromDate: editHistory.created_at,
-      songCount: snapshot.songs.length
-    })
+    // Note: Edit history is recorded by saveMedleySongs() with snapshot
+    // This prevents duplicate entries and ensures the restored state is recorded properly
 
     logger.info('✅ Successfully restored medley from edit history')
 

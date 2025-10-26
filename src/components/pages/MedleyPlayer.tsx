@@ -1095,14 +1095,15 @@ export default function MedleyPlayer({
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 pt-16 pb-24 flex">
+        <div className="min-h-screen bg-gray-100 pt-16 pb-24">
             {/* App Header */}
             <AppHeader variant="player" />
 
-            {/* Main Content */}
-            <div className="flex-1 max-w-6xl mx-auto bg-white shadow-lg">
-
-                {/* プレイヤーコンテナ */}
+            {/* 2カラムレイアウト */}
+            <div className="flex max-w-[1920px] mx-auto">
+                {/* 左カラム: メインコンテンツ */}
+                <div className="flex-1 bg-white shadow-lg">
+                    {/* プレイヤーコンテナ */}
                 <div
                     className="relative"
                     ref={playerContainerRef}
@@ -1409,7 +1410,19 @@ export default function MedleyPlayer({
                     </div>
                 )}
 
+                </div>
+                {/* 左カラム終了 */}
+
+                {/* 右カラム: サイドバー（デスクトップ用） */}
+                <div className="hidden lg:block">
+                    <RightSidebar
+                        currentTime={currentTime}
+                        songs={displaySongs}
+                        isVisible={playerReady && !editModalOpen}
+                    />
+                </div>
             </div>
+            {/* 2カラムレイアウト終了 */}
 
             {/* 楽曲編集モーダル */}
             <SongEditModal
@@ -1539,15 +1552,6 @@ export default function MedleyPlayer({
                         />
                     );
                 })()}
-            </div>
-
-            {/* 右側サイドバー（デスクトップ用） */}
-            <div className="hidden lg:block">
-                <RightSidebar
-                    currentTime={currentTime}
-                    songs={displaySongs}
-                    isVisible={playerReady && !editModalOpen}
-                />
             </div>
 
             {/* デバッグパネル */}

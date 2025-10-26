@@ -257,19 +257,38 @@ useEffect(() => {
 </div>
 ```
 
+### Layout Architecture
+- **2-Column Flexbox Layout** (`MedleyPlayer.tsx`): Nico Nico-style layout with main content and sidebar
+  - **Container structure** (line 1103-1425):
+    - Outer flex container: `<div className="flex max-w-[1920px] mx-auto">`
+    - Left column: `<div className="flex-1 bg-white shadow-lg">` (takes remaining space)
+    - Right column: `<div className="hidden lg:block">` with RightSidebar (320px width via `w-80`)
+  - **Responsive behavior**:
+    - Desktop (≥1024px): Shows 2-column layout with sticky sidebar
+    - Mobile/Tablet (<1024px): Hides sidebar, shows ActiveSongPopup instead
+  - **Key implementation notes**:
+    - Outer container must NOT have `flex` class (removed at line 1098)
+    - RightSidebar uses `sticky` positioning (not `fixed`) to scroll with content
+    - Maximum width constrained to 1920px for ultra-wide displays
+
 ### Current Song Display
 - **RightSidebar** (`src/components/features/player/RightSidebar.tsx`): Nico Nico-style right sidebar for desktop
-  - **Desktop (1024px+)**: Fixed right sidebar showing currently playing songs
-  - **Mobile/Tablet (<1024px)**: Hidden, ActiveSongPopup shows instead at bottom corners
+  - **Positioning**: `sticky top-16 h-[calc(100vh-10rem)]` (line 51)
+    - `sticky` allows scrolling with page while staying visible
+    - `top-16` accounts for fixed header (64px)
+    - Height calculation excludes header (64px) and footer (96px)
+  - **Desktop (1024px+)**: Visible as right column in 2-column layout
+  - **Mobile/Tablet (<1024px)**: Hidden (`hidden lg:block`), ActiveSongPopup shows instead
   - **Features**:
     - "🎵 現在再生中" section with song count badge
     - Compact 80x80px thumbnails (optimized for multiple simultaneous songs)
     - Real-time updates as songs change during playback
-    - Duplicate detection for songs in multiple segments
+    - Duplicate detection for songs in multiple segments (uses Set-based deduplication)
     - Platform links (Nico Nico 🎬, YouTube ▶️) for each song
     - "📋 関連メドレー" section (placeholder for future related medleys)
     - Custom scrollbar styling for song list
     - Fade-in animations with staggered delays (50ms per song)
+    - Maximum height: 450px for currently playing section (allows scrolling for many simultaneous songs)
 - **ActiveSongPopup** (`src/components/ui/song/ActiveSongPopup.tsx`): Bottom-corner popup for mobile
   - Mouse avoidance system with collision detection
   - Position switching (left/right) based on player visibility

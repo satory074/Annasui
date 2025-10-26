@@ -284,18 +284,19 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
 
       {activeSongs.map((song, index) => {
         const isNewSong = !prevActiveSongs.some(prevSong => prevSong.uniqueId === song.uniqueId);
-        
+
         return (
           <div
             key={song.uniqueId}
             className={`
-              bg-white rounded-lg shadow-lg border-2 p-3 max-w-xs
+              bg-white rounded-lg shadow-lg border-2 p-4 max-w-xs
               transform transition-all duration-300 ease-out
+              flex flex-col items-center gap-3
               ${isNewSong ? 'animate-slide-in' : 'translate-x-0 opacity-100'}
-              ${isPositionFixed 
-                ? 'border-orange-400 shadow-orange-200/60' 
-                : mouseAvoidanceActive 
-                  ? 'border-orange-300 shadow-orange-200/50' 
+              ${isPositionFixed
+                ? 'border-orange-400 shadow-orange-200/60'
+                : mouseAvoidanceActive
+                  ? 'border-orange-300 shadow-orange-200/50'
                   : 'border-orange-200'
               }
             `}
@@ -306,8 +307,8 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
               ...(isPositionFixed ? {
                 transform: 'scale(0.99)',
                 filter: 'saturate(1.1)',
-                boxShadow: mouseAvoidanceActive 
-                  ? '0 8px 25px rgba(255, 140, 66, 0.3)' 
+                boxShadow: mouseAvoidanceActive
+                  ? '0 8px 25px rgba(255, 140, 66, 0.3)'
                   : '0 6px 20px rgba(255, 140, 66, 0.15)'
               } : mouseAvoidanceActive ? {
                 transform: 'scale(0.98)',
@@ -315,37 +316,76 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
               } : {})
             }}
           >
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                <SongThumbnail
-                  title={song.title}
-                  niconicoLink={song.niconicoLink}
-                  youtubeLink={song.youtubeLink}
-                  spotifyLink={song.spotifyLink}
-                  applemusicLink={song.applemusicLink}
-                  size="sm"
-                  className="w-12 h-12 rounded-md"
-                  isClickable={false}
-                />
-              </div>
-              <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-semibold text-gray-900 truncate">
-                  {song.title}
-                </h3>
-                <p className="text-xs text-gray-600 truncate">
-                  {song.artist}
-                </p>
-                <div className="flex items-center space-x-1 mt-1">
-                  <div className={`w-2 h-2 rounded-full animate-pulse ${
-                    isPositionFixed ? 'bg-orange-600' : 'bg-orange-500'
-                  }`}></div>
-                  <span className={`text-xs font-medium ${
-                    isPositionFixed ? 'text-orange-700' : 'text-orange-600'
-                  }`}>
-                    再生中{isPositionFixed ? ' (位置固定)' : ''}
-                  </span>
-                </div>
-              </div>
+            {/* サムネイル */}
+            <div className="flex-shrink-0">
+              <SongThumbnail
+                title={song.title}
+                niconicoLink={song.niconicoLink}
+                youtubeLink={song.youtubeLink}
+                spotifyLink={song.spotifyLink}
+                applemusicLink={song.applemusicLink}
+                size="sm"
+                className="w-16 h-16 rounded-md"
+                isClickable={false}
+              />
+            </div>
+
+            {/* タイトル */}
+            <h3 className="text-sm font-semibold text-gray-900 text-center w-full">
+              {song.title}
+            </h3>
+
+            {/* アーティスト */}
+            <p className="text-xs text-gray-600 text-center w-full">
+              {song.artist}
+            </p>
+
+            {/* プラットフォームリンク */}
+            <div className="flex justify-center gap-2 flex-wrap">
+              {song.niconicoLink && (
+                <a
+                  href={song.niconicoLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-xs transition-colors"
+                  title="ニコニコ動画"
+                >
+                  🎬
+                </a>
+              )}
+              {song.youtubeLink && (
+                <a
+                  href={song.youtubeLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-xs transition-colors"
+                  title="YouTube"
+                >
+                  ▶️
+                </a>
+              )}
+              {song.spotifyLink && (
+                <a
+                  href={song.spotifyLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-xs transition-colors"
+                  title="Spotify"
+                >
+                  🎵
+                </a>
+              )}
+              {song.applemusicLink && (
+                <a
+                  href={song.applemusicLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-xs transition-colors"
+                  title="Apple Music"
+                >
+                  🍎
+                </a>
+              )}
             </div>
           </div>
         );

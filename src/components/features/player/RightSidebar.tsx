@@ -48,9 +48,9 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
   }
 
   return (
-    <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col sticky top-16 h-[calc(100vh-10rem)] overflow-hidden">
+    <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
       {/* 現在再生中セクション */}
-      <div className="border-b border-gray-700 flex flex-col" style={{ maxHeight: '450px' }}>
+      <div className="border-b border-gray-700 flex flex-col">
         <div className="p-4 pb-2">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide">
@@ -62,8 +62,8 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
           </div>
         </div>
 
-        {/* 楽曲リスト（スクロール可能） */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4 space-y-3">
+        {/* 楽曲リスト */}
+        <div className="px-4 pb-4 space-y-3">
           {currentSongs.length === 0 ? (
             <div className="flex items-center justify-center h-24 text-gray-500 text-sm">
               再生中の楽曲はありません
@@ -72,10 +72,10 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
             currentSongs.map((song, index) => (
               <div
                 key={`${song.id}-${song.displayIndex}`}
-                className="bg-gray-700/50 rounded-lg p-3 flex items-center gap-3 animate-fade-in"
+                className="bg-gray-700/50 rounded-lg p-4 flex flex-col items-center gap-3 animate-fade-in"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
-                {/* サムネイル (80x80) */}
+                {/* サムネイル */}
                 <div className="flex-shrink-0">
                   <SongThumbnail
                     title={song.title}
@@ -89,46 +89,62 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                   />
                 </div>
 
-                {/* 楽曲情報 */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-bold text-white truncate mb-1">
-                    {song.title}
-                  </h3>
-                  <p className="text-xs text-gray-300 truncate mb-2">
-                    {song.artist}
-                  </p>
+                {/* タイトル */}
+                <h3 className="text-sm font-bold text-white text-center w-full">
+                  {song.title}
+                </h3>
 
-                  {/* 再生中インジケーター & プラットフォームリンク */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
-                      <span className="text-xs font-semibold text-red-400">再生中</span>
-                    </div>
-                    <div className="flex gap-1 ml-auto">
-                      {song.niconicoLink && (
-                        <a
-                          href={song.niconicoLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors"
-                          title="ニコニコ動画"
-                        >
-                          🎬
-                        </a>
-                      )}
-                      {song.youtubeLink && (
-                        <a
-                          href={song.youtubeLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors"
-                          title="YouTube"
-                        >
-                          ▶️
-                        </a>
-                      )}
-                    </div>
-                  </div>
+                {/* アーティスト */}
+                <p className="text-xs text-gray-300 text-center w-full">
+                  {song.artist}
+                </p>
+
+                {/* プラットフォームリンク */}
+                <div className="flex justify-center gap-2 flex-wrap">
+                  {song.niconicoLink && (
+                    <a
+                      href={song.niconicoLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors"
+                      title="ニコニコ動画"
+                    >
+                      🎬
+                    </a>
+                  )}
+                  {song.youtubeLink && (
+                    <a
+                      href={song.youtubeLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors"
+                      title="YouTube"
+                    >
+                      ▶️
+                    </a>
+                  )}
+                  {song.spotifyLink && (
+                    <a
+                      href={song.spotifyLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors"
+                      title="Spotify"
+                    >
+                      🎵
+                    </a>
+                  )}
+                  {song.applemusicLink && (
+                    <a
+                      href={song.applemusicLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors"
+                      title="Apple Music"
+                    >
+                      🍎
+                    </a>
+                  )}
                 </div>
               </div>
             ))

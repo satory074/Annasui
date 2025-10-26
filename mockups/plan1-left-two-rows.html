@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>案1: 左側2行表示（Spotify風）</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+    <!-- Header -->
+    <div class="bg-gray-800 p-4 text-center">
+        <h1 class="text-2xl font-bold mb-2">案1: 左側2行表示（Spotify風）</h1>
+        <p class="text-sm text-gray-400">FixedPlayerBarの左側セクションを2-3行に拡張</p>
+    </div>
+
+    <!-- Main Content Area (Simulated) -->
+    <div class="flex-1 flex items-center justify-center bg-gray-950 p-8">
+        <div class="text-center">
+            <div class="w-64 h-64 bg-gray-800 rounded-lg flex items-center justify-center mb-4">
+                <svg class="w-24 h-24 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                </svg>
+            </div>
+            <p class="text-gray-400">メインコンテンツエリア（動画プレイヤー）</p>
+        </div>
+    </div>
+
+    <!-- Fixed Player Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-gray-800 text-white shadow-2xl border-t border-gray-700">
+        <div class="flex items-stretch px-4 py-3 gap-4">
+
+            <!-- 左側セクション: タイトル情報 + 現在再生楽曲 (30%) -->
+            <div class="w-1/4 min-w-[280px] flex flex-col gap-1">
+                <!-- メドレータイトル（小さく、控えめ） -->
+                <div class="text-xs text-gray-400">
+                    組曲『ニコニコ動画』 by しも
+                </div>
+
+                <!-- 現在再生中の楽曲（大きく、強調） -->
+                <div id="currentSong" class="flex items-center gap-3 bg-gray-700/50 rounded-lg p-2 fade-in">
+                    <!-- サムネイル -->
+                    <div class="flex-shrink-0 w-14 h-14 bg-orange-500 rounded flex items-center justify-center text-2xl">
+                        🎵
+                    </div>
+                    <!-- 楽曲情報 -->
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-bold text-white truncate">
+                            エージェント夜を往く
+                        </h3>
+                        <p class="text-xs text-gray-300 truncate">
+                            DECO*27
+                        </p>
+                        <div class="flex items-center gap-1 mt-0.5">
+                            <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                            <span class="text-xs font-medium text-orange-500">再生中</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中央セクション: 再生コントロール + シークバー (50%) -->
+            <div class="flex-1 flex flex-col gap-2">
+                <!-- 再生コントロールボタン -->
+                <div class="flex items-center justify-center gap-2">
+                    <button class="text-gray-300 hover:text-white transition-all p-1 rounded-full hover:bg-gray-700">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                        </svg>
+                    </button>
+                    <button class="text-gray-300 hover:text-white transition-all p-1 rounded-full hover:bg-gray-700">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="11 17 6 12 11 7" />
+                            <polyline points="18 17 13 12 18 7" />
+                        </svg>
+                    </button>
+                    <button class="bg-orange-500 hover:bg-orange-600 p-3 rounded-full transition-all">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    </button>
+                    <button class="text-gray-300 hover:text-white transition-all p-1 rounded-full hover:bg-gray-700">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="13 17 18 12 13 7" />
+                            <polyline points="6 17 11 12 6 7" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- シークバーと時間表示 -->
+                <div class="flex items-center gap-3">
+                    <div class="text-xs text-gray-300 min-w-[45px] text-right">00:00</div>
+                    <div class="flex-1 relative w-full h-2 bg-gray-600 rounded cursor-pointer hover:h-3 transition-all">
+                        <div class="absolute top-0 bottom-0 rounded-l bg-orange-500" style="width: 25%"></div>
+                        <div class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style="left: 25%"></div>
+                    </div>
+                    <div class="text-xs text-gray-300 min-w-[45px]">10:48</div>
+                </div>
+            </div>
+
+            <!-- 右側セクション: ボリューム + フルスクリーン (20%) -->
+            <div class="w-1/6 min-w-[150px] flex items-center justify-end gap-3">
+                <input type="range" min="0" max="100" value="50" class="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                <button class="text-gray-300 hover:text-white transition-colors p-1 rounded hover:bg-gray-700">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="fixed top-20 right-4 bg-gray-800 p-4 rounded-lg shadow-lg">
+        <h3 class="text-sm font-bold mb-2">楽曲切り替え</h3>
+        <div class="space-y-2">
+            <button onclick="changeSong('エージェント夜を往く', 'DECO*27')" class="w-full px-3 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700">
+                エージェント夜を往く
+            </button>
+            <button onclick="changeSong('ハレ晴レユカイ', '涼宮ハルヒ(平野綾)')" class="w-full px-3 py-2 bg-gray-700 text-white rounded text-sm hover:bg-gray-600">
+                ハレ晴レユカイ
+            </button>
+            <button onclick="changeSong('患部で止まってすぐ溶ける', 'IOSYS')" class="w-full px-3 py-2 bg-gray-700 text-white rounded text-sm hover:bg-gray-600">
+                患部で止まってすぐ溶ける
+            </button>
+        </div>
+    </div>
+
+    <script>
+        function changeSong(title, artist) {
+            const songElement = document.getElementById('currentSong');
+            songElement.classList.remove('fade-in');
+            void songElement.offsetWidth; // Trigger reflow
+            songElement.classList.add('fade-in');
+
+            songElement.querySelector('h3').textContent = title;
+            songElement.querySelector('p').textContent = artist;
+        }
+    </script>
+</body>
+</html>

@@ -27,6 +27,7 @@ import { ActiveSongDebugPanel } from "@/components/ui/debug/ActiveSongDebugPanel
 import { getNiconicoVideoMetadata } from "@/lib/utils/videoMetadata";
 import MedleyHeader from "@/components/features/medley/MedleyHeader";
 import FixedPlayerBar from "@/components/features/player/FixedPlayerBar";
+import { RightSidebar } from "@/components/features/player/RightSidebar";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -1094,11 +1095,12 @@ export default function MedleyPlayer({
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 pt-16 pb-24">
+        <div className="min-h-screen bg-gray-100 pt-16 pb-24 flex">
             {/* App Header */}
             <AppHeader variant="player" />
 
-            <div className="max-w-6xl mx-auto bg-white shadow-lg">
+            {/* Main Content */}
+            <div className="flex-1 max-w-6xl mx-auto bg-white shadow-lg">
 
                 {/* プレイヤーコンテナ */}
                 <div
@@ -1483,59 +1485,70 @@ export default function MedleyPlayer({
                 onMouseLeave={handleTooltipMouseLeave}
             />
 
-            {/* 現在再生中の楽曲ポップアップ */}
-            {(() => {
-                // Runtime component detection for production debugging
-                const isVisibleCondition = playerReady && !editModalOpen;
-                
-                // Enhanced production logging
-                console.log('🔥 MedleyPlayer: Rendering ActiveSongPopup', {
-                    playerReady,
-                    editModalOpen,
-                    songSearchModalOpen,
-                    manualAddModalOpen,
-                    isVisible: isVisibleCondition,
-                    currentTime,
-                    songsCount: displaySongs.length,
-                    timestamp: new Date().toISOString(),
-                    componentExists: !!ActiveSongPopup,
-                    componentName: ActiveSongPopup?.displayName || 'undefined'
-                });
-                logger.info('🔥 MedleyPlayer: Rendering ActiveSongPopup', {
-                    playerReady,
-                    editModalOpen,
-                    songSearchModalOpen,
-                    manualAddModalOpen,
-                    isVisible: isVisibleCondition,
-                    currentTime,
-                    songsCount: displaySongs.length
-                });
+            {/* 現在再生中の楽曲ポップアップ（モバイル用） */}
+            <div className="lg:hidden">
+                {(() => {
+                    // Runtime component detection for production debugging
+                    const isVisibleCondition = playerReady && !editModalOpen;
 
-                // Ensure component exists before rendering
-                if (!ActiveSongPopup) {
-                    console.error('🚨 CRITICAL: ActiveSongPopup component is undefined!');
-                    return <div style={{ 
-                        position: 'fixed', 
-                        top: '6rem', 
-                        right: '1rem', 
-                        zIndex: 1000,
-                        background: 'red',
-                        color: 'white',
-                        padding: '1rem' 
-                    }}>
-                        ERROR: ActiveSongPopup not loaded
-                    </div>;
-                }
+                    // Enhanced production logging
+                    console.log('🔥 MedleyPlayer: Rendering ActiveSongPopup', {
+                        playerReady,
+                        editModalOpen,
+                        songSearchModalOpen,
+                        manualAddModalOpen,
+                        isVisible: isVisibleCondition,
+                        currentTime,
+                        songsCount: displaySongs.length,
+                        timestamp: new Date().toISOString(),
+                        componentExists: !!ActiveSongPopup,
+                        componentName: ActiveSongPopup?.displayName || 'undefined'
+                    });
+                    logger.info('🔥 MedleyPlayer: Rendering ActiveSongPopup', {
+                        playerReady,
+                        editModalOpen,
+                        songSearchModalOpen,
+                        manualAddModalOpen,
+                        isVisible: isVisibleCondition,
+                        currentTime,
+                        songsCount: displaySongs.length
+                    });
 
-                return (
-                    <ActiveSongPopup
-                        currentTime={currentTime}
-                        songs={displaySongs}
-                        isVisible={isVisibleCondition}
-                        playerContainerRef={playerContainerRef}
-                    />
-                );
-            })()}
+                    // Ensure component exists before rendering
+                    if (!ActiveSongPopup) {
+                        console.error('🚨 CRITICAL: ActiveSongPopup component is undefined!');
+                        return <div style={{
+                            position: 'fixed',
+                            top: '6rem',
+                            right: '1rem',
+                            zIndex: 1000,
+                            background: 'red',
+                            color: 'white',
+                            padding: '1rem'
+                        }}>
+                            ERROR: ActiveSongPopup not loaded
+                        </div>;
+                    }
+
+                    return (
+                        <ActiveSongPopup
+                            currentTime={currentTime}
+                            songs={displaySongs}
+                            isVisible={isVisibleCondition}
+                            playerContainerRef={playerContainerRef}
+                        />
+                    );
+                })()}
+            </div>
+
+            {/* 右側サイドバー（デスクトップ用） */}
+            <div className="hidden lg:block">
+                <RightSidebar
+                    currentTime={currentTime}
+                    songs={displaySongs}
+                    isVisible={playerReady && !editModalOpen}
+                />
+            </div>
 
             {/* デバッグパネル */}
             <ActiveSongDebugPanel

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>現在再生中楽曲表示 - UIモック比較</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-12">
+        <header class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-4">現在再生中楽曲表示 - UIモック比較</h1>
+            <p class="text-gray-400 text-lg">各案をクリックして実際のUIを確認してください</p>
+        </header>
+
+        <div class="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
+            <!-- 案1 -->
+            <a href="plan1-left-two-rows.html" class="block bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition-colors border-2 border-transparent hover:border-orange-500">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="text-4xl">1️⃣</div>
+                    <div class="flex-1">
+                        <h2 class="text-xl font-bold mb-2">案1: 左側2行表示（Spotify風）</h2>
+                        <p class="text-sm text-gray-400">FixedPlayerBarの左側セクションを2-3行に拡張</p>
+                    </div>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-400">✅</span>
+                        <span>Spotify風の洗練されたデザイン</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-400">✅</span>
+                        <span>メドレータイトルと楽曲を同時表示</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-400">✅</span>
+                        <span>サムネイル表示で視覚的</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-yellow-400">⚠️</span>
+                        <span>高さが少し増える</span>
+                    </div>
+                </div>
+                <div class="mt-4 text-orange-500 font-semibold text-sm">
+                    おすすめ度: ★★★★☆
+                </div>
+            </a>
+
+            <!-- 案2 -->
+            <a href="plan2-left-toggle.html" class="block bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition-colors border-2 border-transparent hover:border-orange-500">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="text-4xl">2️⃣</div>
+                    <div class="flex-1">
+                        <h2 class="text-xl font-bold mb-2">案2: 左側切り替え表示（省スペース型）</h2>
+                        <p class="text-sm text-gray-400">左側セクションで動的切り替え（高さ固定）</p>
+                    </div>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-400">✅</span>
+                        <span>スペース効率が良い</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-400">✅</span>
+                        <span>楽曲再生中は自動切り替え</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-yellow-400">⚠️</span>
+                        <span>同時に見られない</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-yellow-400">⚠️</span>
+                        <span>切り替えアニメーションが必要</span>
+                    </div>
+                </div>
+                <div class="mt-4 text-orange-500 font-semibold text-sm">
+                    おすすめ度: ★★★☆☆
+                </div>
+            </a>
+
+            <!-- 案3 -->
+            <a href="plan3-top-bar.html" class="block bg-gray-800 rounded-lg p-6 hover:bg-gray-700 transition-colors border-2 border-transparent hover:border-orange-500">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="text-4xl">3️⃣</div>
+                    <div class="flex-1">
+                        <h2 class="text-xl font-bold mb-2">案3: 上部別バー</h2>
+                        <p class="text-sm text-gray-400">FixedPlayerBarの直上に楽曲情報バーを追加</p>
+                    </div>
+                </div>
+                <div class="space-y-2 text-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-400">✅</span>
+                        <span>独立コンポーネントで管理しやすい</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-400">✅</span>
+                        <span>楽曲なし時は非表示可能</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-yellow-400">⚠️</span>
+                        <span>下部エリアが大きくなる</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-yellow-400">⚠️</span>
+                        <span>モバイルで画面を圧迫</span>
+                    </div>
+                </div>
+                <div class="mt-4 text-orange-500 font-semibold text-sm">
+                    おすすめ度: ★★★☆☆
+                </div>
+            </a>
+
+            <!-- 案6 -->
+            <a href="plan6-right-sidebar.html" class="block bg-gradient-to-br from-orange-900 to-orange-800 rounded-lg p-6 hover:from-orange-800 hover:to-orange-700 transition-colors border-2 border-orange-500">
+                <div class="flex items-start gap-4 mb-4">
+                    <div class="text-4xl">6️⃣</div>
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-2">
+                            <h2 class="text-xl font-bold">案6: 右側サイドパネル（ニコニコ風）</h2>
+                            <span class="bg-yellow-500 text-yellow-900 text-xs font-bold px-2 py-1 rounded">推奨</span>
+                        </div>
+                        <p class="text-sm text-orange-100">ニコニコ動画のようなレイアウト - 最も拡張性が高い</p>
+                    </div>
+                </div>
+                <div class="space-y-2 text-sm text-orange-50">
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-300">✅</span>
+                        <span>ニコニコユーザーにとって馴染み深い</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-300">✅</span>
+                        <span>楽曲情報を大きく表示できる</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-green-300">✅</span>
+                        <span>関連メドレーなど将来の拡張が容易</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-yellow-300">⚠️</span>
+                        <span>メイン動画エリアが狭くなる</span>
+                    </div>
+                </div>
+                <div class="mt-4 text-yellow-300 font-bold text-sm">
+                    おすすめ度: ★★★★★ （推奨案）
+                </div>
+            </a>
+        </div>
+
+        <!-- Summary -->
+        <div class="max-w-4xl mx-auto mt-12 bg-gray-800 rounded-lg p-8">
+            <h3 class="text-2xl font-bold mb-4">各案の特徴まとめ</h3>
+            <div class="space-y-4 text-gray-300">
+                <div>
+                    <h4 class="font-bold text-white mb-2">スペース効率重視</h4>
+                    <p class="text-sm">→ 案2（左側切り替え表示）がおすすめ</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-2">Spotify風の洗練されたUI</h4>
+                    <p class="text-sm">→ 案1（左側2行表示）がおすすめ</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white mb-2">将来の拡張性と馴染みやすさ</h4>
+                    <p class="text-sm">→ 案6（右側サイドパネル）がおすすめ ⭐推奨</p>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center mt-12 text-gray-500 text-sm">
+            <p>各モックはインタラクティブに動作します。ボタンをクリックして楽曲を切り替えてみてください。</p>
+        </footer>
+    </div>
+</body>
+</html>

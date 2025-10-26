@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>案6: 右側サイドパネル（ニコニコ風・複数楽曲対応）- 推奨</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+
+        /* Custom scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #374151;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #6B7280;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9CA3AF;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col">
+    <!-- Header -->
+    <div class="bg-gray-800 p-4 text-center">
+        <h1 class="text-2xl font-bold mb-2">案6: 右側サイドパネル（ニコニコ風・複数楽曲対応）★推奨</h1>
+        <p class="text-sm text-gray-400">複数楽曲の同時再生に対応 - コンパクトなデザイン</p>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex" style="padding-bottom: 72px;">
+        <!-- Left: Main Video & Timeline Area -->
+        <div class="flex-1 flex flex-col bg-gray-950">
+            <!-- Video Player Area -->
+            <div class="flex items-center justify-center bg-black" style="height: 400px;">
+                <div class="text-center">
+                    <div class="w-64 h-48 bg-gray-800 rounded-lg flex items-center justify-center mb-4 mx-auto">
+                        <svg class="w-24 h-24 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z"/>
+                        </svg>
+                    </div>
+                    <p class="text-gray-400">動画プレイヤー</p>
+                </div>
+            </div>
+
+            <!-- Timeline Area -->
+            <div class="flex-1 p-6 overflow-y-auto">
+                <h3 class="text-lg font-bold mb-4">楽曲一覧 (4楽曲, 4区間)</h3>
+                <div class="space-y-3">
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <div class="font-semibold">エージェント夜を往く</div>
+                        <div class="text-sm text-gray-400">00:00 - 02:30</div>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <div class="font-semibold">ハレ晴レユカイ</div>
+                        <div class="text-sm text-gray-400">02:30 - 05:00</div>
+                    </div>
+                    <div class="bg-gray-800 p-4 rounded-lg">
+                        <div class="font-semibold">患部で止まってすぐ溶ける</div>
+                        <div class="text-sm text-gray-400">05:00 - 07:30</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Sidebar Panel -->
+        <div class="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
+            <!-- Current Songs Section -->
+            <div class="border-b border-gray-700 flex flex-col" style="max-height: 450px;">
+                <div class="p-4 pb-2">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wide">
+                            🎵 現在再生中
+                        </h3>
+                        <span id="songCount" class="text-xs font-semibold bg-orange-600 text-white px-2 py-0.5 rounded-full">
+                            1
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Song List (Scrollable) -->
+                <div id="currentSongsList" class="flex-1 overflow-y-auto custom-scrollbar px-4 pb-4 space-y-3">
+                    <!-- Song Card Template - will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Related Medleys Section -->
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-4">
+                <h3 class="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wide">
+                    📋 関連メドレー
+                </h3>
+                <div class="space-y-2">
+                    <div class="bg-gray-700 rounded-lg p-3 hover:bg-gray-600 cursor-pointer transition-colors">
+                        <div class="text-sm font-semibold mb-1">アニソンメドレー 2024</div>
+                        <div class="text-xs text-gray-400">15曲 • 45分</div>
+                    </div>
+                    <div class="bg-gray-700 rounded-lg p-3 hover:bg-gray-600 cursor-pointer transition-colors">
+                        <div class="text-sm font-semibold mb-1">VOCALOID名曲選</div>
+                        <div class="text-xs text-gray-400">20曲 • 60分</div>
+                    </div>
+                    <div class="bg-gray-700 rounded-lg p-3 hover:bg-gray-600 cursor-pointer transition-colors">
+                        <div class="text-sm font-semibold mb-1">東方アレンジメドレー</div>
+                        <div class="text-xs text-gray-400">12曲 • 38分</div>
+                    </div>
+                    <div class="bg-gray-700 rounded-lg p-3 hover:bg-gray-600 cursor-pointer transition-colors">
+                        <div class="text-sm font-semibold mb-1">最近編集されたメドレー</div>
+                        <div class="text-xs text-gray-400">8曲 • 25分</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fixed Player Bar -->
+    <div class="fixed bottom-0 left-0 right-0 bg-gray-800 text-white shadow-2xl border-t border-gray-700">
+        <div class="flex items-center px-4 py-3 gap-4">
+
+            <!-- 左側セクション: タイトル情報 (30%) -->
+            <div class="w-1/4 min-w-[200px] flex items-center gap-3">
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-sm font-semibold text-white truncate">
+                        組曲『ニコニコ動画』
+                    </h3>
+                    <p class="text-xs text-gray-400 truncate">
+                        by しも
+                    </p>
+                </div>
+            </div>
+
+            <!-- 中央セクション: 再生コントロール + シークバー (50%) -->
+            <div class="flex-1 flex flex-col gap-2">
+                <!-- 再生コントロールボタン -->
+                <div class="flex items-center justify-center gap-2">
+                    <button class="text-gray-300 hover:text-white transition-all p-1 rounded-full hover:bg-gray-700">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                        </svg>
+                    </button>
+                    <button class="text-gray-300 hover:text-white transition-all p-1 rounded-full hover:bg-gray-700">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="11 17 6 12 11 7" />
+                            <polyline points="18 17 13 12 18 7" />
+                        </svg>
+                    </button>
+                    <button class="bg-orange-500 hover:bg-orange-600 p-3 rounded-full transition-all">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M8 5v14l11-7z"/>
+                        </svg>
+                    </button>
+                    <button class="text-gray-300 hover:text-white transition-all p-1 rounded-full hover:bg-gray-700">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="13 17 18 12 13 7" />
+                            <polyline points="6 17 11 12 6 7" />
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- シークバーと時間表示 -->
+                <div class="flex items-center gap-3">
+                    <div class="text-xs text-gray-300 min-w-[45px] text-right">00:00</div>
+                    <div class="flex-1 relative w-full h-2 bg-gray-600 rounded cursor-pointer hover:h-3 transition-all">
+                        <div class="absolute top-0 bottom-0 rounded-l bg-orange-500" style="width: 25%"></div>
+                        <div class="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10" style="left: 25%"></div>
+                    </div>
+                    <div class="text-xs text-gray-300 min-w-[45px]">10:48</div>
+                </div>
+            </div>
+
+            <!-- 右側セクション: ボリューム + フルスクリーン (20%) -->
+            <div class="w-1/6 min-w-[150px] flex items-center justify-end gap-3">
+                <input type="range" min="0" max="100" value="50" class="w-24 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer">
+                <button class="text-gray-300 hover:text-white transition-colors p-1 rounded hover:bg-gray-700">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 7h-3v2h5v-5h-2v3zM14 5v2h3v3h2V5h-5z" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="fixed top-20 right-4 bg-gray-800 p-4 rounded-lg shadow-lg z-50">
+        <h3 class="text-sm font-bold mb-2">楽曲数切り替え</h3>
+        <div class="space-y-2">
+            <button onclick="setSongCount(1)" class="w-full px-3 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700">
+                1曲再生
+            </button>
+            <button onclick="setSongCount(2)" class="w-full px-3 py-2 bg-gray-700 text-white rounded text-sm hover:bg-gray-600">
+                2曲同時再生
+            </button>
+            <button onclick="setSongCount(3)" class="w-full px-3 py-2 bg-gray-700 text-white rounded text-sm hover:bg-gray-600">
+                3曲同時再生
+            </button>
+            <button onclick="setSongCount(4)" class="w-full px-3 py-2 bg-gray-700 text-white rounded text-sm hover:bg-gray-600">
+                4曲同時再生
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Song data
+        const allSongs = [
+            { title: 'エージェント夜を往く', artist: 'DECO*27', emoji: '🎵' },
+            { title: 'ハレ晴レユカイ', artist: '涼宮ハルヒ(平野綾)', emoji: '🎸' },
+            { title: '患部で止まってすぐ溶ける', artist: 'IOSYS', emoji: '🎹' },
+            { title: 'Help me, ERINNNNNN!!', artist: 'ビートまりお', emoji: '🎺' }
+        ];
+
+        function createSongCard(song, index) {
+            return `
+                <div class="bg-gray-700/50 rounded-lg p-3 fade-in flex items-center gap-3" style="animation-delay: ${index * 50}ms;">
+                    <!-- Thumbnail (80x80) -->
+                    <div class="flex-shrink-0 w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-700 rounded-lg flex items-center justify-center text-3xl shadow-lg">
+                        ${song.emoji}
+                    </div>
+
+                    <!-- Song Info -->
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-bold text-white truncate mb-1">
+                            ${song.title}
+                        </h3>
+                        <p class="text-xs text-gray-300 truncate mb-2">
+                            ${song.artist}
+                        </p>
+
+                        <!-- Playing Indicator & Platform Links -->
+                        <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1">
+                                <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                                <span class="text-xs font-semibold text-red-400">再生中</span>
+                            </div>
+                            <div class="flex gap-1 ml-auto">
+                                <button class="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors">
+                                    🎬
+                                </button>
+                                <button class="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors">
+                                    ▶️
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function setSongCount(count) {
+            const container = document.getElementById('currentSongsList');
+            const countBadge = document.getElementById('songCount');
+
+            // Update count badge
+            countBadge.textContent = count;
+
+            // Clear existing songs
+            container.innerHTML = '';
+
+            // Add new songs
+            for (let i = 0; i < count && i < allSongs.length; i++) {
+                container.innerHTML += createSongCard(allSongs[i], i);
+            }
+        }
+
+        // Initialize with 1 song
+        setSongCount(1);
+    </script>
+</body>
+</html>

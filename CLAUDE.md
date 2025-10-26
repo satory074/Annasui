@@ -257,6 +257,24 @@ useEffect(() => {
 </div>
 ```
 
+### Current Song Display
+- **RightSidebar** (`src/components/features/player/RightSidebar.tsx`): Nico Nico-style right sidebar for desktop
+  - **Desktop (1024px+)**: Fixed right sidebar showing currently playing songs
+  - **Mobile/Tablet (<1024px)**: Hidden, ActiveSongPopup shows instead at bottom corners
+  - **Features**:
+    - "🎵 現在再生中" section with song count badge
+    - Compact 80x80px thumbnails (optimized for multiple simultaneous songs)
+    - Real-time updates as songs change during playback
+    - Duplicate detection for songs in multiple segments
+    - Platform links (Nico Nico 🎬, YouTube ▶️) for each song
+    - "📋 関連メドレー" section (placeholder for future related medleys)
+    - Custom scrollbar styling for song list
+    - Fade-in animations with staggered delays (50ms per song)
+- **ActiveSongPopup** (`src/components/ui/song/ActiveSongPopup.tsx`): Bottom-corner popup for mobile
+  - Mouse avoidance system with collision detection
+  - Position switching (left/right) based on player visibility
+  - Only visible when RightSidebar is hidden (responsive design)
+
 ### Keyboard Shortcuts
 - **Spacebar**: Play/pause (global, disabled in inputs/modals)
 - **S/E/M keys**: Start/End time, Add song (edit mode only)

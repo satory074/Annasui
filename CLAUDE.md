@@ -24,6 +24,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Deployment
 - `firebase deploy --only hosting` - Deploy to production
+- `rm -rf .next && npm run build && firebase deploy --only hosting` - Clean build and deploy (use when build cache causes issues)
 
 ### Database Backup & Recovery
 - `./scripts/backup-database.sh` - Create manual database backup
@@ -268,27 +269,27 @@ useEffect(() => {
     - Mobile/Tablet (<1024px): Hides sidebar, shows ActiveSongPopup instead
   - **Key implementation notes**:
     - Outer container must NOT have `flex` class (removed at line 1098)
-    - RightSidebar uses `sticky` positioning (not `fixed`) to scroll with content
+    - RightSidebar scrolls normally with page content (not sticky/fixed) to match Niconico's UX
     - Maximum width constrained to 1920px for ultra-wide displays
+    - Right sidebar uses light theme (`bg-gray-50`) with vertical card layout
 
 ### Current Song Display
 - **RightSidebar** (`src/components/features/player/RightSidebar.tsx`): Nico Nico-style right sidebar for desktop
-  - **Positioning**: `sticky top-16 h-[calc(100vh-10rem)]` (line 51)
-    - `sticky` allows scrolling with page while staying visible
-    - `top-16` accounts for fixed header (64px)
-    - Height calculation excludes header (64px) and footer (96px)
+  - **Positioning**: Normal scroll flow (NOT sticky/fixed) - scrolls with page content to match Niconico's behavior
   - **Desktop (1024px+)**: Visible as right column in 2-column layout
   - **Mobile/Tablet (<1024px)**: Hidden (`hidden lg:block`), ActiveSongPopup shows instead
+  - **Theme**: Light theme with `bg-gray-50` background, white song cards with `border-gray-200` borders
   - **Features**:
     - "🎵 現在再生中" section with song count badge
-    - Compact 80x80px thumbnails (optimized for multiple simultaneous songs)
+    - Vertical card layout: Thumbnail (80x80px) → Title → Artist → Platform links
+    - Compact thumbnails optimized for multiple simultaneous songs
     - Real-time updates as songs change during playback
     - Duplicate detection for songs in multiple segments (uses Set-based deduplication)
-    - Platform links (Nico Nico 🎬, YouTube ▶️) for each song
+    - Platform links (Nico Nico 🎬, YouTube ▶️, Spotify 🎵, Apple Music 🍎) displayed as gray buttons
     - "📋 関連メドレー" section (placeholder for future related medleys)
-    - Custom scrollbar styling for song list
+    - Custom scrollbar styling with light theme colors
     - Fade-in animations with staggered delays (50ms per song)
-    - Maximum height: 450px for currently playing section (allows scrolling for many simultaneous songs)
+    - Auto-expanding height (no fixed max-height or scrolling)
 - **ActiveSongPopup** (`src/components/ui/song/ActiveSongPopup.tsx`): Bottom-corner popup for mobile
   - Mouse avoidance system with collision detection
   - Position switching (left/right) based on player visibility
@@ -424,6 +425,7 @@ After deploying fixes (especially for save/database operations):
    - **Stale JavaScript**: Even after deployment, browser may serve old bundle
    - **Session state**: sessionStorage persists across reloads but NOT after cache clear
    - **Database propagation**: Supabase schema changes may take ~30 seconds to propagate
+   - **Build cache issues**: If production shows old code despite deployment, run `rm -rf .next && npm run build && firebase deploy --only hosting` to force clean build
 
 ## Environment Variables
 

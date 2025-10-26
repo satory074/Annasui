@@ -26,6 +26,7 @@ import { ActiveSongPopup } from "@/components/ui/song/ActiveSongPopup";
 import { ActiveSongDebugPanel } from "@/components/ui/debug/ActiveSongDebugPanel";
 import { getNiconicoVideoMetadata } from "@/lib/utils/videoMetadata";
 import MedleyHeader from "@/components/features/medley/MedleyHeader";
+import FixedPlayerBar from "@/components/features/player/FixedPlayerBar";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -1093,14 +1094,17 @@ export default function MedleyPlayer({
     }
 
     return (
-        <div className="min-h-screen bg-gray-100 pt-16">
+        <div className="min-h-screen bg-gray-100 pt-16 pb-24">
             {/* App Header */}
             <AppHeader variant="player" />
-            
+
             <div className="max-w-6xl mx-auto bg-white shadow-lg">
 
                 {/* プレイヤーコンテナ */}
-                <div className="relative" ref={playerContainerRef}>
+                <div
+                    className="relative"
+                    ref={playerContainerRef}
+                >
                     {platform === 'youtube' ? (
                         <YouTubePlayer
                             videoId={videoId}
@@ -1208,15 +1212,6 @@ export default function MedleyPlayer({
                             </div>
                         </div>
                     </div>
-                )}
-
-                {/* メドレー基本情報 - 常に表示 */}
-                {!loading && !error && (
-                    <MedleyHeader
-                        title={medleyTitle || (videoMetadata ? videoMetadata.title : undefined)}
-                        creator={medleyCreator || (videoMetadata ? videoMetadata.creator : undefined)}
-                        originalVideoUrl={generateOriginalVideoUrl()}
-                    />
                 )}
 
                 {/* 楽曲リスト（統合コントロール付き） */}
@@ -1580,6 +1575,21 @@ export default function MedleyPlayer({
                 currentSongCount={displaySongs.length}
                 restoredAt={restoreCreatedAt}
                 isLoading={isRestoring}
+            />
+
+            {/* 下部固定プレイヤーバー */}
+            <FixedPlayerBar
+                title={medleyTitle || videoMetadata?.title}
+                creator={medleyCreator || videoMetadata?.creator}
+                originalVideoUrl={generateOriginalVideoUrl()}
+                isPlaying={isPlaying}
+                currentTime={currentTime}
+                duration={effectiveDuration}
+                onTogglePlayPause={togglePlayPause}
+                onSeek={seek}
+                volume={volume}
+                onVolumeChange={handleVolumeChange}
+                onToggleFullscreen={toggleFullscreen}
             />
         </div>
     );

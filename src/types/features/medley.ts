@@ -28,6 +28,14 @@ export type MedleyEditHistory = {
   createdAt: Date;                    // 編集日時
 };
 
+// メドレースナップショット（復元用データ構造）
+export type MedleySnapshot = {
+  title: string;                      // メドレータイトル
+  creator?: string;                   // 制作者
+  duration: number;                   // 総再生時間（秒）
+  songs: Omit<SongSection, 'id'>[];   // 楽曲セクション配列（IDなし）
+};
+
 // メドレー情報全体のデータモデル
 export type MedleyData = {
   id?: string;          // データベースID（作成後に付与）

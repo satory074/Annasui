@@ -176,6 +176,7 @@ Pattern: Server-side fetch → Process response → Return to client
 - Validates songs before saving (no empty titles/artists)
 - Requires authentication and nickname for operation
 - After save completes, data is refetched from database to ensure consistency
+- **Edit history is also refetched** after immediate save (MedleyPlayer.tsx:212-217) to ensure UI shows latest entries
 - No debouncing - changes are saved instantly upon operation completion
 - **Optimistic UI**: Uses `isRefetching` flag to prevent loading screen during refetch
   - `loading`: Only true on initial page load
@@ -310,6 +311,8 @@ useEffect(() => {
 - **Form inputs reset during video playback**: Check that `currentTime` is NOT in useEffect dependency arrays for form initialization (see "React State Management with Continuous Updates" section)
 - **Edits not saving during playback**: Verify form state preservation and guard conditions in both SongEditModal and useMedleyEdit
 - **Multiple segments overlapping**: For songs with multiple occurrences, ensure dynamic height and positioning (see "Timeline Rendering for Multi-Segment Songs" section in SongListGrouped.tsx)
+- **Edit history not updating**: Ensure edit history refetch is called after immediate save (MedleyPlayer.tsx:212-217)
+- **Duplicate edit history entries**: Only `saveMedleySongs()` should call `recordMedleyEdit()` - verify `updateMedley()` doesn't have duplicate call (medleys.ts:396-397 should be removed)
 
 ### Production Issues
 - **Component missing**: Check displayName and module-level logging
@@ -603,9 +606,18 @@ When encountering database errors, follow this systematic approach:
   - Action type (create, update, add_song, etc.) with color coding
   - Relative timestamp
   - Change details (title, song count)
+  - **Snapshot restoration**: Entries with snapshots show "📸 復元可能" badge and restore button
 - **Important**: No ranking or competitive elements (no "top contributor" badges or edit count competition)
 - Location: Below song list in MedleyPlayer
 - Props: `editHistory` (MedleyEditHistory[]), `lastEditor`, `lastEditedAt`
+
+### Edit History Recording System
+- **Single entry per operation**: Each user operation creates ONE edit history entry with snapshot (medleys.ts:194-198)
+- **Snapshot data**: Full medley state (title, creator, duration, all songs) stored for restoration
+- **Recording location**: Only in `saveMedleySongs()` function - ensures snapshot is included
+- **Duplicate prevention**: `updateMedley()` no longer records separately (medleys.ts:396-397 removed)
+- **Auto-refetch**: Edit history is automatically refetched after immediate saves (MedleyPlayer.tsx:212-217)
+- **Restoration**: Users can restore any snapshot via "復元" button in edit history UI
 
 ### Rate Limiting
 - Server-side tracking via in-memory Map (per IP address)

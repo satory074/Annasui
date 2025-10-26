@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { SongSection } from "@/types";
 import { formatTime } from "@/lib/utils/time";
-import PlayPauseButton from "@/components/ui/PlayPauseButton";
 import { logger } from '@/lib/utils/logger';
 
 interface SongListProps {
@@ -201,142 +200,29 @@ export default function SongListGrouped({
 
   return (
     <div className="bg-gray-50">
-      {/* ヘッダー部分 */}
+      {/* ヘッダー部分 - 簡素化版 */}
       <div className="sticky top-16 z-50 bg-white border-b border-gray-200 shadow-sm">
         <div className="px-3 py-2 bg-gray-50 border-b border-gray-200">
-          {/* メドレータイトルと制作者 */}
-          {(medleyTitle || medleyCreator) && (
-            <div className="mb-2 border-b border-gray-200 pb-2">
-              {medleyTitle && (
-                originalVideoUrl ? (
-                  <a
-                    href={originalVideoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-lg font-bold text-gray-900 hover:text-orange-600 hover:underline cursor-pointer transition-colors"
-                    title="元動画を見る"
-                  >
-                    {medleyTitle}
-                  </a>
-                ) : (
-                  <h2 className="text-lg font-bold text-gray-900">
-                    {medleyTitle}
-                  </h2>
-                )
-              )}
-              {medleyCreator && (
-                <p className="text-sm text-gray-600 flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                  {medleyCreator}
-                </p>
-              )}
-            </div>
-          )}
-          
-          <div className="flex justify-between items-center">
-            {/* 左側: 再生コントロール */}
-            <div className="flex items-center gap-4">
-              {onTogglePlayPause && onSeek && (
-                <div className="flex items-center gap-1">
-                  {/* 最初からボタン */}
-                  <button
-                    onClick={() => onSeek(0)}
-                    className="text-gray-600 hover:text-orange-500 transition-all p-1 rounded-full hover:bg-gray-100"
-                    aria-label="最初から再生"
-                    title="最初から"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
-                    </svg>
-                  </button>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-medium text-gray-700">
+              楽曲一覧 ({Object.keys(groupedSongs).length}楽曲, {songs.length}区間)
+            </h3>
 
-                  {/* 5秒戻るボタン */}
-                  <button
-                    onClick={() => onSeek(Math.max(0, currentTime - 5))}
-                    className="text-gray-600 hover:text-orange-500 transition-all p-1 rounded-full hover:bg-gray-100 relative"
-                    aria-label="5秒戻る"
-                    title="5秒戻る"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="11 17 6 12 11 7" />
-                      <polyline points="18 17 13 12 18 7" />
-                    </svg>
-                    <span className="absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 text-xs text-orange-500 font-bold">5</span>
-                  </button>
-
-                  {/* 再生/一時停止ボタン */}
-                  <PlayPauseButton 
-                    isPlaying={isPlaying || false} 
-                    onClick={onTogglePlayPause}
-                    size="sm"
-                  />
-
-                  {/* 5秒進むボタン */}
-                  <button
-                    onClick={() => onSeek(Math.min(duration, currentTime + 5))}
-                    className="text-gray-600 hover:text-orange-500 transition-all p-1 rounded-full hover:bg-gray-100 relative"
-                    aria-label="5秒進む"
-                    title="5秒進む"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="w-4 h-4"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="13 17 18 12 13 7" />
-                      <polyline points="6 17 11 12 6 7" />
-                    </svg>
-                    <span className="absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 text-xs text-orange-500 font-bold">5</span>
-                  </button>
-                </div>
-              )}
-              {onTogglePlayPause && !onSeek && (
-                <PlayPauseButton 
-                  isPlaying={isPlaying || false} 
-                  onClick={onTogglePlayPause}
-                  size="sm"
-                />
-              )}
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-medium text-gray-700">
-                  楽曲一覧 ({Object.keys(groupedSongs).length}楽曲, {songs.length}区間)
-                </h3>
-
-                {/* 楽曲追加ボタン */}
-                {onAddSong && (
-                  <button
-                    onClick={onAddSong}
-                    className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-colors"
-                    title="楽曲を追加"
-                  >
-                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                    </svg>
-                    追加
-                  </button>
-                )}
-              </div>
-            </div>
+            {/* 楽曲追加ボタン */}
+            {onAddSong && (
+              <button
+                onClick={onAddSong}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-orange-600 text-white rounded hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 transition-colors"
+                title="楽曲を追加"
+              >
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                追加
+              </button>
+            )}
           </div>
         </div>
-
       </div>
 
       {/* メインコンテンツエリア */}

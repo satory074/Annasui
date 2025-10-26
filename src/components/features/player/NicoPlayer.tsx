@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { formatTime } from "@/lib/utils/time";
 import ErrorMessage from "@/components/ui/ErrorMessage";
-import PlayerControls from "./PlayerControls";
 import { logger } from '@/lib/utils/logger';
 
 interface NicoPlayerProps {
@@ -130,8 +129,8 @@ export default function NicoPlayer({
           <ErrorMessage
             title={playerError.includes('タイムアウト') ? 'プレイヤー初期化エラー' : 'プレイヤーエラー'}
             message={
-              playerError.includes('タイムアウト') 
-                ? '動画の読み込みに時間がかかっています。ネットワーク接続を確認するか、SafeModeをお試しください。' 
+              playerError.includes('タイムアウト')
+                ? '動画の読み込みに時間がかかっています。ネットワーク接続を確認するか、SafeModeをお試しください。'
                 : playerError
             }
             actionText={playerError.includes('タイムアウト') ? 'リトライ' : '再読み込み'}
@@ -147,18 +146,6 @@ export default function NicoPlayer({
           />
         )}
       </div>
-
-      {/* プレイヤーコントロール */}
-      <PlayerControls
-        isPlaying={isPlaying}
-        currentTime={currentTime}
-        duration={duration}
-        volume={volume}
-        onTogglePlayPause={onTogglePlayPause}
-        onSeek={onSeek}
-        onVolumeChange={onVolumeChange}
-        onToggleFullscreen={onToggleFullscreen}
-      />
     </div>
   );
 }

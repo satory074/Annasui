@@ -48,12 +48,12 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
   }
 
   return (
-    <div className="w-80 bg-gray-800 border-l border-gray-700 flex flex-col">
+    <div className="w-80 bg-gray-50 border-l border-gray-200 flex flex-col">
       {/* 現在再生中セクション */}
-      <div className="border-b border-gray-700 flex flex-col">
+      <div className="border-b border-gray-200 flex flex-col">
         <div className="p-4 pb-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide">
+            <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">
               🎵 現在再生中
             </h3>
             <span className="text-xs font-semibold bg-orange-600 text-white px-2 py-0.5 rounded-full">
@@ -72,7 +72,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
             currentSongs.map((song, index) => (
               <div
                 key={`${song.id}-${song.displayIndex}`}
-                className="bg-gray-700/50 rounded-lg p-4 flex flex-col items-center gap-3 animate-fade-in"
+                className="bg-white border-2 border-gray-200 rounded-lg p-4 flex flex-col items-center gap-3 animate-fade-in shadow-sm hover:shadow-md transition-shadow"
                 style={{ animationDelay: `${index * 50}ms` }}
               >
                 {/* サムネイル */}
@@ -90,12 +90,12 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                 </div>
 
                 {/* タイトル */}
-                <h3 className="text-sm font-bold text-white text-center w-full">
+                <h3 className="text-sm font-bold text-gray-900 text-center w-full">
                   {song.title}
                 </h3>
 
                 {/* アーティスト */}
-                <p className="text-xs text-gray-300 text-center w-full">
+                <p className="text-xs text-gray-600 text-center w-full">
                   {song.artist}
                 </p>
 
@@ -106,7 +106,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                       href={song.niconicoLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors"
+                      className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-xs transition-colors"
                       title="ニコニコ動画"
                     >
                       🎬
@@ -117,7 +117,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                       href={song.youtubeLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors"
+                      className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-xs transition-colors"
                       title="YouTube"
                     >
                       ▶️
@@ -128,7 +128,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                       href={song.spotifyLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors"
+                      className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-xs transition-colors"
                       title="Spotify"
                     >
                       🎵
@@ -139,7 +139,7 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                       href={song.applemusicLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="bg-gray-600 hover:bg-gray-500 px-2 py-1 rounded text-xs transition-colors"
+                      className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-xs transition-colors"
                       title="Apple Music"
                     >
                       🍎
@@ -154,21 +154,21 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
 
       {/* 関連メドレーセクション（将来実装） */}
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-        <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wide">
+        <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">
           📋 関連メドレー
         </h3>
         <div className="space-y-2">
-          <div className="bg-gray-700 rounded-lg p-3 hover:bg-gray-600 cursor-pointer transition-colors">
-            <div className="text-sm font-semibold mb-1 text-gray-300">アニソンメドレー 2024</div>
-            <div className="text-xs text-gray-400">15曲 • 45分</div>
+          <div className="bg-white border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors">
+            <div className="text-sm font-semibold mb-1 text-gray-900">アニソンメドレー 2024</div>
+            <div className="text-xs text-gray-600">15曲 • 45分</div>
           </div>
-          <div className="bg-gray-700 rounded-lg p-3 hover:bg-gray-600 cursor-pointer transition-colors">
-            <div className="text-sm font-semibold mb-1 text-gray-300">VOCALOID名曲選</div>
-            <div className="text-xs text-gray-400">20曲 • 60分</div>
+          <div className="bg-white border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors">
+            <div className="text-sm font-semibold mb-1 text-gray-900">VOCALOID名曲選</div>
+            <div className="text-xs text-gray-600">20曲 • 60分</div>
           </div>
-          <div className="bg-gray-700 rounded-lg p-3 hover:bg-gray-600 cursor-pointer transition-colors">
-            <div className="text-sm font-semibold mb-1 text-gray-300">東方アレンジメドレー</div>
-            <div className="text-xs text-gray-400">12曲 • 38分</div>
+          <div className="bg-white border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors">
+            <div className="text-sm font-semibold mb-1 text-gray-900">東方アレンジメドレー</div>
+            <div className="text-xs text-gray-600">12曲 • 38分</div>
           </div>
         </div>
       </div>
@@ -195,12 +195,12 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
         }
 
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: #374151;
+          background: #F3F4F6;
           border-radius: 4px;
         }
 
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #6B7280;
+          background: #D1D5DB;
           border-radius: 4px;
         }
 

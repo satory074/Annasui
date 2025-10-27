@@ -1,6 +1,6 @@
 import { SongSection, MedleyData } from "../../types";
 import { getAllMedleys } from "../api/medleys";
-import { supabase } from "../supabase";
+import { supabase, type Database } from "../supabase";
 import { logger } from "./logger";
 
 // 楽曲DBエントリの型定義
@@ -56,7 +56,7 @@ function normalizeMusicTerms(text: string): string {
 }
 
 // 強化された楽曲名とアーティスト名を正規化（検索用）
-function normalizeSongInfo(title: string, artist: string): string {
+export function normalizeSongInfo(title: string, artist: string): string {
   const normalizeText = (text: string) => {
     return text
       .toLowerCase()                    // 小文字化
@@ -175,19 +175,35 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
         };
 
         (manualSongs as SongDataRow[]).forEach((song) => {
-          if (songMap.has(song.normalized_id)) {
-            // 既に存在する場合はスキップ（メドレーから追加された楽曲が優先）
+          const normalizedId = song.normalized_id;
+          const manualTitle = song.title;
+          const manualArtist = song.artist || DEFAULT_ARTIST;
+          const manualNiconico = song.niconico_link || undefined;
+          const manualYoutube = song.youtube_link || undefined;
+          const manualSpotify = song.spotify_link || undefined;
+          const manualAppleMusic = song.applemusic_link || undefined;
+
+          if (songMap.has(normalizedId)) {
+            const existingEntry = songMap.get(normalizedId)!;
+
+            // 手動登録のメタデータを優先して反映（リンクの追加・更新もここで行う）
+            existingEntry.title = manualTitle;
+            existingEntry.artist = manualArtist;
+            existingEntry.niconicoLink = manualNiconico;
+            existingEntry.youtubeLink = manualYoutube;
+            existingEntry.spotifyLink = manualSpotify;
+            existingEntry.applemusicLink = manualAppleMusic;
             return;
           }
 
-          songMap.set(song.normalized_id, {
-            id: song.normalized_id,
-            title: song.title,
-            artist: song.artist || DEFAULT_ARTIST,
-            niconicoLink: song.niconico_link || undefined,
-            youtubeLink: song.youtube_link || undefined,
-            spotifyLink: song.spotify_link || undefined,
-            applemusicLink: song.applemusic_link || undefined,
+          songMap.set(normalizedId, {
+            id: normalizedId,
+            title: manualTitle,
+            artist: manualArtist,
+            niconicoLink: manualNiconico,
+            youtubeLink: manualYoutube,
+            spotifyLink: manualSpotify,
+            applemusicLink: manualAppleMusic,
             usageCount: 0, // 手動追加のみでメドレーに未使用
             medleys: []
           });
@@ -469,6 +485,96 @@ export async function addManualSong(songData: {
     return newSong;
   } catch (error) {
     logger.error('Error adding manual song:', error);
+    throw error;
+  }
+}
+
+// 手動で追加した楽曲を更新
+export async function updateManualSong(songData: {
+  id: string;
+  title: string;
+  artist: string;
+  niconicoLink?: string;
+  youtubeLink?: string;
+  spotifyLink?: string;
+  applemusicLink?: string;
+}): Promise<SongDatabaseEntry> {
+  if (!supabase) {
+    const error = new Error('Supabase client is not initialized');
+    logger.error('Cannot update manual song: Supabase client is null');
+    throw error;
+  }
+
+  // アーティスト名が空の場合はデフォルト値を使用
+  const effectiveArtist = songData.artist && songData.artist.trim() ? songData.artist.trim() : DEFAULT_ARTIST;
+
+  try {
+    const { data, error } = await supabase
+      .from('song_master')
+      .update({
+        title: songData.title,
+        artist: effectiveArtist,
+        niconico_link: songData.niconicoLink || null,
+        youtube_link: songData.youtubeLink || null,
+        spotify_link: songData.spotifyLink || null,
+        applemusic_link: songData.applemusicLink || null
+      })
+      .eq('normalized_id', songData.id)
+      .select()
+      .single();
+
+    if (error) {
+      logger.error('Failed to update manual song in database:', error);
+      throw error;
+    }
+
+    logger.info('Manual song updated in database:', data);
+
+    type SongMasterRow = Database['public']['Tables']['song_master']['Row'];
+    const updatedRow = data as SongMasterRow | null;
+
+    // medley_songsのキャッシュを同期（song_idで紐づく全レコードを更新）
+    const masterRecordId = data.id; // song_masterのUUID
+    if (masterRecordId) {
+      const { error: cacheError } = await supabase
+        .from('medley_songs')
+        .update({
+          title: songData.title,
+          artist: effectiveArtist,
+          niconico_link: songData.niconicoLink || null,
+          youtube_link: songData.youtubeLink || null,
+          spotify_link: songData.spotifyLink || null,
+          applemusic_link: songData.applemusicLink || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('song_id', masterRecordId);
+
+      if (cacheError) {
+        logger.warn('Failed to sync medley_songs cache, but song_master was updated:', cacheError);
+        // 致命的エラーではないため、処理は継続
+      } else {
+        logger.info('medley_songs cache synced successfully for song_id:', masterRecordId);
+      }
+    }
+
+    // キャッシュをクリアして次回のgetSongDatabaseで最新データを取得
+    clearSongDatabaseCache();
+
+    const updatedSong: SongDatabaseEntry = {
+      id: songData.id,
+      title: updatedRow?.title ?? songData.title,
+      artist: updatedRow?.artist ?? effectiveArtist,
+      niconicoLink: updatedRow?.niconico_link ?? songData.niconicoLink ?? undefined,
+      youtubeLink: updatedRow?.youtube_link ?? songData.youtubeLink ?? undefined,
+      spotifyLink: updatedRow?.spotify_link ?? songData.spotifyLink ?? undefined,
+      applemusicLink: updatedRow?.applemusic_link ?? songData.applemusicLink ?? undefined,
+      usageCount: 0,
+      medleys: []
+    };
+
+    return updatedSong;
+  } catch (error) {
+    logger.error('Error updating manual song:', error);
     throw error;
   }
 }

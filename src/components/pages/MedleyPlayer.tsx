@@ -18,7 +18,7 @@ import ContributorsDisplay from "@/components/features/medley/ContributorsDispla
 import RestoreConfirmModal from "@/components/features/medley/RestoreConfirmModal";
 import LoginModal from "@/components/features/auth/LoginModal";
 import { SongSection, MedleyEditHistory, MedleySnapshot } from "@/types";
-import { SongDatabaseEntry, createSongFromDatabase, addManualSong } from "@/lib/utils/songDatabase";
+import { SongDatabaseEntry, createSongFromDatabase, addManualSong, updateManualSong, normalizeSongInfo } from "@/lib/utils/songDatabase";
 import { getMedleyEditHistory, restoreFromEditHistory } from "@/lib/api/medleys";
 import { logger } from "@/lib/utils/logger";
 import { PlayerLoadingMessage } from "@/components/ui/loading/PlayerSkeleton";
@@ -733,23 +733,50 @@ export default function MedleyPlayer({
     };
 
     // 楽曲検索モーダルから楽曲を編集
-    const handleEditSongFromDatabase = (updatedSong: SongDatabaseEntry) => {
-        // 現在編集中の楽曲を更新された情報に変更
-        if (editingSong) {
-            const updatedSongSection: SongSection = {
-                ...editingSong,
+    const handleEditSongFromDatabase = async (updatedSong: SongDatabaseEntry) => {
+        try {
+            // データベースに楽曲情報を保存
+            const savedSong = await updateManualSong({
+                id: updatedSong.id,
                 title: updatedSong.title,
                 artist: updatedSong.artist,
-                niconicoLink: updatedSong.niconicoLink || "",
-                youtubeLink: updatedSong.youtubeLink || "",
-                spotifyLink: updatedSong.spotifyLink || "",
-                applemusicLink: updatedSong.applemusicLink || ""
-            };
-            setEditingSong(updatedSongSection);
-        }
+                niconicoLink: updatedSong.niconicoLink,
+                youtubeLink: updatedSong.youtubeLink,
+                spotifyLink: updatedSong.spotifyLink,
+                applemusicLink: updatedSong.applemusicLink
+            });
 
-        // Todo: 実際のデータベース更新ロジックも必要に応じて実装
-        logger.debug('楽曲情報を更新:', updatedSong);
+            logger.info('✅ Database update successful:', {
+                id: savedSong.id,
+                title: savedSong.title,
+                artist: savedSong.artist,
+                niconicoLink: savedSong.niconicoLink,
+                youtubeLink: savedSong.youtubeLink,
+                spotifyLink: savedSong.spotifyLink,
+                applemusicLink: savedSong.applemusicLink
+            });
+
+            // 最新情報を選択中楽曲として保持（SongEditModalで参照）
+            setSelectedDatabaseSong(savedSong);
+
+            // 現在編集中の楽曲を更新された情報に変更
+            if (editingSong) {
+                const updatedSongSection: SongSection = {
+                    ...editingSong,
+                    title: savedSong.title,
+                    artist: savedSong.artist,
+                    niconicoLink: savedSong.niconicoLink || "",
+                    youtubeLink: savedSong.youtubeLink || "",
+                    spotifyLink: savedSong.spotifyLink || "",
+                    applemusicLink: savedSong.applemusicLink || ""
+                };
+                setEditingSong(updatedSongSection);
+            }
+        } catch (error) {
+            logger.error('❌ Failed to update song in database:', error);
+            // エラーを通知
+            alert('楽曲情報の更新に失敗しました。もう一度お試しください。');
+        }
     };
 
     const handleSaveSong = (song: SongSection) => {
@@ -809,6 +836,26 @@ export default function MedleyPlayer({
             });
             updateSong(song);
         }
+
+        // song_masterも更新（存在する場合）
+        // This ensures that changes made in SongEditModal are persisted to song_master
+        (async () => {
+            try {
+                const normalizedId = normalizeSongInfo(song.title, song.artist);
+                await updateManualSong({
+                    id: normalizedId,
+                    title: song.title,
+                    artist: song.artist,
+                    niconicoLink: song.niconicoLink || undefined,
+                    youtubeLink: song.youtubeLink || undefined,
+                    spotifyLink: song.spotifyLink || undefined,
+                    applemusicLink: song.applemusicLink || undefined
+                });
+                logger.info(`✅ [${callId}] song_master updated successfully for:`, { title: song.title, artist: song.artist });
+            } catch (error) {
+                logger.debug(`ℹ️ [${callId}] song_master update skipped (song not in master table):`, error);
+            }
+        })();
 
         // 保存完了後にisChangingSongフラグをリセット
         if (isChangingSong) {

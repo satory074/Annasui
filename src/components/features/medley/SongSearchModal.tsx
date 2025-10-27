@@ -141,6 +141,11 @@ export default function SongSearchModal({
       applemusicLink: editFormData.applemusicLink
     };
 
+    // 先にローカルの楽曲キャッシュを更新しておく（Select直後の即時保存で古いデータが使われないようにする）
+    setSongDatabase((prev) =>
+      prev.map((song) => (song.id === editingEntryId ? updatedSong : song))
+    );
+
     // 編集コールバックを呼び出し
     if (onEditSong) {
       onEditSong(updatedSong);

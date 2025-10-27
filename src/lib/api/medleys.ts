@@ -1,6 +1,7 @@
 import { supabase, type Database } from '@/lib/supabase'
 import type { MedleyData, SongSection, MedleyContributor, MedleySnapshot } from '@/types'
 import { logger } from '@/lib/utils/logger'
+import { normalizeSongInfo } from '@/lib/utils/songDatabase'
 
 type MedleyRow = Database['public']['Tables']['medleys']['Row']
 type SongRow = Database['public']['Tables']['medley_songs']['Row']
@@ -297,22 +298,35 @@ export async function createMedley(
       throw medleyError
     }
 
+    // Look up song_master IDs for songs
+    const songIdMap = await lookupSongIds(medleyData.songs.map(s => ({ title: s.title, artist: s.artist || '' })));
+
     // Insert songs
-    const songsToInsert = medleyData.songs.map((song, index) => ({
-      medley_id: medley.id as string,
-      title: song.title,
-      artist: song.artist || '',
-      start_time: song.startTime,
-      end_time: song.endTime,
-      color: song.color,
-      niconico_link: song.niconicoLink || null,
-      youtube_link: song.youtubeLink || null,
-      spotify_link: song.spotifyLink || null,
-      applemusic_link: song.applemusicLink || null,
-      order_index: index + 1,
-      last_editor: editorNickname || null,
-      last_edited_at: new Date().toISOString()
-    }))
+    const songsToInsert = medleyData.songs.map((song, index) => {
+      const normalizedId = normalizeSongInfo(song.title, song.artist || '');
+      const songId = songIdMap.get(normalizedId) || null;
+
+      if (songId) {
+        logger.debug(`🔗 Linking new song "${song.title}" to song_master: ${songId}`);
+      }
+
+      return {
+        medley_id: medley.id as string,
+        song_id: songId,  // Link to song_master if exists
+        title: song.title,
+        artist: song.artist || '',
+        start_time: song.startTime,
+        end_time: song.endTime,
+        color: song.color,
+        niconico_link: song.niconicoLink || null,
+        youtube_link: song.youtubeLink || null,
+        spotify_link: song.spotifyLink || null,
+        applemusic_link: song.applemusicLink || null,
+        order_index: index + 1,
+        last_editor: editorNickname || null,
+        last_edited_at: new Date().toISOString()
+      };
+    })
 
     const { error: songsError } = await supabase
       .from('medley_songs')
@@ -488,6 +502,46 @@ export async function deleteMedley(videoId: string): Promise<boolean> {
 // Call counter for saveMedleySongs (module-level)
 let saveMedleySongsCallCount = 0;
 
+// Helper function to look up song_master IDs for a batch of songs
+async function lookupSongIds(songs: Array<{ title: string; artist: string }>): Promise<Map<string, string>> {
+  if (!supabase) {
+    return new Map();
+  }
+
+  try {
+    // Calculate normalized IDs for all songs
+    const normalizedIds = songs.map(song => normalizeSongInfo(song.title, song.artist || ''));
+    const uniqueNormalizedIds = [...new Set(normalizedIds)];
+
+    logger.debug('🔍 Looking up song_master IDs for normalized_ids:', uniqueNormalizedIds);
+
+    // Query song_master for all normalized IDs in one query
+    const { data: masterSongs, error } = await supabase
+      .from('song_master')
+      .select('id, normalized_id')
+      .in('normalized_id', uniqueNormalizedIds);
+
+    if (error) {
+      logger.warn('Failed to lookup song_master IDs:', error);
+      return new Map();
+    }
+
+    // Create a map: normalized_id -> song_master UUID
+    const idMap = new Map<string, string>();
+    (masterSongs || []).forEach((song) => {
+      const normalizedId = song.normalized_id as string;
+      const songId = song.id as string;
+      idMap.set(normalizedId, songId);
+    });
+
+    logger.info(`✅ Found ${idMap.size} song_master matches out of ${uniqueNormalizedIds.length} songs`);
+    return idMap;
+  } catch (error) {
+    logger.error('Error looking up song_master IDs:', error);
+    return new Map();
+  }
+}
+
 // Songs management functions
 export async function saveMedleySongs(
   medleyId: string,
@@ -531,21 +585,35 @@ export async function saveMedleySongs(
     // Insert new songs
     if (songs.length > 0) {
       logger.info(`📝 [${callId}] Preparing to INSERT ${songs.length} songs`);
-      const songsToInsert = songs.map((song, index) => ({
-        medley_id: medleyId,
-        title: song.title,
-        artist: song.artist || '',
-        start_time: song.startTime,
-        end_time: song.endTime,
-        color: song.color,
-        niconico_link: song.niconicoLink || null,
-        youtube_link: song.youtubeLink || null,
-        spotify_link: song.spotifyLink || null,
-        applemusic_link: song.applemusicLink || null,
-        order_index: index + 1,  // Re-added: database requires this field for ordering
-        last_editor: editorNickname || null,
-        last_edited_at: new Date().toISOString()
-      }))
+
+      // Look up song_master IDs for songs
+      const songIdMap = await lookupSongIds(songs.map(s => ({ title: s.title, artist: s.artist || '' })));
+
+      const songsToInsert = songs.map((song, index) => {
+        const normalizedId = normalizeSongInfo(song.title, song.artist || '');
+        const songId = songIdMap.get(normalizedId) || null;
+
+        if (songId) {
+          logger.debug(`🔗 [${callId}] Linking song "${song.title}" to song_master: ${songId}`);
+        }
+
+        return {
+          medley_id: medleyId,
+          song_id: songId,  // Link to song_master if exists
+          title: song.title,
+          artist: song.artist || '',
+          start_time: song.startTime,
+          end_time: song.endTime,
+          color: song.color,
+          niconico_link: song.niconicoLink || null,
+          youtube_link: song.youtubeLink || null,
+          spotify_link: song.spotifyLink || null,
+          applemusic_link: song.applemusicLink || null,
+          order_index: index + 1,  // Re-added: database requires this field for ordering
+          last_editor: editorNickname || null,
+          last_edited_at: new Date().toISOString()
+        };
+      })
 
       logger.info(`📤 [${callId}] Executing INSERT for ${songsToInsert.length} songs`, {
         songs: songsToInsert.map(s => ({ title: s.title, artist: s.artist, order: s.order_index }))

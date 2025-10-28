@@ -2,7 +2,19 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Session Notes (2025-10-27)
+## Session Notes
+
+### 2025-10-28: Spotify Thumbnail Integration
+- Implemented Spotify thumbnail API proxy at `/api/thumbnail/spotify/[trackId]/route.ts` to display album artwork from Spotify links
+- Uses Spotify oEmbed API (`https://embed.spotify.com/oembed/`) to fetch thumbnail URLs, then streams image data through Next.js API route
+- Track ID validation: Exactly 22 alphanumeric characters (HTTP 400 if invalid)
+- Caching strategy: 1-hour browser cache, 24-hour CDN cache for successful responses; 5-minute cache for errors
+- Updated `thumbnail.ts` to use proxy route instead of returning placeholder for Spotify links
+- **CRITICAL**: Query parameters in Spotify URLs (e.g., `?autoplay=true`) are ignored during track ID extraction (uses `pathname` only)
+- **Database validation**: Invalid test data (e.g., `production-test-link`) causes HTTP 400 errors - ensure all `song_master.spotify_link` entries contain valid 22-character track IDs
+- Production deployment verified at https://anasui-e6f49.web.app with working Spotify thumbnails
+
+### 2025-10-27: Spotify Link Persistence
 - Resolved production issue where Spotify links edited via the song database were not persisting. Root cause: `buildSongDatabase` ignored `song_master` metadata when a medley entry already existed.
 - `buildSongDatabase()` now overwrites cached song data with the latest `song_master` row so manual metadata (Spotify/YouTube/etc.) propagates to selectors and auto-save payloads.
 - `updateManualSong()` returns the freshly updated Supabase row and MedleyPlayer keeps that result in local state to ensure modals reuse the newest links.
@@ -141,9 +153,10 @@ Local環境でエラーが解決困難な場合、production buildで先に検�
 
 ### API Proxy Pattern
 All external API calls must go through Next.js API routes due to CORS:
-- Niconico thumbnails: `/api/thumbnail/niconico/[videoId]/`
-- Niconico metadata: `/api/metadata/niconico/[videoId]/`
-Pattern: Server-side fetch → Process response → Return to client
+- Niconico thumbnails: `/api/thumbnail/niconico/[videoId]/` → Multiple CDN fallbacks with retry logic
+- Niconico metadata: `/api/metadata/niconico/[videoId]/` → XML parsing for video metadata
+- Spotify thumbnails: `/api/thumbnail/spotify/[trackId]/` → oEmbed API fetch + image streaming
+Pattern: Server-side fetch → Process response → Return to client (as JSON or image buffer)
 
 ## Critical Constraints
 
@@ -166,9 +179,11 @@ Pattern: Server-side fetch → Process response → Return to client
 - **CRITICAL**: Use `authLoading ? <Loading /> : isAuthenticated ? <EditUI /> : <LoginPrompt />` pattern to prevent UI flicker
 
 ### API Proxy Requirements
-- Use proxy APIs for CORS: `/api/thumbnail/niconico/[videoId]/` and `/api/metadata/niconico/[videoId]/`
-- **MUST** include User-Agent header for Niconico API calls
-- Server-side XML parsing uses regex (not DOMParser)
+- Use proxy APIs for CORS: `/api/thumbnail/niconico/[videoId]/`, `/api/metadata/niconico/[videoId]/`, `/api/thumbnail/spotify/[trackId]/`
+- **MUST** include User-Agent header for external API calls (Niconico, Spotify)
+- Server-side XML parsing uses regex (not DOMParser) for Niconico metadata
+- Spotify track ID validation: Exactly 22 alphanumeric characters (`/^[a-zA-Z0-9]{22}$/`)
+- Return image buffers with appropriate Content-Type and caching headers
 
 ## Architecture Patterns
 
@@ -335,6 +350,9 @@ useEffect(() => {
 - **Thumbnails not loading**: Check proxy API with trailing slash
 - **CORS errors**: Must use server-side proxy, not direct API calls
 - **Metadata fails**: Verify User-Agent header and regex parsing
+- **Spotify thumbnail HTTP 400**: Invalid track ID format - must be exactly 22 alphanumeric characters
+- **Spotify thumbnail HTTP 404**: Track does not exist on Spotify or oEmbed API failed
+- **Invalid test data in database**: Check `song_master.spotify_link` for placeholder values (e.g., `production-test-link`) - these cause validation errors
 
 ### Database Issues
 - **PGRST204 error ("column not found in schema cache")**: Check that INSERT/UPDATE operations don't reference non-existent columns
@@ -377,7 +395,11 @@ useEffect(() => {
 ```
 src/
 ├── app/ - Next.js App Router
-│   ├── api/auth/verify-password/ - Password verification endpoint
+│   ├── api/
+│   │   ├── auth/verify-password/ - Password verification endpoint
+│   │   ├── thumbnail/niconico/[videoId]/ - Niconico thumbnail proxy
+│   │   ├── thumbnail/spotify/[trackId]/ - Spotify thumbnail proxy (oEmbed API)
+│   │   └── metadata/niconico/[videoId]/ - Niconico metadata proxy
 │   └── [platform]/[videoId]/ - Platform-specific player pages
 ├── components/
 │   ├── features/

@@ -234,8 +234,8 @@ export function getThumbnailUrl(originalLink: string): string | null {
       // プロキシサーバーを経由してニコニコのサムネイルを取得
       return `/api/thumbnail/niconico/${id}/`;
     case 'spotify':
-      // SpotifyはasyncなAPIが必要なため、同期的にはプレースホルダーを返す
-      return getSpotifyThumbnailPlaceholder();
+      // プロキシサーバーを経由してSpotifyのサムネイルを取得
+      return `/api/thumbnail/spotify/${id}/`;
     case 'appleMusic':
       // Apple Musicも同様にプレースホルダーを返す
       return getAppleMusicThumbnailPlaceholder();
@@ -303,11 +303,8 @@ export async function getBestThumbnailFromLinks(links: {
   }
   
   if (links?.spotify) {
-    const { id } = extractVideoId(links.spotify);
-    if (id) {
-      const thumbnail = await getSpotifyThumbnail(id);
-      if (thumbnail) return thumbnail;
-    }
+    const thumbnail = getThumbnailUrl(links.spotify);
+    if (thumbnail) return thumbnail;
   }
   
   if (links?.appleMusic) {

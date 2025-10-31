@@ -4,6 +4,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Session Notes
 
+### 2025-10-31: Tooltip Layout Unification
+- Unified Tooltip layout with RightSidebar's "現在再生中" card design for consistency
+- Changed `SongInfoDisplay.tsx` compact variant from `space-y-3` to `flex flex-col items-center gap-3` (matching RightSidebar)
+- Removed labels and time information from Tooltip: "楽曲詳細", "楽曲名", "アーティスト" labels, and time codes (開始/終了/時間)
+- Simplified platform links to show only emojis (🎬 ▶️ 🎵 🍎) with gray button style, removed platform name text
+- **Layout structure**: Thumbnail (80x80px, rounded-lg, shadow-lg) → Title (bold, centered) → Artist (small, gray, centered) → Platform links → Action buttons
+- **CRITICAL**: After code changes, clear Next.js cache (`rm -rf .next`) and restart dev server to ensure HMR picks up style changes
+- **Browser cache**: Production deployments require cache clearing (`caches.keys().then(names => names.forEach(name => caches.delete(name)))`) or incognito window to see latest changes
+
 ### 2025-10-28: Spotify Thumbnail Integration
 - Implemented Spotify thumbnail API proxy at `/api/thumbnail/spotify/[trackId]/route.ts` to display album artwork from Spotify links
 - Uses Spotify oEmbed API (`https://embed.spotify.com/oembed/`) to fetch thumbnail URLs, then streams image data through Next.js API route

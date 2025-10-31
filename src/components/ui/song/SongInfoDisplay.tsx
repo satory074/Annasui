@@ -37,29 +37,25 @@ function PlatformLinks({ song, variant = "detailed" }: {
 
   if (variant === "compact") {
     return (
-      <div>
-        <div className="text-xs text-gray-500 mb-1">配信</div>
-        <div className="flex flex-wrap gap-1">
-          {links.map(({ platform, url }, index) => {
-            const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
-            return (
-              <a
-                key={index}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`text-xs ${config.color} hover:underline flex items-center gap-1`}
-                title={`${config.name}で開く`}
-                onClick={(e) => {
-                  e.stopPropagation(); // 親要素へのイベント伝播を防ぐ
-                }}
-              >
-                <span>{config.icon}</span>
-                <span>{config.name}</span>
-              </a>
-            );
-          })}
-        </div>
+      <div className="flex justify-center gap-2 flex-wrap">
+        {links.map(({ platform, url }, index) => {
+          const config = PLATFORM_CONFIG[platform as keyof typeof PLATFORM_CONFIG];
+          return (
+            <a
+              key={index}
+              href={url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-xs transition-colors"
+              title={`${config.name}で開く`}
+              onClick={(e) => {
+                e.stopPropagation(); // 親要素へのイベント伝播を防ぐ
+              }}
+            >
+              {config.icon}
+            </a>
+          );
+        })}
       </div>
     );
   }
@@ -126,65 +122,39 @@ export default function SongInfoDisplay({
 
   if (variant === "compact") {
     return (
-      <div className="space-y-3">
-        <div className="flex flex-col items-center gap-3">
-          {showThumbnail && (
+      <div className="flex flex-col items-center gap-3">
+        {/* サムネイル */}
+        {showThumbnail && (
+          <div className="flex-shrink-0">
             <SongThumbnail
               key={`${song.title}-${song.niconicoLink || song.youtubeLink || song.spotifyLink || song.applemusicLink}`}
               title={song.title}
               size="md"
+              className="w-20 h-20 rounded-lg shadow-lg"
               niconicoLink={song.niconicoLink}
               youtubeLink={song.youtubeLink}
               spotifyLink={song.spotifyLink}
               applemusicLink={song.applemusicLink}
             />
-          )}
-          <div className="text-sm text-gray-600 font-medium">楽曲詳細</div>
-        </div>
-
-        <div className="space-y-3">
-          <div>
-            <div className="text-xs text-gray-500 mb-1">楽曲名</div>
-            <div className="text-sm font-semibold text-gray-900 break-words">
-              {song.title}
-            </div>
           </div>
+        )}
 
-          <div>
-            <div className="text-xs text-gray-500 mb-1">アーティスト</div>
-            <div className="text-sm text-gray-900 break-words">
-              {song.artist || "未設定"}
-            </div>
-          </div>
+        {/* タイトル */}
+        <h3 className="text-sm font-bold text-gray-900 text-center w-full">
+          {song.title}
+        </h3>
 
-          {showTimeCodes && (
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <div>
-                <div className="text-gray-500 mb-1">開始</div>
-                <div className="font-mono text-gray-900">
-                  {formatTime(song.startTime)}
-                </div>
-              </div>
-              <div>
-                <div className="text-gray-500 mb-1">終了</div>
-                <div className="font-mono text-gray-900">
-                  {formatTime(song.endTime)}
-                </div>
-              </div>
-              <div>
-                <div className="text-gray-500 mb-1">時間</div>
-                <div className="font-mono text-gray-900">
-                  {formatDuration(song.startTime, song.endTime)}
-                </div>
-              </div>
-            </div>
-          )}
+        {/* アーティスト */}
+        <p className="text-xs text-gray-600 text-center w-full">
+          {song.artist || "未設定"}
+        </p>
 
-          {showOriginalLink && (
-            <PlatformLinks song={song} variant="compact" />
-          )}
-        </div>
+        {/* プラットフォームリンク */}
+        {showOriginalLink && (
+          <PlatformLinks song={song} variant="compact" />
+        )}
 
+        {/* ボタン */}
         {(onSeek || onEdit) && (
           <div className="pt-3 border-t border-gray-200">
             <div className="flex gap-2">

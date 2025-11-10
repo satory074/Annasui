@@ -21,9 +21,10 @@ const isEmptySong = (song: SongSection | null): boolean => {
     song.title === '未設定の楽曲' ||
     song.title.startsWith('未設定の楽曲');
   
-  const hasEmptyArtist = !song.artist || 
-    song.artist.trim() === '' || 
-    song.artist === 'アーティスト未設定';
+  const hasEmptyArtist = !song.artist ||
+    song.artist.length === 0 ||
+    song.artist.join(", ").trim() === '' ||
+    song.artist.join(", ") === 'アーティスト未設定';
   
   return hasEmptyTitle || hasEmptyArtist;
 };
@@ -92,7 +93,7 @@ export default function SongEditModal({
   const [formData, setFormData] = useState<SongSection>({
     id: 0,
     title: "",
-    artist: "",
+    artist: [],
     startTime: 0,
     endTime: 0,
     color: "bg-blue-400",
@@ -135,11 +136,11 @@ export default function SongEditModal({
     }
 
     // 楽曲情報が不完全な場合は自動保存しない
-    if (!formData.title.trim() || formData.title.startsWith('空の楽曲') || 
-        !formData.artist.trim() || formData.artist === 'アーティスト未設定') {
+    if (!formData.title.trim() || formData.title.startsWith('空の楽曲') ||
+        formData.artist.length === 0 || formData.artist.join(", ").trim() === '' || formData.artist.join(", ") === 'アーティスト未設定') {
       logger.debug('🔄 Skipping auto-save: incomplete song data', {
         title: formData.title,
-        artist: formData.artist
+        artist: formData.artist.join(", ")
       });
       return;
     }
@@ -238,9 +239,9 @@ export default function SongEditModal({
       // マルチセグメント対応：同じ楽曲の複数インスタンスがある場合はそれらを統合
       if (allSongs.length > 0) {
         const sameTitle = song.title.trim();
-        const sameArtist = song.artist.trim();
-        const duplicates = [...allSongs.filter(s => 
-          s.title.trim() === sameTitle && s.artist.trim() === sameArtist
+        const sameArtist = song.artist.join(", ").trim();
+        const duplicates = [...allSongs.filter(s =>
+          s.title.trim() === sameTitle && s.artist.join(", ").trim() === sameArtist
         )].sort((a, b) => a.startTime - b.startTime);
         
         if (duplicates.length > 1) {
@@ -280,7 +281,7 @@ export default function SongEditModal({
       setFormData({
         id: Date.now(), // 一時的なID
         title: "",
-        artist: "",
+        artist: [],
         startTime: 0,
         endTime: 0,
         color: "bg-blue-400",
@@ -544,7 +545,7 @@ export default function SongEditModal({
                       </div>
                       <div>
                         <span className="text-gray-600">アーティスト:</span>
-                        <div className="font-medium text-gray-900">{formData.artist || "未設定"}</div>
+                        <div className="font-medium text-gray-900">{formData.artist.join(", ") || "未設定"}</div>
                       </div>
                     </div>
                     {isEmptySong(song) && (
@@ -619,7 +620,7 @@ export default function SongEditModal({
                     </div>
                     <div>
                       <span className="text-green-700">アーティスト:</span>
-                      <div className="font-medium text-green-900">{formData.artist || "未設定"}</div>
+                      <div className="font-medium text-green-900">{formData.artist.join(", ") || "未設定"}</div>
                     </div>
                   </div>
                   <div className="text-sm text-green-700">
@@ -642,7 +643,7 @@ export default function SongEditModal({
               onTogglePlayPause={onTogglePlayPause}
               allSongs={allSongs}
               currentSongTitle={formData.title}
-              currentSongArtist={formData.artist}
+              currentSongArtist={formData.artist.join(", ")}
               onDeleteSong={!isNew && onDelete && song ? () => {
                 onDelete(song.id);
                 onClose();

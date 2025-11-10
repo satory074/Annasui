@@ -4,19 +4,27 @@ import { useState, useEffect } from "react";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import { checkForDuplicateBeforeAdd } from "@/lib/utils/duplicateSongs";
 import { SongSection } from "@/types";
+import ArtistSelector from "@/components/ui/form/ArtistSelector";
 
 interface ManualSongAddModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (songData: {
     title: string;
-    artist: string;
+    artist: string[];
+    composers?: string[];
+    arrangers?: string[];
     niconicoLink?: string;
     youtubeLink?: string;
     spotifyLink?: string;
     applemusicLink?: string;
   }) => void;
   existingSongs?: SongSection[]; // 重複チェック用
+}
+
+interface Artist {
+  id: string;
+  name: string;
 }
 
 export default function ManualSongAddModal({
@@ -27,7 +35,9 @@ export default function ManualSongAddModal({
 }: ManualSongAddModalProps) {
   const [formData, setFormData] = useState({
     title: "",
-    artist: "",
+    artist: [] as Artist[],
+    composers: [] as Artist[],
+    arrangers: [] as Artist[],
     niconicoLink: "",
     youtubeLink: "",
     spotifyLink: "",
@@ -42,7 +52,9 @@ export default function ManualSongAddModal({
       // Reset form when modal opens
       setFormData({
         title: "",
-        artist: "",
+        artist: [] as Artist[],
+        composers: [] as Artist[],
+        arrangers: [] as Artist[],
         niconicoLink: "",
         youtubeLink: "",
         spotifyLink: "",
@@ -55,9 +67,10 @@ export default function ManualSongAddModal({
 
   // 重複チェック
   useEffect(() => {
-    if (formData.title.trim() && formData.artist.trim()) {
+    const artistString = formData.artist.map(a => a.name).join(", ");
+    if (formData.title.trim() && artistString.trim()) {
       const result = checkForDuplicateBeforeAdd(
-        { title: formData.title.trim(), artist: formData.artist.trim() },
+        { title: formData.title.trim(), artist: artistString.trim() },
         existingSongs
       );
       setDuplicateWarning(result);
@@ -79,9 +92,16 @@ export default function ManualSongAddModal({
 
   const handleSave = () => {
     if (validateForm()) {
+      // Artist配列から名前配列に変換
+      const artistArray = formData.artist.map(a => a.name);
+      const composersArray = formData.composers.map(c => c.name);
+      const arrangersArray = formData.arrangers.map(a => a.name);
+
       onSave({
         title: formData.title.trim(),
-        artist: formData.artist.trim(),
+        artist: artistArray.length > 0 ? artistArray : ["Unknown Artist"],
+        composers: composersArray.length > 0 ? composersArray : undefined,
+        arrangers: arrangersArray.length > 0 ? arrangersArray : undefined,
         niconicoLink: formData.niconicoLink.trim() || undefined,
         youtubeLink: formData.youtubeLink.trim() || undefined,
         spotifyLink: formData.spotifyLink.trim() || undefined,
@@ -130,21 +150,31 @@ export default function ManualSongAddModal({
           </div>
 
           {/* アーティスト名 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              アーティスト名
-            </label>
-            <input
-              type="text"
-              value={formData.artist}
-              onChange={(e) => setFormData({ ...formData, artist: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
-              placeholder="アーティスト名を入力（省略可 - 空欄の場合は「Unknown Artist」として保存）"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              ※ 空欄の場合、自動的に「Unknown Artist」として登録されます
-            </p>
-          </div>
+          <ArtistSelector
+            selectedArtists={formData.artist}
+            onChange={(artists) => setFormData({ ...formData, artist: artists })}
+            label="アーティスト名"
+            placeholder="アーティスト名を選択または新規追加（省略可）"
+          />
+          <p className="text-xs text-gray-500 -mt-2 mb-2">
+            ※ 空欄の場合、自動的に「Unknown Artist」として登録されます
+          </p>
+
+          {/* 作曲者 */}
+          <ArtistSelector
+            selectedArtists={formData.composers}
+            onChange={(artists) => setFormData({ ...formData, composers: artists })}
+            label="作曲者"
+            placeholder="作曲者を選択または新規追加（省略可）"
+          />
+
+          {/* 編曲者 */}
+          <ArtistSelector
+            selectedArtists={formData.arrangers}
+            onChange={(artists) => setFormData({ ...formData, arrangers: artists })}
+            label="編曲者"
+            placeholder="編曲者を選択または新規追加（省略可）"
+          />
 
           {/* プラットフォームリンク */}
           <div className="space-y-3">

@@ -502,7 +502,7 @@ export default function MultiSegmentTimeEditor({
           <div className="relative w-full h-12 bg-gray-100 rounded-md overflow-hidden shadow-inner">
             {/* 既存の他の楽曲（薄いグレー） */}
             {allSongs
-              .filter(song => song.title !== currentSongTitle || song.artist !== currentSongArtist)
+              .filter(song => song.title !== currentSongTitle || song.artist.join(", ") !== currentSongArtist)
               .map(song => (
               <div
                 key={`other-${song.id}`}
@@ -511,7 +511,7 @@ export default function MultiSegmentTimeEditor({
                   left: `${(song.startTime / maxDuration) * 100}%`,
                   width: `${((song.endTime - song.startTime) / maxDuration) * 100}%`
                 }}
-                title={`${song.title} - ${song.artist}`}
+                title={`${song.title} - ${song.artist.join(", ")}`}
               />
             ))}
             

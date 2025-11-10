@@ -186,6 +186,55 @@ export type Database = {
           created_at?: string
         }
       }
+      artists: {
+        Row: {
+          id: string
+          name: string
+          normalized_name: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          normalized_name: string
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          normalized_name?: string
+          created_at?: string
+          updated_at?: string
+        }
+      }
+      song_artist_relations: {
+        Row: {
+          id: string
+          song_id: string
+          artist_id: string
+          role: 'artist' | 'composer' | 'arranger'
+          order_index: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          song_id: string
+          artist_id: string
+          role: 'artist' | 'composer' | 'arranger'
+          order_index?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          song_id?: string
+          artist_id?: string
+          role?: 'artist' | 'composer' | 'arranger'
+          order_index?: number
+          created_at?: string
+        }
+      }
     }
     Views: {
       [_ in never]: never

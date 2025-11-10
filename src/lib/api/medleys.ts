@@ -46,10 +46,13 @@ export async function testSupabaseConnection(): Promise<{ success: boolean; erro
 
 // Database row to app type conversion
 function convertDbRowToSongSection(song: SongRow): SongSection {
+  // Convert artist from comma-separated string to array
+  const artistArray = song.artist ? song.artist.split(',').map(a => a.trim()).filter(a => a !== '') : [];
+
   return {
     id: song.order_index, // Use order_index as the legacy id field
     title: song.title,
-    artist: song.artist || '',
+    artist: artistArray.length > 0 ? artistArray : ['Unknown Artist'],
     startTime: song.start_time,
     endTime: song.end_time,
     color: song.color,
@@ -299,11 +302,12 @@ export async function createMedley(
     }
 
     // Look up song_master IDs for songs
-    const songIdMap = await lookupSongIds(medleyData.songs.map(s => ({ title: s.title, artist: s.artist || '' })));
+    const songIdMap = await lookupSongIds(medleyData.songs.map(s => ({ title: s.title, artist: Array.isArray(s.artist) ? s.artist.join(", ") : (s.artist || '') })));
 
     // Insert songs
     const songsToInsert = medleyData.songs.map((song, index) => {
-      const normalizedId = normalizeSongInfo(song.title, song.artist || '');
+      const artistStr = Array.isArray(song.artist) ? song.artist.join(", ") : (song.artist || '');
+      const normalizedId = normalizeSongInfo(song.title, artistStr);
       const songId = songIdMap.get(normalizedId) || null;
 
       if (songId) {
@@ -314,7 +318,7 @@ export async function createMedley(
         medley_id: medley.id as string,
         song_id: songId,  // Link to song_master if exists
         title: song.title,
-        artist: song.artist || '',
+        artist: artistStr,
         start_time: song.startTime,
         end_time: song.endTime,
         color: song.color,
@@ -561,7 +565,7 @@ export async function saveMedleySongs(
       callNumber: saveMedleySongsCallCount,
       medleyId,
       songsCount: songs.length,
-      songs: songs.map(s => ({ title: s.title, artist: s.artist, start: s.startTime, end: s.endTime })),
+      songs: songs.map(s => ({ title: s.title, artist: Array.isArray(s.artist) ? s.artist.join(", ") : s.artist, start: s.startTime, end: s.endTime })),
       editorNickname,
       timestamp: new Date().toISOString()
     });
@@ -587,10 +591,11 @@ export async function saveMedleySongs(
       logger.info(`📝 [${callId}] Preparing to INSERT ${songs.length} songs`);
 
       // Look up song_master IDs for songs
-      const songIdMap = await lookupSongIds(songs.map(s => ({ title: s.title, artist: s.artist || '' })));
+      const songIdMap = await lookupSongIds(songs.map(s => ({ title: s.title, artist: Array.isArray(s.artist) ? s.artist.join(", ") : (s.artist || '') })));
 
       const songsToInsert = songs.map((song, index) => {
-        const normalizedId = normalizeSongInfo(song.title, song.artist || '');
+        const artistStr = Array.isArray(song.artist) ? song.artist.join(", ") : (song.artist || '');
+        const normalizedId = normalizeSongInfo(song.title, artistStr);
         const songId = songIdMap.get(normalizedId) || null;
 
         if (songId) {
@@ -601,7 +606,7 @@ export async function saveMedleySongs(
           medley_id: medleyId,
           song_id: songId,  // Link to song_master if exists
           title: song.title,
-          artist: song.artist || '',
+          artist: artistStr,
           start_time: song.startTime,
           end_time: song.endTime,
           color: song.color,

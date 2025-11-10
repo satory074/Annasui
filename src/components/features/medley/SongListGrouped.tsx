@@ -63,11 +63,11 @@ export default function SongListGrouped({
   // 楽曲をタイトル・アーティストでグループ化
   const groupedSongs = useMemo(() => {
     const grouped = songs.reduce((groups, song) => {
-      const key = `${song.title}-${song.artist}`;
+      const key = `${song.title}-${song.artist.join(", ")}`;
       if (!groups[key]) {
         groups[key] = {
           title: song.title,
-          artist: song.artist,
+          artist: song.artist.join(", "),
           segments: []
         };
       }
@@ -91,7 +91,7 @@ export default function SongListGrouped({
   // 重複情報を取得する関数
   const getDuplicateInfo = (targetSong: SongSection, allSongs: SongSection[]) => {
     const sameTitleSongs = allSongs.filter(
-      (song) => song.title === targetSong.title && song.artist === targetSong.artist
+      (song) => song.title === targetSong.title && song.artist.join(", ") === targetSong.artist.join(", ")
     );
     
     if (sameTitleSongs.length <= 1) return null;
@@ -277,7 +277,7 @@ export default function SongListGrouped({
                         key={song.id}
                         className={`absolute h-7 transition-all ${
                           // 空の楽曲のビジュアル強調
-                          (song.title?.startsWith('空の楽曲') || song.artist === 'アーティスト未設定')
+                          (song.title?.startsWith('空の楽曲') || song.artist.join(", ") === 'アーティスト未設定')
                             ? 'bg-yellow-400 border-2 border-orange-500 shadow-lg ring-1 ring-orange-300'
                             : isBeyondActualDuration
                               ? 'bg-red-400 opacity-50'
@@ -303,11 +303,11 @@ export default function SongListGrouped({
                         onMouseDown={undefined}
                         onMouseEnter={(e) => handleSongHover(e, song)}
                         onMouseLeave={handleSongLeave}
-                        title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''} | クリックで再生`}
+                        title={`${song.title} - ${song.artist.join(", ")}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''} | クリックで再生`}
                       >
                         <div className={`text-xs font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1 ${
                           // 空の楽曲のテキストカラー調整
-                          (song.title?.startsWith('空の楽曲') || song.artist === 'アーティスト未設定')
+                          (song.title?.startsWith('空の楽曲') || song.artist.join(", ") === 'アーティスト未設定')
                             ? 'text-orange-900'
                             : 'text-gray-800'
                         }`}
@@ -319,7 +319,7 @@ export default function SongListGrouped({
                           <span className="flex items-center gap-1">
                             {song.title}
                             {/* 空の楽曲の警告アイコン */}
-                            {(song.title?.startsWith('空の楽曲') || song.artist === 'アーティスト未設定') && (
+                            {(song.title?.startsWith('空の楽曲') || song.artist.join(", ") === 'アーティスト未設定') && (
                               <span
                                 className="text-orange-600 text-sm font-bold"
                                 title="未入力項目があります"

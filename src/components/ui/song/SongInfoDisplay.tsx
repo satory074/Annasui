@@ -146,8 +146,22 @@ export default function SongInfoDisplay({
 
         {/* アーティスト */}
         <p className="text-xs text-gray-600 text-center w-full">
-          {song.artist || "未設定"}
+          {song.artist.join(", ") || "未設定"}
         </p>
+
+        {/* 作曲者 */}
+        {song.composers && song.composers.length > 0 && (
+          <p className="text-xs text-gray-500 text-center w-full">
+            作曲: {song.composers.join(", ")}
+          </p>
+        )}
+
+        {/* 編曲者 */}
+        {song.arrangers && song.arrangers.length > 0 && (
+          <p className="text-xs text-gray-500 text-center w-full">
+            編曲: {song.arrangers.join(", ")}
+          </p>
+        )}
 
         {/* プラットフォームリンク */}
         {showOriginalLink && (
@@ -205,9 +219,23 @@ export default function SongInfoDisplay({
           <h3 className="font-semibold text-gray-900 text-lg mb-1 truncate">
             {song.title}
           </h3>
-          <p className="text-gray-600 text-sm mb-3 truncate">
-            {song.artist}
+          <p className="text-gray-600 text-sm mb-1 truncate">
+            {song.artist.join(", ")}
           </p>
+
+          {/* 作曲者 */}
+          {song.composers && song.composers.length > 0 && (
+            <p className="text-gray-500 text-xs mb-1 truncate">
+              作曲: {song.composers.join(", ")}
+            </p>
+          )}
+
+          {/* 編曲者 */}
+          {song.arrangers && song.arrangers.length > 0 && (
+            <p className="text-gray-500 text-xs mb-2 truncate">
+              編曲: {song.arrangers.join(", ")}
+            </p>
+          )}
 
           <div className="flex items-center gap-4 text-xs">
             {(song.niconicoLink || song.youtubeLink || song.spotifyLink || song.applemusicLink) && (
@@ -248,9 +276,33 @@ export default function SongInfoDisplay({
           アーティスト
         </label>
         <p className="text-gray-900">
-          {song.artist || "未設定"}
+          {song.artist.join(", ") || "未設定"}
         </p>
       </div>
+
+      {/* 作曲者 */}
+      {song.composers && song.composers.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            作曲者
+          </label>
+          <p className="text-gray-900">
+            {song.composers.join(", ")}
+          </p>
+        </div>
+      )}
+
+      {/* 編曲者 */}
+      {song.arrangers && song.arrangers.length > 0 && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            編曲者
+          </label>
+          <p className="text-gray-900">
+            {song.arrangers.join(", ")}
+          </p>
+        </div>
+      )}
 
       {showTimeCodes && (
         <div className="grid grid-cols-3 gap-4">

@@ -6,6 +6,12 @@ import { SongSection } from "@/types";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import SongInfoDisplay from "@/components/ui/song/SongInfoDisplay";
 import { logger } from '@/lib/utils/logger';
+import ArtistSelector from "@/components/ui/form/ArtistSelector";
+
+interface Artist {
+  id: string;
+  name: string;
+}
 
 interface SongSearchModalProps {
   isOpen: boolean;
@@ -43,7 +49,9 @@ export default function SongSearchModal({
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<{
     title: string;
-    artist: string;
+    artist: Artist[];
+    composers: Artist[];
+    arrangers: Artist[];
     niconicoLink?: string;
     youtubeLink?: string;
     spotifyLink?: string;
@@ -111,6 +119,8 @@ export default function SongSearchModal({
     setEditFormData({
       title: song.title,
       artist: song.artist,
+      composers: song.composers || [],
+      arrangers: song.arrangers || [],
       niconicoLink: song.niconicoLink,
       youtubeLink: song.youtubeLink,
       spotifyLink: song.spotifyLink,
@@ -131,10 +141,13 @@ export default function SongSearchModal({
     const originalSong = songDatabase.find(s => s.id === editingEntryId);
     if (!originalSong) return;
 
+    // Artist配列はそのまま使用（ID込みで）
     const updatedSong: SongDatabaseEntry = {
       ...originalSong,
       title: editFormData.title,
       artist: editFormData.artist,
+      composers: editFormData.composers,
+      arrangers: editFormData.arrangers,
       niconicoLink: editFormData.niconicoLink,
       youtubeLink: editFormData.youtubeLink,
       spotifyLink: editFormData.spotifyLink,
@@ -198,7 +211,7 @@ export default function SongSearchModal({
         setIsAutoSaving(true);
         logger.info('🔄 Auto-saving after song selection...', {
           songTitle: song.title,
-          songArtist: song.artist,
+          songArtist: song.artist.map(a => a.name).join(", "),
           videoId
         });
         
@@ -331,16 +344,41 @@ export default function SongSearchModal({
                           />
                         </div>
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            アーティスト名
-                          </label>
-                          <input
-                            type="text"
-                            value={editFormData?.artist || ''}
-                            onChange={(e) => handleFormChange('artist', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
+                          <ArtistSelector
+                            selectedArtists={editFormData?.artist || []}
+                            onChange={(artists) => {
+                              if (editFormData) {
+                                setEditFormData({ ...editFormData, artist: artists });
+                              }
+                            }}
+                            label="アーティスト名"
+                            placeholder="アーティスト名を選択または新規追加"
                           />
                         </div>
+                      </div>
+
+                      {/* 作曲者・編曲者編集 */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <ArtistSelector
+                          selectedArtists={editFormData?.composers || []}
+                          onChange={(artists) => {
+                            if (editFormData) {
+                              setEditFormData({ ...editFormData, composers: artists });
+                            }
+                          }}
+                          label="作曲者"
+                          placeholder="作曲者を選択または新規追加"
+                        />
+                        <ArtistSelector
+                          selectedArtists={editFormData?.arrangers || []}
+                          onChange={(artists) => {
+                            if (editFormData) {
+                              setEditFormData({ ...editFormData, arrangers: artists });
+                            }
+                          }}
+                          label="編曲者"
+                          placeholder="編曲者を選択または新規追加"
+                        />
                       </div>
 
                       {/* プラットフォームリンク編集 */}

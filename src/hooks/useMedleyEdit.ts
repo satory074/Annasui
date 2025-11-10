@@ -92,7 +92,7 @@ export function useMedleyEdit(
     logger.info('🔄 updateSong called in useMedleyEdit', {
       updatedSongId: updatedSong.id,
       updatedSongTitle: updatedSong.title,
-      updatedSongArtist: updatedSong.artist
+      updatedSongArtist: updatedSong.artist.join(", ")
     });
 
     setEditingSongs(prev => {
@@ -108,8 +108,8 @@ export function useMedleyEdit(
           logger.info('✅ Found matching song to update', {
             originalTitle: song.title,
             newTitle: updatedSong.title,
-            originalArtist: song.artist,
-            newArtist: updatedSong.artist
+            originalArtist: song.artist.join(", "),
+            newArtist: updatedSong.artist.join(", ")
           });
         }
         return isMatch ? updatedSong : song;
@@ -349,7 +349,7 @@ export function useMedleyEdit(
       // 保存前に必須項目を一括チェック
       const invalidSongs = songsToValidateAndSave.filter(song => {
         const isTitleEmpty = !song.title || song.title.trim() === '' || song.title.startsWith('空の楽曲');
-        const isArtistEmpty = !song.artist || song.artist.trim() === '' || song.artist === 'アーティスト未設定';
+        const isArtistEmpty = !song.artist || song.artist.length === 0 || song.artist.join(", ").trim() === '' || song.artist.join(", ") === 'アーティスト未設定';
         return isTitleEmpty || isArtistEmpty;
       });
 
@@ -362,7 +362,7 @@ export function useMedleyEdit(
           if (!song.title || song.title.trim() === '' || song.title.startsWith('空の楽曲')) {
             issues.push('楽曲名');
           }
-          if (!song.artist || song.artist.trim() === '' || song.artist === 'アーティスト未設定') {
+          if (!song.artist || song.artist.length === 0 || song.artist.join(", ").trim() === '' || song.artist.join(", ") === 'アーティスト未設定') {
             issues.push('アーティスト名');
           }
           return `• ${formatTime(song.startTime)} ～ ${formatTime(song.endTime)}: ${issues.join('と')}を入力してください`;

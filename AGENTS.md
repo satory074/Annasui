@@ -4,6 +4,28 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Session Notes
 
+### 2025-11-10: Library Page Implementation (Phase 1)
+- Implemented dedicated `/library/` route for managing song database independently from medley editing
+- **Authentication-protected**: Page requires login, navigation link only visible when authenticated
+- **Features implemented**:
+  - Searchable table with 20 items per page pagination
+  - Sortable columns (title, artist, updated date)
+  - Edit modal for metadata (title, artists, composers, arrangers, platform links)
+  - Delete functionality with smart unlinking (preserves medley integrity)
+  - Reusable `useSongSearch` hook for filtering and pagination
+  - `ArtistSelector` component with autocomplete for multi-artist management
+- **New files**:
+  - `src/app/library/page.tsx` - Route page with metadata
+  - `src/components/pages/LibraryPageClient.tsx` - Main library component (table view)
+  - `src/components/features/library/SongDatabaseEditModal.tsx` - Edit dialog without time fields
+  - `src/components/ui/form/ArtistSelector.tsx` - Reusable multi-artist selector with autocomplete
+  - `src/hooks/useSongSearch.ts` - Extracted search/filter/pagination logic
+- **Modified files**:
+  - `src/components/layout/AppHeader.tsx` - Added "楽曲ライブラリ" link (requiresAuth: true)
+  - `src/lib/utils/songDatabase.ts` - Added `deleteManualSong()`, timestamps (createdAt/updatedAt)
+- **Production verified**: https://anasui-e6f49.web.app/library/
+- **Design pattern**: Phase 1 of 3-phase hybrid approach (dedicated page + inline editing + advanced features)
+
 ### 2025-10-31: Tooltip Layout Unification
 - Unified Tooltip layout with RightSidebar's "現在再生中" card design for consistency
 - Changed `SongInfoDisplay.tsx` compact variant from `space-y-3` to `flex flex-col items-center gap-3` (matching RightSidebar)
@@ -159,6 +181,26 @@ Local環境でエラーが解決困難な場合、production buildで先に検�
   - `getSongDatabase()`: Get all songs (cached, includes medley + manual songs)
   - `searchSongs()`: Search with scoring and match type detection
   - `createSongFromDatabase()`: Convert DB entry to timeline song
+  - `deleteManualSong()`: Delete song with smart unlinking (preserves medley integrity)
+  - `updateManualSong()`: Update song metadata (title, artists, composers, arrangers, links)
+
+### Library Page System
+- **Purpose**: Dedicated interface for managing song database independently from medley context
+- **Route**: `/library/` (authentication required)
+- **Implementation**:
+  - `src/app/library/page.tsx` - Next.js route with dynamic rendering
+  - `src/components/pages/LibraryPageClient.tsx` - Main component (table view)
+  - `src/components/features/library/SongDatabaseEditModal.tsx` - Edit modal
+  - `src/hooks/useSongSearch.ts` - Reusable search/filter/pagination hook
+- **Features**:
+  - **Search & Filter**: Real-time search by title/artist with match type display
+  - **Sortable Table**: Click column headers to sort (title, artist, updated date)
+  - **Pagination**: 20 items per page with prev/next navigation
+  - **Edit Modal**: Full metadata editing (title, artists, composers, arrangers, 4 platform links)
+  - **Delete**: Smart deletion that unlinks songs from medleys (preserves cached data)
+  - **Authentication Guard**: Shows login prompt if not authenticated
+- **UI Pattern**: Table layout with thumbnails, platform links, action buttons (編集/削除)
+- **Navigation**: Link in AppHeader (visible only when authenticated via `requiresAuth: true`)
 
 ### API Proxy Pattern
 All external API calls must go through Next.js API routes due to CORS:
@@ -409,21 +451,30 @@ src/
 │   │   ├── thumbnail/niconico/[videoId]/ - Niconico thumbnail proxy
 │   │   ├── thumbnail/spotify/[trackId]/ - Spotify thumbnail proxy (oEmbed API)
 │   │   └── metadata/niconico/[videoId]/ - Niconico metadata proxy
+│   ├── library/ - Library page route (authentication required)
 │   └── [platform]/[videoId]/ - Platform-specific player pages
 ├── components/
 │   ├── features/
 │   │   ├── auth/ - LoginModal component
+│   │   ├── library/ - SongDatabaseEditModal (library page edit dialog)
 │   │   ├── medley/ - Medley editing, ContributorsDisplay
 │   │   └── player/ - NicoPlayer, YouTubePlayer
-│   ├── layout/ - AppHeader with login/logout UI
-│   ├── pages/ - MedleyPlayer, HomePageClient
-│   └── ui/ - Reusable components
+│   ├── layout/ - AppHeader with login/logout UI and library link
+│   ├── pages/ - MedleyPlayer, HomePageClient, LibraryPageClient
+│   └── ui/
+│       ├── form/ - ArtistSelector (multi-artist autocomplete)
+│       └── song/ - Song-related UI components
 ├── contexts/
 │   └── AuthContext.tsx - Authentication state management
-├── hooks/ - useMedleyEdit (with editor tracking), useNicoPlayer
+├── hooks/
+│   ├── useMedleyEdit.ts - Timeline editing with editor tracking
+│   ├── useNicoPlayer.ts - Niconico player integration
+│   └── useSongSearch.ts - Reusable search/filter/pagination
 ├── lib/
 │   ├── api/medleys.ts - Medley CRUD with nickname parameters
-│   └── utils/ - Logger, thumbnail, video metadata
+│   └── utils/
+│       ├── songDatabase.ts - Song database CRUD + search system
+│       └── logger.ts, thumbnail.ts, etc.
 └── types/ - TypeScript definitions
 ```
 

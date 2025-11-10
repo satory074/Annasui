@@ -111,9 +111,9 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 return matchesSearch;
             } else {
                 // Song search mode
-                const hasMatchingSong = medley.songs.some(song => 
+                const hasMatchingSong = medley.songs.some(song =>
                     song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    song.artist.toLowerCase().includes(searchTerm.toLowerCase())
+                    song.artist.join(", ").toLowerCase().includes(searchTerm.toLowerCase())
                 );
                 return hasMatchingSong;
             }
@@ -216,11 +216,11 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
         }))
     );
 
-    const filteredSongs = searchMode === "song" ? 
-        (searchTerm ? 
-            allSongs.filter(song => 
+    const filteredSongs = searchMode === "song" ?
+        (searchTerm ?
+            allSongs.filter(song =>
                 song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                song.artist.toLowerCase().includes(searchTerm.toLowerCase())
+                song.artist.join(", ").toLowerCase().includes(searchTerm.toLowerCase())
             )
         : allSongs)
     : [];

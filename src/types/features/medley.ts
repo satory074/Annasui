@@ -2,7 +2,9 @@
 export type SongSection = {
   id: number;
   title: string;           // 曲名
-  artist: string;          // アーティスト名
+  artist: string[];        // アーティスト名（複数可）
+  composers?: string[];    // 作曲者（複数可、カンマ区切りで表示）
+  arrangers?: string[];    // 編曲者（複数可、カンマ区切りで表示）
   startTime: number;       // 開始時間（秒）
   endTime: number;         // 終了時間（秒）
   color: string;           // 表示色（CSS color code）

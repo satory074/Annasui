@@ -14,15 +14,18 @@ export interface DuplicateGroup {
 }
 
 // 楽曲名とアーティスト名を正規化（重複検出用）
-function normalizeSongKey(title: string, artist: string): string {
-  const normalizeText = (text: string) => 
+function normalizeSongKey(title: string, artist: string | string[]): string {
+  const normalizeText = (text: string) =>
     text.toLowerCase()
          .replace(/\s+/g, '')
          .replace(/[・･]/g, '')
          .replace(/[（）()]/g, '')
          .trim();
-  
-  return `${normalizeText(title)}_${normalizeText(artist)}`;
+
+  // Handle artist as string or array
+  const artistStr = Array.isArray(artist) ? artist.join(", ") : artist;
+
+  return `${normalizeText(title)}_${normalizeText(artistStr)}`;
 }
 
 // メドレー内の重複楽曲を検出

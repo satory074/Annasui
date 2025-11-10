@@ -183,7 +183,7 @@ export default function ImportSetlistModal({
     const songs: SongSection[] = previewSongs.map((entry, index) => ({
       id: Date.now() + index,
       title: entry.title,
-      artist: entry.artist || "",
+      artist: entry.artist ? [entry.artist] : [],
       startTime: Math.round(entry.startTime * 10) / 10,
       endTime: Math.round((entry.endTime || entry.startTime + 30) * 10) / 10,
       color: `bg-${['blue', 'green', 'purple', 'yellow', 'pink', 'indigo'][index % 6]}-400`,

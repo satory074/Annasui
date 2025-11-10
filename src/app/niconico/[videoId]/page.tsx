@@ -41,7 +41,7 @@ export async function generateMetadata({ params }: MedleyPageProps): Promise<Met
       keywords: [
         medleyData.title,
         ...medleyData.songs.map(song => song.title),
-        ...medleyData.songs.map(song => song.artist),
+        ...medleyData.songs.flatMap(song => song.artist),
         'ニコニコメドレー',
         'メドレー動画',
         'アノテーション',
@@ -158,7 +158,7 @@ export default async function MedleyPage({ params }: MedleyPageProps) {
                                 "name": song.title,
                                 "byArtist": {
                                     "@type": "MusicGroup",
-                                    "name": song.artist
+                                    "name": song.artist.join(", ")
                                 },
                                 "duration": `PT${Math.floor((song.endTime - song.startTime) / 60)}M${(song.endTime - song.startTime) % 60}S`,
                                 "position": index + 1,

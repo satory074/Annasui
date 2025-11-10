@@ -89,17 +89,17 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
       const isActive = currentTime >= song.startTime && currentTime < song.endTime + 0.1;
       
       if (isActive) {
-        console.log('🎵 ActiveSongPopup: Found active song', { 
-          title: song.title, 
-          artist: song.artist,
+        console.log('🎵 ActiveSongPopup: Found active song', {
+          title: song.title,
+          artist: song.artist.join(", "),
           startTime: song.startTime,
           endTime: song.endTime,
           currentTime,
           timeCheck: `${currentTime} >= ${song.startTime} && ${currentTime} < ${song.endTime + 0.1}`
         });
-        logger.info('🎵 ActiveSongPopup: Found active song', { 
-          title: song.title, 
-          artist: song.artist,
+        logger.info('🎵 ActiveSongPopup: Found active song', {
+          title: song.title,
+          artist: song.artist.join(", "),
           startTime: song.startTime,
           endTime: song.endTime,
           currentTime,
@@ -116,7 +116,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
     const uniqueActiveSongs = currentActiveSongs.reduce((acc: ActiveSong[], current) => {
       const existing = acc.find(song =>
         song.title === current.title &&
-        song.artist === current.artist &&
+        song.artist.join(", ") === current.artist.join(", ") &&
         song.niconicoLink === current.niconicoLink &&
         song.youtubeLink === current.youtubeLink
       );
@@ -126,16 +126,16 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
       return acc;
     }, []);
 
-    console.log('🎵 ActiveSongPopup: Updated active songs', { 
-      found: currentActiveSongs.length, 
+    console.log('🎵 ActiveSongPopup: Updated active songs', {
+      found: currentActiveSongs.length,
       unique: uniqueActiveSongs.length,
-      songs: uniqueActiveSongs.map(s => ({ title: s.title, artist: s.artist })),
+      songs: uniqueActiveSongs.map(s => ({ title: s.title, artist: s.artist.join(", ") })),
       currentTime
     });
-    logger.info('🎵 ActiveSongPopup: Updated active songs', { 
-      found: currentActiveSongs.length, 
+    logger.info('🎵 ActiveSongPopup: Updated active songs', {
+      found: currentActiveSongs.length,
       unique: uniqueActiveSongs.length,
-      songs: uniqueActiveSongs.map(s => ({ title: s.title, artist: s.artist }))
+      songs: uniqueActiveSongs.map(s => ({ title: s.title, artist: s.artist.join(", ") }))
     });
 
     // 前の状態を保存してからstateを更新
@@ -337,7 +337,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
 
             {/* アーティスト */}
             <p className="text-xs text-gray-600 text-center w-full">
-              {song.artist}
+              {song.artist.join(", ")}
             </p>
 
             {/* プラットフォームリンク */}

@@ -101,7 +101,7 @@ export default function BulkEditModal({
 
       // アーティストの一括更新
       if (bulkEditData.applyArtist && bulkEditData.artistTemplate.trim()) {
-        updatedSong.artist = bulkEditData.artistTemplate;
+        updatedSong.artist = [bulkEditData.artistTemplate];
       }
 
       // 時間調整
@@ -174,7 +174,7 @@ export default function BulkEditModal({
                     {song.title || `楽曲 ${index + 1}`}
                   </div>
                   <div className="text-sm text-gray-600">
-                    {song.artist && `${song.artist} • `}
+                    {song.artist && song.artist.length > 0 && `${song.artist.join(", ")} • `}
                     {formatTime(song.startTime)} - {formatTime(song.endTime)}
                     <span className="ml-2 text-xs bg-gray-200 px-1 rounded">
                       {Math.round((song.endTime - song.startTime) * 10) / 10}s

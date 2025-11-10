@@ -552,7 +552,7 @@ export default function MedleyPlayer({
                 newArtist: songTemplate.artist,
                 replacingEmptySong: editingSong.title.startsWith('空の楽曲') || editingSong.title === '',
                 existsInTimeline: existsInTimeline,
-                isEmptyPlaceholder: editingSong.title === '' && editingSong.artist === ''
+                isEmptyPlaceholder: editingSong.title === '' && editingSong.artist.join(", ") === ''
             });
 
             // 既存楽曲がある場合は必ず置換 - ID、時間情報を保持して楽曲情報のみ更新
@@ -633,7 +633,9 @@ export default function MedleyPlayer({
     // 手動楽曲追加モーダルから楽曲を保存
     const handleManualSongSave = async (songData: {
         title: string;
-        artist: string;
+        artist: string[];
+        composers?: string[];
+        arrangers?: string[];
         niconicoLink?: string;
         youtubeLink?: string;
         spotifyLink?: string;
@@ -684,7 +686,7 @@ export default function MedleyPlayer({
         const newSong: SongSection = {
             id: Date.now(),
             title: "",
-            artist: "",
+            artist: [],
             startTime: currentTime || 0,
             endTime: Math.min((currentTime || 0) + 30, duration),
             color: "bg-orange-400",
@@ -739,7 +741,9 @@ export default function MedleyPlayer({
             const savedSong = await updateManualSong({
                 id: updatedSong.id,
                 title: updatedSong.title,
-                artist: updatedSong.artist,
+                artist: updatedSong.artist.map(a => a.name),
+                composers: updatedSong.composers?.map(c => c.name),
+                arrangers: updatedSong.arrangers?.map(a => a.name),
                 niconicoLink: updatedSong.niconicoLink,
                 youtubeLink: updatedSong.youtubeLink,
                 spotifyLink: updatedSong.spotifyLink,
@@ -764,7 +768,9 @@ export default function MedleyPlayer({
                 const updatedSongSection: SongSection = {
                     ...editingSong,
                     title: savedSong.title,
-                    artist: savedSong.artist,
+                    artist: savedSong.artist.map(a => a.name),
+                    composers: savedSong.composers?.map(c => c.name),
+                    arrangers: savedSong.arrangers?.map(a => a.name),
                     niconicoLink: savedSong.niconicoLink || "",
                     youtubeLink: savedSong.youtubeLink || "",
                     spotifyLink: savedSong.spotifyLink || "",
@@ -841,7 +847,7 @@ export default function MedleyPlayer({
         // This ensures that changes made in SongEditModal are persisted to song_master
         (async () => {
             try {
-                const normalizedId = normalizeSongInfo(song.title, song.artist);
+                const normalizedId = normalizeSongInfo(song.title, song.artist.join(", "));
                 await updateManualSong({
                     id: normalizedId,
                     title: song.title,
@@ -881,7 +887,7 @@ export default function MedleyPlayer({
         const nextSong: SongSection = {
             id: Date.now() + 1, // 一意なIDを作成
             title: "",
-            artist: "",
+            artist: [],
             startTime: Math.round(nextStartTime * 10) / 10,
             endTime: Math.round((nextStartTime + 30) * 10) / 10, // デフォルト30秒
             color: "bg-blue-400",
@@ -909,9 +915,9 @@ export default function MedleyPlayer({
             logger.debug('🔄 handleBatchUpdate called with:', updatedSongs.length, 'segments');
             // 現在編集中の楽曲と同じタイトル・アーティストの全インスタンスを取得
             const currentTitle = editingSong.title.trim();
-            const currentArtist = editingSong.artist.trim();
-            const existingInstances = displaySongs.filter(song => 
-                song.title.trim() === currentTitle && song.artist.trim() === currentArtist
+            const currentArtist = editingSong.artist.join(", ").trim();
+            const existingInstances = displaySongs.filter(song =>
+                song.title.trim() === currentTitle && song.artist.join(", ").trim() === currentArtist
             );
 
             // 削除するIDリストと追加する楽曲リストを準備

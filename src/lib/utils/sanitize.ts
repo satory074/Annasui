@@ -144,7 +144,7 @@ export function sanitizeTimeInput(time: number | string): number {
  */
 export function sanitizeSongSection(song: {
   title?: string;
-  artist?: string;
+  artist?: string | string[];
   startTime?: number | string;
   endTime?: number | string;
   niconicoLink?: string;
@@ -154,7 +154,7 @@ export function sanitizeSongSection(song: {
   color?: string;
 }): {
   title: string;
-  artist: string;
+  artist: string[];
   startTime: number;
   endTime: number;
   niconicoLink?: string;
@@ -163,9 +163,19 @@ export function sanitizeSongSection(song: {
   applemusicLink?: string;
   color?: string;
 } {
+  // Handle artist as string or array
+  let artistArray: string[];
+  if (Array.isArray(song.artist)) {
+    artistArray = song.artist.map(a => sanitizeArtistName(a)).filter(a => a !== '');
+  } else if (song.artist) {
+    artistArray = [sanitizeArtistName(song.artist)].filter(a => a !== '');
+  } else {
+    artistArray = [];
+  }
+
   const sanitized = {
     title: sanitizeSongTitle(song.title || ''),
-    artist: sanitizeArtistName(song.artist || ''),
+    artist: artistArray.length > 0 ? artistArray : ['Unknown Artist'],
     startTime: sanitizeTimeInput(song.startTime || 0),
     endTime: sanitizeTimeInput(song.endTime || 0),
   };

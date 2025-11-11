@@ -63,6 +63,36 @@ export function sanitizeArtistName(artist: string): string {
 }
 
 /**
+ * Sanitizes composer name input
+ */
+export function sanitizeComposerName(composer: string): string {
+  if (!composer || typeof composer !== 'string') {
+    return '';
+  }
+
+  return sanitizeText(composer)
+    // Preserve common name formats
+    .replace(/&amp;/g, '&')
+    // Limit length to reasonable size
+    .substring(0, 100);
+}
+
+/**
+ * Sanitizes arranger name input
+ */
+export function sanitizeArrangerName(arranger: string): string {
+  if (!arranger || typeof arranger !== 'string') {
+    return '';
+  }
+
+  return sanitizeText(arranger)
+    // Preserve common name formats
+    .replace(/&amp;/g, '&')
+    // Limit length to reasonable size
+    .substring(0, 100);
+}
+
+/**
  * Sanitizes URL input and validates format
  */
 export function sanitizeUrl(url: string): string {
@@ -145,6 +175,8 @@ export function sanitizeTimeInput(time: number | string): number {
 export function sanitizeSongSection(song: {
   title?: string;
   artist?: string | string[];
+  composers?: string | string[];
+  arrangers?: string | string[];
   startTime?: number | string;
   endTime?: number | string;
   niconicoLink?: string;
@@ -155,6 +187,8 @@ export function sanitizeSongSection(song: {
 }): {
   title: string;
   artist: string[];
+  composers?: string[];
+  arrangers?: string[];
   startTime: number;
   endTime: number;
   niconicoLink?: string;
@@ -173,6 +207,22 @@ export function sanitizeSongSection(song: {
     artistArray = [];
   }
 
+  // Handle composers as string or array
+  let composersArray: string[] = [];
+  if (Array.isArray(song.composers)) {
+    composersArray = song.composers.map(c => sanitizeComposerName(c)).filter(c => c !== '');
+  } else if (song.composers) {
+    composersArray = [sanitizeComposerName(song.composers)].filter(c => c !== '');
+  }
+
+  // Handle arrangers as string or array
+  let arrangersArray: string[] = [];
+  if (Array.isArray(song.arrangers)) {
+    arrangersArray = song.arrangers.map(a => sanitizeArrangerName(a)).filter(a => a !== '');
+  } else if (song.arrangers) {
+    arrangersArray = [sanitizeArrangerName(song.arrangers)].filter(a => a !== '');
+  }
+
   const sanitized = {
     title: sanitizeSongTitle(song.title || ''),
     artist: artistArray.length > 0 ? artistArray : ['Unknown Artist'],
@@ -182,12 +232,24 @@ export function sanitizeSongSection(song: {
 
   // Optional fields
   const result: typeof sanitized & {
+    composers?: string[];
+    arrangers?: string[];
     niconicoLink?: string;
     youtubeLink?: string;
     spotifyLink?: string;
     applemusicLink?: string;
     color?: string;
   } = sanitized;
+
+  // Add composers if present
+  if (composersArray.length > 0) {
+    result.composers = composersArray;
+  }
+
+  // Add arrangers if present
+  if (arrangersArray.length > 0) {
+    result.arrangers = arrangersArray;
+  }
 
   // Sanitize platform-specific links
   if (song.niconicoLink) {

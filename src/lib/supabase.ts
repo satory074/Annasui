@@ -108,6 +108,8 @@ export type Database = {
           order_index: number
           title: string
           artist: string
+          composers: string | null
+          arrangers: string | null
           color: string
           niconico_link: string | null
           youtube_link: string | null
@@ -127,6 +129,8 @@ export type Database = {
           order_index: number
           title: string
           artist: string
+          composers?: string | null
+          arrangers?: string | null
           color?: string
           niconico_link?: string | null
           youtube_link?: string | null
@@ -146,6 +150,8 @@ export type Database = {
           order_index?: number
           title?: string
           artist?: string
+          composers?: string | null
+          arrangers?: string | null
           color?: string
           niconico_link?: string | null
           youtube_link?: string | null

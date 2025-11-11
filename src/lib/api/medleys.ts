@@ -49,10 +49,18 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
   // Convert artist from comma-separated string to array
   const artistArray = song.artist ? song.artist.split(',').map(a => a.trim()).filter(a => a !== '') : [];
 
+  // Convert composers from comma-separated string to array
+  const composersArray = song.composers ? song.composers.split(',').map(c => c.trim()).filter(c => c !== '') : [];
+
+  // Convert arrangers from comma-separated string to array
+  const arrangersArray = song.arrangers ? song.arrangers.split(',').map(a => a.trim()).filter(a => a !== '') : [];
+
   return {
     id: song.order_index, // Use order_index as the legacy id field
     title: song.title,
     artist: artistArray.length > 0 ? artistArray : ['Unknown Artist'],
+    composers: composersArray.length > 0 ? composersArray : undefined,
+    arrangers: arrangersArray.length > 0 ? arrangersArray : undefined,
     startTime: song.start_time,
     endTime: song.end_time,
     color: song.color,
@@ -307,6 +315,8 @@ export async function createMedley(
     // Insert songs
     const songsToInsert = medleyData.songs.map((song, index) => {
       const artistStr = Array.isArray(song.artist) ? song.artist.join(", ") : (song.artist || '');
+      const composersStr = song.composers && song.composers.length > 0 ? song.composers.join(", ") : null;
+      const arrangersStr = song.arrangers && song.arrangers.length > 0 ? song.arrangers.join(", ") : null;
       const normalizedId = normalizeSongInfo(song.title, artistStr);
       const songId = songIdMap.get(normalizedId) || null;
 
@@ -319,6 +329,8 @@ export async function createMedley(
         song_id: songId,  // Link to song_master if exists
         title: song.title,
         artist: artistStr,
+        composers: composersStr,
+        arrangers: arrangersStr,
         start_time: song.startTime,
         end_time: song.endTime,
         color: song.color,
@@ -595,6 +607,8 @@ export async function saveMedleySongs(
 
       const songsToInsert = songs.map((song, index) => {
         const artistStr = Array.isArray(song.artist) ? song.artist.join(", ") : (song.artist || '');
+        const composersStr = song.composers && song.composers.length > 0 ? song.composers.join(", ") : null;
+        const arrangersStr = song.arrangers && song.arrangers.length > 0 ? song.arrangers.join(", ") : null;
         const normalizedId = normalizeSongInfo(song.title, artistStr);
         const songId = songIdMap.get(normalizedId) || null;
 
@@ -607,6 +621,8 @@ export async function saveMedleySongs(
           song_id: songId,  // Link to song_master if exists
           title: song.title,
           artist: artistStr,
+          composers: composersStr,
+          arrangers: arrangersStr,
           start_time: song.startTime,
           end_time: song.endTime,
           color: song.color,

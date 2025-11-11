@@ -340,6 +340,20 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
               {song.artist.join(", ")}
             </p>
 
+            {/* 作曲者 */}
+            {song.composers && song.composers.length > 0 && (
+              <p className="text-xs text-gray-500 text-center w-full">
+                作曲: {song.composers.join(", ")}
+              </p>
+            )}
+
+            {/* 編曲者 */}
+            {song.arrangers && song.arrangers.length > 0 && (
+              <p className="text-xs text-gray-500 text-center w-full">
+                編曲: {song.arrangers.join(", ")}
+              </p>
+            )}
+
             {/* プラットフォームリンク */}
             <div className="flex justify-center gap-2 flex-wrap">
               {song.niconicoLink && (

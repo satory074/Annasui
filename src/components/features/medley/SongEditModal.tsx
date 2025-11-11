@@ -94,6 +94,8 @@ export default function SongEditModal({
     id: 0,
     title: "",
     artist: [],
+    composers: undefined,
+    arrangers: undefined,
     startTime: 0,
     endTime: 0,
     color: "bg-blue-400",
@@ -282,6 +284,8 @@ export default function SongEditModal({
         id: Date.now(), // 一時的なID
         title: "",
         artist: [],
+        composers: undefined,
+        arrangers: undefined,
         startTime: 0,
         endTime: 0,
         color: "bg-blue-400",
@@ -547,6 +551,14 @@ export default function SongEditModal({
                         <span className="text-gray-600">アーティスト:</span>
                         <div className="font-medium text-gray-900">{formData.artist.join(", ") || "未設定"}</div>
                       </div>
+                      <div>
+                        <span className="text-gray-600">作曲:</span>
+                        <div className="font-medium text-gray-900">{formData.composers?.join(", ") || "-"}</div>
+                      </div>
+                      <div>
+                        <span className="text-gray-600">編曲:</span>
+                        <div className="font-medium text-gray-900">{formData.arrangers?.join(", ") || "-"}</div>
+                      </div>
                     </div>
                     {isEmptySong(song) && (
                       <div className="text-sm text-orange-700 bg-orange-50 p-3 rounded-md border-l-4 border-orange-400">
@@ -621,6 +633,14 @@ export default function SongEditModal({
                     <div>
                       <span className="text-green-700">アーティスト:</span>
                       <div className="font-medium text-green-900">{formData.artist.join(", ") || "未設定"}</div>
+                    </div>
+                    <div>
+                      <span className="text-green-700">作曲:</span>
+                      <div className="font-medium text-green-900">{formData.composers?.join(", ") || "-"}</div>
+                    </div>
+                    <div>
+                      <span className="text-green-700">編曲:</span>
+                      <div className="font-medium text-green-900">{formData.arrangers?.join(", ") || "-"}</div>
                     </div>
                   </div>
                   <div className="text-sm text-green-700">

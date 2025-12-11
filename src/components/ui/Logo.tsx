@@ -85,10 +85,10 @@ export default function Logo({ size = 'md', className = '', showText = true }: L
       
       {/* Medlean text */}
       {showText && (
-        <text x="74" y="38" 
-              fontFamily="system-ui, -apple-system, sans-serif" 
-              fontSize={fontSize} 
-              fontWeight="800" 
+        <text x="74" y="38"
+              fontFamily="var(--font-display), serif"
+              fontSize={fontSize}
+              fontWeight="700"
               letterSpacing="-0.02em"
               fill="url(#textGradient)">
           Medlean

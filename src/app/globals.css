@@ -44,7 +44,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  
+
   /* Vibrant Orange Theme Colors */
   --color-orange-600: var(--color-orange-primary);
   --color-orange-700: var(--color-orange-secondary);
@@ -54,7 +54,7 @@
   --color-mint-700: var(--color-mint-secondary);
   --color-vibrant-600: var(--color-vibrant-primary);
   --color-vibrant-700: var(--color-vibrant-secondary);
-  
+
   /* Legacy mappings for compatibility - being phased out */
   --color-caramel-600: var(--color-orange-primary);
   --color-caramel-700: var(--color-orange-secondary);
@@ -63,9 +63,15 @@
   --color-sienna-700: var(--color-indigo-secondary);
   --color-olive-600: var(--color-mint-primary);
   --color-brick-600: #ef4444;
-  
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  /* Typography - New font system */
+  --font-display: var(--font-display);
+  --font-ui: var(--font-ui);
+  --font-accent: var(--font-accent);
+
+  /* Legacy font variables for compatibility */
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-accent);
 }
 
 @media (prefers-color-scheme: dark) {

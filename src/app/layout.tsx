@@ -77,7 +77,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${fraunces.variable} ${onest.variable} ${spaceGrotesk.variable} antialiased`}
       >
         <ClientLayout>
           <ErrorBoundary>

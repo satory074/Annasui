@@ -789,27 +789,74 @@ export async function updateManualSong(songData: {
   const artistNames = songData.artist && songData.artist.length > 0 ? songData.artist : [DEFAULT_ARTIST];
   const effectiveArtist = artistNames[0]; // 下位互換性のため最初のアーティストをsong_master.artistに保存
 
+  // normalized_idを再生成（songData.idがnormalized_idの場合はそのまま使用、そうでなければ生成）
+  const normalizedId = songData.id.includes('_')
+    ? songData.id
+    : normalizeSongInfo(songData.title, effectiveArtist);
+
   try {
-    const { data, error } = await supabase
+    // まず既存レコードを検索
+    const { data: existingRecord, error: selectError } = await supabase
       .from('song_master')
-      .update({
-        title: songData.title,
-        artist: effectiveArtist,
-        niconico_link: songData.niconicoLink || null,
-        youtube_link: songData.youtubeLink || null,
-        spotify_link: songData.spotifyLink || null,
-        applemusic_link: songData.applemusicLink || null
-      })
-      .eq('normalized_id', songData.id)
-      .select()
-      .single();
+      .select('id, normalized_id')
+      .eq('normalized_id', normalizedId)
+      .maybeSingle();
+
+    if (selectError) {
+      logger.error('Failed to check existing song_master record:', selectError);
+      throw selectError;
+    }
+
+    let data;
+    let error;
+
+    // 型アサーション: existingRecordの型を明示
+    const existingId = existingRecord ? (existingRecord as { id: string; normalized_id: string }).id : null;
+
+    if (existingId) {
+      // レコードが存在する場合は更新
+      logger.info('Updating existing song_master record:', { normalizedId, existingId });
+      const result = await supabase
+        .from('song_master')
+        .update({
+          title: songData.title,
+          artist: effectiveArtist,
+          niconico_link: songData.niconicoLink || null,
+          youtube_link: songData.youtubeLink || null,
+          spotify_link: songData.spotifyLink || null,
+          applemusic_link: songData.applemusicLink || null
+        })
+        .eq('id', existingId)
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    } else {
+      // レコードが存在しない場合は新規作成
+      logger.info('Creating new song_master record:', { normalizedId, title: songData.title });
+      const result = await supabase
+        .from('song_master')
+        .insert({
+          title: songData.title,
+          artist: effectiveArtist,
+          normalized_id: normalizedId,
+          niconico_link: songData.niconicoLink || null,
+          youtube_link: songData.youtubeLink || null,
+          spotify_link: songData.spotifyLink || null,
+          applemusic_link: songData.applemusicLink || null
+        })
+        .select()
+        .single();
+      data = result.data;
+      error = result.error;
+    }
 
     if (error) {
-      logger.error('Failed to update manual song in database:', error);
+      logger.error('Failed to upsert song in database:', error);
       throw error;
     }
 
-    logger.info('Manual song updated in database:', data);
+    logger.info('Song upserted in database:', data);
 
     type SongMasterRow = Database['public']['Tables']['song_master']['Row'];
     const updatedRow = data as SongMasterRow | null;

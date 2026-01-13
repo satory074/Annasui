@@ -152,27 +152,6 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
         </div>
       </div>
 
-      {/* 関連メドレーセクション（将来実装） */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-        <h3 className="text-xs font-bold text-gray-700 mb-3 uppercase tracking-wide">
-          📋 関連メドレー
-        </h3>
-        <div className="space-y-2">
-          <div className="bg-white border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors">
-            <div className="text-sm font-semibold mb-1 text-gray-900">アニソンメドレー 2024</div>
-            <div className="text-xs text-gray-600">15曲 • 45分</div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors">
-            <div className="text-sm font-semibold mb-1 text-gray-900">VOCALOID名曲選</div>
-            <div className="text-xs text-gray-600">20曲 • 60分</div>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer transition-colors">
-            <div className="text-sm font-semibold mb-1 text-gray-900">東方アレンジメドレー</div>
-            <div className="text-xs text-gray-600">12曲 • 38分</div>
-          </div>
-        </div>
-      </div>
-
       <style jsx>{`
         @keyframes fade-in {
           from {
@@ -187,25 +166,6 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
 
         .animate-fade-in {
           animation: fade-in 0.3s ease-out forwards;
-        }
-
-        /* カスタムスクロールバー */
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #F3F4F6;
-          border-radius: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #D1D5DB;
-          border-radius: 4px;
-        }
-
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #9CA3AF;
         }
       `}</style>
     </div>

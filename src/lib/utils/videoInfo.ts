@@ -1,3 +1,5 @@
+import { logger } from '@/lib/utils/logger';
+
 // ニコニコ動画の情報を格納する型
 export interface VideoInfo {
   videoId: string;
@@ -30,7 +32,7 @@ export function normalizeVideoInfo(data: unknown, videoId: string): VideoInfo | 
     }
     return null;
   } catch (error) {
-    console.error('Error normalizing video info:', error);
+    logger.error('Error normalizing video info:', error);
     return null;
   }
 }

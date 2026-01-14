@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import { checkForDuplicateBeforeAdd } from "@/lib/utils/duplicateSongs";
+import { findSimilarSongsInDatabase, SimilarSongResult, SongDatabaseEntry } from "@/lib/utils/songDatabase";
+import { logger } from "@/lib/utils/logger";
 import { SongSection } from "@/types";
 import ArtistSelector from "@/components/ui/form/ArtistSelector";
 
@@ -20,6 +22,7 @@ interface ManualSongAddModalProps {
     applemusicLink?: string;
   }) => void;
   existingSongs?: SongSection[]; // 重複チェック用
+  onUseSimilarSong?: (song: SongDatabaseEntry) => void; // 類似楽曲を使用
 }
 
 interface Artist {
@@ -31,7 +34,8 @@ export default function ManualSongAddModal({
   isOpen,
   onClose,
   onSave,
-  existingSongs = []
+  existingSongs = [],
+  onUseSimilarSong
 }: ManualSongAddModalProps) {
   const [formData, setFormData] = useState({
     title: "",
@@ -46,6 +50,10 @@ export default function ManualSongAddModal({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [duplicateWarning, setDuplicateWarning] = useState<{ isDuplicate: boolean; existingInstances: SongSection[] }>({ isDuplicate: false, existingInstances: [] });
+
+  // 類似楽曲検索用ステート
+  const [similarSongs, setSimilarSongs] = useState<SimilarSongResult[]>([]);
+  const [isSearchingSimilar, setIsSearchingSimilar] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -62,10 +70,12 @@ export default function ManualSongAddModal({
       });
       setErrors({});
       setDuplicateWarning({ isDuplicate: false, existingInstances: [] });
+      setSimilarSongs([]);
+      setIsSearchingSimilar(false);
     }
   }, [isOpen]);
 
-  // 重複チェック
+  // 重複チェック（現在のメドレー内）
   useEffect(() => {
     const artistString = formData.artist.map(a => a.name).join(", ");
     if (formData.title.trim() && artistString.trim()) {
@@ -78,6 +88,34 @@ export default function ManualSongAddModal({
       setDuplicateWarning({ isDuplicate: false, existingInstances: [] });
     }
   }, [formData.title, formData.artist, existingSongs]);
+
+  // 類似楽曲検索（song_master全体から）
+  useEffect(() => {
+    const searchSimilar = async () => {
+      const artistString = formData.artist.map(a => a.name).join(", ");
+      if (formData.title.trim().length < 2) {
+        setSimilarSongs([]);
+        return;
+      }
+
+      setIsSearchingSimilar(true);
+      try {
+        const results = await findSimilarSongsInDatabase(
+          formData.title.trim(),
+          artistString.trim() || 'Unknown Artist'
+        );
+        setSimilarSongs(results.slice(0, 5)); // 上位5件
+      } catch (error) {
+        logger.error('Failed to search similar songs:', error);
+        setSimilarSongs([]);
+      } finally {
+        setIsSearchingSimilar(false);
+      }
+    };
+
+    const debounceTimer = setTimeout(searchSimilar, 300);
+    return () => clearTimeout(debounceTimer);
+  }, [formData.title, formData.artist]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -240,7 +278,7 @@ export default function ManualSongAddModal({
           </div>
         </div>
 
-        {/* 重複警告 */}
+        {/* 重複警告（現在のメドレー内） */}
         {duplicateWarning.isDuplicate && (
           <div className="mt-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
             <div className="flex items-start gap-3">
@@ -257,7 +295,7 @@ export default function ManualSongAddModal({
                 <ul className="text-xs text-amber-600 list-disc list-inside space-y-1">
                   {duplicateWarning.existingInstances.map((song) => (
                     <li key={song.id}>
-                      {Math.floor(song.startTime / 60)}:{String(song.startTime % 60).padStart(2, '0')} - {Math.floor(song.endTime / 60)}:{String(song.endTime % 60).padStart(2, '0')}
+                      {Math.floor(song.startTime / 60)}:{String(Math.floor(song.startTime % 60)).padStart(2, '0')} - {Math.floor(song.endTime / 60)}:{String(Math.floor(song.endTime % 60)).padStart(2, '0')}
                     </li>
                   ))}
                 </ul>
@@ -266,6 +304,65 @@ export default function ManualSongAddModal({
                 </p>
               </div>
             </div>
+          </div>
+        )}
+
+        {/* 類似楽曲の警告（song_masterテーブル全体から検索） */}
+        {similarSongs.length > 0 && (
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-start gap-3">
+              <svg className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+              </svg>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-700 mb-2">
+                  データベースに類似の楽曲が見つかりました
+                </p>
+                <p className="text-xs text-blue-600 mb-3">
+                  既存の楽曲を使用すると、重複登録を防げます。
+                </p>
+                <ul className="space-y-2">
+                  {similarSongs.map((result) => (
+                    <li key={result.song.id} className="flex items-center justify-between bg-white p-2 rounded border border-blue-100">
+                      <div className="flex-1 min-w-0 mr-2">
+                        <span className="text-sm font-medium text-gray-900 block truncate">{result.song.title}</span>
+                        <span className="text-xs text-gray-500 block truncate">
+                          {result.song.artist.map(a => a.name).join(", ")}
+                        </span>
+                        <span className={`inline-block mt-1 px-1.5 py-0.5 rounded text-xs ${
+                          result.matchReason === 'exact_normalized_id' ? 'bg-green-100 text-green-700' :
+                          result.matchReason === 'title_match' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {result.matchReason === 'exact_normalized_id' ? '完全一致' :
+                           result.matchReason === 'title_match' ? 'タイトル一致' :
+                           `${result.similarity}%類似`}
+                        </span>
+                      </div>
+                      {onUseSimilarSong && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            onUseSimilarSong(result.song);
+                          }}
+                          className="flex-shrink-0 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                        >
+                          この楽曲を使用
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 検索中表示 */}
+        {isSearchingSimilar && (
+          <div className="mt-4 text-center text-sm text-gray-500">
+            類似楽曲を検索中...
           </div>
         )}
 

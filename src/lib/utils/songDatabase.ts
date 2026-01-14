@@ -28,6 +28,28 @@ export interface SongDatabaseEntry {
 // アーティスト名が空の場合のデフォルト値
 const DEFAULT_ARTIST = "Unknown Artist";
 
+// Type definitions for Supabase responses (to avoid `any`)
+// Note: Supabase returns nested relations as arrays or single objects depending on the relationship type
+interface SongArtistRelationResponse {
+  song_id: string;
+  role: 'artist' | 'composer' | 'arranger';
+  order_index: number;
+  artists: {
+    id: string;
+    name: string;
+  } | { id: string; name: string }[] | null;  // Can be single object, array, or null
+}
+
+interface ArtistResponse {
+  id: string;
+  name: string;
+}
+
+interface SongMasterResponse {
+  id: string;
+  normalized_id: string;
+}
+
 // カタカナをひらがなに変換
 function katakanaToHiragana(text: string): string {
   return text.replace(/[\u30a1-\u30f6]/g, (match) => {
@@ -209,12 +231,21 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
 
         const relationsBySongId = new Map<string, RelationRow[]>();
         if (relations && Array.isArray(relations)) {
-          relations.forEach((rel: any) => {
+          (relations as unknown as SongArtistRelationResponse[]).forEach((rel) => {
+            // Handle both single object and array cases from Supabase
+            let artistData: { id: string; name: string } | null = null;
+            if (rel.artists) {
+              if (Array.isArray(rel.artists) && rel.artists.length > 0) {
+                artistData = { id: rel.artists[0].id, name: rel.artists[0].name };
+              } else if (!Array.isArray(rel.artists)) {
+                artistData = { id: rel.artists.id, name: rel.artists.name };
+              }
+            }
             const typedRel: RelationRow = {
               song_id: rel.song_id as string,
               role: rel.role as 'artist' | 'composer' | 'arranger',
               order_index: rel.order_index as number,
-              artists: rel.artists ? { id: rel.artists.id as string, name: rel.artists.name as string } : null
+              artists: artistData
             };
             if (!relationsBySongId.has(typedRel.song_id)) {
               relationsBySongId.set(typedRel.song_id, []);
@@ -584,9 +615,9 @@ export async function fetchAllArtists(): Promise<Array<{ id: string; name: strin
     }
 
     // Type assertion to ensure correct types
-    return (artists as any[]).map(a => ({
-      id: a.id as string,
-      name: a.name as string
+    return (artists as ArtistResponse[]).map(a => ({
+      id: a.id,
+      name: a.name
     }));
   } catch (error) {
     logger.error('Error fetching all artists:', error);
@@ -611,13 +642,15 @@ async function upsertArtist(name: string): Promise<string> {
     .eq('normalized_name', normalizedName)
     .single();
 
-  if (selectError && (selectError as any).code !== 'PGRST116') { // PGRST116 = 見つからない
+  // PGRST116 = not found (expected when artist doesn't exist)
+  const errorCode = selectError && typeof selectError === 'object' && 'code' in selectError ? (selectError as { code: string }).code : null;
+  if (selectError && errorCode !== 'PGRST116') {
     logger.error('Failed to check existing artist:', selectError);
     throw selectError;
   }
 
   if (existing) {
-    return (existing as any).id as string; // 既存のアーティストIDを返す
+    return (existing as { id: string }).id; // 既存のアーティストIDを返す
   }
 
   // 新規アーティストを挿入
@@ -636,7 +669,7 @@ async function upsertArtist(name: string): Promise<string> {
     throw new Error('Failed to create artist - no data returned');
   }
 
-  return (newArtist as any).id as string;
+  return (newArtist as { id: string }).id;
 }
 
 // 手動で楽曲を追加
@@ -691,7 +724,7 @@ export async function addManualSong(songData: {
     }
 
     logger.info('Manual song saved to database:', data);
-    const songId = (data as any).id as string;
+    const songId = (data as { id: string }).id;
 
     // アーティスト/作曲者/編曲者をartistsテーブルに挿入し、song_artist_relationsに関連付け
     const relations: Array<{ song_id: string; artist_id: string; role: 'artist' | 'composer' | 'arranger'; order_index: number }> = [];
@@ -880,7 +913,7 @@ export async function updateManualSong(songData: {
 
     type SongMasterRow = Database['public']['Tables']['song_master']['Row'];
     const updatedRow = data as SongMasterRow | null;
-    const masterRecordId = (data as any).id as string; // song_masterのUUID
+    const masterRecordId = (data as { id: string }).id; // song_masterのUUID
 
     // 既存のsong_artist_relationsを削除
     const { error: deleteError } = await supabase

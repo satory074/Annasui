@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/utils/logger';
 
 // ニコニコ動画のサムネイルを取得するプロキシAPI
 
@@ -29,7 +30,7 @@ async function fetchNiconicoThumbnail(videoId: string): Promise<{
   // 各URLを順番に試行
   for (const url of thumbnailUrls) {
     try {
-      console.log(`[Thumbnail API] Trying: ${url}`);
+      logger.debug(`[Thumbnail API] Trying: ${url}`);
       
       const response = await fetch(url, {
         method: 'GET', // 実際に画像データを取得
@@ -44,7 +45,7 @@ async function fetchNiconicoThumbnail(videoId: string): Promise<{
         // Content-Typeが画像かチェック
         if (contentType.startsWith('image/')) {
           const imageBuffer = Buffer.from(await response.arrayBuffer());
-          console.log(`[Thumbnail API] Success: ${url} (${imageBuffer.length} bytes, ${contentType})`);
+          logger.debug(`[Thumbnail API] Success: ${url} (${imageBuffer.length} bytes, ${contentType})`);
           
           return {
             success: true,
@@ -54,16 +55,16 @@ async function fetchNiconicoThumbnail(videoId: string): Promise<{
         }
       }
       
-      console.log(`[Thumbnail API] Failed (${response.status}): ${url}`);
+      logger.debug(`[Thumbnail API] Failed (${response.status}): ${url}`);
     } catch (error) {
-      console.error(`[Thumbnail API] Error with ${url}:`, error);
+      logger.error(`[Thumbnail API] Error with ${url}:`, error);
       continue;
     }
   }
   
   // すべてのURLが失敗した場合、getthumbinfo APIを試行
   try {
-    console.log(`[Thumbnail API] Trying getthumbinfo API for ${videoId}`);
+    logger.debug(`[Thumbnail API] Trying getthumbinfo API for ${videoId}`);
     
     const apiResponse = await fetch(`https://ext.nicovideo.jp/api/getthumbinfo/${videoId}`, {
       headers: {
@@ -78,7 +79,7 @@ async function fetchNiconicoThumbnail(videoId: string): Promise<{
       const thumbnailUrlMatch = xmlText.match(/<thumbnail_url[^>]*>([^<]+)<\/thumbnail_url>/);
       if (thumbnailUrlMatch) {
         const extractedUrl = thumbnailUrlMatch[1];
-        console.log(`[Thumbnail API] Extracted from XML: ${extractedUrl}`);
+        logger.debug(`[Thumbnail API] Extracted from XML: ${extractedUrl}`);
         
         // 抽出したURLから実際に画像データを取得
         try {
@@ -91,7 +92,7 @@ async function fetchNiconicoThumbnail(videoId: string): Promise<{
           if (imageResponse.ok && imageResponse.body) {
             const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
             const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-            console.log(`[Thumbnail API] Success via getthumbinfo: ${extractedUrl} (${imageBuffer.length} bytes)`);
+            logger.debug(`[Thumbnail API] Success via getthumbinfo: ${extractedUrl} (${imageBuffer.length} bytes)`);
             
             return {
               success: true,
@@ -100,12 +101,12 @@ async function fetchNiconicoThumbnail(videoId: string): Promise<{
             };
           }
         } catch (error) {
-          console.error(`[Thumbnail API] Error fetching image from XML URL: ${extractedUrl}`, error);
+          logger.error(`[Thumbnail API] Error fetching image from XML URL: ${extractedUrl}`, error);
         }
       }
     }
   } catch (error) {
-    console.error('[Thumbnail API] getthumbinfo API error:', error);
+    logger.error('[Thumbnail API] getthumbinfo API error:', error);
   }
   
   return {
@@ -132,7 +133,7 @@ export async function GET(
     // sm prefix を付与
     const formattedVideoId = videoId.startsWith('sm') ? videoId : `sm${videoId}`;
     
-    console.log(`[Thumbnail API] Fetching thumbnail for: ${formattedVideoId}`);
+    logger.debug(`[Thumbnail API] Fetching thumbnail for: ${formattedVideoId}`);
     
     // サムネイル取得を試行
     const result = await fetchNiconicoThumbnail(formattedVideoId);
@@ -154,7 +155,7 @@ export async function GET(
         },
       });
       
-      console.log(`[Thumbnail API] Streaming ${result.imageBuffer.length} bytes for ${formattedVideoId}`);
+      logger.debug(`[Thumbnail API] Streaming ${result.imageBuffer.length} bytes for ${formattedVideoId}`);
       return response;
     }
     
@@ -171,7 +172,7 @@ export async function GET(
     );
     
   } catch (error) {
-    console.error('[Thumbnail API] Unexpected error:', error);
+    logger.error('[Thumbnail API] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { 
@@ -201,7 +202,7 @@ export async function HEAD(
     // sm prefix を付与
     const formattedVideoId = videoId.startsWith('sm') ? videoId : `sm${videoId}`;
     
-    console.log(`[Thumbnail API] HEAD request for: ${formattedVideoId}`);
+    logger.debug(`[Thumbnail API] HEAD request for: ${formattedVideoId}`);
     
     // サムネイル取得を試行
     const result = await fetchNiconicoThumbnail(formattedVideoId);
@@ -225,7 +226,7 @@ export async function HEAD(
     return new NextResponse(null, { status: 404 });
     
   } catch (error) {
-    console.error('[Thumbnail API] HEAD request error:', error);
+    logger.error('[Thumbnail API] HEAD request error:', error);
     return new NextResponse(null, { status: 500 });
   }
 }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/utils/logger';
 
 // SpotifyのサムネイルをoEmbed APIから取得するプロキシAPI
 
@@ -12,7 +13,7 @@ async function fetchSpotifyThumbnail(trackId: string): Promise<{
   error?: string;
 }> {
   try {
-    console.log(`[Spotify Thumbnail API] Fetching thumbnail for track: ${trackId}`);
+    logger.debug(`[Spotify Thumbnail API] Fetching thumbnail for track: ${trackId}`);
 
     // Spotify oEmbed APIからサムネイルURLを取得
     const oEmbedUrl = `https://embed.spotify.com/oembed/?url=spotify:track:${trackId}`;
@@ -23,7 +24,7 @@ async function fetchSpotifyThumbnail(trackId: string): Promise<{
     });
 
     if (!oEmbedResponse.ok) {
-      console.log(`[Spotify Thumbnail API] oEmbed API failed (${oEmbedResponse.status})`);
+      logger.debug(`[Spotify Thumbnail API] oEmbed API failed (${oEmbedResponse.status})`);
       return {
         success: false,
         error: `oEmbed API returned ${oEmbedResponse.status}`,
@@ -34,14 +35,14 @@ async function fetchSpotifyThumbnail(trackId: string): Promise<{
     const thumbnailUrl = oEmbedData.thumbnail_url;
 
     if (!thumbnailUrl) {
-      console.log('[Spotify Thumbnail API] No thumbnail_url in oEmbed response');
+      logger.debug('[Spotify Thumbnail API] No thumbnail_url in oEmbed response');
       return {
         success: false,
         error: 'No thumbnail_url found in oEmbed response',
       };
     }
 
-    console.log(`[Spotify Thumbnail API] Found thumbnail URL: ${thumbnailUrl}`);
+    logger.debug(`[Spotify Thumbnail API] Found thumbnail URL: ${thumbnailUrl}`);
 
     // サムネイル画像の実データを取得
     const imageResponse = await fetch(thumbnailUrl, {
@@ -51,7 +52,7 @@ async function fetchSpotifyThumbnail(trackId: string): Promise<{
     });
 
     if (!imageResponse.ok || !imageResponse.body) {
-      console.log(`[Spotify Thumbnail API] Image fetch failed (${imageResponse.status})`);
+      logger.debug(`[Spotify Thumbnail API] Image fetch failed (${imageResponse.status})`);
       return {
         success: false,
         error: `Image fetch returned ${imageResponse.status}`,
@@ -62,7 +63,7 @@ async function fetchSpotifyThumbnail(trackId: string): Promise<{
 
     // Content-Typeが画像かチェック
     if (!contentType.startsWith('image/')) {
-      console.log(`[Spotify Thumbnail API] Invalid content type: ${contentType}`);
+      logger.debug(`[Spotify Thumbnail API] Invalid content type: ${contentType}`);
       return {
         success: false,
         error: `Invalid content type: ${contentType}`,
@@ -70,7 +71,7 @@ async function fetchSpotifyThumbnail(trackId: string): Promise<{
     }
 
     const imageBuffer = Buffer.from(await imageResponse.arrayBuffer());
-    console.log(`[Spotify Thumbnail API] Success: ${imageBuffer.length} bytes, ${contentType}`);
+    logger.debug(`[Spotify Thumbnail API] Success: ${imageBuffer.length} bytes, ${contentType}`);
 
     return {
       success: true,
@@ -79,7 +80,7 @@ async function fetchSpotifyThumbnail(trackId: string): Promise<{
     };
 
   } catch (error) {
-    console.error('[Spotify Thumbnail API] Unexpected error:', error);
+    logger.error('[Spotify Thumbnail API] Unexpected error:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -102,7 +103,7 @@ export async function GET(
       );
     }
 
-    console.log(`[Spotify Thumbnail API] GET request for: ${trackId}`);
+    logger.debug(`[Spotify Thumbnail API] GET request for: ${trackId}`);
 
     // サムネイル取得を試行
     const result = await fetchSpotifyThumbnail(trackId);
@@ -124,7 +125,7 @@ export async function GET(
         },
       });
 
-      console.log(`[Spotify Thumbnail API] Streaming ${result.imageBuffer.length} bytes for ${trackId}`);
+      logger.debug(`[Spotify Thumbnail API] Streaming ${result.imageBuffer.length} bytes for ${trackId}`);
       return response;
     }
 
@@ -141,7 +142,7 @@ export async function GET(
     );
 
   } catch (error) {
-    console.error('[Spotify Thumbnail API] Unexpected error:', error);
+    logger.error('[Spotify Thumbnail API] Unexpected error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       {
@@ -168,7 +169,7 @@ export async function HEAD(
       return new NextResponse(null, { status: 400 });
     }
 
-    console.log(`[Spotify Thumbnail API] HEAD request for: ${trackId}`);
+    logger.debug(`[Spotify Thumbnail API] HEAD request for: ${trackId}`);
 
     // サムネイル取得を試行
     const result = await fetchSpotifyThumbnail(trackId);
@@ -192,7 +193,7 @@ export async function HEAD(
     return new NextResponse(null, { status: 404 });
 
   } catch (error) {
-    console.error('[Spotify Thumbnail API] HEAD request error:', error);
+    logger.error('[Spotify Thumbnail API] HEAD request error:', error);
     return new NextResponse(null, { status: 500 });
   }
 }

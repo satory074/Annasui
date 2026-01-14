@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next'
 import { getAllMedleys } from '@/lib/api/medleys'
+import { logger } from '@/lib/utils/logger'
 
 const BASE_URL = 'https://anasui-e6f49.web.app'
 
@@ -57,7 +58,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return [...staticPages, ...medleyPages]
   } catch (error) {
-    console.error('Error generating sitemap:', error)
+    logger.error('Error generating sitemap:', error)
     return staticPages
   }
 }

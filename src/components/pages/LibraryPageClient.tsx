@@ -2,16 +2,18 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSongDatabase, SongDatabaseEntry, deleteManualSong } from "@/lib/utils/songDatabase";
+import { getSongDatabase, SongDatabaseEntry, deleteManualSong, findDuplicateGroups, DatabaseDuplicateGroup } from "@/lib/utils/songDatabase";
 import { useSongSearch } from "@/hooks/useSongSearch";
 import { logger } from "@/lib/utils/logger";
 import AppHeader from "@/components/layout/AppHeader";
 import LoginModal from "@/components/features/auth/LoginModal";
 import SongDatabaseEditModal from "@/components/features/library/SongDatabaseEditModal";
+import DuplicateGroupCard from "@/components/features/library/DuplicateGroupCard";
 import Image from "next/image";
 
 type SortField = "title" | "artist" | "updatedAt" | "createdAt";
 type SortOrder = "asc" | "desc";
+type TabType = "songs" | "duplicates";
 
 export default function LibraryPageClient() {
   const { isAuthenticated, loading } = useAuth();
@@ -25,6 +27,11 @@ export default function LibraryPageClient() {
   const [selectedSong, setSelectedSong] = useState<SongDatabaseEntry | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const ITEMS_PER_PAGE = 20;
+
+  // タブ管理
+  const [activeTab, setActiveTab] = useState<TabType>("songs");
+  const [duplicateGroups, setDuplicateGroups] = useState<DatabaseDuplicateGroup[]>([]);
+  const [isLoadingDuplicates, setIsLoadingDuplicates] = useState(false);
 
   // Load song database
   useEffect(() => {
@@ -48,6 +55,35 @@ export default function LibraryPageClient() {
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
+
+  // Load duplicate groups when tab changes
+  useEffect(() => {
+    const loadDuplicates = async () => {
+      if (activeTab !== "duplicates") return;
+
+      setIsLoadingDuplicates(true);
+      try {
+        const groups = await findDuplicateGroups();
+        setDuplicateGroups(groups);
+        logger.info('Duplicate groups loaded', { count: groups.length });
+      } catch (error) {
+        logger.error('Failed to load duplicate groups', error);
+      } finally {
+        setIsLoadingDuplicates(false);
+      }
+    };
+
+    loadDuplicates();
+  }, [activeTab]);
+
+  // Refresh duplicate groups after merge
+  const handleMergeComplete = async () => {
+    const db = await getSongDatabase();
+    setSongDatabase(db);
+    const groups = await findDuplicateGroups();
+    setDuplicateGroups(groups);
+    logger.info('Data refreshed after merge');
+  };
 
   // Search and pagination using the extracted hook
   const { searchResults, totalPages, paginatedResults } = useSongSearch({
@@ -194,33 +230,99 @@ export default function LibraryPageClient() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">楽曲ライブラリ</h1>
             <p className="text-gray-600">
               登録されている楽曲: {songDatabase.length}曲
-              {searchTerm && ` / 検索結果: ${searchResults.length}曲`}
+              {activeTab === "songs" && searchTerm && ` / 検索結果: ${searchResults.length}曲`}
+              {activeTab === "duplicates" && duplicateGroups.length > 0 && ` / 重複候補: ${duplicateGroups.length}グループ`}
             </p>
           </div>
 
-          {/* Search Bar */}
-          <div className="mb-6">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="楽曲名、アーティスト名で検索..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          {/* Tabs */}
+          <div className="mb-6 border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab("songs")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === "songs"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                楽曲一覧
+              </button>
+              <button
+                onClick={() => setActiveTab("duplicates")}
+                className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === "duplicates"
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                }`}
+              >
+                重複管理
+                {duplicateGroups.length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs">
+                    {duplicateGroups.length}
+                  </span>
+                )}
+              </button>
+            </nav>
           </div>
 
-          {/* Table */}
-          {isLoading ? (
-            <div className="text-center py-12 text-gray-600">
-              読み込み中...
+          {/* Search Bar (only for songs tab) */}
+          {activeTab === "songs" && (
+            <div className="mb-6">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="楽曲名、アーティスト名で検索..."
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
             </div>
-          ) : sortedResults.length === 0 ? (
-            <div className="text-center py-12 text-gray-600">
-              {searchTerm ? '該当する楽曲が見つかりませんでした。' : '楽曲が登録されていません。'}
-            </div>
+          )}
+
+          {/* Content based on active tab */}
+          {activeTab === "duplicates" ? (
+            // Duplicates Tab
+            isLoadingDuplicates ? (
+              <div className="text-center py-12 text-gray-600">
+                重複を検索中...
+              </div>
+            ) : duplicateGroups.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="text-gray-600 mb-2">重複の可能性がある楽曲は見つかりませんでした。</div>
+                <p className="text-sm text-gray-500">
+                  楽曲名の表記揺れ（カタカナ/ひらがな、全角/半角など）がある場合に検出されます。
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    <strong>重複管理について:</strong> 表記揺れにより同じ楽曲が複数登録されている可能性があります。
+                    マスターとなる楽曲を選択し、「マージ実行」をクリックすると、他の楽曲の参照がマスターに統合されます。
+                  </p>
+                </div>
+                {duplicateGroups.map((group, index) => (
+                  <DuplicateGroupCard
+                    key={`${group.primarySong.id}-${index}`}
+                    group={group}
+                    onMergeComplete={handleMergeComplete}
+                  />
+                ))}
+              </div>
+            )
           ) : (
-            <>
-              <div className="bg-white rounded-lg shadow overflow-hidden">
+            // Songs Tab (Table)
+            isLoading ? (
+              <div className="text-center py-12 text-gray-600">
+                読み込み中...
+              </div>
+            ) : sortedResults.length === 0 ? (
+              <div className="text-center py-12 text-gray-600">
+                {searchTerm ? '該当する楽曲が見つかりませんでした。' : '楽曲が登録されていません。'}
+              </div>
+            ) : (
+              <>
+                <div className="bg-white rounded-lg shadow overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -417,7 +519,8 @@ export default function LibraryPageClient() {
                 </div>
               )}
             </>
-          )}
+          )
+        )}
         </div>
       </div>
 

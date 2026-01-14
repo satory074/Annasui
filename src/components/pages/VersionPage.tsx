@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import AppHeader from "@/components/layout/AppHeader";
+import { logger } from '@/lib/utils/logger';
 
 interface PackageJson {
   version: string;
@@ -61,7 +62,7 @@ export default function VersionPage() {
         setChangelogContent(changelogContent.trim());
 
       } catch (error) {
-        console.error('バージョン情報の取得に失敗しました:', error);
+        logger.error('バージョン情報の取得に失敗しました:', error);
       } finally {
         setLoading(false);
       }

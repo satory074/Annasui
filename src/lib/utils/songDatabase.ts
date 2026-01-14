@@ -5,7 +5,8 @@ import { logger } from "./logger";
 
 // 楽曲DBエントリの型定義
 export interface SongDatabaseEntry {
-  id: string; // 楽曲名_アーティスト名をベースにした一意ID
+  id: string;        // song_master.id (UUID) - プライマリキー
+  dedupKey: string;  // 重複検出用キー（旧normalized_id）- タイトル_アーティスト名から生成
   title: string;
   artist: Array<{ id: string; name: string }>; // アーティスト（複数可）
   composers: Array<{ id: string; name: string }>; // 作曲者（複数可）
@@ -106,16 +107,17 @@ export function normalizeSongInfo(title: string, artist: string): string {
 export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
   const allMedleys: MedleyData[] = await getAllMedleys();
 
+  // dedupKeyをキーとしたMap（重複検出用）
   const songMap = new Map<string, SongDatabaseEntry>();
 
-  // 全メドレーから楽曲を収集
+  // 全メドレーから楽曲を収集（この時点ではidは仮のもの）
   allMedleys.forEach(medley => {
     medley.songs.forEach(song => {
-      const normalizedId = normalizeSongInfo(song.title, song.artist.join(", "));
+      const dedupKey = normalizeSongInfo(song.title, song.artist.join(", "));
 
-      if (songMap.has(normalizedId)) {
+      if (songMap.has(dedupKey)) {
         // 既存の楽曲エントリを更新
-        const existingEntry = songMap.get(normalizedId)!;
+        const existingEntry = songMap.get(dedupKey)!;
         existingEntry.usageCount++;
         existingEntry.medleys.push({
           medleyTitle: medley.title,
@@ -137,9 +139,10 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
           existingEntry.applemusicLink = song.applemusicLink;
         }
       } else {
-        // 新しい楽曲エントリを作成
-        songMap.set(normalizedId, {
-          id: normalizedId,
+        // 新しい楽曲エントリを作成（メドレーのみの楽曲はid=dedupKeyを仮設定）
+        songMap.set(dedupKey, {
+          id: dedupKey,  // 仮ID（後でsong_masterのUUIDで上書きされる可能性あり）
+          dedupKey,      // 重複検出用キー
           title: song.title,
           artist: song.artist.map(a => ({ id: '', name: a })), // 配列に変換
           composers: song.composers ? song.composers.map(c => ({ id: '', name: c })) : [],
@@ -221,7 +224,8 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
         }
 
         (manualSongs as SongDataRow[]).forEach((song) => {
-          const normalizedId = song.normalized_id;
+          const songUuid = song.id;  // song_master.id (UUID)
+          const dedupKey = song.normalized_id;  // 重複検出用キー
           const manualTitle = song.title;
           const manualNiconico = song.niconico_link || undefined;
           const manualYoutube = song.youtube_link || undefined;
@@ -246,10 +250,12 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
           // アーティストが空の場合はデフォルト値を使用
           const finalArtists = artists.length > 0 ? artists : [{ id: '', name: DEFAULT_ARTIST }];
 
-          if (songMap.has(normalizedId)) {
-            const existingEntry = songMap.get(normalizedId)!;
+          if (songMap.has(dedupKey)) {
+            const existingEntry = songMap.get(dedupKey)!;
 
-            // 手動登録のメタデータを優先して反映（リンクの追加・更新もここで行う）
+            // song_masterのUUIDでidを上書き（メドレーのみの楽曲を正式なIDに更新）
+            existingEntry.id = songUuid;
+            // 手動登録のメタデータを優先して反映
             existingEntry.title = manualTitle;
             existingEntry.artist = finalArtists;
             existingEntry.composers = composers;
@@ -263,8 +269,10 @@ export async function buildSongDatabase(): Promise<SongDatabaseEntry[]> {
             return;
           }
 
-          songMap.set(normalizedId, {
-            id: normalizedId,
+          // song_masterのみに存在する楽曲（メドレーで未使用）
+          songMap.set(dedupKey, {
+            id: songUuid,  // song_master.id (UUID)
+            dedupKey,      // 重複検出用キー
             title: manualTitle,
             artist: finalArtists,
             composers,
@@ -523,7 +531,11 @@ export function createSongFromDatabase(
   startTime: number = 0,
   endTime: number = 0
 ): Omit<SongSection, 'id'> {
+  // UUIDかどうかを判定（仮IDの場合はsongIdを設定しない）
+  const isUuid = dbEntry.id.includes('-') && dbEntry.id.length === 36;
+
   return {
+    songId: isUuid ? dbEntry.id : undefined, // song_master.id (UUID) への参照
     title: dbEntry.title,
     artist: dbEntry.artist.map(a => a.name), // Array<{id, name}> → string[]
     composers: dbEntry.composers.length > 0 ? dbEntry.composers.map(c => c.name) : undefined,
@@ -641,11 +653,11 @@ export async function addManualSong(songData: {
   // アーティスト名が空の場合はデフォルト値を使用
   const artistNames = songData.artist && songData.artist.length > 0 ? songData.artist : [DEFAULT_ARTIST];
   const effectiveArtist = artistNames[0]; // 下位互換性のため最初のアーティストをsong_master.artistに保存
-  const normalizedId = normalizeSongInfo(songData.title, effectiveArtist);
+  const dedupKey = normalizeSongInfo(songData.title, effectiveArtist);
 
-  // 既存のデータベースで重複チェック
+  // 既存のデータベースで重複チェック（dedupKeyで比較）
   const database = await getSongDatabase();
-  const existingDbSong = database.find(song => song.id === normalizedId);
+  const existingDbSong = database.find(song => song.dedupKey === dedupKey);
   if (existingDbSong) {
     logger.info('Song already exists in database:', existingDbSong);
     return existingDbSong;
@@ -668,7 +680,7 @@ export async function addManualSong(songData: {
         youtube_link: songData.youtubeLink || null,
         spotify_link: songData.spotifyLink || null,
         applemusic_link: songData.applemusicLink || null,
-        normalized_id: normalizedId
+        normalized_id: dedupKey
       })
       .select()
       .single();
@@ -747,7 +759,8 @@ export async function addManualSong(songData: {
     clearSongDatabaseCache();
 
     const newSong: SongDatabaseEntry = {
-      id: normalizedId,
+      id: songId,    // song_master.id (UUID)
+      dedupKey,      // 重複検出用キー
       title: songData.title,
       artist: artistNames.map(a => ({ id: '', name: a })), // 配列に変換
       composers: songData.composers ? songData.composers.map(c => ({ id: '', name: c })) : [],
@@ -769,7 +782,7 @@ export async function addManualSong(songData: {
 
 // 手動で追加した楽曲を更新
 export async function updateManualSong(songData: {
-  id: string;
+  id: string;  // song_master.id (UUID) または dedupKey（後方互換性）
   title: string;
   artist: string[]; // アーティスト名の配列
   composers?: string[]; // 作曲者名の配列
@@ -789,18 +802,25 @@ export async function updateManualSong(songData: {
   const artistNames = songData.artist && songData.artist.length > 0 ? songData.artist : [DEFAULT_ARTIST];
   const effectiveArtist = artistNames[0]; // 下位互換性のため最初のアーティストをsong_master.artistに保存
 
-  // normalized_idを再生成（songData.idがnormalized_idの場合はそのまま使用、そうでなければ生成）
-  const normalizedId = songData.id.includes('_')
-    ? songData.id
-    : normalizeSongInfo(songData.title, effectiveArtist);
+  // dedupKeyを生成
+  const dedupKey = normalizeSongInfo(songData.title, effectiveArtist);
+
+  // songData.idがUUIDかdedupKeyかを判定（UUIDはハイフンを含む）
+  const isUuid = songData.id.includes('-') && songData.id.length === 36;
 
   try {
-    // まず既存レコードを検索
-    const { data: existingRecord, error: selectError } = await supabase
-      .from('song_master')
-      .select('id, normalized_id')
-      .eq('normalized_id', normalizedId)
-      .maybeSingle();
+    // 既存レコードを検索（UUIDならidで、そうでなければnormalized_idで検索）
+    const { data: existingRecord, error: selectError } = isUuid
+      ? await supabase
+          .from('song_master')
+          .select('id, normalized_id')
+          .eq('id', songData.id)
+          .maybeSingle()
+      : await supabase
+          .from('song_master')
+          .select('id, normalized_id')
+          .eq('normalized_id', songData.id)
+          .maybeSingle();
 
     if (selectError) {
       logger.error('Failed to check existing song_master record:', selectError);
@@ -815,7 +835,7 @@ export async function updateManualSong(songData: {
 
     if (existingId) {
       // レコードが存在する場合は更新
-      logger.info('Updating existing song_master record:', { normalizedId, existingId });
+      logger.info('Updating existing song_master record:', { dedupKey, existingId });
       const result = await supabase
         .from('song_master')
         .update({
@@ -833,13 +853,13 @@ export async function updateManualSong(songData: {
       error = result.error;
     } else {
       // レコードが存在しない場合は新規作成
-      logger.info('Creating new song_master record:', { normalizedId, title: songData.title });
+      logger.info('Creating new song_master record:', { dedupKey, title: songData.title });
       const result = await supabase
         .from('song_master')
         .insert({
           title: songData.title,
           artist: effectiveArtist,
-          normalized_id: normalizedId,
+          normalized_id: dedupKey,
           niconico_link: songData.niconicoLink || null,
           youtube_link: songData.youtubeLink || null,
           spotify_link: songData.spotifyLink || null,
@@ -959,7 +979,8 @@ export async function updateManualSong(songData: {
     clearSongDatabaseCache();
 
     const updatedSong: SongDatabaseEntry = {
-      id: songData.id,
+      id: masterRecordId,  // song_master.id (UUID)
+      dedupKey,            // 重複検出用キー
       title: updatedRow?.title ?? songData.title,
       artist: artistNames.map(a => ({ id: '', name: a })), // 配列に変換
       composers: songData.composers ? songData.composers.map(c => ({ id: '', name: c })) : [],
@@ -1044,4 +1065,295 @@ export async function deleteManualSong(songId: string): Promise<void> {
 // キャッシュをクリア（開発用）
 export function clearSongDatabaseCache(): void {
   cachedSongDatabase = null;
+}
+
+// =============================================================================
+// 類似楽曲検索・重複検出機能
+// =============================================================================
+
+// 類似楽曲検索結果の型
+export interface SimilarSongResult {
+  song: SongDatabaseEntry;
+  similarity: number; // 0-100
+  matchReason: 'exact_normalized_id' | 'title_match' | 'fuzzy_match';
+}
+
+// 文字の一致率に基づく類似度計算（簡易版）
+function calculateFuzzyScore(str1: string, str2: string): number {
+  const chars1 = str1.split('');
+  const chars2Set = new Set(str2.split(''));
+  const matchCount = chars1.filter(c => chars2Set.has(c)).length;
+  const maxLength = Math.max(str1.length, str2.length);
+  if (maxLength === 0) return 100;
+  return Math.round((matchCount / maxLength) * 100);
+}
+
+/**
+ * song_masterテーブルから類似楽曲を検索
+ * @param title 検索する楽曲タイトル
+ * @param artist 検索するアーティスト名
+ * @returns 類似楽曲の配列（類似度スコア付き）
+ */
+export async function findSimilarSongsInDatabase(
+  title: string,
+  artist: string
+): Promise<SimilarSongResult[]> {
+  const searchDedupKey = normalizeSongInfo(title, artist);
+  const database = await getSongDatabase();
+
+  const results: SimilarSongResult[] = [];
+
+  for (const song of database) {
+    // 1. dedupKey 完全一致
+    if (song.dedupKey === searchDedupKey) {
+      results.push({
+        song,
+        similarity: 100,
+        matchReason: 'exact_normalized_id'
+      });
+      continue;
+    }
+
+    // 2. タイトルのみ一致（アーティスト違い）
+    const searchTitleNorm = searchDedupKey.split('_')[0];
+    const songTitleNorm = song.dedupKey.split('_')[0];
+    if (searchTitleNorm === songTitleNorm && searchTitleNorm.length > 0) {
+      results.push({
+        song,
+        similarity: 80,
+        matchReason: 'title_match'
+      });
+      continue;
+    }
+
+    // 3. あいまい一致（文字の一致率）- タイトル部分のみで比較
+    if (searchTitleNorm.length >= 2) {
+      const fuzzyScore = calculateFuzzyScore(searchTitleNorm, songTitleNorm);
+      if (fuzzyScore >= 70) {
+        results.push({
+          song,
+          similarity: fuzzyScore,
+          matchReason: 'fuzzy_match'
+        });
+      }
+    }
+  }
+
+  return results.sort((a, b) => b.similarity - a.similarity);
+}
+
+// 重複グループの型（ライブラリページ用）
+export interface DatabaseDuplicateGroup {
+  primarySong: SongDatabaseEntry;
+  duplicates: SongDatabaseEntry[];
+  similarity: number;
+  reason: string;
+}
+
+// レーベンシュタイン距離による文字列類似度計算
+function calculateStringSimilarity(str1: string, str2: string): number {
+  const len1 = str1.length;
+  const len2 = str2.length;
+  const maxLen = Math.max(len1, len2);
+  if (maxLen === 0) return 1;
+
+  const matrix: number[][] = [];
+  for (let i = 0; i <= len1; i++) matrix[i] = [i];
+  for (let j = 0; j <= len2; j++) matrix[0][j] = j;
+
+  for (let i = 1; i <= len1; i++) {
+    for (let j = 1; j <= len2; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+
+  return 1 - matrix[len1][len2] / maxLen;
+}
+
+/**
+ * データベース内の重複楽曲グループを検出
+ * dedupKeyを使用して類似度を判定し、idはUUIDとして処理済みセットに使用
+ */
+export async function findDuplicateGroups(): Promise<DatabaseDuplicateGroup[]> {
+  const database = await getSongDatabase();
+  const groups: DatabaseDuplicateGroup[] = [];
+  const processedIds = new Set<string>();
+
+  for (const song of database) {
+    if (processedIds.has(song.id)) continue;
+
+    const similarSongs = database.filter(other => {
+      if (other.id === song.id) return false;
+      if (processedIds.has(other.id)) return false;
+
+      // dedupKeyを使ってタイトル部分を抽出して比較
+      const songTitleNorm = song.dedupKey.split('_')[0];
+      const otherTitleNorm = other.dedupKey.split('_')[0];
+
+      // レーベンシュタイン距離で類似度判定
+      const similarity = calculateStringSimilarity(songTitleNorm, otherTitleNorm);
+      return similarity > 0.8;
+    });
+
+    if (similarSongs.length > 0) {
+      const allSongs = [song, ...similarSongs].sort((a, b) => b.usageCount - a.usageCount);
+
+      groups.push({
+        primarySong: allSongs[0],
+        duplicates: allSongs.slice(1),
+        similarity: 85,
+        reason: 'タイトルの表記揺れ'
+      });
+
+      // UUIDを処理済みセットに追加
+      allSongs.forEach(s => processedIds.add(s.id));
+    }
+  }
+
+  return groups;
+}
+
+/**
+ * 重複楽曲をマージ
+ * UUIDまたはdedupKeyの両方に対応
+ * メドレーからのみ抽出された楽曲（song_masterに未登録）も処理可能
+ *
+ * @param targetId マージ先のID（UUIDまたはdedupKey）
+ * @param sourceIds マージ元のID配列（UUIDまたはdedupKey）
+ */
+export async function mergeDuplicateSongs(
+  targetId: string,
+  sourceIds: string[]
+): Promise<{ success: boolean; updatedCount: number; deletedCount: number }> {
+  if (!supabase) throw new Error('Supabase client is not initialized');
+
+  let updatedCount = 0;
+  let deletedCount = 0;
+
+  // UUIDかどうかを判定するヘルパー
+  const isUuid = (id: string) => id.includes('-') && id.length === 36;
+
+  // SongDatabaseを取得（song_master未登録楽曲の情報取得用）
+  const database = await getSongDatabase();
+
+  // target の UUID を取得（存在しない場合は作成）
+  let targetUuid: string;
+
+  if (isUuid(targetId)) {
+    // UUIDの場合はそのまま使用
+    targetUuid = targetId;
+  } else {
+    // dedupKeyの場合はnormalized_idで検索
+    const { data: targetData, error: targetError } = await supabase
+      .from('song_master')
+      .select('id')
+      .eq('normalized_id', targetId)
+      .maybeSingle();
+
+    if (targetError) {
+      logger.error('Error querying target song:', targetError);
+      throw new Error(`Failed to query target song: ${targetId}`);
+    }
+
+    if (!targetData) {
+      // song_masterに存在しない場合、SongDatabaseEntryから情報を取得して作成
+      const targetEntry = database.find(s => s.dedupKey === targetId || s.id === targetId);
+      if (!targetEntry) {
+        throw new Error(`Target song not found in database: ${targetId}`);
+      }
+
+      const { data: newTarget, error: insertError } = await supabase
+        .from('song_master')
+        .insert({
+          title: targetEntry.title,
+          artist: targetEntry.artist[0]?.name || 'Unknown Artist',
+          normalized_id: targetEntry.dedupKey,
+          niconico_link: targetEntry.niconicoLink || null,
+          youtube_link: targetEntry.youtubeLink || null,
+          spotify_link: targetEntry.spotifyLink || null,
+          applemusic_link: targetEntry.applemusicLink || null
+        })
+        .select('id')
+        .single();
+
+      if (insertError || !newTarget) {
+        logger.error('Failed to create target song in song_master:', insertError);
+        throw new Error(`Failed to create target song: ${targetId}`);
+      }
+      targetUuid = (newTarget as { id: string }).id;
+      logger.info('Created target song in song_master:', { targetId, targetUuid });
+    } else {
+      targetUuid = (targetData as { id: string }).id;
+    }
+  }
+
+  for (const sourceId of sourceIds) {
+    let sourceUuid: string | null = null;
+
+    if (isUuid(sourceId)) {
+      // UUIDの場合はそのまま使用
+      sourceUuid = sourceId;
+    } else {
+      // dedupKeyの場合はnormalized_idで検索
+      const { data: sourceData, error: sourceError } = await supabase
+        .from('song_master')
+        .select('id')
+        .eq('normalized_id', sourceId)
+        .maybeSingle();
+
+      if (sourceError) {
+        logger.error('Error querying source song:', { sourceId, error: sourceError });
+        continue;
+      }
+
+      if (!sourceData) {
+        // song_masterに存在しない楽曲は、medley_songsにも参照がないのでスキップ
+        logger.info('Source song not in song_master (medley-only), skipping:', { sourceId });
+        // ただし、重複としてカウントはする（UIから消えるように）
+        updatedCount++;
+        continue;
+      }
+      sourceUuid = (sourceData as { id: string }).id;
+    }
+
+    if (!sourceUuid || sourceUuid === targetUuid) {
+      // 同じUUIDの場合はスキップ
+      continue;
+    }
+
+    // medley_songs の song_id を更新
+    const { error: updateError } = await supabase
+      .from('medley_songs')
+      .update({ song_id: targetUuid })
+      .eq('song_id', sourceUuid);
+
+    if (updateError) {
+      logger.error('Failed to update medley_songs:', updateError);
+      continue;
+    }
+
+    updatedCount++;
+
+    // source の song_master を削除
+    const { error: deleteError } = await supabase
+      .from('song_master')
+      .delete()
+      .eq('id', sourceUuid);
+
+    if (deleteError) {
+      logger.error('Failed to delete source song:', deleteError);
+      continue;
+    }
+
+    deletedCount++;
+    logger.info('Merged song:', { sourceId, targetId });
+  }
+
+  clearSongDatabaseCache();
+  return { success: true, updatedCount, deletedCount };
 }

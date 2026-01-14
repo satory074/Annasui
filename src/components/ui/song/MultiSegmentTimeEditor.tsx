@@ -87,7 +87,7 @@ function SegmentList({
                     onChange={(e) => onSetTempTimeValue(e.target.value)}
                     onBlur={onFinishEditing}
                     onKeyDown={handleKeyDown}
-                    className={`w-20 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
+                    className={`w-24 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
                       segmentErrors.startTime ? 'border-red-500' : 'border-gray-300'
                     } bg-white text-gray-900`}
                     autoFocus
@@ -114,7 +114,7 @@ function SegmentList({
                     onChange={(e) => onSetTempTimeValue(e.target.value)}
                     onBlur={onFinishEditing}
                     onKeyDown={handleKeyDown}
-                    className={`w-20 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
+                    className={`w-24 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
                       segmentErrors.endTime ? 'border-red-500' : 'border-gray-300'
                     } bg-white text-gray-900`}
                     autoFocus

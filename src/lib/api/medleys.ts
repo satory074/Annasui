@@ -57,6 +57,7 @@ function convertDbRowToSongSection(song: SongRow): SongSection {
 
   return {
     id: song.order_index, // Use order_index as the legacy id field
+    songId: song.song_id || undefined, // song_master.id (UUID) への参照
     title: song.title,
     artist: artistArray.length > 0 ? artistArray : ['Unknown Artist'],
     composers: composersArray.length > 0 ? composersArray : undefined,
@@ -602,18 +603,33 @@ export async function saveMedleySongs(
     if (songs.length > 0) {
       logger.info(`📝 [${callId}] Preparing to INSERT ${songs.length} songs`);
 
-      // Look up song_master IDs for songs
-      const songIdMap = await lookupSongIds(songs.map(s => ({ title: s.title, artist: Array.isArray(s.artist) ? s.artist.join(", ") : (s.artist || '') })));
+      // Filter songs that don't have songId for lookup
+      const songsNeedingLookup = songs.filter(s => !s.songId).map(s => ({
+        title: s.title,
+        artist: Array.isArray(s.artist) ? s.artist.join(", ") : (s.artist || '')
+      }));
+
+      // Look up song_master IDs only for songs that don't already have songId
+      const songIdMap = songsNeedingLookup.length > 0
+        ? await lookupSongIds(songsNeedingLookup)
+        : new Map<string, string>();
 
       const songsToInsert = songs.map((song, index) => {
         const artistStr = Array.isArray(song.artist) ? song.artist.join(", ") : (song.artist || '');
         const composersStr = song.composers && song.composers.length > 0 ? song.composers.join(", ") : null;
         const arrangersStr = song.arrangers && song.arrangers.length > 0 ? song.arrangers.join(", ") : null;
-        const normalizedId = normalizeSongInfo(song.title, artistStr);
-        const songId = songIdMap.get(normalizedId) || null;
 
-        if (songId) {
-          logger.debug(`🔗 [${callId}] Linking song "${song.title}" to song_master: ${songId}`);
+        // Use existing songId if available, otherwise lookup by normalized_id
+        let songId: string | null = null;
+        if (song.songId) {
+          songId = song.songId;
+          logger.debug(`🔗 [${callId}] Using existing songId for "${song.title}": ${songId}`);
+        } else {
+          const normalizedId = normalizeSongInfo(song.title, artistStr);
+          songId = songIdMap.get(normalizedId) || null;
+          if (songId) {
+            logger.debug(`🔗 [${callId}] Linked song "${song.title}" to song_master via lookup: ${songId}`);
+          }
         }
 
         return {

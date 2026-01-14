@@ -1,6 +1,7 @@
 // 楽曲セクションのデータモデル
 export type SongSection = {
-  id: number;
+  id: number;              // タイムラインUI用の位置ID（order_indexから派生）
+  songId?: string;         // song_master.id (UUID) への参照（永続化用）
   title: string;           // 曲名
   artist: string[];        // アーティスト名（複数可）
   composers?: string[];    // 作曲者（複数可、カンマ区切りで表示）

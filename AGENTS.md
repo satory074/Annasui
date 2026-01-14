@@ -319,6 +319,15 @@ useEffect(() => {
   - Position switching (left/right) based on player visibility
   - Only visible when RightSidebar is hidden (responsive design)
 
+### Time Utilities (`src/lib/utils/time.ts`)
+- **Decimal time support**: All time values support 0.1 second precision
+- **Input format**: `"1:30.5"` parses to `90.5` seconds (uses `parseFloat`)
+- **Display format**: Shows decimal only when present (`1:30` vs `1:30.5`)
+- **Functions**:
+  - `parseTimeInput(str)`: Converts `"M:SS.s"` string to seconds (number)
+  - `formatTimeSimple(time)`: Converts seconds to `"M:SS"` or `"M:SS.s"` string
+  - `formatTime(time)`: Same with zero-padded minutes (`"MM:SS"`)
+
 ### Keyboard Shortcuts
 - **Spacebar**: Play/pause (global, disabled in inputs/modals)
 - **S/E/M keys**: Start/End time, Add song (edit mode only)
@@ -562,7 +571,8 @@ Run this migration in Supabase Dashboard to set up the database from scratch:
   1. Create corresponding `song_master` record first
   2. Set `medley_songs.song_id` to link them
   3. Without this link, library page editing will fail (see `updateManualSong()` upsert pattern)
-- `start_time`, `end_time`, `order_index` - Timeline placement
+- `start_time`, `end_time` (REAL) - Timeline placement with 0.1 second precision (e.g., `30.5` for 30.5 seconds)
+- `order_index` - Order within medley
 - `title`, `artist`, `color` - Cached display data
 - Platform-specific links (all TEXT, NULL allowed):
   - `niconico_link`, `youtube_link`, `spotify_link`, `applemusic_link`
@@ -583,7 +593,8 @@ Run this migration in Supabase Dashboard to set up the database from scratch:
 - Migration 015 rebuilt database with ideal structure (4 tables)
 - Migration 016 made artist field optional in song_master
 - Migration 017 replaced JSONB `links` with platform-specific columns (`niconico_link`, `youtube_link`, `spotify_link`, `applemusic_link`)
-- Current system: Single shared password + user-provided nicknames + platform-specific links
+- Migration 022 added decimal time support (`start_time`/`end_time` changed from INTEGER to REAL for 0.1s precision)
+- Current system: Single shared password + user-provided nicknames + platform-specific links + decimal time support
 
 ### Manual Song Registration
 - See [docs/MEDLEY_REGISTRATION_GUIDE.md](docs/MEDLEY_REGISTRATION_GUIDE.md) for medley song metadata registration procedures (database direct registration)

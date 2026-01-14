@@ -297,7 +297,7 @@ export function usePlayerPosition(
     // プロダクション環境でも位置情報をコンソールに出力（右下固定ベース）
     
     // プロダクション環境専用デバッグ出力（logger.debugは本番で出力されないため）
-    console.log('🎯 Player Position Debug (Dynamic Mouse Avoidance):', {
+    logger.debug('🎯 Player Position Debug (Dynamic Mouse Avoidance):', {
       isVisible,
       isInUpperArea,
       collisionDetection: {

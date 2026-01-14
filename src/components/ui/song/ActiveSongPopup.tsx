@@ -8,7 +8,7 @@ import { usePlayerPosition } from '@/hooks/usePlayerPosition';
 
 // Explicit production build marker - prevents tree-shaking removal
 if (typeof window !== 'undefined') {
-  console.log('🔥 ActiveSongPopup: Module loaded in production', {
+  logger.debug('🔥 ActiveSongPopup: Module loaded in production', {
     timestamp: new Date().toISOString(),
     url: window.location.href,
     userAgent: navigator.userAgent,
@@ -42,7 +42,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
 
   // プロダクション環境でのマウス回避機能状態ログ
   useEffect(() => {
-    console.log('🖱️ ActiveSongPopup: Mouse avoidance state update', {
+    logger.debug('🖱️ ActiveSongPopup: Mouse avoidance state update', {
       popupPosition,
       isMouseNearPopup,
       mouseAvoidanceActive,
@@ -54,17 +54,17 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
 
   // 初期マウント時のログ（プロダクション環境対応）
   useEffect(() => {
-    console.log('🎵 ActiveSongPopup: Component mounted');
+    logger.debug('🎵 ActiveSongPopup: Component mounted');
     logger.info('🎵 ActiveSongPopup: Component mounted');
     return () => {
-      console.log('🎵 ActiveSongPopup: Component unmounted');
+      logger.debug('🎵 ActiveSongPopup: Component unmounted');
       logger.info('🎵 ActiveSongPopup: Component unmounted');
     };
   }, []);
 
   useEffect(() => {
     // プロダクション環境でも確実にログを出力
-    console.log('🎵 ActiveSongPopup: Effect triggered', { 
+    logger.debug('🎵 ActiveSongPopup: Effect triggered', { 
       isVisible, 
       currentTime, 
       songsCount: songs.length,
@@ -77,7 +77,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
     });
 
     if (!isVisible) {
-      console.log('🎵 ActiveSongPopup: Not visible, skipping', { isVisible, currentTime });
+      logger.debug('🎵 ActiveSongPopup: Not visible, skipping', { isVisible, currentTime });
       logger.info('🎵 ActiveSongPopup: Not visible, skipping');
       return;
     }
@@ -89,7 +89,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
       const isActive = currentTime >= song.startTime && currentTime < song.endTime + 0.1;
       
       if (isActive) {
-        console.log('🎵 ActiveSongPopup: Found active song', {
+        logger.debug('🎵 ActiveSongPopup: Found active song', {
           title: song.title,
           artist: song.artist.join(", "),
           startTime: song.startTime,
@@ -126,7 +126,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
       return acc;
     }, []);
 
-    console.log('🎵 ActiveSongPopup: Updated active songs', {
+    logger.debug('🎵 ActiveSongPopup: Updated active songs', {
       found: currentActiveSongs.length,
       unique: uniqueActiveSongs.length,
       songs: uniqueActiveSongs.map(s => ({ title: s.title, artist: s.artist.join(", ") })),
@@ -184,7 +184,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
   };
 
   if (!isVisible || activeSongs.length === 0 || shouldHidePopup) {
-    console.log('🎵 ActiveSongPopup: Not rendering', { 
+    logger.debug('🎵 ActiveSongPopup: Not rendering', { 
       isVisible, 
       activeSongsLength: activeSongs.length,
       shouldHidePopup,
@@ -250,7 +250,7 @@ export const ActiveSongPopup: React.FC<ActiveSongPopupProps> = ({
     return null;
   }
 
-  console.log('🎵 ActiveSongPopup: Rendering', { 
+  logger.debug('🎵 ActiveSongPopup: Rendering', { 
     activeSongs: activeSongs.map(s => s.title),
     prevActiveSongs: prevActiveSongs.map(s => s.title),
     currentTime,
@@ -413,7 +413,7 @@ ActiveSongPopup.displayName = 'ActiveSongPopup';
 
 // Export verification for production builds
 if (typeof window !== 'undefined') {
-  console.log('🔥 ActiveSongPopup: Component definition exported', {
+  logger.debug('🔥 ActiveSongPopup: Component definition exported', {
     displayName: ActiveSongPopup.displayName,
     timestamp: new Date().toISOString()
   });

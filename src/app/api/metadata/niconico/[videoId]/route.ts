@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/utils/logger';
 
 // ニコニコ動画のメタデータを取得するプロキシAPI
 
@@ -23,7 +24,7 @@ export interface NiconicoMetadataResponse {
  */
 async function fetchNiconicoMetadata(videoId: string): Promise<NiconicoMetadataResponse> {
   const apiUrl = `https://ext.nicovideo.jp/api/getthumbinfo/${videoId}`;
-  console.log(`[Metadata API] Fetching metadata for: ${videoId} from ${apiUrl}`);
+  logger.debug(`[Metadata API] Fetching metadata for: ${videoId} from ${apiUrl}`);
   
   try {
     const response = await fetch(apiUrl, {
@@ -32,7 +33,7 @@ async function fetchNiconicoMetadata(videoId: string): Promise<NiconicoMetadataR
       },
     });
     
-    console.log(`[Metadata API] Response status: ${response.status} ${response.statusText}`);
+    logger.debug(`[Metadata API] Response status: ${response.status} ${response.statusText}`);
     
     if (!response.ok) {
       const responseText = await response.text().catch(() => 'テキスト取得失敗');
@@ -49,7 +50,7 @@ async function fetchNiconicoMetadata(videoId: string): Promise<NiconicoMetadataR
     }
     
     const xmlText = await response.text();
-    console.log(`[Metadata API] XML response length: ${xmlText.length}`);
+    logger.debug(`[Metadata API] XML response length: ${xmlText.length}`);
     
     // Node.js環境でのXML解析（正規表現を使用）
     // APIエラーチェック
@@ -58,7 +59,7 @@ async function fetchNiconicoMetadata(videoId: string): Promise<NiconicoMetadataR
       const errorCode = errorMatch[1];
       const errorDescriptionMatch = xmlText.match(/<description[^>]*>([^<]+)<\/description>/);
       const errorDescription = errorDescriptionMatch ? errorDescriptionMatch[1] : '';
-      console.error('[Metadata API] API error:', errorCode, errorDescription);
+      logger.error('[Metadata API] API error:', errorCode, errorDescription);
       
       return {
         success: false,
@@ -84,7 +85,7 @@ async function fetchNiconicoMetadata(videoId: string): Promise<NiconicoMetadataR
     const lengthStr = lengthMatch ? lengthMatch[1] : '';
     const thumbnail = thumbnailMatch ? thumbnailMatch[1] : '';
     
-    console.log(`[Metadata API] Extracted data:`, { title, creator, lengthStr, thumbnail });
+    logger.debug(`[Metadata API] Extracted data:`, { title, creator, lengthStr, thumbnail });
     
     // 長さをmm:ss形式から秒数に変換
     let duration: number | undefined;
@@ -92,9 +93,9 @@ async function fetchNiconicoMetadata(videoId: string): Promise<NiconicoMetadataR
       const [minutes, seconds] = lengthStr.split(':').map(Number);
       if (!isNaN(minutes) && !isNaN(seconds)) {
         duration = minutes * 60 + seconds;
-        console.log(`[Metadata API] Duration converted: ${lengthStr} -> ${duration}s`);
+        logger.debug(`[Metadata API] Duration converted: ${lengthStr} -> ${duration}s`);
       } else {
-        console.warn('[Metadata API] Invalid duration format:', lengthStr);
+        logger.warn('[Metadata API] Invalid duration format:', lengthStr);
       }
     }
     
@@ -112,11 +113,11 @@ async function fetchNiconicoMetadata(videoId: string): Promise<NiconicoMetadataR
       }
     };
     
-    console.log(`[Metadata API] Success:`, { title, creator, duration });
+    logger.debug(`[Metadata API] Success:`, { title, creator, duration });
     return result;
     
   } catch (error) {
-    console.error('[Metadata API] Fetch error:', error);
+    logger.error('[Metadata API] Fetch error:', error);
     
     return {
       success: false,
@@ -163,7 +164,7 @@ export async function GET(
     // sm prefix を付与
     const formattedVideoId = videoId.startsWith('sm') ? videoId : `sm${videoId}`;
     
-    console.log(`[Metadata API] Processing request for: ${formattedVideoId}`);
+    logger.debug(`[Metadata API] Processing request for: ${formattedVideoId}`);
     
     // メタデータ取得を実行
     const result = await fetchNiconicoMetadata(formattedVideoId);
@@ -185,7 +186,7 @@ export async function GET(
     return response;
     
   } catch (error) {
-    console.error('[Metadata API] Unexpected error:', error);
+    logger.error('[Metadata API] Unexpected error:', error);
     
     const errorResponse: NiconicoMetadataResponse = {
       success: false,

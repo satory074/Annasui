@@ -6,6 +6,123 @@ import { normalizeSongInfo } from '@/lib/utils/songDatabase'
 type MedleyRow = Database['public']['Tables']['medleys']['Row']
 type SongRow = Database['public']['Tables']['medley_songs']['Row']
 
+// =============================================================================
+// Input Validation & Sanitization
+// =============================================================================
+
+/**
+ * Validate video ID format
+ * - Niconico: sm/nm + digits (e.g., sm12345678, nm9876543)
+ * - YouTube: 11 character alphanumeric string with dash/underscore
+ */
+function validateVideoId(videoId: string): { valid: boolean; error?: string } {
+  if (!videoId || typeof videoId !== 'string') {
+    return { valid: false, error: 'Video ID is required' }
+  }
+
+  // Niconico format: sm/nm + digits
+  const niconicoPattern = /^(sm|nm)\d{1,10}$/
+  // YouTube format: 11 alphanumeric characters (with dash/underscore)
+  const youtubePattern = /^[a-zA-Z0-9_-]{11}$/
+
+  if (niconicoPattern.test(videoId) || youtubePattern.test(videoId)) {
+    return { valid: true }
+  }
+
+  return { valid: false, error: `Invalid video ID format: ${videoId}` }
+}
+
+/**
+ * Sanitize user input to prevent XSS attacks
+ * Removes HTML tags and dangerous characters
+ */
+function sanitizeString(input: string | null | undefined): string {
+  if (!input || typeof input !== 'string') {
+    return ''
+  }
+
+  return input
+    // Remove HTML tags
+    .replace(/<[^>]*>/g, '')
+    // Escape HTML entities
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    // Remove null bytes and control characters
+    .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '')
+    .trim()
+}
+
+/**
+ * Validate and sanitize URL
+ * Only allows http/https protocols and specific domains for music services
+ */
+function validateAndSanitizeUrl(url: string | null | undefined): string | null {
+  if (!url || typeof url !== 'string') {
+    return null
+  }
+
+  const trimmedUrl = url.trim()
+  if (!trimmedUrl) {
+    return null
+  }
+
+  // Check for valid URL format
+  try {
+    const parsedUrl = new URL(trimmedUrl)
+
+    // Only allow http and https protocols
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      logger.warn('Invalid URL protocol:', parsedUrl.protocol)
+      return null
+    }
+
+    // Whitelist of allowed domains for music service links
+    const allowedDomains = [
+      'nicovideo.jp', 'www.nicovideo.jp', 'nico.ms',
+      'youtube.com', 'www.youtube.com', 'youtu.be',
+      'spotify.com', 'open.spotify.com',
+      'music.apple.com', 'apple.co'
+    ]
+
+    const hostname = parsedUrl.hostname.toLowerCase()
+    const isAllowed = allowedDomains.some(domain =>
+      hostname === domain || hostname.endsWith('.' + domain)
+    )
+
+    if (!isAllowed) {
+      logger.warn('URL domain not in whitelist:', hostname)
+      return null
+    }
+
+    return trimmedUrl
+  } catch {
+    logger.warn('Invalid URL format:', trimmedUrl)
+    return null
+  }
+}
+
+/**
+ * Sanitize song data for database insertion
+ */
+function sanitizeSongData(song: Omit<SongSection, 'id'>): Omit<SongSection, 'id'> {
+  return {
+    ...song,
+    title: sanitizeString(song.title) || 'Untitled',
+    artist: Array.isArray(song.artist)
+      ? song.artist.map(a => sanitizeString(a)).filter(a => a !== '')
+      : [sanitizeString(song.artist as unknown as string) || 'Unknown Artist'],
+    composers: song.composers?.map(c => sanitizeString(c)).filter(c => c !== ''),
+    arrangers: song.arrangers?.map(a => sanitizeString(a)).filter(a => a !== ''),
+    niconicoLink: validateAndSanitizeUrl(song.niconicoLink) || undefined,
+    youtubeLink: validateAndSanitizeUrl(song.youtubeLink) || undefined,
+    spotifyLink: validateAndSanitizeUrl(song.spotifyLink) || undefined,
+    applemusicLink: validateAndSanitizeUrl(song.applemusicLink) || undefined
+  }
+}
+
 // Test function to verify API key
 export async function testSupabaseConnection(): Promise<{ success: boolean; error?: string }> {
   if (!supabase) {
@@ -91,16 +208,31 @@ function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyDa
   }
 }
 
-// Direct fetch implementation using environment variables
+// Build Supabase REST API URL with proper escaping
+function buildSupabaseRestUrl(table: string, params: Record<string, string>): string {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  if (!supabaseUrl) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_URL environment variable is not set')
+  }
+
+  const url = new URL(`${supabaseUrl}/rest/v1/${table}`)
+  Object.entries(params).forEach(([key, value]) => {
+    url.searchParams.append(key, value)
+  })
+  return url.toString()
+}
+
+// Direct fetch implementation using environment variables only (no hardcoded fallbacks)
 async function directFetch(url: string): Promise<unknown> {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dheairurkxjftugrwdjl.supabase.co';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZWFpcnVya3hqZnR1Z3J3ZGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyODI3OTEsImV4cCI6MjA3MTg1ODc5MX0.7VSQnn4HdWrMf3qgdPkB2bSyjSH1nuJhH1DR8m4Y4h8';
-  
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+  if (!supabaseAnonKey) {
+    throw new Error('NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is not set')
+  }
+
   logger.debug('🔍 DirectFetch environment check:', {
     hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-    hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    urlLength: supabaseUrl.length,
-    keyLength: supabaseAnonKey.length,
+    hasKey: !!supabaseAnonKey,
     isProduction: process.env.NODE_ENV === 'production'
   });
 
@@ -148,6 +280,13 @@ async function directFetch(url: string): Promise<unknown> {
 
 // API functions
 export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | null> {
+  // Validate video ID format
+  const validation = validateVideoId(videoId)
+  if (!validation.valid) {
+    logger.warn('🚫 Invalid video ID:', validation.error)
+    return null
+  }
+
   try {
     logger.debug('🔍 Fetching medley data for:', videoId)
 
@@ -198,10 +337,10 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
       }
     }
 
-    // Fallback to direct fetch
+    // Fallback to direct fetch with proper URL escaping
     logger.debug('🔧 Using direct fetch for medley data')
     const medleyDataDirect = await directFetch(
-      `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/medleys?select=*&video_id=eq.${videoId}`
+      buildSupabaseRestUrl('medleys', { select: '*', video_id: `eq.${videoId}` })
     ) as unknown[];
 
     if (!medleyDataDirect || medleyDataDirect.length === 0) {
@@ -211,9 +350,9 @@ export async function getMedleyByVideoId(videoId: string): Promise<MedleyData | 
 
     const medley = medleyDataDirect[0] as Record<string, unknown>;
 
-    // Get the songs for this medley using direct fetch
+    // Get the songs for this medley using direct fetch with proper URL escaping
     const songDataDirect = await directFetch(
-      `https://dheairurkxjftugrwdjl.supabase.co/rest/v1/medley_songs?select=*&medley_id=eq.${medley.id}&order=order_index`
+      buildSupabaseRestUrl('medley_songs', { select: '*', medley_id: `eq.${medley.id}`, order: 'order_index' })
     ) as unknown[];
 
     logger.debug('✅ Successfully fetched medley data via direct fetch:', {
@@ -291,16 +430,29 @@ export async function createMedley(
     return null
   }
 
+  // Validate video ID
+  const validation = validateVideoId(medleyData.videoId)
+  if (!validation.valid) {
+    logger.warn('🚫 Invalid video ID in createMedley:', validation.error)
+    return null
+  }
+
+  // Sanitize input data
+  const sanitizedTitle = sanitizeString(medleyData.title) || 'Untitled Medley'
+  const sanitizedCreator = sanitizeString(medleyData.creator) || ''
+  const sanitizedEditorNickname = editorNickname ? sanitizeString(editorNickname) : undefined
+  const sanitizedSongs = medleyData.songs.map(song => sanitizeSongData(song))
+
   try {
     // Insert medley
     const { data: medley, error: medleyError } = await supabase
       .from('medleys')
       .insert({
         video_id: medleyData.videoId,
-        title: medleyData.title,
-        creator: medleyData.creator || null,
+        title: sanitizedTitle,
+        creator: sanitizedCreator || null,
         duration: medleyData.duration,
-        last_editor: editorNickname || null,
+        last_editor: sanitizedEditorNickname || null,
         last_edited_at: new Date().toISOString()
       })
       .select()
@@ -311,10 +463,10 @@ export async function createMedley(
     }
 
     // Look up song_master IDs for songs
-    const songIdMap = await lookupSongIds(medleyData.songs.map(s => ({ title: s.title, artist: Array.isArray(s.artist) ? s.artist.join(", ") : (s.artist || '') })));
+    const songIdMap = await lookupSongIds(sanitizedSongs.map(s => ({ title: s.title, artist: Array.isArray(s.artist) ? s.artist.join(", ") : (s.artist || '') })));
 
     // Insert songs
-    const songsToInsert = medleyData.songs.map((song, index) => {
+    const songsToInsert = sanitizedSongs.map((song, index) => {
       const artistStr = Array.isArray(song.artist) ? song.artist.join(", ") : (song.artist || '');
       const composersStr = song.composers && song.composers.length > 0 ? song.composers.join(", ") : null;
       const arrangersStr = song.arrangers && song.arrangers.length > 0 ? song.arrangers.join(", ") : null;
@@ -354,10 +506,10 @@ export async function createMedley(
     }
 
     // Record edit history
-    if (editorNickname) {
-      await recordMedleyEdit(medley.id as string, editorNickname, 'create_medley', {
-        title: medleyData.title,
-        songCount: medleyData.songs.length
+    if (sanitizedEditorNickname) {
+      await recordMedleyEdit(medley.id as string, sanitizedEditorNickname, 'create_medley', {
+        title: sanitizedTitle,
+        songCount: sanitizedSongs.length
       })
     }
 
@@ -386,14 +538,27 @@ export async function updateMedley(
     return null
   }
 
+  // Validate video ID
+  const validation = validateVideoId(videoId)
+  if (!validation.valid) {
+    logger.warn('🚫 Invalid video ID in updateMedley:', validation.error)
+    return null
+  }
+
+  // Sanitize input data
+  const sanitizedTitle = updates.title ? sanitizeString(updates.title) : undefined
+  const sanitizedCreator = updates.creator !== undefined ? sanitizeString(updates.creator) : undefined
+  const sanitizedEditorNickname = editorNickname ? sanitizeString(editorNickname) : undefined
+  const sanitizedSongs = updates.songs ? updates.songs.map(song => sanitizeSongData(song)) : undefined
+
   try {
     const { data: medley, error } = await supabase
       .from('medleys')
       .update({
-        title: updates.title,
-        creator: updates.creator,
+        title: sanitizedTitle,
+        creator: sanitizedCreator,
         duration: updates.duration,
-        last_editor: editorNickname || null,
+        last_editor: sanitizedEditorNickname || null,
         last_edited_at: new Date().toISOString()
       })
       .eq('video_id', videoId)
@@ -405,18 +570,18 @@ export async function updateMedley(
     }
 
     // Update songs if provided
-    if (updates.songs) {
+    if (sanitizedSongs) {
       logger.debug('🔍 updateMedley: About to save songs', {
         medleyId: medley.id,
-        songsCount: updates.songs.length,
-        songs: updates.songs
+        songsCount: sanitizedSongs.length,
+        songs: sanitizedSongs
       });
       const medleyInfo = {
-        title: (updates.title ?? medley.title) as string,
-        creator: (updates.creator ?? medley.creator ?? undefined) as string | undefined,
+        title: (sanitizedTitle ?? medley.title) as string,
+        creator: (sanitizedCreator ?? medley.creator ?? undefined) as string | undefined,
         duration: (updates.duration ?? medley.duration) as number
       };
-      const success = await saveMedleySongs(medley.id as string, updates.songs, editorNickname, medleyInfo);
+      const success = await saveMedleySongs(medley.id as string, sanitizedSongs, sanitizedEditorNickname, medleyInfo);
       if (!success) {
         logger.error('Failed to update songs for medley:', medley.id);
         throw new Error('Failed to update songs');
@@ -573,13 +738,17 @@ export async function saveMedleySongs(
     return false
   }
 
+  // Sanitize all song data for safety (even if already sanitized by caller)
+  const sanitizedSongs = songs.map(song => sanitizeSongData(song))
+  const sanitizedEditorNickname = editorNickname ? sanitizeString(editorNickname) : undefined
+
   try {
     logger.info(`🗄️ [${callId}] saveMedleySongs called`, {
       callNumber: saveMedleySongsCallCount,
       medleyId,
-      songsCount: songs.length,
-      songs: songs.map(s => ({ title: s.title, artist: Array.isArray(s.artist) ? s.artist.join(", ") : s.artist, start: s.startTime, end: s.endTime })),
-      editorNickname,
+      songsCount: sanitizedSongs.length,
+      songs: sanitizedSongs.map(s => ({ title: s.title, artist: Array.isArray(s.artist) ? s.artist.join(", ") : s.artist, start: s.startTime, end: s.endTime })),
+      editorNickname: sanitizedEditorNickname,
       timestamp: new Date().toISOString()
     });
 
@@ -600,11 +769,11 @@ export async function saveMedleySongs(
     logger.info(`✅ [${callId}] DELETE completed in ${deleteDuration}ms`);
 
     // Insert new songs
-    if (songs.length > 0) {
-      logger.info(`📝 [${callId}] Preparing to INSERT ${songs.length} songs`);
+    if (sanitizedSongs.length > 0) {
+      logger.info(`📝 [${callId}] Preparing to INSERT ${sanitizedSongs.length} songs`);
 
       // Filter songs that don't have songId for lookup
-      const songsNeedingLookup = songs.filter(s => !s.songId).map(s => ({
+      const songsNeedingLookup = sanitizedSongs.filter(s => !s.songId).map(s => ({
         title: s.title,
         artist: Array.isArray(s.artist) ? s.artist.join(", ") : (s.artist || '')
       }));
@@ -614,7 +783,7 @@ export async function saveMedleySongs(
         ? await lookupSongIds(songsNeedingLookup)
         : new Map<string, string>();
 
-      const songsToInsert = songs.map((song, index) => {
+      const songsToInsert = sanitizedSongs.map((song, index) => {
         const artistStr = Array.isArray(song.artist) ? song.artist.join(", ") : (song.artist || '');
         const composersStr = song.composers && song.composers.length > 0 ? song.composers.join(", ") : null;
         const arrangersStr = song.arrangers && song.arrangers.length > 0 ? song.arrangers.join(", ") : null;
@@ -647,7 +816,7 @@ export async function saveMedleySongs(
           spotify_link: song.spotifyLink || null,
           applemusic_link: song.applemusicLink || null,
           order_index: index + 1,  // Re-added: database requires this field for ordering
-          last_editor: editorNickname || null,
+          last_editor: sanitizedEditorNickname || null,
           last_edited_at: new Date().toISOString()
         };
       })
@@ -673,14 +842,14 @@ export async function saveMedleySongs(
     }
 
     // Record snapshot in edit history
-    if (editorNickname && medleyInfo) {
+    if (sanitizedEditorNickname && medleyInfo) {
       const snapshot: MedleySnapshot = {
         title: medleyInfo.title,
         creator: medleyInfo.creator,
         duration: medleyInfo.duration,
-        songs: songs
+        songs: sanitizedSongs
       };
-      await recordMedleyEdit(medleyId, editorNickname, 'update_medley', {
+      await recordMedleyEdit(medleyId, sanitizedEditorNickname, 'update_medley', {
         snapshot,
         songCount: songs.length
       });

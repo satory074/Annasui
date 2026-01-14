@@ -67,7 +67,7 @@ export function useMousePosition(edgeThreshold: number = 150): MousePosition {
 
       // 定期的にマウス位置をログ出力（デバッグ用、5秒間隔）
       if (now - lastLogTime.current > 5000) {
-        console.log('🖱️ useMousePosition: Position update', {
+        logger.debug('🖱️ useMousePosition: Position update', {
           x,
           y,
           isNearLeftEdge,
@@ -99,7 +99,7 @@ export function useMousePosition(edgeThreshold: number = 150): MousePosition {
     // マウス移動イベントリスナーを登録
     document.addEventListener('mousemove', debouncedUpdateMousePosition, { passive: true });
 
-    console.log('🖱️ useMousePosition: Event listener registered', {
+    logger.debug('🖱️ useMousePosition: Event listener registered', {
       edgeThreshold,
       timestamp: new Date().toISOString()
     });
@@ -117,7 +117,7 @@ export function useMousePosition(edgeThreshold: number = 150): MousePosition {
 
     return () => {
       document.removeEventListener('mousemove', debouncedUpdateMousePosition);
-      console.log('🖱️ useMousePosition: Event listener removed', {
+      logger.debug('🖱️ useMousePosition: Event listener removed', {
         timestamp: new Date().toISOString()
       });
       if (requestRef.current) {

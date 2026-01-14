@@ -673,6 +673,19 @@ export default function MedleyPlayer({
         }
     };
 
+    // 類似楽曲を使用するコールバック（ManualSongAddModalから）
+    const handleUseSimilarSong = (song: SongDatabaseEntry) => {
+        logger.info('🔄 Using similar song from database:', {
+            songId: song.id,
+            songTitle: song.title,
+            songArtist: song.artist.map(a => a.name).join(', ')
+        });
+        // ManualSongAddModalを閉じる
+        setManualAddModalOpen(false);
+        // 選択された楽曲でSongEditModalを開く
+        handleSelectSongFromDatabase(song);
+    };
+
 
     // 新しい楽曲区間を追加する関数
     const handleAddNewSong = () => {
@@ -1543,6 +1556,7 @@ export default function MedleyPlayer({
                 onClose={() => setManualAddModalOpen(false)}
                 onSave={handleManualSongSave}
                 existingSongs={displaySongs}
+                onUseSimilarSong={handleUseSimilarSong}
             />
 
             
@@ -1563,20 +1577,8 @@ export default function MedleyPlayer({
                     // Runtime component detection for production debugging
                     const isVisibleCondition = playerReady && !editModalOpen;
 
-                    // Enhanced production logging
-                    console.log('🔥 MedleyPlayer: Rendering ActiveSongPopup', {
-                        playerReady,
-                        editModalOpen,
-                        songSearchModalOpen,
-                        manualAddModalOpen,
-                        isVisible: isVisibleCondition,
-                        currentTime,
-                        songsCount: displaySongs.length,
-                        timestamp: new Date().toISOString(),
-                        componentExists: !!ActiveSongPopup,
-                        componentName: ActiveSongPopup?.displayName || 'undefined'
-                    });
-                    logger.info('🔥 MedleyPlayer: Rendering ActiveSongPopup', {
+                    // Enhanced production logging (using logger only)
+                    logger.debug('🔥 MedleyPlayer: Rendering ActiveSongPopup', {
                         playerReady,
                         editModalOpen,
                         songSearchModalOpen,
@@ -1588,7 +1590,7 @@ export default function MedleyPlayer({
 
                     // Ensure component exists before rendering
                     if (!ActiveSongPopup) {
-                        console.error('🚨 CRITICAL: ActiveSongPopup component is undefined!');
+                        logger.error('🚨 CRITICAL: ActiveSongPopup component is undefined!');
                         return <div style={{
                             position: 'fixed',
                             top: '6rem',

@@ -1,4 +1,5 @@
 import { SongSection } from "@/types";
+import { normalizeSongInfo } from "./songDatabase";
 
 export interface DuplicateInfo {
   song: SongSection;
@@ -14,18 +15,11 @@ export interface DuplicateGroup {
 }
 
 // 楽曲名とアーティスト名を正規化（重複検出用）
+// songDatabase.tsの高度な正規化を使用（カタカナ→ひらがな、全角→半角、音楽用語統一）
 function normalizeSongKey(title: string, artist: string | string[]): string {
-  const normalizeText = (text: string) =>
-    text.toLowerCase()
-         .replace(/\s+/g, '')
-         .replace(/[・･]/g, '')
-         .replace(/[（）()]/g, '')
-         .trim();
-
   // Handle artist as string or array
   const artistStr = Array.isArray(artist) ? artist.join(", ") : artist;
-
-  return `${normalizeText(title)}_${normalizeText(artistStr)}`;
+  return normalizeSongInfo(title, artistStr);
 }
 
 // メドレー内の重複楽曲を検出

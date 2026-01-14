@@ -1,19 +1,30 @@
 import { createClient } from '@supabase/supabase-js'
 import { logger } from '@/lib/utils/logger'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dheairurkxjftugrwdjl.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRoZWFpcnVya3hqZnR1Z3J3ZGpsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYyODI3OTEsImV4cCI6MjA3MTg1ODc5MX0.7VSQnn4HdWrMf3qgdPkB2bSyjSH1nuJhH1DR8m4Y4h8'
+// Environment variables are required - no hardcoded fallbacks for security
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-// Debug logging for production
-logger.debug('🔍 Supabase Environment Debug:', {
-  hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-  hasKey: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  urlLength: supabaseUrl.length,
-  keyLength: supabaseAnonKey.length,
-  urlValue: supabaseUrl,
-  keyPrefix: supabaseAnonKey.substring(0, 20) + '...',
-  isProduction: process.env.NODE_ENV === 'production'
-})
+// Validate environment variables early
+if (!supabaseUrl) {
+  logger.error('❌ NEXT_PUBLIC_SUPABASE_URL environment variable is not set')
+}
+if (!supabaseAnonKey) {
+  logger.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is not set')
+}
+
+// Debug logging for production (only if variables are set)
+if (supabaseUrl && supabaseAnonKey) {
+  logger.debug('🔍 Supabase Environment Debug:', {
+    hasUrl: true,
+    hasKey: true,
+    urlLength: supabaseUrl.length,
+    keyLength: supabaseAnonKey.length,
+    urlValue: supabaseUrl,
+    keyPrefix: supabaseAnonKey.substring(0, 20) + '...',
+    isProduction: process.env.NODE_ENV === 'production'
+  })
+}
 
 // Database types based on new structure
 export type Database = {
@@ -264,14 +275,10 @@ export type Database = {
   }
 }
 
-// Only create client if properly configured
+// Only create client if environment variables are properly configured
 let supabase: ReturnType<typeof createClient> | null = null
 
-if (supabaseUrl !== 'https://placeholder.supabase.co' &&
-    supabaseAnonKey !== 'placeholder-anon-key' &&
-    supabaseUrl !== 'your_supabase_url_here' &&
-    supabaseAnonKey !== 'your_supabase_anon_key_here' &&
-    supabaseUrl.length > 0 && supabaseAnonKey.length > 0) {
+if (supabaseUrl && supabaseAnonKey) {
   try {
     logger.info('✅ Creating Supabase client...')
     supabase = createClient(supabaseUrl, supabaseAnonKey)
@@ -280,7 +287,7 @@ if (supabaseUrl !== 'https://placeholder.supabase.co' &&
     supabase = null
   }
 } else {
-  logger.warn('❌ Supabase environment variables not properly configured')
+  logger.warn('❌ Supabase environment variables not properly configured. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.')
 }
 
 // Export a safe client that checks for null

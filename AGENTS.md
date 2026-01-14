@@ -292,13 +292,17 @@ useEffect(() => {
     - Mobile/Tablet (<1024px): Hides sidebar, shows ActiveSongPopup instead
   - **Key implementation notes**:
     - Outer container must NOT have `flex` class (removed at line 1098)
-    - RightSidebar scrolls normally with page content (not sticky/fixed) to match Niconico's UX
+    - RightSidebar uses sticky positioning (`sticky top-16`) to stay visible while scrolling
     - Maximum width constrained to 1920px for ultra-wide displays
     - Right sidebar uses light theme (`bg-gray-50`) with vertical card layout
 
 ### Current Song Display
 - **RightSidebar** (`src/components/features/player/RightSidebar.tsx`): Nico Nico-style right sidebar for desktop
-  - **Positioning**: Normal scroll flow (NOT sticky/fixed) - scrolls with page content to match Niconico's behavior
+  - **Positioning**: Sticky positioning - stays fixed at top while scrolling page content
+    - Classes: `sticky top-16 self-start max-h-[calc(100vh-4rem)] overflow-y-auto`
+    - `top-16`: Fixed below header (64px)
+    - `max-h-[calc(100vh-4rem)]`: Constrained to viewport height minus header
+    - `overflow-y-auto`: Internal scrolling when many songs are playing
   - **Desktop (1024px+)**: Visible as right column in 2-column layout
   - **Mobile/Tablet (<1024px)**: Hidden (`hidden lg:block`), ActiveSongPopup shows instead
   - **Theme**: Light theme with `bg-gray-50` background, white song cards with `border-gray-200` borders
@@ -310,7 +314,6 @@ useEffect(() => {
     - Duplicate detection for songs in multiple segments (uses Set-based deduplication)
     - Platform links (Nico Nico 🎬, YouTube ▶️, Spotify 🎵, Apple Music 🍎) displayed as gray buttons
     - Fade-in animations with staggered delays (50ms per song)
-    - Auto-expanding height (no fixed max-height or scrolling)
 - **ActiveSongPopup** (`src/components/ui/song/ActiveSongPopup.tsx`): Bottom-corner popup for mobile
   - Mouse avoidance system with collision detection
   - Position switching (left/right) based on player visibility

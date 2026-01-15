@@ -1,4 +1,4 @@
-# Database Setup for User Authentication
+# Database Setup
 
 ## Prerequisites
 
@@ -6,77 +6,67 @@
 2. Environment variables set:
    - `NEXT_PUBLIC_SUPABASE_URL`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - `EDIT_PASSWORD` (server-side only, for editing authentication)
+
+## Current Database Structure
+
+The database uses **4 core tables** (see Migration 015):
+
+| Table | Purpose |
+|-------|---------|
+| `medleys` | Medley basic information (video_id, platform, title, creator, duration) |
+| `song_master` | Song master data for reuse across medleys |
+| `medley_songs` | Song placement within medleys (timeline data) |
+| `medley_edits` | Edit history tracking with snapshots |
 
 ## Migration Steps
 
-### Step 1: Configure OAuth Providers in Supabase Dashboard
+Execute migrations in order via Supabase SQL Editor:
 
-1. Go to Authentication > Settings > OAuth
-2. Enable GitHub OAuth:
-   - Add GitHub OAuth App credentials
-   - Set callback URL: `https://your-domain.com/auth/callback`
-3. Enable Google OAuth:
-   - Add Google OAuth App credentials  
-   - Set callback URL: `https://your-domain.com/auth/callback`
+1. **015_rebuild_database_structure.sql** - Complete database rebuild (creates all 4 tables)
+2. **016_make_artist_optional.sql** - Makes artist field optional in song_master
+3. **017_add_platform_specific_links.sql** - Replaces JSONB links with individual columns
+4. **022_add_decimal_time_support.sql** - Changes time fields from INTEGER to REAL
 
-### Step 2: Run Database Migrations
+## Authentication System
 
-Execute the SQL files in order:
+**Current**: Password-based authentication with nicknames (Migration 011+)
+- Single shared password (`EDIT_PASSWORD` env var)
+- Users provide nickname when editing
+- All edits tracked with editor nickname in `medley_edits`
+- Rate limiting: 5 attempts per 10 minutes
 
-1. **001_create_users_table.sql**
-   ```bash
-   # In Supabase SQL Editor or via CLI
-   psql -h db.xxx.supabase.co -U postgres -d postgres -f 001_create_users_table.sql
-   ```
+**Legacy** (Migrations 001-009): OAuth with GitHub/Google - **Removed in Migration 010**
 
-2. **002_add_user_id_to_medleys.sql**
-   ```bash
-   psql -h db.xxx.supabase.co -U postgres -d postgres -f 002_add_user_id_to_medleys.sql
-   ```
+## Key Schema Details
 
-### Step 3: Configure Site URL
+### song_master
+```sql
+id UUID PRIMARY KEY
+title TEXT NOT NULL
+artist TEXT  -- Optional, defaults to "Unknown Artist" in app
+normalized_id TEXT UNIQUE  -- For duplicate detection
+niconico_link, youtube_link, spotify_link, applemusic_link TEXT
+```
 
-In Supabase Dashboard:
-1. Go to Authentication > Settings
-2. Add site URL: `https://anasui-e6f49.web.app`
-3. Add redirect URLs:
-   - `https://anasui-e6f49.web.app/auth/callback`
-   - `http://localhost:3000/auth/callback` (for development)
+### medley_songs
+```sql
+id UUID PRIMARY KEY
+medley_id UUID REFERENCES medleys(id)
+song_id UUID REFERENCES song_master(id)  -- Nullable, links to master
+start_time, end_time REAL  -- Decimal time support (0.1s precision)
+title, artist TEXT  -- Cached from song_master
+```
 
-## What This Enables
+## Backup & Recovery
 
-- **User Authentication**: GitHub/Google OAuth login
-- **User Profiles**: Automatic profile creation on signup
-- **Owned Medleys**: New medleys are owned by authenticated users
-- **Legacy Support**: Existing anonymous medleys remain accessible
-- **Row Level Security**: Users can only edit their own medleys
+- **Automated**: Daily at 3:00 AM JST via GitHub Actions
+- **Manual**: `./scripts/backup-database.sh`
+- **Restore**: `./scripts/restore-database.sh <backup_file>`
+- See [docs/BACKUP_RESTORE.md](../docs/BACKUP_RESTORE.md) for details
 
-## Database Schema
+## Row Level Security (RLS)
 
-### Users Table
-- `id` - UUID (references auth.users)
-- `email` - User email
-- `name` - Display name
-- `avatar_url` - Profile picture URL
-- `created_at/updated_at` - Timestamps
-
-### Updated Medleys Table
-- Added `user_id` - Foreign key to users table
-- RLS policies for user ownership
-- Legacy support for anonymous medleys (user_id = null)
-
-## Security Features
-
-- **Row Level Security (RLS)** enabled
-- Users can only modify their own data
-- Public read access to all medleys
-- Automatic profile creation on signup
-- Secure OAuth flow with proper redirects
-
-## Testing
-
-1. Deploy with authentication enabled
-2. Test GitHub/Google login flow
-3. Create new medley while authenticated
-4. Verify ownership restrictions
-5. Test anonymous access to existing medleys
+All tables have RLS enabled with open policies:
+- Anyone can SELECT, INSERT, UPDATE, DELETE
+- Authentication handled at application level via password verification

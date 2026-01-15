@@ -1274,17 +1274,37 @@ export async function mergeDuplicateSongs(
   // SongDatabaseを取得（song_master未登録楽曲の情報取得用）
   const database = await getSongDatabase();
 
-  // target の UUID を取得（存在しない場合は作成）
+  // target の UUID と楽曲情報を取得（存在しない場合は作成）
   let targetUuid: string;
+  let targetTitle: string;
+  let targetArtist: string;
 
   if (isUuid(targetId)) {
-    // UUIDの場合はそのまま使用
+    // UUIDの場合、song_masterから情報を取得
     targetUuid = targetId;
+    const { data: targetInfo, error: targetInfoError } = await supabase
+      .from('song_master')
+      .select('title, artist')
+      .eq('id', targetId)
+      .single();
+
+    if (targetInfoError || !targetInfo) {
+      // song_masterにない場合はdatabaseから取得
+      const targetEntry = database.find(s => s.id === targetId);
+      if (!targetEntry) {
+        throw new Error(`Target song not found: ${targetId}`);
+      }
+      targetTitle = targetEntry.title;
+      targetArtist = targetEntry.artist[0]?.name || 'Unknown Artist';
+    } else {
+      targetTitle = (targetInfo as { title: string; artist: string }).title;
+      targetArtist = (targetInfo as { title: string; artist: string }).artist;
+    }
   } else {
     // dedupKeyの場合はnormalized_idで検索
     const { data: targetData, error: targetError } = await supabase
       .from('song_master')
-      .select('id')
+      .select('id, title, artist')
       .eq('normalized_id', targetId)
       .maybeSingle();
 
@@ -1300,11 +1320,14 @@ export async function mergeDuplicateSongs(
         throw new Error(`Target song not found in database: ${targetId}`);
       }
 
+      targetTitle = targetEntry.title;
+      targetArtist = targetEntry.artist[0]?.name || 'Unknown Artist';
+
       const { data: newTarget, error: insertError } = await supabase
         .from('song_master')
         .insert({
-          title: targetEntry.title,
-          artist: targetEntry.artist[0]?.name || 'Unknown Artist',
+          title: targetTitle,
+          artist: targetArtist,
           normalized_id: targetEntry.dedupKey,
           niconico_link: targetEntry.niconicoLink || null,
           youtube_link: targetEntry.youtubeLink || null,
@@ -1321,7 +1344,9 @@ export async function mergeDuplicateSongs(
       targetUuid = (newTarget as { id: string }).id;
       logger.info('Created target song in song_master:', { targetId, targetUuid });
     } else {
-      targetUuid = (targetData as { id: string }).id;
+      targetUuid = (targetData as { id: string; title: string; artist: string }).id;
+      targetTitle = (targetData as { id: string; title: string; artist: string }).title;
+      targetArtist = (targetData as { id: string; title: string; artist: string }).artist;
     }
   }
 
@@ -1345,10 +1370,46 @@ export async function mergeDuplicateSongs(
       }
 
       if (!sourceData) {
-        // song_masterに存在しない楽曲は、medley_songsにも参照がないのでスキップ
-        logger.info('Source song not in song_master (medley-only), skipping:', { sourceId });
-        // ただし、重複としてカウントはする（UIから消えるように）
-        updatedCount++;
+        // song_masterに存在しない楽曲の場合、medley_songsのtitleで検索してsong_idを更新
+        const sourceEntry = database.find(s => s.dedupKey === sourceId || s.id === sourceId);
+        if (!sourceEntry) {
+          logger.info('Source song not found in database, skipping:', { sourceId });
+          continue;
+        }
+
+        // medley_songsでtitleが一致するレコードを検索し、song_idをtargetUuidに更新
+        const { data: medleySongsToUpdate, error: searchError } = await supabase
+          .from('medley_songs')
+          .select('id')
+          .eq('title', sourceEntry.title)
+          .is('song_id', null);
+
+        if (searchError) {
+          logger.error('Error searching medley_songs:', searchError);
+          continue;
+        }
+
+        if (medleySongsToUpdate && medleySongsToUpdate.length > 0) {
+          // medley_songsのsong_id, title, artistをターゲットの情報で更新
+          const { error: updateMedleySongsError } = await supabase
+            .from('medley_songs')
+            .update({
+              song_id: targetUuid,
+              title: targetTitle,
+              artist: targetArtist
+            })
+            .eq('title', sourceEntry.title)
+            .is('song_id', null);
+
+          if (updateMedleySongsError) {
+            logger.error('Failed to update medley_songs for medley-only song:', updateMedleySongsError);
+            continue;
+          }
+          updatedCount += medleySongsToUpdate.length;
+          logger.info('Updated medley_songs for medley-only song:', { sourceId, title: sourceEntry.title, targetTitle, count: medleySongsToUpdate.length });
+        } else {
+          logger.info('No medley_songs found for medley-only song:', { sourceId, title: sourceEntry.title });
+        }
         continue;
       }
       sourceUuid = (sourceData as { id: string }).id;
@@ -1359,10 +1420,14 @@ export async function mergeDuplicateSongs(
       continue;
     }
 
-    // medley_songs の song_id を更新
+    // medley_songs の song_id, title, artist を更新
     const { error: updateError } = await supabase
       .from('medley_songs')
-      .update({ song_id: targetUuid })
+      .update({
+        song_id: targetUuid,
+        title: targetTitle,
+        artist: targetArtist
+      })
       .eq('song_id', sourceUuid);
 
     if (updateError) {
@@ -1385,6 +1450,23 @@ export async function mergeDuplicateSongs(
 
     deletedCount++;
     logger.info('Merged song:', { sourceId, targetId });
+  }
+
+  // 同じsong_idを持つがartistが異なるmedley_songsレコードを統一
+  // これは過去のマージでsong_idは更新されたがartistが更新されなかったケースに対応
+  const { error: normalizeError } = await supabase
+    .from('medley_songs')
+    .update({
+      title: targetTitle,
+      artist: targetArtist
+    })
+    .eq('song_id', targetUuid)
+    .neq('artist', targetArtist);
+
+  if (normalizeError) {
+    logger.error('Failed to normalize medley_songs artist:', normalizeError);
+  } else {
+    logger.info('Normalized medley_songs with same song_id to same artist:', { targetUuid, targetArtist });
   }
 
   clearSongDatabaseCache();

@@ -128,11 +128,58 @@ Web検索を使用して以下のクエリで調査：
 
 ---
 
+## 4.5 既存楽曲の検索（必須）
+
+**重要**: 新規登録の前に、必ず `song_master` テーブルで既存の楽曲を検索すること。既存の楽曲が見つかった場合は、そのIDを使用して `medley_songs` に登録する。
+
+### 4.5.1 検索クエリ
+
+#### タイトルで検索
+```sql
+SELECT id, title, artist, normalized_id,
+       niconico_link, youtube_link, spotify_link, applemusic_link
+FROM song_master
+WHERE title ILIKE '%{楽曲名}%';
+```
+
+#### normalized_id で検索（推奨）
+```sql
+SELECT id, title, artist, normalized_id
+FROM song_master
+WHERE normalized_id LIKE '%{正規化楽曲名}%';
+```
+
+#### アーティスト名で検索
+```sql
+SELECT id, title, artist
+FROM song_master
+WHERE artist ILIKE '%{アーティスト名}%';
+```
+
+### 4.5.2 検索結果の判断
+
+| 結果 | 対応 |
+|------|------|
+| **一致する楽曲が見つかった** | その `id` を `medley_songs.song_id` に設定して登録 |
+| **類似する楽曲が見つかった** | 内容を確認し、同一曲なら既存IDを使用。異なる場合は新規登録 |
+| **見つからなかった** | セクション5.0の手順で `song_master` に新規登録 |
+
+### 4.5.3 検索のポイント
+
+- **表記揺れに注意**: 「〜」と「~」、「・」と「･」など
+- **英語/日本語の違い**: 「God knows...」と「ゴッドノウズ」
+- **部分一致で幅広く検索**: `%キーワード%` で検索範囲を広げる
+- **複数条件で絞り込み**: タイトルとアーティストの両方で確認
+
+---
+
 ## 5. データベース更新
 
-### 5.0 重要: song_masterへの登録（推奨）
+### 5.0 重要: song_masterへの新規登録（既存楽曲が見つからない場合のみ）
 
-**ライブラリページで楽曲を編集可能にするには、`song_master`テーブルへの登録が必要です。**
+**注意**: セクション4.5で既存楽曲を検索し、**見つからなかった場合のみ**このセクションの手順で新規登録すること。
+
+ライブラリページで楽曲を編集可能にするには、`song_master`テーブルへの登録が必要です。
 
 #### 5.0.1 normalized_idの生成
 
@@ -286,9 +333,22 @@ https://anasui-e6f49.web.app/{platform}/{video_id}/
        ↓
 [4. 原曲URL調査] → 公式ソース優先で検索 (Spotify > YouTube > Apple Music > niconico)
        ↓
+[4.5 既存楽曲検索] → SELECT song_master で既存楽曲を検索 ★重要★
+       ↓
+   ┌─────────────────────────────────────┐
+   │ 既存楽曲が見つかった？               │
+   └─────────────────────────────────────┘
+       │                    │
+      YES                  NO
+       │                    │
+       ↓                    ↓
+[既存IDを使用]     [5.0 song_master新規登録]
+       │                    │
+       └────────┬───────────┘
+                ↓
 [5. データ整理] → 調査結果をテーブル形式でまとめる
        ↓
-[6. SQL実行] → INSERT または UPDATE
+[6. SQL実行] → INSERT medley_songs (song_id を設定)
        ↓
 [7. 検証] → SELECT で確認 + Webアプリで目視確認
        ↓

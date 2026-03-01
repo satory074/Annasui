@@ -22,6 +22,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - After `npm install`, verify `package-lock.json` shows the exact intended version
 - Use `npm ci` instead of `npm install` in CI/CD to ensure lockfile is respected
 
+### Database (Drizzle ORM - local dev only, requires DATABASE_URL)
+- `npm run db:generate` - Generate migration files from schema changes
+- `npm run db:migrate` - Run pending migrations
+- `npm run db:studio` - Open Drizzle Studio (database GUI)
+
 ### Deployment
 - `firebase deploy --only hosting` - Deploy to production
 - `rm -rf .next && npm run build && firebase deploy --only hosting` - Clean build and deploy (use when build cache causes issues)
@@ -36,9 +41,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **IMPORTANT**: Always stop dev servers after testing to prevent performance issues
 
-## Testing Strategy
-- No automated tests - manual testing only
-- Development: http://localhost:3000
+## Testing
+
+### Automated Tests
+- `npm run test` - Run unit tests (Vitest)
+- `npm run test:watch` - Watch mode for development
+- `npm run test:coverage` - Coverage report
+- `npm run test:e2e` - Playwright e2e tests (in `e2e/` directory)
+- Test files in `src/**/__tests__/` directories
+- MSW handlers in `src/mocks/` for API mocking
+
+### Production Verification
 - **CRITICAL**: Always verify in production (https://anasui-e6f49.web.app)
 - Production differs in: SSR behavior, CORS policies, iframe communication
 
@@ -83,7 +96,7 @@ Local環境でエラーが解決困難な場合、production buildで先に検�
 
 **Medlean** - Multi-platform medley annotation platform built with Next.js. Supports Niconico (full integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, immediate save system.
 
-**Tech Stack**: Next.js 15.5.7 + React 19.0.0 + TypeScript, TailwindCSS 4, Supabase 2.45.0 (database), Firebase Hosting
+**Tech Stack**: Next.js 15.5.7 + React 19.0.0 + TypeScript, TailwindCSS 4, Supabase 2.45.0 (database), Firebase Hosting, Zustand (state), React Query v5 (data fetching), React Hook Form + Zod v4 (forms), Drizzle ORM (server-side DB, local dev only)
 
 **Status**: Alpha v0.1.0-alpha.1 with password-protected editing
 
@@ -95,6 +108,25 @@ Local環境でエラーが解決困難な場合、production buildで先に検�
 **Supabase Client Version**: `@supabase/supabase-js@2.45.0` - Do NOT upgrade without testing thoroughly, as newer versions may have breaking type changes
 
 ## Core Architecture
+
+### Dual Database Client Architecture (CRITICAL)
+This codebase has **two** database access methods. Using the wrong one causes production failures.
+
+| Client | Location | Env Var | Works in Firebase? | Use Case |
+|--------|----------|---------|-------------------|----------|
+| **Supabase JS** | `src/lib/supabase.ts` | `NEXT_PUBLIC_SUPABASE_*` | Yes | Client components, API routes, production |
+| **Drizzle ORM** | `src/lib/db/index.ts` | `DATABASE_URL` | **No** | Server Actions (`"use server"`), local dev, migrations |
+
+- **Production (Firebase Hosting)**: Only Supabase JS client works. `DATABASE_URL` is NOT set in Cloud Functions.
+- **Pages using Drizzle** (e.g., `src/app/(app)/library/page.tsx`) will crash in production with `DATABASE_URL environment variable is not set`.
+- **Safe pattern**: Use Supabase JS client for all pages. Reserve Drizzle for `"use server"` functions and `drizzle-kit` commands (`db:generate`, `db:migrate`, `db:studio`).
+- **Zod v4 + React Hook Form**: Use untyped `useForm({})` with explicit `as SongFormValues` cast on defaultValues due to stricter type inference.
+
+### Route Architecture
+- **Route group `(app)`**: `src/app/(app)/` is transparent in URLs (e.g., `(app)/library/` serves `/library/`)
+- **Conflict warning**: `src/app/(app)/library/page.tsx` conflicts with `src/app/library/page.tsx` — only one can be active
+- **Current active**: `src/app/library/page.tsx` (Supabase client), `(app)` version disabled (`.tsx.disabled`)
+- **Feature modules**: New features use `src/features/` directory (auth, medley, player, song-database, library)
 
 ### Authentication System
 - **Password-based authentication**: Single shared password (`EDIT_PASSWORD` env var) with user-provided nicknames
@@ -434,35 +466,30 @@ useEffect(() => {
 ```
 src/
 ├── app/ - Next.js App Router
-│   ├── api/
-│   │   ├── auth/verify-password/ - Password verification endpoint
-│   │   ├── thumbnail/niconico/[videoId]/ - Niconico thumbnail proxy
-│   │   ├── thumbnail/spotify/[trackId]/ - Spotify thumbnail proxy (oEmbed API)
-│   │   └── metadata/niconico/[videoId]/ - Niconico metadata proxy
-│   ├── library/ - Library page route (authentication required)
-│   └── [platform]/[videoId]/ - Platform-specific player pages
+│   ├── (app)/ - Route group (transparent in URLs)
+│   │   └── [platform]/[videoId]/ - Dynamic medley pages (server prefetch)
+│   ├── api/ - API routes (auth, thumbnail proxies, metadata)
+│   ├── library/ - Library page (Supabase client, production-safe)
+│   ├── niconico/[videoId]/ - Legacy Niconico route
+│   └── youtube/[videoId]/ - Legacy YouTube route
+├── features/ - Feature-based modules (new architecture)
+│   ├── auth/ - Auth context, components, actions
+│   ├── medley/ - Stores (Zustand), queries, actions
+│   ├── player/ - Player state store
+│   ├── song-database/ - Normalization, search utils, validators
+│   └── library/ - Library page components
 ├── components/
-│   ├── features/
-│   │   ├── auth/ - LoginModal component
-│   │   ├── library/ - SongDatabaseEditModal (library page edit dialog)
-│   │   ├── medley/ - Medley editing, ContributorsDisplay
-│   │   └── player/ - NicoPlayer, YouTubePlayer
-│   ├── layout/ - AppHeader with login/logout UI and library link
-│   ├── pages/ - MedleyPlayer, HomePageClient, LibraryPageClient
-│   └── ui/
-│       ├── form/ - ArtistSelector (multi-artist autocomplete)
-│       └── song/ - Song-related UI components
-├── contexts/
-│   └── AuthContext.tsx - Authentication state management
-├── hooks/
-│   ├── useMedleyEdit.ts - Timeline editing with editor tracking
-│   ├── useNicoPlayer.ts - Niconico player integration
-│   └── useSongSearch.ts - Reusable search/filter/pagination
+│   ├── features/ - Feature-specific UI (auth, library, medley, player)
+│   ├── layout/ - AppHeader
+│   ├── pages/ - Page-level client components
+│   └── ui/ - Reusable UI (form, song, modal)
+├── hooks/ - Custom hooks (useMedleyEdit, useNicoPlayer, useSongSearch)
 ├── lib/
-│   ├── api/medleys.ts - Medley CRUD with nickname parameters
-│   └── utils/
-│       ├── songDatabase.ts - Song database CRUD + search system
-│       └── logger.ts, thumbnail.ts, etc.
+│   ├── db/ - Drizzle ORM setup (server-side only, needs DATABASE_URL)
+│   ├── supabase.ts - Supabase JS client (production)
+│   ├── api/medleys.ts - Medley CRUD
+│   └── utils/ - songDatabase, logger, time, thumbnail
+├── contexts/AuthContext.tsx - Auth state (legacy, see also features/auth/)
 └── types/ - TypeScript definitions
 ```
 
@@ -512,6 +539,7 @@ After deploying fixes (especially for save/database operations):
 EDIT_PASSWORD="your-secure-password-here"
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+DATABASE_URL=postgresql://user:password@host:port/database  # Optional: only for Drizzle ORM / drizzle-kit
 ```
 
 ### Production (Firebase Console)

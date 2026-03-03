@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useMedleyData } from "@/hooks/useMedleyData";
 import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import { useMedleyEdit } from "@/hooks/useMedleyEdit";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/features/auth/context";
 import AppHeader from "@/components/layout/AppHeader";
 import NicoPlayer from "@/components/features/player/NicoPlayer";
 import YouTubePlayer from "@/components/features/player/YouTubePlayer";

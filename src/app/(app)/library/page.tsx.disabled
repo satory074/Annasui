@@ -1,0 +1,25 @@
+import { db } from "@/lib/db";
+import { songMaster } from "@/lib/db/schema";
+import { desc } from "drizzle-orm";
+import { LibraryTable } from "@/features/library/components/LibraryTable";
+import type { Metadata } from "next";
+
+export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "楽曲ライブラリ | Medlean",
+  description: "登録されている楽曲の一覧を表示・編集できます。",
+};
+
+export default async function LibraryPage() {
+  const songs = await db.query.songMaster.findMany({
+    orderBy: desc(songMaster.updatedAt),
+  });
+
+  return (
+    <div className="pt-16 max-w-6xl mx-auto px-4 py-6">
+      <h1 className="text-2xl font-bold text-gray-900 mb-4">楽曲ライブラリ</h1>
+      <LibraryTable initialSongs={songs} />
+    </div>
+  );
+}

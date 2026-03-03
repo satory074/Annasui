@@ -4,7 +4,7 @@ import { Onest } from "next/font/google";
 import { Space_Grotesk } from "next/font/google";
 import "./globals.css";
 import ErrorBoundary from "@/components/ErrorBoundary";
-import ClientLayout from "@/components/ClientLayout";
+import { Providers } from "@/app/providers";
 
 const fraunces = Fraunces({
   variable: "--font-display",
@@ -79,11 +79,11 @@ export default function RootLayout({
       <body
         className={`${fraunces.variable} ${onest.variable} ${spaceGrotesk.variable} antialiased`}
       >
-        <ClientLayout>
+        <Providers>
           <ErrorBoundary>
             {children}
           </ErrorBoundary>
-        </ClientLayout>
+        </Providers>
       </body>
     </html>
   );

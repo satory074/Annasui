@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from "@/features/auth/context"
 import { logger } from '@/lib/utils/logger'
 
 interface LoginModalProps {

@@ -12,7 +12,7 @@ import LoginModal from "@/components/features/auth/LoginModal";
 import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
 import { autoCorrectPlatform } from "@/lib/utils/platformDetection";
 import { logger } from "@/lib/utils/logger";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/features/auth/context";
 
 interface HomePageClientProps {
     initialMedleys: MedleyData[];

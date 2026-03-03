@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/features/auth/context";
 import { getSongDatabase, SongDatabaseEntry, deleteManualSong, findDuplicateGroups, DatabaseDuplicateGroup } from "@/lib/utils/songDatabase";
 import { useSongSearch } from "@/hooks/useSongSearch";
 import { logger } from "@/lib/utils/logger";

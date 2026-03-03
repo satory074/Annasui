@@ -5,7 +5,7 @@ import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 import VersionInfoModal from "@/components/ui/VersionInfoModal";
 import LoginModal from "@/components/features/auth/LoginModal";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/features/auth/context";
 
 interface AppHeaderProps {
   variant?: "home" | "player" | "default";

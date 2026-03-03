@@ -3,6 +3,7 @@ import { SongSection, MedleyData } from '@/types';
 import { updateMedley, createMedley } from '@/lib/api/medleys';
 import { logger } from '@/lib/utils/logger';
 import { formatTime } from '@/lib/utils/time';
+import { hasSongsChanged, areSongArraysEqual } from '@/lib/utils/compare';
 
 interface UseMedleyEditReturn {
   editingSongs: SongSection[];
@@ -57,8 +58,9 @@ export function useMedleyEdit(
   const MAX_HISTORY = 50; // 最大履歴数
 
   // 変更を検知するためのヘルパー関数
+  // Uses efficient deep comparison instead of JSON.stringify for better performance
   const detectChanges = useCallback((newSongs: SongSection[]) => {
-    const songsChanged = JSON.stringify(newSongs) !== JSON.stringify(originalSongs);
+    const songsChanged = hasSongsChanged(newSongs, originalSongs);
     setHasChanges(songsChanged);
   }, [originalSongs]);
 
@@ -489,10 +491,6 @@ export function useMedleyEdit(
 
   // 元のsongs配列が変更された時に編集中の配列も更新
   useEffect(() => {
-    // 初回読み込み時、または実際にoriginalSongsの内容が変わった場合は更新
-    const currentSongsString = JSON.stringify(editingSongs);
-    const originalSongsString = JSON.stringify(originalSongs);
-
     // 編集中の曲があり、originalSongsが空の場合は更新しない
     // （ユーザーが編集中で、親コンポーネントがまだデータを取得していない状態）
     if (editingSongs.length > 0 && originalSongs.length === 0) {
@@ -503,15 +501,18 @@ export function useMedleyEdit(
       return;
     }
 
+    // Use efficient comparison instead of JSON.stringify
+    const contentsMatch = areSongArraysEqual(editingSongs, originalSongs);
+
     // 初回読み込みで内容が異なる場合のみ更新
     // refetch中、編集中、保存中、保存失敗後は更新しない（ユーザーの編集を保護）
-    if (currentSongsString !== originalSongsString && !isRefetching && !hasChanges && !isSaving && !saveFailed) {
+    if (!contentsMatch && !isRefetching && !hasChanges && !isSaving && !saveFailed) {
       logger.debug('🔄 Updating editingSongs from originalSongs', {
         hasChanges,
         isSaving,
         originalSongsCount: originalSongs.length,
         editingSongsCount: editingSongs.length,
-        contentsMatch: currentSongsString === originalSongsString
+        contentsMatch
       });
 
       setEditingSongs(originalSongs);

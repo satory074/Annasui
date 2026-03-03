@@ -1,5 +1,28 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { logger } from '@/lib/utils/logger';
+
+/**
+ * Timing-safe string comparison to prevent timing attacks
+ * Returns true if strings are equal, false otherwise
+ */
+function safeStringCompare(a: string, b: string): boolean {
+  // Convert strings to buffers of same length to prevent length-based timing attacks
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+
+  // If lengths differ, comparison will fail but we still do the comparison
+  // to avoid leaking length information through timing
+  if (bufA.length !== bufB.length) {
+    // Create a buffer of same length to compare, then return false
+    const paddedB = Buffer.alloc(bufA.length, 0);
+    bufB.copy(paddedB, 0, 0, Math.min(bufB.length, bufA.length));
+    timingSafeEqual(bufA, paddedB);
+    return false;
+  }
+
+  return timingSafeEqual(bufA, bufB);
+}
 
 // Rate limiting store (in-memory, resets on server restart)
 // For production, consider using Redis or similar
@@ -15,10 +38,26 @@ setInterval(() => {
   }
 }, 10 * 60 * 1000);
 
+/**
+ * Get rate limit key from request
+ * Note: X-Forwarded-For can be spoofed in some configurations.
+ * For enhanced security in production, consider:
+ * 1. Using Redis for distributed rate limiting
+ * 2. Trusting only verified proxy headers (e.g., Cloudflare, Vercel)
+ * 3. Combining IP with other fingerprinting methods
+ */
 function getRateLimitKey(request: NextRequest): string {
+  // First try Vercel's trusted header (not spoofable when deployed on Vercel)
+  const vercelIp = request.headers.get('x-vercel-forwarded-for');
+  if (vercelIp) {
+    return vercelIp.split(',')[0].trim();
+  }
+
   // Use X-Forwarded-For header if available (for proxied requests)
+  // Note: This can be spoofed if not behind a trusted proxy
   const forwarded = request.headers.get('x-forwarded-for');
   if (forwarded) {
+    // Only trust the first IP (set by the closest trusted proxy)
     return forwarded.split(',')[0].trim();
   }
 
@@ -113,8 +152,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify password
-    if (password === correctPassword) {
+    // Verify password using timing-safe comparison
+    if (safeStringCompare(password, correctPassword)) {
       logger.info('Successful authentication for nickname:', nickname.trim(), 'from IP:', ip);
 
       // Clear rate limit on successful login

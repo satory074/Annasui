@@ -13,15 +13,11 @@ if (!supabaseAnonKey) {
   logger.error('❌ NEXT_PUBLIC_SUPABASE_ANON_KEY environment variable is not set')
 }
 
-// Debug logging for production (only if variables are set)
+// Debug logging - only confirm presence, never log actual values
 if (supabaseUrl && supabaseAnonKey) {
-  logger.debug('🔍 Supabase Environment Debug:', {
+  logger.debug('🔍 Supabase configuration validated:', {
     hasUrl: true,
     hasKey: true,
-    urlLength: supabaseUrl.length,
-    keyLength: supabaseAnonKey.length,
-    urlValue: supabaseUrl,
-    keyPrefix: supabaseAnonKey.substring(0, 20) + '...',
     isProduction: process.env.NODE_ENV === 'production'
   })
 }

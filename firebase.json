@@ -8,22 +8,6 @@
     ],
     "rewrites": [
       {
-        "source": "/version",
-        "destination": "/version.html"
-      },
-      {
-        "source": "/admin",
-        "destination": "/admin.html"
-      },
-      {
-        "source": "/profile",
-        "destination": "/profile.html"
-      },
-      {
-        "source": "/settings",
-        "destination": "/settings.html"
-      },
-      {
         "source": "**",
         "function": "ssranasuie6f49"
       }

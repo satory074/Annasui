@@ -4,793 +4,154 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-**Prerequisites**: Node.js 18.0.0+, Firebase CLI (`npm install -g firebase-tools`)
-
 ### Development
-- `npm run dev` - Start development server (http://localhost:3000)
-- `ps aux | grep "next-server" | grep -v grep` - Check running dev servers
-- `lsof -ti:3000,3001,3002,3003,3004 | xargs kill -9` - Kill all dev servers
+- `npm run dev` — Start dev server (http://localhost:3000)
+- `npm run build` — Production build
+- `npm run lint` — ESLint (ignored during builds via `ignoreDuringBuilds: true`)
+- `npx tsc --noEmit` — TypeScript type checking
+- `npm run build && npx tsc --noEmit && npm run lint` — Pre-deployment validation
 
-### Build & Quality
-- `npm run build` - Build production app
-- `npm run lint` - Run ESLint checks (note: ignored during builds via `ignoreDuringBuilds: true`)
-- `npx tsc --noEmit` - TypeScript type checking
-- `npm run build && npx tsc --noEmit && npm run lint` - Pre-deployment validation
+### Testing
+- `npm run test` — Run unit tests (Vitest, jsdom, files in `src/**/__tests__/`)
+- `npm run test:watch` — Watch mode
+- `npm run test:coverage` — Coverage report
+- `npm run test:e2e` — Playwright e2e tests (`e2e/` directory, auto-starts dev server)
 
-**Dependency Management**:
-- Use exact versions (no `^` prefix) for critical dependencies like `@supabase/supabase-js` to prevent unexpected upgrades
-- After `npm install`, verify `package-lock.json` shows the exact intended version
-- Use `npm ci` instead of `npm install` in CI/CD to ensure lockfile is respected
-
-### Database (Drizzle ORM - local dev only, requires DATABASE_URL)
-- `npm run db:generate` - Generate migration files from schema changes
-- `npm run db:migrate` - Run pending migrations
-- `npm run db:studio` - Open Drizzle Studio (database GUI)
+### Database (Drizzle ORM — local dev only, requires `DATABASE_URL`)
+- `npm run db:generate` — Generate migrations from schema changes
+- `npm run db:migrate` — Run pending migrations
+- `npm run db:studio` — Open Drizzle Studio GUI
 
 ### Deployment
-- `firebase deploy --only hosting` - Deploy to production
-- `rm -rf .next && npm run build && firebase deploy --only hosting` - Clean build and deploy (use when build cache causes issues)
+- `firebase deploy --only hosting` — Deploy to production
+- `rm -rf .next && npm run build && firebase deploy --only hosting` — Clean build + deploy (when cache causes issues)
+- Always verify in production: https://anasui-e6f49.web.app
 
-### Database Backup & Recovery
-- `./scripts/backup-database.sh` - Create manual database backup
-- `./scripts/restore-database.sh database/backups/backup_YYYYMMDD_HHMMSS.tar.gz` - Restore from backup
-- **Automated backups**: Run daily at 3:00 AM JST via GitHub Actions
-- **Backup location**: `database/backups/` (30 most recent backups retained)
-- **Connection string**: Use Session Pooler (`aws-1-ap-northeast-1.pooler.supabase.com:5432`)
-- See [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md) for complete disaster recovery procedures
-
-**IMPORTANT**: Always stop dev servers after testing to prevent performance issues
-
-## Testing
-
-### Automated Tests
-- `npm run test` - Run unit tests (Vitest)
-- `npm run test:watch` - Watch mode for development
-- `npm run test:coverage` - Coverage report
-- `npm run test:e2e` - Playwright e2e tests (in `e2e/` directory)
-- Test files in `src/**/__tests__/` directories
-- MSW handlers in `src/mocks/` for API mocking
-
-### Production Verification
-- **CRITICAL**: Always verify in production (https://anasui-e6f49.web.app)
-- Production differs in: SSR behavior, CORS policies, iframe communication
-
-### Local環境でエラーが発生した場合の対処
-**症状**: Local開発サーバー（`npm run dev`）でTypeError、ReferenceError、Fast Refresh警告が頻発する
-
-**原因**: Next.jsのHot Module Replacement (HMR)は開発用の機能で、以下の問題を引き起こす可能性があります:
-- Fast Refreshによる不完全なモジュール再読み込み
-- 初期化順序の不整合（例: `ReferenceError: Cannot access 'duration' before initialization`）
-- `TypeError: Cannot read properties of undefined`
-
-**対処法: Production-First Testing**
-
-Local環境でエラーが解決困難な場合、production buildで先に検証することで、Local環境特有の問題を切り分けできます:
-
-1. **Build確認**: `npm run build`
-   - Production buildが成功すれば、基本的な構文・型エラーはない証拠
-   - TypeScriptの型エラーが検出される
-   - ビルド失敗時はエラーメッセージに従って修正
-
-2. **Deploy**: `firebase deploy --only hosting`
-   - Production環境へデプロイ
-   - HMR/Fast Refreshは使用されない
-   - コードは最適化された状態で実行
-
-3. **Production検証**: https://anasui-e6f49.web.app
-   - ブラウザのDevToolsコンソールでログ確認
-   - 実際の動作をテスト
-   - SSR、CORS、iframe通信の実際の挙動を検証
-
-4. **必要に応じてLocal修正を継続**
-   - Production環境で問題が解決していれば、Local環境のHMR問題と判断
-   - Production環境でも問題があれば、コード自体の問題として修正
-
-**メリット**:
-- まだリリース前の段階では、production環境でのテストが安全に可能
-- データベースも独立しているため影響は限定的
-- Local環境とproduction環境の挙動の違いを早期に発見できる
-- HMRによる誤ったエラー報告に惑わされない
+### Server Management
+- `ps aux | grep "next-server" | grep -v grep` — Check running dev servers
+- `lsof -ti:3000,3001,3002,3003,3004 | xargs kill -9` — Kill all dev servers
+- Always stop dev servers after testing to prevent performance issues
 
 ## Project Overview
 
-**Medlean** - Multi-platform medley annotation platform built with Next.js. Supports Niconico (full integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, immediate save system.
+**Medlean** — Multi-platform medley annotation platform. Supports Niconico (full iframe integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, immediate save system.
 
-**Tech Stack**: Next.js 15.5.7 + React 19.0.0 + TypeScript, TailwindCSS 4, Supabase 2.45.0 (database), Firebase Hosting, Zustand (state), React Query v5 (data fetching), React Hook Form + Zod v4 (forms), Drizzle ORM (server-side DB, local dev only)
+**Tech Stack**: Next.js 15.5.7, React 19, TypeScript, TailwindCSS 4, Supabase 2.45.0 (database), Firebase Hosting, Zustand (state with temporal undo/redo), React Query v5 (data fetching), React Hook Form + Zod v4 (forms), Drizzle ORM (server-side DB, local dev only)
 
-**Status**: Alpha v0.1.0-alpha.1 with password-protected editing
-
-**Security Status**:
-- Next.js 15.5.7: Security patches applied (CVE-2025-55182, CVE-2025-66478)
-- Supabase 2.45.0: Intentionally maintained (newer versions have breaking type changes)
-- Run `npm audit` regularly; 2 low-severity vulnerabilities (Supabase auth-js) are acceptable
-
-**Supabase Client Version**: `@supabase/supabase-js@2.45.0` - Do NOT upgrade without testing thoroughly, as newer versions may have breaking type changes
+**Status**: Alpha v0.1.0-alpha.1
 
 ## Core Architecture
 
 ### Dual Database Client Architecture (CRITICAL)
-This codebase has **two** database access methods. Using the wrong one causes production failures.
 
 | Client | Location | Env Var | Works in Firebase? | Use Case |
 |--------|----------|---------|-------------------|----------|
 | **Supabase JS** | `src/lib/supabase.ts` | `NEXT_PUBLIC_SUPABASE_*` | Yes | Client components, API routes, production |
 | **Drizzle ORM** | `src/lib/db/index.ts` | `DATABASE_URL` | **No** | Server Actions (`"use server"`), local dev, migrations |
 
-- **Production (Firebase Hosting)**: Only Supabase JS client works. `DATABASE_URL` is NOT set in Cloud Functions.
-- **Pages using Drizzle** (e.g., `src/app/(app)/library/page.tsx`) will crash in production with `DATABASE_URL environment variable is not set`.
-- **Safe pattern**: Use Supabase JS client for all pages. Reserve Drizzle for `"use server"` functions and `drizzle-kit` commands (`db:generate`, `db:migrate`, `db:studio`).
-- **Zod v4 + React Hook Form**: Use untyped `useForm({})` with explicit `as SongFormValues` cast on defaultValues due to stricter type inference.
+Production (Firebase Hosting) does NOT have `DATABASE_URL`. Pages using Drizzle will crash in production. Use Supabase JS client for all pages; reserve Drizzle for `"use server"` functions and `drizzle-kit` commands.
+
+### Architecture Layers
+
+**Provider hierarchy** (`src/app/providers.tsx`): QueryClientProvider → AuthProvider → children (+ ReactQueryDevtools)
+
+**Auth system** (`src/features/auth/context`): Single shared password (`EDIT_PASSWORD` env var) + user nicknames. No registration. Session via sessionStorage. API: `/api/auth/verify-password/` with rate limiting (5 attempts/10 min). Import: `import { useAuth } from "@/features/auth/context"`.
+
+**State management**: Two Zustand stores in `src/features/`:
+- `medley/store.ts` — Timeline state (songs, selection) with temporal middleware (undo/redo via zundo) and immer
+- `player/store.ts` — Playback state (currentTime, isPlaying, duration, volume)
+
+**Data fetching**: React Query v5 with Supabase JS client. CRUD operations in `src/lib/api/medleys.ts`. All external API calls go through Next.js API routes due to CORS (Niconico thumbnails, metadata; Spotify thumbnails).
+
+**Legacy hooks** (in `src/hooks/`): `useMedleyEdit` (timeline editing with immediate save), `useNicoPlayer` (iframe postMessage), `useCurrentTrack`, `useSongSearch`. These coexist with the newer `src/features/` modules.
 
 ### Route Architecture
-- **Route group `(app)`**: `src/app/(app)/` is transparent in URLs (e.g., `(app)/library/` serves `/library/`)
-- **Conflict warning**: `src/app/(app)/library/page.tsx` conflicts with `src/app/library/page.tsx` — only one can be active
-- **Current active**: `src/app/library/page.tsx` (Supabase client), `(app)` version disabled (`.tsx.disabled`)
-- **Feature modules**: New features use `src/features/` directory (auth, medley, player, song-database, library)
+- Route group `(app)` at `src/app/(app)/` is transparent in URLs
+- **Conflict**: `src/app/(app)/library/page.tsx` conflicts with `src/app/library/page.tsx` — only one can be active. Currently active: `src/app/library/page.tsx`
+- Pages using components with `useAuth` need `export const dynamic = "force-dynamic"`
 
-### Authentication System
-- **Password-based authentication**: Single shared password (`EDIT_PASSWORD` env var) with user-provided nicknames
-- **No registration required**: Users enter nickname + password to edit
-- **Session persistence**: Uses sessionStorage for maintaining login state
-- **Contributor tracking**: All edits record editor nickname in database (`medley_edits` table)
-- **AuthContext** (`src/contexts/AuthContext.tsx`): Provides `isAuthenticated`, `nickname`, `login()`, `logout()`
-- **API verification**: `/api/auth/verify-password/` with rate limiting (5 attempts/10 min)
-
-### Video Player Integration
-- **useNicoPlayer**: Manages Niconico iframe postMessage communication
-- **useMedleyEdit**: Timeline editing with immediate save system and editor tracking
-- **usePlayerPosition + useMousePosition**: Real-time collision detection for ActiveSongPopup
-- **useCurrentTrack**: Determines which song is playing based on current time
-- **useMedleyData + useMedleyDataApi**: Data fetching with optimistic UI pattern
-  - `loading`: Initial page load only (triggers full loading screen)
-  - `isRefetching`: Background data sync (UI remains visible)
-  - `isInitialLoad`: Internal flag to distinguish first load from refetch
-- Platform-specific players in `app/[platform]/[videoId]/` routes
-
-### Song Database System
-- **Purpose**: Persistent storage for manually added songs that can be reused across medleys
-- **Implementation**: `src/lib/utils/songDatabase.ts`
-- **Database table**: `song_master` (see migrations `015_rebuild_database_structure.sql`, `016_make_artist_optional.sql`)
-
-**ID Architecture** (3 distinct ID types):
+### ID Architecture (3 distinct types)
 | ID | Type | Location | Purpose |
 |----|------|----------|---------|
-| `song_master.id` | UUID | Database | Primary key |
-| `normalized_id` / `dedupKey` | string | DB + App | Duplicate detection |
-| `SongSection.id` | number | Memory only | Timeline position (from `order_index`) |
+| `song_master.id` | UUID | Database | Primary key, FK references |
+| `normalized_id` / `dedupKey` | string | DB + App | Duplicate detection (katakana→hiragana normalization) |
+| `SongSection.id` | string (UUID) | App memory | From `medley_songs.id` |
 
-- **SongDatabaseEntry.id**: UUID from `song_master.id` (primary key)
-- **SongDatabaseEntry.dedupKey**: Normalized string for duplicate detection (title_artist format)
-- **SongSection.songId**: Optional UUID reference to `song_master`
-- UUID detection: `id.includes('-') && id.length === 36`
-
-**Key features**:
-  - **Duplicate Detection**: Uses `normalizeSongInfo()` (converts katakana→hiragana, removes symbols, unifies music terms)
-  - **Search system**: Multi-tier matching (exact → startsWith → wordMatch → partialMatch → fuzzyMatch) with scoring
-  - **Persistence**: Songs saved to Supabase persist across page reloads
-  - **Integration**: Fetched via `buildSongDatabase()` which merges medley-extracted songs + manually added songs
-  - **Optional fields**: Artist name and original link are optional (Migration 016)
-    - Empty artist → automatically converted to "Unknown Artist"
-    - Empty original_link → stored as NULL
-
-**Functions**:
-  - `addManualSong()`: Save new song to database (title required, artist/link optional)
-  - `getSongDatabase()`: Get all songs (cached, includes medley + manual songs)
-  - `searchSongs()`: Search with scoring and match type detection
-  - `createSongFromDatabase()`: Convert DB entry to timeline song (sets `songId` for UUID references)
-  - `deleteManualSong()`: Delete song with smart unlinking (preserves medley integrity)
-  - `updateManualSong()`: Update song metadata (supports both UUID and dedupKey lookups)
-  - `findDuplicateGroups()`: Detect potential duplicates using `dedupKey` similarity
-  - `mergeDuplicateSongs()`: Merge duplicates (accepts UUID or dedupKey)
-
-**Duplicate Management**:
-  - **Detection**: Uses Levenshtein distance on `dedupKey` (>80% similarity triggers grouping)
-  - **Merge process** (`mergeDuplicateSongs()`):
-    1. Updates `song_id` in `medley_songs` to point to target (master) song
-    2. Updates `title` and `artist` to match target song
-    3. Normalizes existing records with same `song_id` but different `artist` values
-    4. Deletes source entries from `song_master` (if UUID-based)
-    5. Clears song database cache
-  - **ID handling**: Accepts both UUID (from `song_master`) and dedupKey (for medley-only songs)
-  - **UI**: Library page → "重複管理" tab → Select master via radio button → Click "マージ実行"
-
-### Library Page System
-- **Purpose**: Dedicated interface for managing song database independently from medley context
-- **Route**: `/library/` (authentication required)
-- **Implementation**:
-  - `src/app/library/page.tsx` - Next.js route with dynamic rendering
-  - `src/components/pages/LibraryPageClient.tsx` - Main component (table view)
-  - `src/components/features/library/SongDatabaseEditModal.tsx` - Edit modal
-  - `src/hooks/useSongSearch.ts` - Reusable search/filter/pagination hook
-- **Features**:
-  - **Search & Filter**: Real-time search by title/artist with match type display
-  - **Sortable Table**: Click column headers to sort (title, artist, updated date)
-  - **Pagination**: 20 items per page with prev/next navigation
-  - **Edit Modal**: Full metadata editing (title, artists, composers, arrangers, 4 platform links)
-  - **Delete**: Smart deletion that unlinks songs from medleys (preserves cached data)
-  - **Authentication Guard**: Shows login prompt if not authenticated
-- **UI Pattern**: Table layout with thumbnails, platform links, action buttons (編集/削除)
-- **Navigation**: Link in AppHeader (visible only when authenticated via `requiresAuth: true`)
-
-### API Proxy Pattern
-All external API calls must go through Next.js API routes due to CORS:
-- Niconico thumbnails: `/api/thumbnail/niconico/[videoId]/` → Multiple CDN fallbacks with retry logic
-- Niconico metadata: `/api/metadata/niconico/[videoId]/` → XML parsing for video metadata
-- Spotify thumbnails: `/api/thumbnail/spotify/[trackId]/` → oEmbed API fetch + image streaming
-Pattern: Server-side fetch → Process response → Return to client (as JSON or image buffer)
+`SongSection.songId` is an optional UUID reference back to `song_master` for library linking.
 
 ## Critical Constraints
 
-### Firebase Configuration
-- **MUST** use `trailingSlash: true` in next.config.ts
+### Firebase Hosting
+- **MUST** use `trailingSlash: true` in `next.config.ts`
 - **MUST** include trailing slashes in API URLs: `/api/thumbnail/niconico/${id}/`
-- Reason: Firebase Hosting auto-adds slashes causing redirect loops
+- Firebase auto-adds slashes causing redirect loops without this
 
-### Niconico Player Integration
+### Niconico Player
 - **NEVER** use `sandbox` attribute on iframe (blocks postMessage)
 - **MUST** convert seconds to milliseconds for Niconico API (`time * 1000`)
 - **MUST** use `commandInProgress` flag to prevent command overlap
 
-### Authentication Requirements
-- **MUST** check `isAuthenticated` AND `authLoading` before showing edit UI
-- **MUST** pass `nickname` parameter to all save operations
-- Edit operations: `saveMedley(videoId, title, creator, duration, nickname)`
-- Immediate save callbacks: Provide `onAfterAdd`, `onAfterUpdate`, `onAfterDelete`, `onAfterBatchUpdate` to useMedleyEdit
-- Environment variable: `EDIT_PASSWORD` (server-side only, no `NEXT_PUBLIC_` prefix)
-- **CRITICAL**: Use `authLoading ? <Loading /> : isAuthenticated ? <EditUI /> : <LoginPrompt />` pattern to prevent UI flicker
+### TailwindCSS 4
+- **MUST** add explicit `text-gray-900` to all `input` and `textarea` elements — TailwindCSS 4 may render text invisible without it
 
-### API Proxy Requirements
-- Use proxy APIs for CORS: `/api/thumbnail/niconico/[videoId]/`, `/api/metadata/niconico/[videoId]/`, `/api/thumbnail/spotify/[trackId]/`
-- **MUST** include User-Agent header for external API calls (Niconico, Spotify)
-- Server-side XML parsing uses regex (not DOMParser) for Niconico metadata
-- Spotify track ID validation: Exactly 22 alphanumeric characters (`/^[a-zA-Z0-9]{22}$/`)
-- Return image buffers with appropriate Content-Type and caching headers
+### Zod v4 + React Hook Form
+- Use untyped `useForm({})` with explicit `as SongFormValues` cast on defaultValues due to stricter type inference
 
-## Architecture Patterns
+### useEffect with Continuous Updates
+When components receive rapidly-updating props (e.g., `currentTime` from video playback), do NOT include them in useEffect dependency arrays — this resets form state every ~100ms. Reference the prop directly and add `eslint-disable-next-line react-hooks/exhaustive-deps` with a comment explaining why.
 
-### Authentication Flow
-1. Anonymous: Read-only access
-2. Authenticated: Full edit access after password verification
-3. Contributors tracked: All edits record editor nickname
-4. Session persisted: Login state maintained across page loads
+### Supabase Client Version
+`@supabase/supabase-js@2.45.0` — Do NOT upgrade without thorough testing; newer versions have breaking type changes.
 
-### Immediate Save System
-- Operations (add/edit/delete) trigger immediate save to database
-- Validates songs before saving (no empty titles/artists)
-- Requires authentication and nickname for operation
-- After save completes, data is refetched from database to ensure consistency
-- **Edit history is also refetched** after immediate save (in `handleImmediateSave` callback) to ensure UI shows latest entries
-- No debouncing - changes are saved instantly upon operation completion
-- **Optimistic UI**: Uses `isRefetching` flag to prevent loading screen during refetch
-  - `loading`: Only true on initial page load
-  - `isRefetching`: True during background data sync (UI stays visible)
-  - Small blue banner shows "データを同期中..." during refetch
+## Immediate Save System
 
-### useMedleyEdit State Management
-- **Three state layers**: `originalSongs` (from parent/server), `editingSongs` (local edits), `hasChanges` (dirty flag)
-- **State synchronization**: useEffect syncs `originalSongs` → `editingSongs` only when:
-  1. Content actually differs (JSON.stringify comparison)
-  2. User is NOT editing (`editingSongs.length > 0 && originalSongs.length === 0` guard)
-  3. NOT currently saving (`!isSaving` guard)
-  4. NOT currently refetching (`!isRefetching` guard)
-- **Immediate save flow**: Operation completes → Callback triggers → Save to DB → Refetch from DB → State updates
-- **Callback system**: Use `onAfterAdd`, `onAfterUpdate`, `onAfterDelete`, `onAfterBatchUpdate` props
-- **Guard conditions prevent**: Race conditions between save completion and parent refetch
+Operations (add/edit/delete) trigger immediate save to database — no debouncing. Flow:
+1. User operation → `useMedleyEdit` callback triggers
+2. `saveMedleySongs()` writes to DB + creates edit history snapshot
+3. Data refetched from DB to ensure consistency
+4. UI uses `isRefetching` flag (NOT `loading`) to stay visible during background sync
 
-### React State Management with Continuous Updates
-**CRITICAL**: When components receive continuous prop updates (e.g., `currentTime` from video playback), carefully manage useEffect dependencies to prevent form state resets:
+Guard conditions in `useMedleyEdit` state sync prevent race conditions: `!isSaving`, `!isRefetching`, `!hasChanges`, `!saveFailed`.
 
-- **Problem Pattern**: Including rapidly-updating props in useEffect dependency arrays causes the effect to run repeatedly, resetting form state
-- **Example**: `SongEditModal.tsx` previously had `currentTime` in useEffect dependency array, causing form inputs to reset every ~100ms during playback
-- **Solution**: Only include dependencies that should trigger re-initialization
-  - If a prop is only needed for initial render calculation, reference it directly without adding to dependency array
-  - Add `eslint-disable-next-line react-hooks/exhaustive-deps` with explanatory comment
-  - Document WHY the dependency is omitted (e.g., "currentTime only needed for initial render, not re-renders")
+## Database Schema (4 tables)
 
-**Pattern**:
-```typescript
-// ❌ BAD: currentTime causes form reset during playback
-useEffect(() => {
-  setFormData(song);
-}, [song, currentTime]); // currentTime updates every 100ms!
+1. **`medleys`** — `id` (UUID), `video_id` (unique), `platform`, `title`, `creator`, `duration`, timestamps
+2. **`song_master`** — `id` (UUID), `title`, `artist` (nullable), `normalized_id` (unique), platform links (`niconico_link`, `youtube_link`, `spotify_link`, `applemusic_link`), timestamps
+3. **`medley_songs`** — `id` (UUID), `medley_id` (FK), `song_id` (FK nullable → song_master), `start_time`/`end_time` (REAL, 0.1s precision), `order_index`, cached `title`/`artist`/`color`, platform links, timestamps
+4. **`medley_edits`** — `id` (UUID), `medley_id` (FK), `song_id` (FK), `editor_nickname`, `action`, `changes` (JSONB), timestamp
 
-// ✅ GOOD: currentTime used directly, not in deps
-useEffect(() => {
-  setFormData({
-    ...song,
-    startTime: isNew ? currentTime : song.startTime  // Direct reference
-  });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, [song, isNew]); // currentTime NOT in deps - only for initial render
-```
-
-**When to be cautious**:
-- Video player `currentTime` updates (every ~100ms)
-- Mouse position tracking (continuous events)
-- Animation frame updates
-- Any prop that updates multiple times per second
-
-### Timeline Rendering for Multi-Segment Songs
-**CRITICAL**: When a song appears multiple times in a medley, segments must be displayed in multiple rows within one section, NOT overlapping.
-
-- **Problem Pattern**: Fixed positioning (`top-1`) causes all segments to overlap when a song has multiple occurrences
-- **Solution**: Dynamic height calculation and vertical positioning based on segment index
-  - Container height: `${group.segments.length * 32}px` (32px per segment)
-  - Segment positioning: `top: ${segmentIndex * 32 + 2}px`
-  - Segment height: Fixed `h-7` (28px) with 4px total margin
-  - Location: `src/components/features/medley/SongListGrouped.tsx`
-
-**Pattern**:
-```typescript
-// ❌ BAD: Fixed positioning causes overlap
-<div className="h-8">
-  {segments.map(segment => (
-    <div className="absolute top-1 h-6" />
-  ))}
-</div>
-
-// ✅ GOOD: Dynamic positioning for multi-row layout
-<div style={{ height: `${group.segments.length * 32}px` }}>
-  {segments.map((segment, segmentIndex) => (
-    <div
-      className="absolute h-7"
-      style={{ top: `${segmentIndex * 32 + 2}px` }}
-    />
-  ))}
-</div>
-```
-
-### Layout Architecture
-- **2-Column Flexbox Layout** (`MedleyPlayer.tsx`): Nico Nico-style layout with main content and sidebar
-  - **Container structure**:
-    - Outer flex container: `<div className="flex max-w-[1920px] mx-auto">`
-    - Left column: `<div className="flex-1 bg-white shadow-lg">` (takes remaining space)
-    - Right column: `<div className="hidden lg:block">` with RightSidebar (320px width via `w-80`)
-  - **Responsive behavior**:
-    - Desktop (≥1024px): Shows 2-column layout with sticky sidebar
-    - Mobile/Tablet (<1024px): Hides sidebar, shows ActiveSongPopup instead
-  - **Key implementation notes**:
-    - Outer container must NOT have `flex` class on wrapper
-    - RightSidebar uses sticky positioning (`sticky top-16`) to stay visible while scrolling
-    - Maximum width constrained to 1920px for ultra-wide displays
-    - Right sidebar uses light theme (`bg-gray-50`) with vertical card layout
-
-### Current Song Display
-- **RightSidebar** (`src/components/features/player/RightSidebar.tsx`): Nico Nico-style right sidebar for desktop
-  - **Positioning**: Sticky positioning - stays fixed at top while scrolling page content
-    - Classes: `sticky top-16 self-start max-h-[calc(100vh-4rem)] overflow-y-auto`
-    - `top-16`: Fixed below header (64px)
-    - `max-h-[calc(100vh-4rem)]`: Constrained to viewport height minus header
-    - `overflow-y-auto`: Internal scrolling when many songs are playing
-  - **Desktop (1024px+)**: Visible as right column in 2-column layout
-  - **Mobile/Tablet (<1024px)**: Hidden (`hidden lg:block`), ActiveSongPopup shows instead
-  - **Theme**: Light theme with `bg-gray-50` background, white song cards with `border-gray-200` borders
-  - **Features**:
-    - "🎵 現在再生中" section with song count badge
-    - Vertical card layout: Thumbnail (80x80px) → Title → Artist → Platform links
-    - Compact thumbnails optimized for multiple simultaneous songs
-    - Real-time updates as songs change during playback
-    - Duplicate detection for songs in multiple segments (uses Set-based deduplication)
-    - Platform links (Nico Nico 🎬, YouTube ▶️, Spotify 🎵, Apple Music 🍎) displayed as gray buttons
-    - Fade-in animations with staggered delays (50ms per song)
-- **ActiveSongPopup** (`src/components/ui/song/ActiveSongPopup.tsx`): Bottom-corner popup for mobile
-  - Mouse avoidance system with collision detection
-  - Position switching (left/right) based on player visibility
-  - Only visible when RightSidebar is hidden (responsive design)
-
-### Time Utilities (`src/lib/utils/time.ts`)
-- **Decimal time support**: All time values support 0.1 second precision
-- **Input format**: `"1:30.5"` parses to `90.5` seconds (uses `parseFloat`)
-- **Display format**: Shows decimal only when present (`1:30` vs `1:30.5`)
-- **Functions**:
-  - `parseTimeInput(str)`: Converts `"M:SS.s"` string to seconds (number)
-  - `formatTimeSimple(time)`: Converts seconds to `"M:SS"` or `"M:SS.s"` string
-  - `formatTime(time)`: Same with zero-padded minutes (`"MM:SS"`)
-
-### Keyboard Shortcuts
-- **Spacebar**: Play/pause (global, disabled in inputs/modals)
-- **S/E/M keys**: Start/End time, Add song (edit mode only)
-- **Ctrl+Z/Y**: Undo/Redo (edit mode only)
-
-### Component Requirements
-- Use `logger.debug/info/warn/error()` instead of console.log
-- Always include `displayName` for production builds
-- Use unique keys for dynamic components
-- Check authentication before rendering edit controls
-- **CRITICAL**: Always add explicit text color class (`text-gray-900`) to all `input` and `textarea` elements
-  - Reason: TailwindCSS 4 default styles may cause input text to be invisible (white/transparent)
-  - Pattern: `className="... text-gray-900 ..."`
-  - Applies to: All form inputs, search boxes, textareas in modals and forms
-
-## Common Issues
-
-### Player Issues
-- **Seek fails**: Check millisecond conversion (`* 1000`)
-- **iframe not responding**: Verify postMessage origin and no sandbox attribute
-- **Duration mismatch**: Use `actualPlayerDuration` for timeline
-
-### Authentication Issues
-- **Edit buttons missing**: Verify user is authenticated via `useAuth()`
-- **Edit buttons appearing when not authenticated**: Check that edit callbacks are conditionally passed (e.g., `onEdit={isAuthenticated ? handleEdit : undefined}`)
-- **Tooltip edit button bypassing authentication**: Ensure `handleEditFromTooltip` includes authentication check before opening modal
-- **Password verification fails**: Check `EDIT_PASSWORD` in `.env.local` (dev) or Firebase env (prod)
-- **Session lost**: sessionStorage clears on browser close (expected behavior)
-- **Rate limiting**: Max 5 login attempts per 10 minutes
-
-### API Issues
-- **Thumbnails not loading**: Check proxy API with trailing slash
-- **CORS errors**: Must use server-side proxy, not direct API calls
-- **Metadata fails**: Verify User-Agent header and regex parsing
-- **Spotify thumbnail HTTP 400**: Invalid track ID format - must be exactly 22 alphanumeric characters
-- **Spotify thumbnail HTTP 404**: Track does not exist on Spotify or oEmbed API failed
-- **Invalid test data in database**: Check `song_master.spotify_link` for placeholder values (e.g., `production-test-link`) - these cause validation errors
-
-### Database Issues
-- **PGRST204 error ("column not found in schema cache")**: Check that INSERT/UPDATE operations don't reference non-existent columns
-- **400 Bad Request from Supabase**: Inspect network request URL for `?columns=...` parameter - ensure all column names exist in the actual database schema
-- **Type errors after Supabase client upgrade**: Update Database type definitions in `src/lib/supabase.ts` to match actual schema
-- **Schema mismatch**: Run `NOTIFY pgrst, 'reload schema';` in Supabase SQL editor to refresh PostgREST schema cache
-- **Migration-induced save failures**: After schema migrations (especially column renames/additions), systematically search codebase for old field references:
-  - Use `grep -r "oldFieldName" src/` to find all references
-  - Check: Type definitions, API calls, sanitization functions, component props, hooks
-  - Example: Migration 017 replaced `originalLink` with `niconicoLink`/`youtubeLink`/`spotifyLink`/`applemusicLink` - required updating 4+ files
-  - After fixes, verify production deployment with cache-cleared browser test
-
-### Timeline Issues
-- **Keyboard shortcuts not working**: Check edit mode active and no input focus
-- **Immediate save not triggering**: Verify authenticated, valid song data, and callbacks provided to useMedleyEdit
-- **Undo/Redo broken**: Check keyboard listeners in edit mode only
-- **Songs disappearing after operation**: Verify immediate save callback and refetch are working correctly
-- **EditingSongs reset unexpectedly**: Verify useEffect guard conditions (`!isSaving`, `!isRefetching`, `!hasChanges`) in `useMedleyEdit` sync effect
-- **Loading screen appears during song edit**: Ensure `isRefetching` flag is used (not `loading`) for background sync
-- **Form inputs reset during video playback**: Check that `currentTime` is NOT in useEffect dependency arrays for form initialization (see "React State Management with Continuous Updates" section)
-- **Edits not saving during playback**: Verify form state preservation and guard conditions in both SongEditModal and useMedleyEdit
-- **Multiple segments overlapping**: For songs with multiple occurrences, ensure dynamic height and positioning (see "Timeline Rendering for Multi-Segment Songs" section in SongListGrouped.tsx)
-- **Edit history not updating**: Ensure edit history refetch is called after immediate save (in `handleImmediateSave`)
-- **Duplicate edit history entries**: Only `saveMedleySongs()` should call `recordMedleyEdit()` - verify `updateMedley()` doesn't have duplicate call
-
-### Production Issues
-- **Component missing**: Check displayName and module-level logging
-- **ActiveSongPopup hidden**: Verify collision detection uses 116px popup zone
-- **Build failures**: Run `npm run build + npx tsc --noEmit + npm run lint`
-
-### UI/Styling Issues
-- **Input text invisible**: Add `text-gray-900` class to all `input`/`textarea` elements
-  - Affected components: All modals (SongSearchModal, ManualSongAddModal, BulkEditModal, ImportSetlistModal, LoginModal)
-  - Reason: TailwindCSS 4 may not apply default text color, causing white/transparent text on white background
-  - Solution: Explicitly add `text-gray-900` to className prop
-  - Example: `className="w-full px-3 py-2 border border-gray-300 text-gray-900 ..."`
-
-## File Structure
-
-```
-src/
-├── app/ - Next.js App Router
-│   ├── (app)/ - Route group (transparent in URLs)
-│   │   └── [platform]/[videoId]/ - Dynamic medley pages (server prefetch)
-│   ├── api/ - API routes (auth, thumbnail proxies, metadata)
-│   ├── library/ - Library page (Supabase client, production-safe)
-│   ├── niconico/[videoId]/ - Legacy Niconico route
-│   └── youtube/[videoId]/ - Legacy YouTube route
-├── features/ - Feature-based modules (new architecture)
-│   ├── auth/ - Auth context, components, actions
-│   ├── medley/ - Stores (Zustand), queries, actions
-│   ├── player/ - Player state store
-│   ├── song-database/ - Normalization, search utils, validators
-│   └── library/ - Library page components
-├── components/
-│   ├── features/ - Feature-specific UI (auth, library, medley, player)
-│   ├── layout/ - AppHeader
-│   ├── pages/ - Page-level client components
-│   └── ui/ - Reusable UI (form, song, modal)
-├── hooks/ - Custom hooks (useMedleyEdit, useNicoPlayer, useSongSearch)
-├── lib/
-│   ├── db/ - Drizzle ORM setup (server-side only, needs DATABASE_URL)
-│   ├── supabase.ts - Supabase JS client (production)
-│   ├── api/medleys.ts - Medley CRUD
-│   └── utils/ - songDatabase, logger, time, thumbnail
-├── contexts/AuthContext.tsx - Auth state (legacy, see also features/auth/)
-└── types/ - TypeScript definitions
-```
-
-## Development Workflow
-
-1. **Local**: `npm run dev` (http://localhost:3000)
-2. **Type/Lint**: `npx tsc --noEmit && npm run lint`
-3. **Build**: `npm run build`
-4. **Deploy**: `firebase deploy --only hosting`
-5. **Verify**: Test on https://anasui-e6f49.web.app
-
-**CRITICAL**: Always test features in production - SSR/CORS/iframe behavior differs from local.
-
-### Production Deployment Verification
-
-After deploying fixes (especially for save/database operations):
-
-1. **Clear Browser Cache**:
-   - Firebase caches JavaScript bundles aggressively
-   - Hard refresh (Cmd+Shift+R) may not be sufficient
-   - Use Chrome DevTools: "Disable cache" + reload, or open incognito window
-   - Or use JavaScript to force cache clear: `caches.keys().then(names => names.forEach(name => caches.delete(name)))`
-
-2. **Verify Network Requests**:
-   - Open Chrome DevTools → Network tab → Filter by "Fetch/XHR"
-   - Look for successful POST/PATCH/DELETE requests to Supabase
-   - Check request payload in "Payload" tab - verify correct field names
-   - Example: After Migration 017, confirm `niconicoLink` (not `originalLink`) in POST body
-
-3. **Test Complete Flow**:
-   - Login with test credentials
-   - Perform operation that was failing (e.g., add song)
-   - Verify no error dialog appears
-   - Check browser console for errors
-   - Reload page to confirm data persistence
-
-4. **Common Deployment Issues**:
-   - **Stale JavaScript**: Even after deployment, browser may serve old bundle
-   - **Session state**: sessionStorage persists across reloads but NOT after cache clear
-   - **Database propagation**: Supabase schema changes may take ~30 seconds to propagate
-   - **Build cache issues**: If production shows old code despite deployment, run `rm -rf .next && npm run build && firebase deploy --only hosting` to force clean build
+Key: `medley_songs.song_id` links to `song_master` for library integration. When registering songs, create `song_master` record first, then set `medley_songs.song_id`.
 
 ## Environment Variables
 
-### Development (.env.local)
 ```bash
-EDIT_PASSWORD="your-secure-password-here"
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
-DATABASE_URL=postgresql://user:password@host:port/database  # Optional: only for Drizzle ORM / drizzle-kit
+# .env.local (dev)
+EDIT_PASSWORD="..."                    # Server-side only, no NEXT_PUBLIC_ prefix
+NEXT_PUBLIC_SUPABASE_URL=https://...   # Supabase project URL
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...      # Supabase anon key
+DATABASE_URL=postgresql://...          # Optional: only for Drizzle ORM
 ```
 
-### Production (Firebase Console)
-Set via Firebase console or CLI:
-- `EDIT_PASSWORD` - Server-side password for authentication (DO NOT use `NEXT_PUBLIC_` prefix)
-- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+Production env vars set via Firebase console. `EDIT_PASSWORD` must NOT have `NEXT_PUBLIC_` prefix.
 
-**IMPORTANT**:
-- Never add `NEXT_PUBLIC_` prefix to `EDIT_PASSWORD` (server-side only)
-- Actual values are in `.env.local` (not committed to git)
-- Production values fallback to hardcoded defaults in `next.config.ts` if env vars not set
+## Common Issues
 
-## Database Setup
+- **Seek fails**: Check millisecond conversion (`* 1000`) for Niconico
+- **CORS errors**: Must use server-side proxy routes, not direct API calls
+- **Thumbnails not loading**: Check proxy API URLs have trailing slashes
+- **Input text invisible**: Add `text-gray-900` to inputs (TailwindCSS 4 issue)
+- **Build failures with Drizzle pages**: Only Supabase JS client works in Firebase production
+- **PGRST204 error**: Code references non-existent DB columns; check schema
+- **Schema mismatch after migration**: Run `NOTIFY pgrst, 'reload schema';` in Supabase SQL editor
+- **Form state resets during playback**: Remove `currentTime` from useEffect deps
+- **Stale production JS**: Firebase caches aggressively; use incognito or clear caches
+- **HMR errors in dev**: May be local-only; verify with `npm run build` first, then deploy to production to confirm
 
-**Current Structure**: Migration `015_rebuild_database_structure.sql` - Complete database rebuild with ideal structure (4 tables)
+## Code Conventions
 
-Run this migration in Supabase Dashboard to set up the database from scratch:
-- `015_rebuild_database_structure.sql` - **Complete rebuild** with optimized structure
-
-**Core tables** (4 tables):
-1. `medleys` - Medley basic information with platform support
-2. `song_master` - Song master data for reuse across medleys
-3. `medley_songs` - Song placement within medleys (timeline data)
-4. `medley_edits` - Edit history tracking
-
-**Key improvements** from previous structure:
-- Added `platform` column to medleys (niconico/youtube/spotify/appleMusic)
-- Renamed `songs` → `medley_songs` with foreign key to `song_master`
-- Renamed `song_data` → `song_master` (structure unchanged)
-- Added `song_id` to `medley_edits` for granular tracking
-- Unified all timestamps to TIMESTAMPTZ
-- Removed unused `tempo_changes` table
-
-### Backup & Recovery System
-
-**Automated backups** run daily at 3:00 AM JST via GitHub Actions:
-- Backs up schema, data, and roles
-- Stores in `database/backups/` (30 most recent kept)
-- Triggers: Daily schedule, manual via GitHub Actions, on migration changes
-
-**Manual operations**:
-```bash
-# Create backup
-./scripts/backup-database.sh
-
-# Restore from backup
-./scripts/restore-database.sh database/backups/backup_YYYYMMDD_HHMMSS.tar.gz
-```
-
-**GitHub Secret required**: `SUPABASE_DB_URL` (Session Pooler connection string)
-- Format: `postgresql://postgres.PROJECT_ID:PASSWORD@aws-1-ap-northeast-1.pooler.supabase.com:5432/postgres`
-- **Critical**: Must use Session Pooler (port 5432), not Direct Connection or Transaction Pooler
-- See [docs/BACKUP_RESTORE.md](docs/BACKUP_RESTORE.md) for complete procedures
-
-**Database Schema**:
-
-**1. medleys** (Medley basic information)
-- `id` (UUID, primary key)
-- `video_id` (VARCHAR, unique) - Video ID (sm12345, etc.)
-- `platform` (VARCHAR) - Platform type (niconico/youtube/spotify/appleMusic)
-- `title`, `creator`, `duration` - Medley metadata
-- `created_at`, `updated_at`, `last_editor`, `last_edited_at` (all TIMESTAMPTZ)
-
-**2. song_master** (Song master data - reusable across medleys)
-- `id` (UUID, primary key) - **Use this as the authoritative song identifier**
-- `title` (TEXT, NOT NULL), `artist` (TEXT, NULL allowed), `normalized_id` (TEXT, unique) - Song identification
-- **ID Architecture**:
-  - `id` (UUID): Primary key, used for all DB operations and FK references
-  - `normalized_id`: Dedupe key for duplicate detection only (not for lookups)
-  - Application maps: `song_master.id` → `SongDatabaseEntry.id`, `normalized_id` → `SongDatabaseEntry.dedupKey`
-- Platform-specific links (all TEXT, NULL allowed):
-  - `niconico_link` - Niconico video URL
-  - `youtube_link` - YouTube video URL
-  - `spotify_link` - Spotify track URL
-  - `applemusic_link` - Apple Music track URL
-- `description` (TEXT) - Optional song description
-- `created_at`, `updated_at` (TIMESTAMPTZ)
-- **Migration 016**: Made `artist` optional - empty values are converted to "Unknown Artist" by application code
-- **Migration 017**: Replaced `original_link` (TEXT) and `links` (JSONB) with individual platform columns for better type safety
-
-**3. medley_songs** (Song placement within medleys)
-- `id` (UUID, primary key)
-- `medley_id` (UUID, FK → medleys) - Parent medley
-- `song_id` (UUID, FK → song_master, nullable) - **Reference to master data (UUID)**
-- **ID Flow**:
-  - When saving: `SongSection.songId` → `medley_songs.song_id` (if provided, otherwise looked up by `normalized_id`)
-  - When loading: `medley_songs.song_id` → `SongSection.songId`
-- **Important**: When registering songs directly to `medley_songs`:
-  1. Create corresponding `song_master` record first
-  2. Set `medley_songs.song_id` to link them
-  3. Without this link, library page editing will fail (see `updateManualSong()` upsert pattern)
-- `start_time`, `end_time` (REAL) - Timeline placement with 0.1 second precision (e.g., `30.5` for 30.5 seconds)
-- `order_index` - Order within medley (maps to `SongSection.id` for timeline UI)
-- `title`, `artist`, `color` - Cached display data
-- Platform-specific links (all TEXT, NULL allowed):
-  - `niconico_link`, `youtube_link`, `spotify_link`, `applemusic_link`
-- `created_at`, `updated_at`, `last_editor`, `last_edited_at` (TIMESTAMPTZ)
-- **Note**: `title`/`artist` are cached from `song_master` for display even if master is deleted
-- **Migration 017**: Replaced `original_link` with individual platform columns
-
-**4. medley_edits** (Edit history)
-- `id` (UUID, primary key)
-- `medley_id` (UUID, FK → medleys), `song_id` (UUID, FK → medley_songs)
-- `editor_nickname`, `action`, `changes` (JSONB)
-- `created_at` (TIMESTAMPTZ)
-
-**Database Evolution**:
-- Originally used Google OAuth (migrations 001-009)
-- Migration 010 removed OAuth system for open access
-- Migration 011 added password-based authentication with nickname tracking
-- Migration 015 rebuilt database with ideal structure (4 tables)
-- Migration 016 made artist field optional in song_master
-- Migration 017 replaced JSONB `links` with platform-specific columns (`niconico_link`, `youtube_link`, `spotify_link`, `applemusic_link`)
-- Migration 022 added decimal time support (`start_time`/`end_time` changed from INTEGER to REAL for 0.1s precision)
-- Current system: Single shared password + user-provided nicknames + platform-specific links + decimal time support
-
-### Manual Song Registration
-- See [docs/MEDLEY_REGISTRATION_GUIDE.md](docs/MEDLEY_REGISTRATION_GUIDE.md) for medley song metadata registration procedures (database direct registration)
-
-### Manual Song Addition (UI)
-- **Component**: `ManualSongAddModal.tsx` - Form for adding songs to database
-- **Required fields**:
-  - `title` (楽曲名) - MUST NOT be empty
-- **Optional fields**:
-  - `artist` (アーティスト名) - If empty, automatically converted to "Unknown Artist"
-  - Platform-specific links (all optional, can be empty/NULL):
-    - `niconicoLink` (🎬 ニコニコ動画)
-    - `youtubeLink` (▶️ YouTube)
-    - `spotifyLink` (🎵 Spotify)
-    - `applemusicLink` (🍎 Apple Music)
-- **UI behavior**:
-  - Shows placeholder text explaining optional fields
-  - Displays help text: "※ 空欄の場合、自動的に「Unknown Artist」として登録されます"
-  - Validation only checks that title is not empty
-- **Data flow**: User input → `addManualSong()` → Database → Song search cache cleared → **Auto-select added song**
-  - After successful save, `handleSelectSongFromDatabase(addedSong)` is called automatically
-  - This opens the edit modal with the newly added song pre-selected
-  - User can immediately set time information without searching again
-- **Usage**: Accessed via "手動で新しい楽曲を追加" button in SongSearchModal
-- **Implementation**: `MedleyPlayer.tsx:handleManualSongSave` - Both replacement and new addition modes auto-select the added song
-
-## Security Patterns
-
-```typescript
-// Check authentication for edits
-const { isAuthenticated, nickname } = useAuth();
-if (editOperation && !isAuthenticated) {
-  setLoginModalOpen(true);
-  return;
-}
-
-// Use logger, not console
-logger.debug('Operation completed', data);
-
-// Pass nickname to save operations
-await saveMedley(videoId, title, creator, duration, nickname || undefined);
-
-// Conditional edit UI rendering
-onAddSong={isAuthenticated ? handleAddNewSong : undefined}
-onEditSong={isAuthenticated ? handleEditSongClick : undefined}
-onEdit={isAuthenticated ? handleEditFromTooltip : undefined}
-
-// Authentication check in event handlers (defensive programming)
-const handleEditFromTooltip = (song: SongSection) => {
-  if (!isAuthenticated) {
-    setLoginModalOpen(true);
-    return;
-  }
-  // ... proceed with edit
-};
-
-// Immediate save pattern with callbacks
-const handleImmediateSave = useCallback(async () => {
-  if (!isAuthenticated || !nickname) return;
-  const success = await saveMedley(videoId, title, creator, duration, nickname);
-  if (success) await refetch(); // Refetch latest data from DB
-}, [isAuthenticated, nickname, videoId, title, creator, duration, saveMedley, refetch]);
-
-// Pass callbacks to useMedleyEdit
-const { editingSongs, addSong, updateSong, deleteSong } = useMedleyEdit({
-  originalSongs: medleySongs,
-  onSaveSuccess: refetch,
-  onAfterAdd: handleImmediateSave,
-  onAfterUpdate: handleImmediateSave,
-  onAfterDelete: handleImmediateSave,
-  onAfterBatchUpdate: handleImmediateSave
-});
-```
-
-## Debugging Database Issues
-
-When encountering database errors, follow this systematic approach:
-
-1. **Check Network Tab in Browser DevTools**:
-   - Filter by "Fetch/XHR" to see Supabase API calls
-   - Look for failed requests (400, 404, 500 status codes)
-   - Inspect the request URL for `?columns=...` parameter
-   - Check response headers for `proxy-status` (e.g., `PostgREST; error=PGRST204`)
-
-2. **Verify Database Schema**:
-   - Open Supabase Dashboard → Database → Tables
-   - Compare INSERT/UPDATE operations in code with actual table columns
-   - Common issue: Code references columns that were removed or never existed
-
-3. **Check Supabase Client Version**:
-   - Inspect network request headers for `x-client-info: supabase-js-web/X.Y.Z`
-   - Verify it matches `package.json` version
-   - If mismatch, run `rm -rf node_modules package-lock.json && npm install`
-
-4. **Validate TypeScript Types**:
-   - Check `src/lib/supabase.ts` Database type definitions
-   - Ensure Row/Insert/Update types match actual schema
-   - Run `npx tsc --noEmit` to catch type errors before runtime
-
-5. **Test in Production**:
-   - Always verify fixes in production (https://anasui-e6f49.web.app)
-   - Production uses different Supabase instance and may have schema differences
-   - Check Chrome DevTools console for error messages
-
-## Key Implementation Details
-
-### LoginModal Integration
-- Import: `import LoginModal from "@/components/features/auth/LoginModal"`
-- State: `const [loginModalOpen, setLoginModalOpen] = useState(false)`
-- Usage: Show modal when unauthenticated users attempt edits
-- Callback: `onLoginSuccess` to proceed with edit action after successful login
-
-### Edit History Display
-- Component: `ContributorsDisplay` shows edit history timeline (not ranking)
-- Data: Fetched via `getMedleyEditHistory(medleyId, limit)` function
-- Display: Shows chronological timeline of edits (latest first) with:
-  - Editor nickname with avatar
-  - Action type (create, update, add_song, etc.) with color coding
-  - Relative timestamp
-  - Change details (title, song count)
-  - **Snapshot restoration**: Entries with snapshots show "📸 復元可能" badge and restore button
-- **Important**: No ranking or competitive elements (no "top contributor" badges or edit count competition)
-- Location: Below song list in MedleyPlayer
-- Props: `editHistory` (MedleyEditHistory[]), `lastEditor`, `lastEditedAt`
-
-### Edit History Recording System
-- **Single entry per operation**: Each user operation creates ONE edit history entry with snapshot (in `saveMedleySongs()`)
-- **Snapshot data**: Full medley state (title, creator, duration, all songs) stored for restoration
-- **Recording location**: Only in `saveMedleySongs()` function - ensures snapshot is included
-- **Duplicate prevention**: `updateMedley()` no longer records separately
-- **Auto-refetch**: Edit history is automatically refetched after immediate saves (in `handleImmediateSave`)
-- **Restoration**: Users can restore any snapshot via "復元" button in edit history UI
-
-### Rate Limiting
-- Server-side tracking via in-memory Map (per IP address)
-- 5 attempts per 10-minute window
-- 429 status code on rate limit exceeded
-- Auto-cleanup of expired rate limit entries
+- Use `logger.debug/info/warn/error()` instead of `console.log`
+- Import auth: `import { useAuth } from "@/features/auth/context"`
+- Auth guard pattern: `authLoading ? <Loading /> : isAuthenticated ? <EditUI /> : <LoginPrompt />`
+- Conditionally pass edit callbacks: `onEdit={isAuthenticated ? handleEdit : undefined}`
+- All save operations require `nickname` parameter
+- Use exact version for `@supabase/supabase-js` (no `^` prefix)

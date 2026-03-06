@@ -8,6 +8,25 @@ import SongInfoDisplay from "@/components/ui/song/SongInfoDisplay";
 import { logger } from '@/lib/utils/logger';
 import ArtistSelector from "@/components/ui/form/ArtistSelector";
 
+// Highlight matching text within a string
+function HighlightMatch({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <>{text}</>;
+
+  const normalizedQuery = query.toLowerCase();
+  const normalizedText = text.toLowerCase();
+  const index = normalizedText.indexOf(normalizedQuery);
+
+  if (index === -1) return <>{text}</>;
+
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark className="bg-yellow-200 text-inherit rounded-sm px-0.5">{text.slice(index, index + query.length)}</mark>
+      {text.slice(index + query.length)}
+    </>
+  );
+}
+
 interface Artist {
   id: string;
   name: string;
@@ -245,29 +264,40 @@ export default function SongSearchModal({
 
   return (
     <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="xl">
-        {/* ヘッダー */}
-        <h2 className="text-xl font-bold mb-4 text-gray-900">
-          楽曲を選択
-        </h2>
-        
-        {/* 検索フィールド */}
-        <div className="relative mb-4">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="楽曲名またはアーティスト名で検索..."
-            className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
-            autoFocus
-          />
-          <svg 
-            className="absolute right-3 top-2.5 h-5 w-5 text-gray-400" 
-            fill="none" 
-            stroke="currentColor" 
-            viewBox="0 0 24 24"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
+        {/* ヘッダー + 検索フィールド (sticky) */}
+        <div className="sticky top-0 bg-white z-10 pb-3 -mx-6 px-6 pt-0 border-b border-gray-100">
+          <h2 className="text-xl font-bold mb-3 text-gray-900">
+            楽曲を選択
+          </h2>
+
+          {/* 検索バー + 手動追加ボタン */}
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="楽曲名またはアーティスト名で検索..."
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
+                autoFocus
+              />
+              <svg
+                className="absolute right-3 top-2.5 h-5 w-5 text-gray-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <button
+              onClick={onManualAdd}
+              className="px-3 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 whitespace-nowrap text-sm font-medium transition-colors"
+              title="手動で新しい楽曲を追加"
+            >
+              + 手動追加
+            </button>
+          </div>
         </div>
         
         {/* 結果件数とページネーション情報 */}
@@ -460,11 +490,32 @@ export default function SongSearchModal({
                     >
                       <div className="flex items-start gap-4">
                         <div className="flex-1">
-                          <SongInfoDisplay
-                            song={songSection}
-                            variant="card"
-                            showTimeCodes={false}
-                          />
+                          {searchTerm ? (
+                            <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex gap-4">
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-semibold text-gray-900 text-lg mb-1 truncate">
+                                  <HighlightMatch text={song.title} query={searchTerm} />
+                                </h3>
+                                <p className="text-gray-600 text-sm mb-1 truncate">
+                                  <HighlightMatch text={song.artist.map(a => a.name).join(", ")} query={searchTerm} />
+                                </p>
+                                {song.niconicoLink || song.youtubeLink || song.spotifyLink || song.applemusicLink ? (
+                                  <div className="flex flex-wrap gap-1 mt-1">
+                                    {song.niconicoLink && <span className="bg-gray-200 px-2 py-0.5 rounded text-xs">🎬</span>}
+                                    {song.youtubeLink && <span className="bg-gray-200 px-2 py-0.5 rounded text-xs">📺</span>}
+                                    {song.spotifyLink && <span className="bg-gray-200 px-2 py-0.5 rounded text-xs">🎵</span>}
+                                    {song.applemusicLink && <span className="bg-gray-200 px-2 py-0.5 rounded text-xs">🍎</span>}
+                                  </div>
+                                ) : null}
+                              </div>
+                            </div>
+                          ) : (
+                            <SongInfoDisplay
+                              song={songSection}
+                              variant="card"
+                              showTimeCodes={false}
+                            />
+                          )}
                           
                           {/* 検索関連情報 */}
                           {isSearchResult && matchInfo && (
@@ -522,15 +573,30 @@ export default function SongSearchModal({
               );
             })}
             
+            {/* 検索前の初期状態 */}
+            {searchResults.length === 0 && !searchTerm && songDatabase.length > 0 && (
+              <div className="text-center py-12 text-gray-400">
+                <svg className="mx-auto h-12 w-12 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="m21 21-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <p className="text-base mb-1">楽曲名またはアーティスト名を入力して検索してください</p>
+                <p className="text-sm">登録済み: {songDatabase.length}曲</p>
+              </div>
+            )}
+
             {/* 検索結果がない場合 */}
             {searchResults.length === 0 && searchTerm && (
               <div className="text-center py-8 text-gray-500">
-                <p className="mb-4">「{searchTerm}」に一致する楽曲が見つかりませんでした</p>
+                <svg className="mx-auto h-10 w-10 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p className="mb-1 text-base font-medium">「{searchTerm}」に一致する楽曲が見つかりませんでした</p>
+                <p className="text-sm mb-4 text-gray-400">検索条件を変更するか、新しい楽曲として追加してください</p>
                 <button
                   onClick={onManualAdd}
-                  className="px-4 py-2 bg-mint-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-2 focus:ring-mint-600"
+                  className="px-5 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 font-medium transition-colors"
                 >
-                  新しい楽曲として手動で追加
+                  「{searchTerm}」を新しい楽曲として追加
                 </button>
               </div>
             )}
@@ -607,14 +673,7 @@ export default function SongSearchModal({
         )}
 
         {/* フッター */}
-        <div className="border-t border-gray-200 pt-4 flex justify-between">
-          <button
-            onClick={onManualAdd}
-            className="px-4 py-2 bg-mint-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-2 focus:ring-mint-600"
-          >
-            手動で新しい楽曲を追加
-          </button>
-          
+        <div className="border-t border-gray-200 pt-4 flex justify-end">
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"

@@ -8,6 +8,17 @@ import SongThumbnail from "@/components/ui/song/SongThumbnail";
 import { getDuplicateInfo } from "@/lib/utils/duplicateSongs";
 import { sanitizeSongSection } from "@/lib/utils/sanitize";
 import { logger } from "@/lib/utils/logger";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // 空の楽曲かどうかを判定するヘルパー関数
 const isEmptySong = (song: SongSection | null): boolean => {
@@ -129,6 +140,9 @@ export default function SongEditModal({
   const [applyToAllInstances, setApplyToAllInstances] = useState<boolean>(false);
   const [isSaving, setIsSaving] = useState<boolean>(false);
   const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState<boolean>(false);
+  const [discardDialogOpen, setDiscardDialogOpen] = useState<boolean>(false);
+  const [initialFormData, setInitialFormData] = useState<SongSection | null>(null);
   const [lastAutoSaveTime, setLastAutoSaveTime] = useState<number>(0);
 
   // 自動保存機能（関数の定義を最初に移動）
@@ -237,6 +251,7 @@ export default function SongEditModal({
     
     if (song) {
       setFormData(song);
+      setInitialFormData(song);
       // 楽曲データから直接セグメント情報を設定
       // マルチセグメント対応：同じ楽曲の複数インスタンスがある場合はそれらを統合
       if (allSongs.length > 0) {
@@ -478,17 +493,38 @@ export default function SongEditModal({
 
   const handleDelete = () => {
     if (onDelete && song && !isNew) {
-      if (confirm("この楽曲を削除しますか？")) {
-        onDelete(song.id);
-        onClose();
-      }
+      setDeleteDialogOpen(true);
+    }
+  };
+
+  const isDirty = initialFormData && (
+    formData.title !== initialFormData.title ||
+    formData.artist.join(",") !== initialFormData.artist.join(",") ||
+    JSON.stringify(segments.map(s => ({ s: s.startTime, e: s.endTime }))) !==
+      JSON.stringify([{ s: initialFormData.startTime, e: initialFormData.endTime }])
+  );
+
+  const handleCloseWithGuard = () => {
+    if (isDirty && !autoSave) {
+      setDiscardDialogOpen(true);
+    } else {
+      onClose();
+    }
+  };
+
+  const confirmDelete = () => {
+    if (onDelete && song) {
+      onDelete(song.id);
+      toast.success(`「${song.title}」を削除しました`);
+      setDeleteDialogOpen(false);
+      onClose();
     }
   };
 
 
 
   return (
-    <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="md" ariaLabel={isNew ? "楽曲を追加" : "楽曲を編集"}>
+    <BaseModal isOpen={isOpen} onClose={handleCloseWithGuard} maxWidth="md" ariaLabel={isNew ? "楽曲を追加" : "楽曲を編集"}>
         <h2 id="modal-title" className="text-xl font-bold mb-4 text-gray-900">
           {isNew ? (isFromDatabase ? "楽曲DBから追加" : "楽曲を追加") : "楽曲を編集"}
         </h2>
@@ -776,7 +812,7 @@ export default function SongEditModal({
           </div>
           <div className="flex gap-2">
             <button
-              onClick={onClose}
+              onClick={handleCloseWithGuard}
               className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
               disabled={isAutoSaving}
             >
@@ -803,6 +839,45 @@ export default function SongEditModal({
             )}
           </div>
         </div>
+
+      {/* Discard Changes Confirmation */}
+      <AlertDialog open={discardDialogOpen} onOpenChange={setDiscardDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>編集内容を破棄</AlertDialogTitle>
+            <AlertDialogDescription>
+              保存されていない変更があります。破棄してもよろしいですか？
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>編集を続ける</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setDiscardDialogOpen(false); onClose(); }}>
+              破棄して閉じる
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>楽曲を削除</AlertDialogTitle>
+            <AlertDialogDescription>
+              「{song?.title}」を削除しますか？この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </BaseModal>
   );
 }

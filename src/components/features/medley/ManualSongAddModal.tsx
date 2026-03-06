@@ -49,6 +49,7 @@ export default function ManualSongAddModal({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showPlatformLinks, setShowPlatformLinks] = useState(false);
   const [duplicateWarning, setDuplicateWarning] = useState<{ isDuplicate: boolean; existingInstances: SongSection[] }>({ isDuplicate: false, existingInstances: [] });
 
   // 類似楽曲検索用ステート
@@ -72,6 +73,7 @@ export default function ManualSongAddModal({
       setDuplicateWarning({ isDuplicate: false, existingInstances: [] });
       setSimilarSongs([]);
       setIsSearchingSimilar(false);
+      setShowPlatformLinks(false);
     }
   }, [isOpen]);
 
@@ -214,67 +216,78 @@ export default function ManualSongAddModal({
             placeholder="編曲者を選択または新規追加（省略可）"
           />
 
-          {/* プラットフォームリンク */}
-          <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">
-              各プラットフォームのリンク（すべて省略可）
-            </label>
+          {/* プラットフォームリンク (Progressive Disclosure) */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowPlatformLinks(!showPlatformLinks)}
+              className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+            >
+              <svg
+                className={`w-4 h-4 transition-transform ${showPlatformLinks ? 'rotate-90' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              プラットフォームリンクを追加
+              {(() => {
+                const linkCount = [formData.niconicoLink, formData.youtubeLink, formData.spotifyLink, formData.applemusicLink].filter(l => l.trim()).length;
+                return linkCount > 0 ? (
+                  <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">
+                    {linkCount}/4
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-400">（省略可）</span>
+                );
+              })()}
+            </button>
 
-            {/* ニコニコ動画 */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm text-gray-600">🎬 ニコニコ動画</span>
+            {showPlatformLinks && (
+              <div className="mt-3 space-y-3 pl-6 border-l-2 border-gray-200">
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">🎬 ニコニコ動画</label>
+                  <input
+                    type="url"
+                    value={formData.niconicoLink}
+                    onChange={(e) => setFormData({ ...formData, niconicoLink: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
+                    placeholder="https://www.nicovideo.jp/watch/..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">▶️ YouTube</label>
+                  <input
+                    type="url"
+                    value={formData.youtubeLink}
+                    onChange={(e) => setFormData({ ...formData, youtubeLink: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">🎵 Spotify</label>
+                  <input
+                    type="url"
+                    value={formData.spotifyLink}
+                    onChange={(e) => setFormData({ ...formData, spotifyLink: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
+                    placeholder="https://open.spotify.com/track/..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-600 mb-1">🍎 Apple Music</label>
+                  <input
+                    type="url"
+                    value={formData.applemusicLink}
+                    onChange={(e) => setFormData({ ...formData, applemusicLink: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
+                    placeholder="https://music.apple.com/..."
+                  />
+                </div>
               </div>
-              <input
-                type="url"
-                value={formData.niconicoLink}
-                onChange={(e) => setFormData({ ...formData, niconicoLink: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                placeholder="https://www.nicovideo.jp/watch/..."
-              />
-            </div>
-
-            {/* YouTube */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm text-gray-600">▶️ YouTube</span>
-              </div>
-              <input
-                type="url"
-                value={formData.youtubeLink}
-                onChange={(e) => setFormData({ ...formData, youtubeLink: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                placeholder="https://www.youtube.com/watch?v=..."
-              />
-            </div>
-
-            {/* Spotify */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm text-gray-600">🎵 Spotify</span>
-              </div>
-              <input
-                type="url"
-                value={formData.spotifyLink}
-                onChange={(e) => setFormData({ ...formData, spotifyLink: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                placeholder="https://open.spotify.com/track/..."
-              />
-            </div>
-
-            {/* Apple Music */}
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-sm text-gray-600">🍎 Apple Music</span>
-              </div>
-              <input
-                type="url"
-                value={formData.applemusicLink}
-                onChange={(e) => setFormData({ ...formData, applemusicLink: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                placeholder="https://music.apple.com/..."
-              />
-            </div>
+            )}
           </div>
         </div>
 

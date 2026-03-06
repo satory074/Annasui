@@ -3,9 +3,20 @@
 import { useState, useEffect } from "react";
 import { SongDatabaseEntry, updateManualSong, deleteManualSong } from "@/lib/utils/songDatabase";
 import BaseModal from "@/components/ui/modal/BaseModal";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import SongThumbnail from "@/components/ui/song/SongThumbnail";
 import ArtistSelector from "@/components/ui/form/ArtistSelector";
 import { logger } from "@/lib/utils/logger";
+import { toast } from "sonner";
 
 interface Artist {
   id: string;
@@ -50,6 +61,7 @@ export default function SongDatabaseEditModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   // Initialize form data when modal opens or song changes
   useEffect(() => {
@@ -99,34 +111,37 @@ export default function SongDatabaseEditModal({
 
       logger.info('Song updated successfully', { songId: song.id, title: formData.title });
       onSave(updatedSong);
+      toast.success('楽曲を保存しました');
       onClose();
     } catch (error) {
       logger.error('Failed to save song', error);
-      alert('楽曲の保存に失敗しました。');
+      toast.error('楽曲の保存に失敗しました');
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleDelete = async () => {
-    if (!song) return;
+  const handleDelete = () => {
+    setDeleteDialogOpen(true);
+  };
 
-    if (!confirm(`「${song.title}」を削除しますか？\n\nこの楽曲がメドレーで使用されている場合、紐付けが解除されます。\nこの操作は取り消せません。`)) {
-      return;
-    }
+  const confirmDelete = async () => {
+    if (!song) return;
 
     setIsDeleting(true);
 
     try {
       await deleteManualSong(song.id);
       logger.info('Song deleted successfully', { songId: song.id, title: song.title });
+      toast.success(`「${song.title}」を削除しました`);
       onDelete?.();
       onClose();
     } catch (error) {
       logger.error('Failed to delete song', error);
-      alert('楽曲の削除に失敗しました。');
+      toast.error('楽曲の削除に失敗しました');
     } finally {
       setIsDeleting(false);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -282,6 +297,28 @@ export default function SongDatabaseEditModal({
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>楽曲を削除</AlertDialogTitle>
+            <AlertDialogDescription>
+              「{song?.title}」を削除しますか？メドレーで使用されている場合、紐付けが解除されます。この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+              disabled={isDeleting}
+            >
+              {isDeleting ? '削除中...' : '削除'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </BaseModal>
   );
 }

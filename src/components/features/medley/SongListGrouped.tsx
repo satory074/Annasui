@@ -275,7 +275,7 @@ export default function SongListGrouped({
                     return (
                       <div
                         key={song.id}
-                        className={`absolute h-7 transition-all ${
+                        className={`group/bar absolute h-7 transition-all duration-150 ${
                           // 空の楽曲のビジュアル強調
                           (song.title?.startsWith('空の楽曲') || song.artist.join(", ") === 'アーティスト未設定')
                             ? 'bg-yellow-400 border-2 border-orange-500 shadow-lg ring-1 ring-orange-300'
@@ -287,9 +287,9 @@ export default function SongListGrouped({
                         } ${
                           isCurrentlyPlaying ? 'ring-2 ring-blue-400 animate-pulse' : ''
                         } ${
-                          selectedSong?.id === song.id ? 'ring-2 ring-blue-500' : ''
+                          selectedSong?.id === song.id ? 'ring-2 ring-orange-400' : ''
                         } ${
-                          'cursor-pointer'
+                          'cursor-pointer hover:brightness-110 hover:shadow-sm'
                         } ${
                           draggingSong?.id === song.id ? 'opacity-70 z-30' : ''
                         } select-none`}
@@ -303,7 +303,7 @@ export default function SongListGrouped({
                         onMouseDown={undefined}
                         onMouseEnter={(e) => handleSongHover(e, song)}
                         onMouseLeave={handleSongLeave}
-                        title={`${song.title} - ${song.artist.join(", ")}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''} | クリックで再生`}
+                        title={`${song.title} - ${song.artist.join(", ")}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${onEditSong ? ' | ダブルクリックで編集' : ''}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''}`}
                       >
                         <div className={`text-xs font-medium px-2 leading-6 pointer-events-none relative z-30 whitespace-nowrap flex items-center gap-1 ${
                           // 空の楽曲のテキストカラー調整
@@ -329,6 +329,21 @@ export default function SongListGrouped({
                             )}
                           </span>
                         </div>
+                        {/* 編集ボタン（ホバー時に表示） */}
+                        {onEditSong && (
+                          <button
+                            className="absolute right-0.5 top-0.5 h-6 w-6 flex items-center justify-center rounded bg-white/80 text-gray-700 opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-auto hover:bg-white shadow-sm z-40"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onEditSong(song);
+                            }}
+                            title="編集"
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                          </button>
+                        )}
                         {/* 重なり表示用の斜線パターン */}
                         {hasOverlap && (
                           <div className="absolute inset-0 opacity-30 bg-orange-500 rounded-sm pointer-events-none">

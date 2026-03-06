@@ -1,12 +1,9 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { getSongDatabase, searchSongs, SongDatabaseEntry, SearchResult, createSongFromDatabase } from "@/lib/utils/songDatabase";
-import { SongSection } from "@/types";
+import { getSongDatabase, searchSongs, SongDatabaseEntry, SearchResult } from "@/lib/utils/songDatabase";
 import BaseModal from "@/components/ui/modal/BaseModal";
-import SongInfoDisplay from "@/components/ui/song/SongInfoDisplay";
 import { logger } from '@/lib/utils/logger';
-import ArtistSelector from "@/components/ui/form/ArtistSelector";
 
 // Highlight matching text within a string
 function HighlightMatch({ text, query }: { text: string; query: string }) {
@@ -25,11 +22,6 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
       {text.slice(index + query.length)}
     </>
   );
-}
-
-interface Artist {
-  id: string;
-  name: string;
 }
 
 interface SongSearchModalProps {
@@ -65,40 +57,19 @@ export default function SongSearchModal({
   const [, setIsLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const ITEMS_PER_PAGE = 10;
-  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
-  const [editFormData, setEditFormData] = useState<{
-    title: string;
-    artist: Artist[];
-    composers: Artist[];
-    arrangers: Artist[];
-    niconicoLink?: string;
-    youtubeLink?: string;
-    spotifyLink?: string;
-    applemusicLink?: string;
-  } | null>(null);
   const [isAutoSaving, setIsAutoSaving] = useState<boolean>(false);
 
   // 検索結果とページネーション
-  const { searchResults, totalPages, paginatedResults, resultsByMatchType } = useMemo(() => {
+  const { searchResults, totalPages, paginatedResults } = useMemo(() => {
     const results = searchSongs(songDatabase, searchTerm);
     const totalPages = Math.ceil(results.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     const paginatedResults = results.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-    
-    // 一致タイプ別に分類
-    const resultsByMatchType = {
-      exact: results.filter(r => r.matchType === 'exact'),
-      startsWith: results.filter(r => r.matchType === 'startsWith'),
-      wordMatch: results.filter(r => r.matchType === 'wordMatch'),
-      partialMatch: results.filter(r => r.matchType === 'partialMatch'),
-      fuzzyMatch: results.filter(r => r.matchType === 'fuzzyMatch')
-    };
-    
+
     return {
       searchResults: results,
       totalPages,
-      paginatedResults,
-      resultsByMatchType
+      paginatedResults
     };
   }, [songDatabase, searchTerm, currentPage]);
 
@@ -107,8 +78,6 @@ export default function SongSearchModal({
     if (isOpen) {
       setSearchTerm("");
       setCurrentPage(1);
-      setEditingEntryId(null);
-      setEditFormData(null);
       
       // Load song database
       const loadSongDatabase = async () => {
@@ -127,101 +96,31 @@ export default function SongSearchModal({
     }
   }, [isOpen]);
 
+  // 重複検出: 同じ dedupKey を持つ楽曲をグループ化
+  const duplicateKeys = useMemo(() => {
+    const keyCount: Record<string, number> = {};
+    songDatabase.forEach(song => {
+      if (song.dedupKey) {
+        keyCount[song.dedupKey] = (keyCount[song.dedupKey] || 0) + 1;
+      }
+    });
+    // 2件以上あるキーのみ返す
+    return new Set(Object.entries(keyCount).filter(([, count]) => count > 1).map(([key]) => key));
+  }, [songDatabase]);
+
   // 検索語が変わったときは最初のページに戻る
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm]);
 
-  // 編集開始ハンドラ
+  // 編集ハンドラ — onEditSong コールバックに委譲
   const handleStartEdit = (song: SongDatabaseEntry) => {
-    setEditingEntryId(song.id);
-    setEditFormData({
-      title: song.title,
-      artist: song.artist,
-      composers: song.composers || [],
-      arrangers: song.arrangers || [],
-      niconicoLink: song.niconicoLink,
-      youtubeLink: song.youtubeLink,
-      spotifyLink: song.spotifyLink,
-      applemusicLink: song.applemusicLink
-    });
-  };
-
-  // 編集キャンセルハンドラ
-  const handleCancelEdit = () => {
-    setEditingEntryId(null);
-    setEditFormData(null);
-  };
-
-  // 編集保存ハンドラ
-  const handleSaveEdit = () => {
-    if (!editFormData || !editingEntryId) return;
-
-    const originalSong = songDatabase.find(s => s.id === editingEntryId);
-    if (!originalSong) return;
-
-    // Artist配列はそのまま使用（ID込みで）
-    const updatedSong: SongDatabaseEntry = {
-      ...originalSong,
-      title: editFormData.title,
-      artist: editFormData.artist,
-      composers: editFormData.composers,
-      arrangers: editFormData.arrangers,
-      niconicoLink: editFormData.niconicoLink,
-      youtubeLink: editFormData.youtubeLink,
-      spotifyLink: editFormData.spotifyLink,
-      applemusicLink: editFormData.applemusicLink
-    };
-
-    // 先にローカルの楽曲キャッシュを更新しておく（Select直後の即時保存で古いデータが使われないようにする）
-    setSongDatabase((prev) =>
-      prev.map((song) => (song.id === editingEntryId ? updatedSong : song))
-    );
-
-    // 編集コールバックを呼び出し
     if (onEditSong) {
-      onEditSong(updatedSong);
+      onEditSong(song);
     }
-
-    setEditingEntryId(null);
-    setEditFormData(null);
-  };
-
-  // フォーム入力ハンドラ
-  const handleFormChange = (field: string, value: string) => {
-    if (!editFormData) return;
-
-    setEditFormData({
-      ...editFormData,
-      [field]: value || undefined
-    });
   };
 
   if (!isOpen) return null;
-
-  // SongDatabaseEntryからSongSectionに変換するヘルパー関数
-  const convertToSongSection = (dbEntry: SongDatabaseEntry): SongSection => {
-    return {
-      ...createSongFromDatabase(dbEntry, 0, 0),
-      id: Date.now() + Math.random() // 一時的なID
-    };
-  };
-
-  // 一致タイプのラベルと色を取得
-  const getMatchTypeInfo = (matchType: SearchResult['matchType']) => {
-    switch (matchType) {
-      case 'exact':
-        return { label: '完全一致', color: 'bg-green-100 text-green-800 border-green-200' };
-      case 'startsWith':
-        return { label: '前方一致', color: 'bg-blue-100 text-blue-800 border-blue-200' };
-      case 'wordMatch':
-        return { label: '単語一致', color: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
-      case 'partialMatch':
-        return { label: '部分一致', color: 'bg-orange-100 text-orange-800 border-orange-200' };
-      case 'fuzzyMatch':
-        return { label: 'あいまい一致', color: 'bg-gray-100 text-gray-800 border-gray-200' };
-    }
-  };
 
   // 楽曲選択時の自動保存処理
   const handleSelectSongWithAutoSave = async (song: SearchResult | SongDatabaseEntry) => {
@@ -266,9 +165,20 @@ export default function SongSearchModal({
     <BaseModal isOpen={isOpen} onClose={onClose} maxWidth="xl">
         {/* ヘッダー + 検索フィールド (sticky) */}
         <div className="sticky top-0 bg-white z-10 pb-3 -mx-6 px-6 pt-0 border-b border-gray-100">
-          <h2 className="text-xl font-bold mb-3 text-gray-900">
-            楽曲を選択
-          </h2>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xl font-bold text-gray-900">
+              楽曲を選択
+            </h2>
+            <button
+              onClick={onClose}
+              className="p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              title="閉じる"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
 
           {/* 検索バー + 手動追加ボタン */}
           <div className="flex gap-2">
@@ -300,275 +210,91 @@ export default function SongSearchModal({
           </div>
         </div>
         
-        {/* 結果件数とページネーション情報 */}
+        {/* 結果件数 */}
         <div className="flex justify-between items-center mb-4">
-          <div className="flex flex-col">
-            <p className="text-sm text-gray-600">
-              {searchResults.length}件の楽曲が見つかりました
-              {totalPages > 1 && (
-                <span className="ml-2 text-gray-500">
-                  （{currentPage}/{totalPages}ページ）
-                </span>
-              )}
-            </p>
-            
-            {/* 一致タイプ別の件数表示（検索時のみ） */}
-            {searchTerm && searchResults.length > 0 && (
-              <div className="flex flex-wrap gap-2 mt-2">
-                {Object.entries(resultsByMatchType).map(([type, results]) => {
-                  if (results.length === 0) return null;
-                  const info = getMatchTypeInfo(type as SearchResult['matchType']);
-                  return (
-                    <span
-                      key={type}
-                      className={`px-2 py-1 rounded-full text-xs border ${info.color}`}
-                    >
-                      {info.label}: {results.length}件
-                    </span>
-                  );
-                })}
-              </div>
+          <p className="text-sm text-gray-600">
+            {searchResults.length}件見つかりました
+            {totalPages > 1 && (
+              <span className="ml-2 text-gray-500">
+                （{currentPage}/{totalPages}ページ）
+              </span>
             )}
-          </div>
-          
-          {/* ページサイズ変更 */}
-          {searchResults.length > 10 && (
-            <div className="text-sm text-gray-600">
-              1ページに{ITEMS_PER_PAGE}件表示
-            </div>
-          )}
+          </p>
         </div>
 
         {/* 検索結果リスト */}
         <div className="flex-1 overflow-y-auto max-h-[50vh]">
           <div className="space-y-3">
             {paginatedResults.map((song) => {
-              const songSection = convertToSongSection(song);
-              const isEditing = editingEntryId === song.id;
               const isSearchResult = 'searchScore' in song && searchTerm;
-              const matchInfo = isSearchResult ? getMatchTypeInfo((song as SearchResult).matchType) : null;
-              
+              const isExactMatch = isSearchResult && (song as SearchResult).matchType === 'exact';
+              const hasDuplicate = song.dedupKey && duplicateKeys.has(song.dedupKey);
+
               return (
                 <div
                   key={song.id}
-                  className={`border rounded-lg transition-colors p-3 ${
-                    isEditing 
-                      ? 'border-orange-600 bg-orange-50' 
-                      : 'border-gray-200 hover:bg-gray-50'
-                  }`}
+                  className="group border rounded-lg transition-all p-3 border-gray-200 hover:bg-orange-50 hover:border-orange-300 cursor-pointer"
+                  onClick={() => handleSelectSongWithAutoSave(song)}
                 >
-                  {isEditing ? (
-                    /* 編集フォーム */
-                    <div className="space-y-4">
-                      {/* 基本情報編集 */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            楽曲名
-                          </label>
-                          <input
-                            type="text"
-                            value={editFormData?.title || ''}
-                            onChange={(e) => handleFormChange('title', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                          />
-                        </div>
-                        <div>
-                          <ArtistSelector
-                            selectedArtists={editFormData?.artist || []}
-                            onChange={(artists) => {
-                              if (editFormData) {
-                                setEditFormData({ ...editFormData, artist: artists });
-                              }
-                            }}
-                            label="アーティスト名"
-                            placeholder="アーティスト名を選択または新規追加"
-                          />
-                        </div>
-                      </div>
-
-                      {/* 作曲者・編曲者編集 */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <ArtistSelector
-                          selectedArtists={editFormData?.composers || []}
-                          onChange={(artists) => {
-                            if (editFormData) {
-                              setEditFormData({ ...editFormData, composers: artists });
-                            }
-                          }}
-                          label="作曲者"
-                          placeholder="作曲者を選択または新規追加"
-                        />
-                        <ArtistSelector
-                          selectedArtists={editFormData?.arrangers || []}
-                          onChange={(artists) => {
-                            if (editFormData) {
-                              setEditFormData({ ...editFormData, arrangers: artists });
-                            }
-                          }}
-                          label="編曲者"
-                          placeholder="編曲者を選択または新規追加"
-                        />
-                      </div>
-
-                      {/* プラットフォームリンク編集 */}
-                      <div className="space-y-3">
-                        <h4 className="text-sm font-medium text-gray-700">配信プラットフォーム</h4>
-                        <div className="grid grid-cols-1 gap-3">
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">
-                              🎬 ニコニコ動画
-                            </label>
-                            <input
-                              type="url"
-                              value={editFormData?.niconicoLink || ''}
-                              onChange={(e) => handleFormChange('niconicoLink', e.target.value)}
-                              placeholder="https://www.nicovideo.jp/watch/..."
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">
-                              ▶️ YouTube
-                            </label>
-                            <input
-                              type="url"
-                              value={editFormData?.youtubeLink || ''}
-                              onChange={(e) => handleFormChange('youtubeLink', e.target.value)}
-                              placeholder="https://www.youtube.com/watch?v=..."
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">
-                              🎵 Spotify
-                            </label>
-                            <input
-                              type="url"
-                              value={editFormData?.spotifyLink || ''}
-                              onChange={(e) => handleFormChange('spotifyLink', e.target.value)}
-                              placeholder="https://open.spotify.com/track/..."
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs text-gray-600 mb-1">
-                              🍎 Apple Music
-                            </label>
-                            <input
-                              type="url"
-                              value={editFormData?.applemusicLink || ''}
-                              onChange={(e) => handleFormChange('applemusicLink', e.target.value)}
-                              placeholder="https://music.apple.com/..."
-                              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-600 text-sm"
-                            />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* 編集ボタン */}
-                      <div className="flex gap-2 pt-2">
-                        <button
-                          onClick={handleSaveEdit}
-                          className="px-4 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600"
-                        >
-                          保存
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="px-4 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
-                        >
-                          キャンセル
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    /* 表示モード */
-                    <div
-                      onClick={() => handleSelectSongWithAutoSave(song)}
-                      className="cursor-pointer"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="flex-1">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h3 className="font-semibold text-gray-900 truncate">
                           {searchTerm ? (
-                            <div className="p-4 border border-gray-200 rounded-lg bg-gray-50 flex gap-4">
-                              <div className="flex-1 min-w-0">
-                                <h3 className="font-semibold text-gray-900 text-lg mb-1 truncate">
-                                  <HighlightMatch text={song.title} query={searchTerm} />
-                                </h3>
-                                <p className="text-gray-600 text-sm mb-1 truncate">
-                                  <HighlightMatch text={song.artist.map(a => a.name).join(", ")} query={searchTerm} />
-                                </p>
-                                {song.niconicoLink || song.youtubeLink || song.spotifyLink || song.applemusicLink ? (
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {song.niconicoLink && <span className="bg-gray-200 px-2 py-0.5 rounded text-xs">🎬</span>}
-                                    {song.youtubeLink && <span className="bg-gray-200 px-2 py-0.5 rounded text-xs">📺</span>}
-                                    {song.spotifyLink && <span className="bg-gray-200 px-2 py-0.5 rounded text-xs">🎵</span>}
-                                    {song.applemusicLink && <span className="bg-gray-200 px-2 py-0.5 rounded text-xs">🍎</span>}
-                                  </div>
-                                ) : null}
-                              </div>
-                            </div>
+                            <HighlightMatch text={song.title} query={searchTerm} />
                           ) : (
-                            <SongInfoDisplay
-                              song={songSection}
-                              variant="card"
-                              showTimeCodes={false}
-                            />
+                            song.title
                           )}
-                          
-                          {/* 検索関連情報 */}
-                          {isSearchResult && matchInfo && (
-                            <div className="flex items-center gap-3 mt-2">
-                              <span className={`px-2 py-1 rounded-full text-xs border ${matchInfo.color}`}>
-                                {matchInfo.label}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                スコア: {Math.round((song as SearchResult).searchScore)}
-                              </span>
-                              <span className="text-xs text-gray-500">
-                                一致フィールド: {
-                                  (song as SearchResult).matchedField === 'title' ? '楽曲名' :
-                                  (song as SearchResult).matchedField === 'artist' ? 'アーティスト名' :
-                                  '楽曲名・アーティスト名'
-                                }
-                              </span>
-                              {song.usageCount > 0 && (
-                                <span className="text-xs text-gray-500">
-                                  使用回数: {song.usageCount}回
-                                </span>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* ボタングループ */}
-                        <div className="flex gap-2 self-center">
-                          {onEditSong && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleStartEdit(song);
-                              }}
-                              className="px-3 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-600 whitespace-nowrap"
-                            >
-                              編集
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleSelectSongWithAutoSave(song);
-                            }}
-                            className="px-4 py-2 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 whitespace-nowrap"
-                            disabled={isAutoSaving}
-                          >
-                            {isAutoSaving ? '保存中...' : '選択'}
-                          </button>
-                        </div>
+                        </h3>
+                        {isExactMatch && (
+                          <span className="px-1.5 py-0.5 rounded text-xs bg-green-100 text-green-800 border border-green-200 flex-shrink-0">
+                            完全一致
+                          </span>
+                        )}
+                        {hasDuplicate && (
+                          <span className="px-1.5 py-0.5 rounded text-xs bg-amber-100 text-amber-800 border border-amber-200 flex-shrink-0">
+                            重複の可能性
+                          </span>
+                        )}
                       </div>
+                      <p className="text-gray-600 text-sm truncate">
+                        {searchTerm ? (
+                          <HighlightMatch text={song.artist.map(a => a.name).join(", ")} query={searchTerm} />
+                        ) : (
+                          song.artist.map(a => a.name).join(", ")
+                        )}
+                      </p>
+                      {(song.niconicoLink || song.youtubeLink || song.spotifyLink || song.applemusicLink) && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {song.niconicoLink && <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs">🎬</span>}
+                          {song.youtubeLink && <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs">📺</span>}
+                          {song.spotifyLink && <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs">🎵</span>}
+                          {song.applemusicLink && <span className="bg-gray-200 px-1.5 py-0.5 rounded text-xs">🍎</span>}
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* 編集アイコンボタン + 選択矢印 */}
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {onEditSong && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleStartEdit(song);
+                          }}
+                          className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
+                          title="マスター楽曲データを編集"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
+                        </button>
+                      )}
+                      <svg className="w-5 h-5 text-gray-300 group-hover:text-orange-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               );
             })}
@@ -672,14 +398,14 @@ export default function SongSearchModal({
           </div>
         )}
 
-        {/* フッター */}
-        <div className="border-t border-gray-200 pt-4 flex justify-end">
+        {/* フッター (sticky) */}
+        <div className="sticky bottom-0 bg-white border-t border-gray-200 pt-3 pb-1 -mx-6 px-6 flex justify-end">
           <button
             onClick={onClose}
             className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
             disabled={isAutoSaving}
           >
-            {autoSave && !isAutoSaving ? '完了' : 'キャンセル'}
+            閉じる
           </button>
         </div>
     </BaseModal>

@@ -575,32 +575,20 @@ export default function MedleyPlayer({
                 existsInTimeline: existsInTimeline
             });
 
-            // CRITICAL FIX: タイムラインに存在するかどうかに関わらず、楽曲を保存する
-            // これにより、ユーザーが編集モーダルで「保存」ボタンを押さなくても、DBに保存される
+            // 保存タイミング修正: 即時保存せず、SongEditModalで時間調整後にユーザーが保存する
             if (existsInTimeline) {
                 setIsNewSong(false);
-                logger.info(`📝 [${callId}] Setting isNewSong=false (song exists in timeline - will call updateSong)`);
-                // 既存楽曲を更新（これにより onAfterUpdate → saveMedley が呼ばれる）
-                logger.info(`🔄 [${callId}] Calling updateSong to save changes immediately`);
+                logger.info(`📝 [${callId}] Setting isNewSong=false (song exists in timeline - will update on save)`);
+                // 既存楽曲を更新（タイムラインに表示するため即時更新）
                 updateSong(replacedSong);
-                // 自動保存が実行されたのでフラグを立てる（同期的）
                 isAutoSavedRef.current = true;
-                logger.info(`✅ [${callId}] Set isAutoSavedRef.current = true (after updateSong)`);
+                logger.info(`✅ [${callId}] Updated existing song in timeline`);
             } else {
+                // 新規追加: モーダルで時間を確認・調整してから保存
                 setIsNewSong(true);
-                logger.info(`📝 [${callId}] Keeping isNewSong=true (empty placeholder - will call addSong)`);
-
-                // 🔧 FIX: Immediately add the new song to editingSongs to ensure auto-save works
-                // This prevents the song from being lost if auto-save triggers before user clicks "Save"
-                logger.info(`✅ [${callId}] [AUTO-ADD FIX] Immediately adding new song to timeline`);
-                addSong(replacedSong);
-                // After adding, set isNewSong to false since it's now in the timeline
-                setIsNewSong(false);
-                // 自動保存が実行されたのでフラグを立てる（同期的）
-                isAutoSavedRef.current = true;
-                logger.info(`✅ [${callId}] Set isAutoSavedRef.current = true (after addSong)`);
+                logger.info(`📝 [${callId}] Keeping isNewSong=true - user will save from SongEditModal after time adjustment`);
+                isAutoSavedRef.current = false;
             }
-            // NOTE: isChangingSongは保存完了後にリセットする（SongEditModalの保存ロジックで使用するため）
 
             // 編集モーダルを開く
             setEditModalOpen(true);
@@ -994,7 +982,7 @@ export default function MedleyPlayer({
                     });
                     return currentHoveringSong;
                 });
-            }, 200); // 200ms の遅延
+            }, 500); // 500ms の遅延（ツールチップ操作のための猶予）
             
             setHideTooltipTimeout(timeout);
         }
@@ -1025,7 +1013,7 @@ export default function MedleyPlayer({
                 });
                 return currentHoveringTooltip;
             });
-        }, 200); // 200ms の遅延
+        }, 500); // 500ms の遅延（ツールチップ操作のための猶予）
 
         setHideTooltipTimeout(timeout);
     };
@@ -1491,6 +1479,8 @@ export default function MedleyPlayer({
                         currentTime={currentTime}
                         songs={displaySongs}
                         isVisible={playerReady && !editModalOpen}
+                        onEditSong={handleEditSongClick}
+                        isAuthenticated={isAuthenticated}
                     />
                 </div>
             </div>

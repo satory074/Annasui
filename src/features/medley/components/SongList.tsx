@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatTimeSimple } from "@/lib/utils/time";
@@ -14,6 +14,7 @@ interface SongListProps {
   onSeek?: (time: number) => void;
   onEdit?: (song: SongSection) => void;
   onDelete?: (id: string) => void;
+  onReorder?: (songs: SongSection[]) => void;
 }
 
 export function SongList({
@@ -23,9 +24,14 @@ export function SongList({
   onSeek,
   onEdit,
   onDelete,
+  onReorder,
 }: SongListProps) {
   const selectSong = useTimelineStore((s) => s.selectSong);
   const selectedSongId = useTimelineStore((s) => s.selectedSongId);
+
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  const dragNodeRef = useRef<HTMLDivElement | null>(null);
 
   const handleClick = useCallback(
     (song: SongSection) => {
@@ -35,6 +41,48 @@ export function SongList({
     [selectSong, onSeek]
   );
 
+  const sorted = [...songs].sort((a, b) => a.startTime - b.startTime);
+
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    if (!isEditMode || !onReorder) return;
+    setDragIndex(index);
+    dragNodeRef.current = e.currentTarget;
+    e.dataTransfer.effectAllowed = "move";
+    // Make the drag image semi-transparent
+    if (e.currentTarget) {
+      e.currentTarget.style.opacity = "0.5";
+    }
+  };
+
+  const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
+    e.currentTarget.style.opacity = "1";
+    if (dragIndex !== null && dropIndex !== null && dragIndex !== dropIndex && onReorder) {
+      const reordered = [...sorted];
+      const [moved] = reordered.splice(dragIndex, 1);
+      reordered.splice(dropIndex, 0, moved);
+
+      // Re-assign orderIndex based on new positions
+      const updated = reordered.map((song, i) => ({
+        ...song,
+        orderIndex: i,
+      }));
+      onReorder(updated);
+    }
+    setDragIndex(null);
+    setDropIndex(null);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDropIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDropIndex(null);
+  };
+
   if (!songs.length) {
     return (
       <div className="text-sm text-gray-500 text-center py-8">
@@ -43,27 +91,45 @@ export function SongList({
     );
   }
 
-  const sorted = [...songs].sort((a, b) => a.startTime - b.startTime);
-
   return (
     <div className="space-y-1">
-      {sorted.map((song) => {
+      {sorted.map((song, index) => {
         const isActive =
           currentTime >= song.startTime && currentTime < song.endTime;
         const isSelected = selectedSongId === song.id;
+        const isDropTarget = dropIndex === index && dragIndex !== index;
 
         return (
           <div
             key={song.id}
+            draggable={isEditMode && !!onReorder}
+            onDragStart={(e) => handleDragStart(e, index)}
+            onDragEnd={handleDragEnd}
+            onDragOver={(e) => handleDragOver(e, index)}
+            onDragLeave={handleDragLeave}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
               isActive
                 ? "bg-orange-50 border border-orange-200"
                 : isSelected
                 ? "bg-blue-50 border border-blue-200"
                 : "hover:bg-gray-50 border border-transparent"
-            }`}
+            } ${isDropTarget ? "border-t-2 border-t-blue-400" : ""}`}
             onClick={() => handleClick(song)}
           >
+            {/* Drag handle (edit mode only) */}
+            {isEditMode && onReorder && (
+              <div className="cursor-grab active:cursor-grabbing text-gray-400 hover:text-gray-600 shrink-0 touch-none">
+                <svg className="w-4 h-4" viewBox="0 0 16 16" fill="currentColor">
+                  <circle cx="5" cy="3" r="1.5" />
+                  <circle cx="11" cy="3" r="1.5" />
+                  <circle cx="5" cy="8" r="1.5" />
+                  <circle cx="11" cy="8" r="1.5" />
+                  <circle cx="5" cy="13" r="1.5" />
+                  <circle cx="11" cy="13" r="1.5" />
+                </svg>
+              </div>
+            )}
+
             {/* Color indicator */}
             <div
               className="w-3 h-3 rounded-full shrink-0"

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { AuthProvider } from "@/features/auth/context";
+import { Toaster } from "sonner";
 
 function makeQueryClient() {
   return new QueryClient({
@@ -38,6 +39,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>{children}</AuthProvider>
+      <Toaster position="top-right" richColors closeButton duration={3000} />
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
   );

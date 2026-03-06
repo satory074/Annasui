@@ -10,6 +10,18 @@ import LoginModal from "@/components/features/auth/LoginModal";
 import SongDatabaseEditModal from "@/components/features/library/SongDatabaseEditModal";
 import DuplicateGroupCard from "@/components/features/library/DuplicateGroupCard";
 import Image from "next/image";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import ManualSongAddModal from "@/components/features/medley/ManualSongAddModal";
+import { toast } from "sonner";
 
 type SortField = "title" | "artist" | "updatedAt" | "createdAt";
 type SortOrder = "asc" | "desc";
@@ -27,6 +39,13 @@ export default function LibraryPageClient() {
   const [selectedSong, setSelectedSong] = useState<SongDatabaseEntry | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const ITEMS_PER_PAGE = 20;
+
+  // Delete dialog state
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [songToDelete, setSongToDelete] = useState<SongDatabaseEntry | null>(null);
+
+  // Add song modal state
+  const [addSongModalOpen, setAddSongModalOpen] = useState(false);
 
   // タブ管理
   const [activeTab, setActiveTab] = useState<TabType>("songs");
@@ -147,29 +166,55 @@ export default function LibraryPageClient() {
     setEditModalOpen(true);
   };
 
-  const handleDeleteSong = async (song: SongDatabaseEntry) => {
+  const handleDeleteSong = (song: SongDatabaseEntry) => {
     if (!isAuthenticated) {
       setLoginModalOpen(true);
       return;
     }
+    setSongToDelete(song);
+    setDeleteDialogOpen(true);
+  };
 
-    if (!confirm(`「${song.title}」を削除しますか？\n\nこの操作は取り消せません。`)) {
-      return;
-    }
+  const confirmDeleteSong = async () => {
+    if (!songToDelete) return;
 
     try {
-      await deleteManualSong(song.id);
-      // Refresh database
+      await deleteManualSong(songToDelete.id);
       const db = await getSongDatabase();
       setSongDatabase(db);
-      logger.info('Song deleted', { songId: song.id, title: song.title });
+      logger.info('Song deleted', { songId: songToDelete.id, title: songToDelete.title });
+      toast.success(`「${songToDelete.title}」を削除しました`);
     } catch (error) {
       logger.error('Failed to delete song', error);
-      alert('楽曲の削除に失敗しました。');
+      toast.error('楽曲の削除に失敗しました');
+    } finally {
+      setDeleteDialogOpen(false);
+      setSongToDelete(null);
     }
   };
 
-  const getThumbnailUrl = (song: SongDatabaseEntry): string => {
+  const handleAddSong = async (songData: {
+    title: string;
+    artist: string[];
+    composers?: string[];
+    arrangers?: string[];
+    niconicoLink?: string;
+    youtubeLink?: string;
+    spotifyLink?: string;
+    applemusicLink?: string;
+  }) => {
+    // The ManualSongAddModal handles its own save via songDatabase utils
+    // We just need to refresh the local state
+    logger.info('Song added from library', { title: songData.title });
+    const db = await getSongDatabase();
+    setSongDatabase(db);
+    toast.success(`「${songData.title}」を追加しました`);
+  };
+
+  const [thumbnailErrors, setThumbnailErrors] = useState<Set<string>>(new Set());
+
+  const getThumbnailUrl = (song: SongDatabaseEntry): string | null => {
+    if (thumbnailErrors.has(song.id)) return null;
     if (song.niconicoLink) {
       const videoId = song.niconicoLink.split('/').pop();
       return `/api/thumbnail/niconico/${videoId}/`;
@@ -182,8 +227,28 @@ export default function LibraryPageClient() {
       const trackId = new URL(song.spotifyLink).pathname.split('/').pop();
       return `/api/thumbnail/spotify/${trackId}/`;
     }
-    return "/placeholder-thumbnail.png";
+    return null;
   };
+
+  const handleThumbnailError = (songId: string) => {
+    setThumbnailErrors(prev => new Set(prev).add(songId));
+  };
+
+  // SVG fallback for broken/missing thumbnails
+  const ThumbnailFallback = ({ className }: { className?: string }) => (
+    <div className={`flex items-center justify-center bg-gray-100 rounded ${className || ''}`}>
+      <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+      </svg>
+    </div>
+  );
+
+  // Sort indicator component
+  const SortIndicator = ({ field }: { field: SortField }) => (
+    <span className={`ml-1 ${sortField === field ? 'text-blue-600' : 'text-gray-300'}`}>
+      {sortField === field ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}
+    </span>
+  );
 
   // Show login prompt if not authenticated
   if (loading) {
@@ -226,13 +291,24 @@ export default function LibraryPageClient() {
       <div className="min-h-screen bg-gray-50 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">楽曲ライブラリ</h1>
-            <p className="text-gray-600">
-              登録されている楽曲: {songDatabase.length}曲
-              {activeTab === "songs" && searchTerm && ` / 検索結果: ${searchResults.length}曲`}
-              {activeTab === "duplicates" && duplicateGroups.length > 0 && ` / 重複候補: ${duplicateGroups.length}グループ`}
-            </p>
+          <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">楽曲ライブラリ</h1>
+              <p className="text-gray-600">
+                登録されている楽曲: {songDatabase.length}曲
+                {activeTab === "songs" && searchTerm && ` / 検索結果: ${searchResults.length}曲`}
+                {activeTab === "duplicates" && duplicateGroups.length > 0 && ` / 重複候補: ${duplicateGroups.length}グループ`}
+              </p>
+            </div>
+            <button
+              onClick={() => setAddSongModalOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-medium shrink-0"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              楽曲を追加
+            </button>
           </div>
 
           {/* Tabs */}
@@ -322,7 +398,92 @@ export default function LibraryPageClient() {
               </div>
             ) : (
               <>
-                <div className="bg-white rounded-lg shadow overflow-hidden">
+                {/* Sort controls (visible on mobile) */}
+                <div className="flex flex-wrap gap-2 mb-4 sm:hidden">
+                  <span className="text-xs text-gray-500 self-center">並び替え:</span>
+                  {(["title", "artist", "updatedAt"] as SortField[]).map((field) => {
+                    const labels: Record<SortField, string> = { title: "タイトル", artist: "アーティスト", updatedAt: "更新日", createdAt: "作成日" };
+                    return (
+                      <button
+                        key={field}
+                        onClick={() => handleSort(field)}
+                        className={`px-2 py-1 text-xs rounded-md border transition-colors ${
+                          sortField === field ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-200 text-gray-600'
+                        }`}
+                      >
+                        {labels[field]}
+                        {sortField === field && (sortOrder === "asc" ? " ▲" : " ▼")}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="sm:hidden space-y-3">
+                  {sortedResults.map((song) => {
+                    const artistName = song.artist[0]?.name || "Unknown Artist";
+                    const thumbUrl = getThumbnailUrl(song);
+
+                    return (
+                      <div key={song.id} className="bg-white rounded-lg shadow p-4">
+                        <div className="flex items-start gap-3">
+                          {/* Thumbnail */}
+                          <div className="relative w-14 h-14 shrink-0">
+                            {thumbUrl ? (
+                              <Image
+                                src={thumbUrl}
+                                alt={song.title}
+                                fill
+                                className="object-cover rounded"
+                                sizes="56px"
+                                onError={() => handleThumbnailError(song.id)}
+                              />
+                            ) : (
+                              <ThumbnailFallback className="w-14 h-14" />
+                            )}
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">{song.title}</p>
+                            <p className="text-xs text-gray-500 truncate">{artistName}</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              {song.niconicoLink && <span title="ニコニコ動画">🎬</span>}
+                              {song.youtubeLink && <span title="YouTube">▶️</span>}
+                              {song.spotifyLink && <span title="Spotify">🎵</span>}
+                              {song.applemusicLink && <span title="Apple Music">🍎</span>}
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex gap-1 shrink-0">
+                            <button
+                              onClick={() => handleEditSong(song)}
+                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              title="編集"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                              </svg>
+                            </button>
+                            <button
+                              onClick={() => handleDeleteSong(song)}
+                              className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors"
+                              title="削除"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden sm:block bg-white rounded-lg shadow overflow-hidden">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -333,34 +494,26 @@ export default function LibraryPageClient() {
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors"
+                        className={`px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors ${sortField === "title" ? "bg-blue-50" : ""}`}
                         onClick={() => handleSort("title")}
                       >
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                             タイトル
                           </span>
-                          {sortField === "title" && (
-                            <span className="text-gray-400">
-                              {sortOrder === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
+                          <SortIndicator field="title" />
                         </div>
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors"
+                        className={`px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors ${sortField === "artist" ? "bg-blue-50" : ""}`}
                         onClick={() => handleSort("artist")}
                       >
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                             アーティスト
                           </span>
-                          {sortField === "artist" && (
-                            <span className="text-gray-400">
-                              {sortOrder === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
+                          <SortIndicator field="artist" />
                         </div>
                       </th>
                       <th scope="col" className="px-6 py-3 text-left">
@@ -370,18 +523,14 @@ export default function LibraryPageClient() {
                       </th>
                       <th
                         scope="col"
-                        className="px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors"
+                        className={`px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors ${sortField === "updatedAt" ? "bg-blue-50" : ""}`}
                         onClick={() => handleSort("updatedAt")}
                       >
-                        <div className="flex items-center space-x-1">
+                        <div className="flex items-center">
                           <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                             更新日
                           </span>
-                          {sortField === "updatedAt" && (
-                            <span className="text-gray-400">
-                              {sortOrder === "asc" ? "↑" : "↓"}
-                            </span>
-                          )}
+                          <SortIndicator field="updatedAt" />
                         </div>
                       </th>
                       <th scope="col" className="px-6 py-3 text-right">
@@ -397,29 +546,30 @@ export default function LibraryPageClient() {
                       const updatedAt = song.updatedAt
                         ? new Date(song.updatedAt).toLocaleDateString('ja-JP')
                         : '-';
+                      const thumbUrl = getThumbnailUrl(song);
 
                       return (
                         <tr key={song.id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="relative w-16 h-12">
-                              <Image
-                                src={getThumbnailUrl(song)}
-                                alt={song.title}
-                                fill
-                                className="object-cover rounded"
-                                sizes="64px"
-                              />
+                              {thumbUrl ? (
+                                <Image
+                                  src={thumbUrl}
+                                  alt={song.title}
+                                  fill
+                                  className="object-cover rounded"
+                                  sizes="64px"
+                                  onError={() => handleThumbnailError(song.id)}
+                                />
+                              ) : (
+                                <ThumbnailFallback className="w-16 h-12" />
+                              )}
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <div className="text-sm font-medium text-gray-900">
                               {song.title}
                             </div>
-                            {song.matchType !== 'exact' && (
-                              <div className="text-xs text-gray-500">
-                                {song.matchType}
-                              </div>
-                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-900">{artistName}</div>
@@ -427,48 +577,16 @@ export default function LibraryPageClient() {
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="flex items-center space-x-2">
                               {song.niconicoLink && (
-                                <a
-                                  href={song.niconicoLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                                  title="ニコニコ動画"
-                                >
-                                  🎬
-                                </a>
+                                <a href={song.niconicoLink} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors" title="ニコニコ動画">🎬</a>
                               )}
                               {song.youtubeLink && (
-                                <a
-                                  href={song.youtubeLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                                  title="YouTube"
-                                >
-                                  ▶️
-                                </a>
+                                <a href={song.youtubeLink} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors" title="YouTube">▶️</a>
                               )}
                               {song.spotifyLink && (
-                                <a
-                                  href={song.spotifyLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                                  title="Spotify"
-                                >
-                                  🎵
-                                </a>
+                                <a href={song.spotifyLink} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors" title="Spotify">🎵</a>
                               )}
                               {song.applemusicLink && (
-                                <a
-                                  href={song.applemusicLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-gray-600 hover:text-gray-900 transition-colors"
-                                  title="Apple Music"
-                                >
-                                  🍎
-                                </a>
+                                <a href={song.applemusicLink} target="_blank" rel="noopener noreferrer" className="text-gray-600 hover:text-gray-900 transition-colors" title="Apple Music">🍎</a>
                               )}
                             </div>
                           </td>
@@ -534,18 +652,42 @@ export default function LibraryPageClient() {
         }}
         song={selectedSong}
         onSave={async () => {
-          // Refresh database
           const db = await getSongDatabase();
           setSongDatabase(db);
-          logger.info('Song database refreshed after edit');
+          toast.success('楽曲を更新しました');
         }}
         onDelete={async () => {
-          // Refresh database
           const db = await getSongDatabase();
           setSongDatabase(db);
-          logger.info('Song database refreshed after delete');
+          toast.success('楽曲を削除しました');
         }}
       />
+      <ManualSongAddModal
+        isOpen={addSongModalOpen}
+        onClose={() => setAddSongModalOpen(false)}
+        onSave={handleAddSong}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>楽曲を削除</AlertDialogTitle>
+            <AlertDialogDescription>
+              「{songToDelete?.title}」を削除しますか？この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setSongToDelete(null)}>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteSong}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              削除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

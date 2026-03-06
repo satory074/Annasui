@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback, useRef } from "react";
+import { useMemo, useCallback, useRef, useState } from "react";
 import { formatTimeSimple } from "@/lib/utils/time";
 import type { SongSection } from "../types";
 
@@ -9,6 +9,7 @@ interface TimelineSectionProps {
   duration: number;
   currentTime: number;
   onSeek?: (time: number) => void;
+  onSongTimeChange?: (songId: string, startTime: number, endTime: number) => void;
 }
 
 export function TimelineSection({
@@ -16,8 +17,16 @@ export function TimelineSection({
   duration,
   currentTime,
   onSeek,
+  onSongTimeChange,
 }: TimelineSectionProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [dragState, setDragState] = useState<{
+    songId: string;
+    edge: "start" | "end";
+    initialTime: number;
+    initialMouseX: number;
+  } | null>(null);
+  const [dragTooltip, setDragTooltip] = useState<{ time: number; x: number; y: number } | null>(null);
 
   const timeToPercent = useCallback(
     (time: number) => {
@@ -27,15 +36,86 @@ export function TimelineSection({
     [duration]
   );
 
+  const percentToTime = useCallback(
+    (pct: number) => {
+      return Math.max(0, Math.min(pct * duration, duration));
+    },
+    [duration]
+  );
+
   const handleClick = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
+      if (dragState) return; // Don't seek while dragging
       if (!containerRef.current || !onSeek || duration <= 0) return;
       const rect = containerRef.current.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const pct = x / rect.width;
       onSeek(Math.max(0, Math.min(pct * duration, duration)));
     },
-    [duration, onSeek]
+    [duration, onSeek, dragState]
+  );
+
+  // Drag handlers for resize
+  const handleDragStart = useCallback(
+    (e: React.MouseEvent | React.TouchEvent, songId: string, edge: "start" | "end") => {
+      e.stopPropagation();
+      e.preventDefault();
+
+      const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+      const song = songs.find((s) => s.id === songId);
+      if (!song) return;
+
+      const initialTime = edge === "start" ? song.startTime : song.endTime;
+      setDragState({ songId, edge, initialTime, initialMouseX: clientX });
+
+      const handleMove = (ev: MouseEvent | TouchEvent) => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const moveX = "touches" in ev ? ev.touches[0].clientX : ev.clientX;
+        const pct = (moveX - rect.left) / rect.width;
+        const newTime = Math.round(percentToTime(pct) * 10) / 10; // 0.1s precision
+
+        setDragTooltip({
+          time: newTime,
+          x: moveX,
+          y: rect.top - 30,
+        });
+      };
+
+      const handleEnd = (ev: MouseEvent | TouchEvent) => {
+        if (!containerRef.current) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const endX = "changedTouches" in ev ? ev.changedTouches[0].clientX : ev.clientX;
+        const pct = (endX - rect.left) / rect.width;
+        let newTime = Math.round(percentToTime(pct) * 10) / 10;
+
+        const currentSong = songs.find((s) => s.id === songId);
+        if (currentSong && onSongTimeChange) {
+          if (edge === "start") {
+            newTime = Math.min(newTime, currentSong.endTime - 0.5);
+            newTime = Math.max(0, newTime);
+            onSongTimeChange(songId, newTime, currentSong.endTime);
+          } else {
+            newTime = Math.max(newTime, currentSong.startTime + 0.5);
+            newTime = Math.min(duration, newTime);
+            onSongTimeChange(songId, currentSong.startTime, newTime);
+          }
+        }
+
+        setDragState(null);
+        setDragTooltip(null);
+        document.removeEventListener("mousemove", handleMove);
+        document.removeEventListener("mouseup", handleEnd);
+        document.removeEventListener("touchmove", handleMove);
+        document.removeEventListener("touchend", handleEnd);
+      };
+
+      document.addEventListener("mousemove", handleMove);
+      document.addEventListener("mouseup", handleEnd);
+      document.addEventListener("touchmove", handleMove, { passive: false });
+      document.addEventListener("touchend", handleEnd);
+    },
+    [songs, percentToTime, duration, onSongTimeChange]
   );
 
   // Group overlapping songs into rows
@@ -80,7 +160,7 @@ export function TimelineSection({
       <div
         ref={containerRef}
         onClick={handleClick}
-        className="relative bg-gray-100 rounded-lg cursor-pointer overflow-hidden"
+        className="relative bg-gray-100 rounded-lg cursor-pointer overflow-visible"
         style={{ height: `${rows.rowCount * 28 + 8}px` }}
       >
         {/* Song segments */}
@@ -88,11 +168,14 @@ export function TimelineSection({
           const left = timeToPercent(song.startTime);
           const width = timeToPercent(song.endTime) - left;
           const row = rows.assignments[i];
+          const isDragging = dragState?.songId === song.id;
 
           return (
             <div
               key={song.id}
-              className="absolute h-6 rounded-md opacity-80 hover:opacity-100 transition-opacity flex items-center px-1.5 overflow-hidden"
+              className={`absolute h-6 rounded-md opacity-80 hover:opacity-100 transition-opacity flex items-center overflow-hidden group ${
+                isDragging ? "opacity-100 ring-2 ring-white shadow-lg" : ""
+              }`}
               style={{
                 left: `${left}%`,
                 width: `${Math.max(width, 0.5)}%`,
@@ -101,9 +184,27 @@ export function TimelineSection({
               }}
               title={`${song.title} (${formatTimeSimple(song.startTime)} - ${formatTimeSimple(song.endTime)})`}
             >
-              <span className="text-xs text-white font-medium truncate drop-shadow-sm">
+              {/* Left drag handle */}
+              {onSongTimeChange && (
+                <div
+                  className="absolute left-0 top-0 bottom-0 w-2 cursor-w-resize z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-white/30 hover:bg-white/60 rounded-l-md"
+                  onMouseDown={(e) => handleDragStart(e, song.id, "start")}
+                  onTouchStart={(e) => handleDragStart(e, song.id, "start")}
+                />
+              )}
+
+              <span className="text-xs text-white font-medium truncate drop-shadow-sm px-1.5">
                 {song.title}
               </span>
+
+              {/* Right drag handle */}
+              {onSongTimeChange && (
+                <div
+                  className="absolute right-0 top-0 bottom-0 w-2 cursor-e-resize z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-white/30 hover:bg-white/60 rounded-r-md"
+                  onMouseDown={(e) => handleDragStart(e, song.id, "end")}
+                  onTouchStart={(e) => handleDragStart(e, song.id, "end")}
+                />
+              )}
             </div>
           );
         })}
@@ -118,6 +219,16 @@ export function TimelineSection({
           </div>
         )}
       </div>
+
+      {/* Drag tooltip */}
+      {dragTooltip && (
+        <div
+          className="fixed z-50 px-2 py-1 bg-gray-900 text-white text-xs rounded shadow-lg pointer-events-none font-mono"
+          style={{ left: dragTooltip.x, top: dragTooltip.y, transform: "translateX(-50%)" }}
+        >
+          {formatTimeSimple(dragTooltip.time)}
+        </div>
+      )}
     </div>
   );
 }

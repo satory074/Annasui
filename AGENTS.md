@@ -13,6 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Testing
 - `npm run test` — Run unit tests (Vitest, jsdom, files in `src/**/__tests__/`)
+- `npx vitest run src/lib/utils/__tests__/time.test.ts` — Run a single test file
 - `npm run test:watch` — Watch mode
 - `npm run test:coverage` — Coverage report
 - `npm run test:e2e` — Playwright e2e tests (`e2e/` directory, auto-starts dev server)
@@ -66,8 +67,8 @@ Production (Firebase Hosting) does NOT have `DATABASE_URL`. Pages using Drizzle 
 **Legacy hooks** (in `src/hooks/`): `useMedleyEdit` (timeline editing with immediate save), `useNicoPlayer` (iframe postMessage), `useCurrentTrack`, `useSongSearch`. These coexist with the newer `src/features/` modules.
 
 ### Route Architecture
-- Route group `(app)` at `src/app/(app)/` is transparent in URLs
-- **Conflict**: `src/app/(app)/library/page.tsx` conflicts with `src/app/library/page.tsx` — only one can be active. Currently active: `src/app/library/page.tsx`
+- Route group `(app)` at `src/app/(app)/` is transparent in URLs — e.g., `src/app/(app)/[platform]/[videoId]/page.tsx` serves `/:platform/:videoId`
+- Platform-specific routes (`/niconico/[videoId]`, `/youtube/[videoId]`) redirect to the generic `/(app)/[platform]/[videoId]` route
 - Pages using components with `useAuth` need `export const dynamic = "force-dynamic"`
 
 ### ID Architecture (3 distinct types)

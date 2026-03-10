@@ -29,17 +29,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - Always verify in production: https://anasui-e6f49.web.app
 
 ### Server Management
-- `ps aux | grep "next-server" | grep -v grep` — Check running dev servers
 - `lsof -ti:3000,3001,3002,3003,3004 | xargs kill -9` — Kill all dev servers
 - Always stop dev servers after testing to prevent performance issues
 
 ## Project Overview
 
-**Medlean** — Multi-platform medley annotation platform. Supports Niconico (full iframe integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, immediate save system.
+**Medlean** — Multi-platform medley annotation platform. Supports Niconico (full iframe integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, BPM-based beat input.
 
-**Tech Stack**: Next.js 15.5.7, React 19, TypeScript, TailwindCSS 4, Supabase 2.45.0 (database), Firebase Hosting, Zustand (state with temporal undo/redo), React Query v5 (data fetching), React Hook Form + Zod v4 (forms), Drizzle ORM (server-side DB, local dev only)
-
-**Status**: Alpha v0.1.0-alpha.1
+**Tech Stack**: Next.js 15.5.7, React 19, TypeScript, TailwindCSS 4, Supabase 2.45.0, Firebase Hosting, Zustand (state + temporal undo/redo via zundo), React Query v5, React Hook Form + Zod v4, Drizzle ORM (local dev only)
 
 ## Core Architecture
 
@@ -50,35 +47,66 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | **Supabase JS** | `src/lib/supabase.ts` | `NEXT_PUBLIC_SUPABASE_*` | Yes | Client components, API routes, production |
 | **Drizzle ORM** | `src/lib/db/index.ts` | `DATABASE_URL` | **No** | Server Actions (`"use server"`), local dev, migrations |
 
-Production (Firebase Hosting) does NOT have `DATABASE_URL`. Pages using Drizzle will crash in production. Use Supabase JS client for all pages; reserve Drizzle for `"use server"` functions and `drizzle-kit` commands.
+Production (Firebase Hosting) does NOT have `DATABASE_URL`. Use Supabase JS for all production paths; Drizzle only for `"use server"` and `drizzle-kit`.
 
-### Architecture Layers
+### New vs Legacy Component Architecture
 
-**Provider hierarchy** (`src/app/providers.tsx`): QueryClientProvider → AuthProvider → children (+ ReactQueryDevtools)
+**New (active)** — `src/features/medley/components/MedleyView.tsx`:
+- Used by the main page `src/app/(app)/[platform]/[videoId]/page.tsx`
+- Server page prefetches data with `HydrationBoundary` + React Query
+- Zustand stores for timeline and UI state; React Query mutations for saves
+- Player abstracted via `PlayerAdapter` interface (`src/features/player/adapters/types.ts`)
 
-**Auth system** (`src/features/auth/context`): Single shared password (`EDIT_PASSWORD` env var) + user nicknames. No registration. Session via sessionStorage. API: `/api/auth/verify-password/` with rate limiting (5 attempts/10 min). Import: `import { useAuth } from "@/features/auth/context"`.
+**Legacy (being replaced)** — `src/components/pages/MedleyPlayer.tsx`:
+- Large monolithic component using `useMedleyEdit` + `useMedleyDataApi` hooks from `src/hooks/`
+- Immediate-save system with `!isSaving`, `!isRefetching` guard conditions
+- Still in use; do not delete until fully migrated
 
-**State management**: Two Zustand stores in `src/features/`:
-- `medley/store.ts` — Timeline state (songs, selection) with temporal middleware (undo/redo via zundo) and immer
+Many components exist in both `src/components/features/` (legacy) and `src/features/` (new). Prefer `src/features/` for new code.
+
+### Zustand Stores (3 stores in `src/features/`)
+
+- `medley/store.ts` — Timeline songs + selection, with temporal middleware (undo/redo)
+- `medley/store-ui.ts` — Modal state (`openModal: ModalId | null`), edit mode toggle
 - `player/store.ts` — Playback state (currentTime, isPlaying, duration, volume)
 
-**Data fetching**: React Query v5 with Supabase JS client. CRUD operations in `src/lib/api/medleys.ts`. All external API calls go through Next.js API routes due to CORS (Niconico thumbnails, metadata; Spotify thumbnails).
+### Provider Hierarchy (`src/app/providers.tsx`)
+QueryClientProvider → AuthProvider → children (+ ReactQueryDevtools)
 
-**Legacy hooks** (in `src/hooks/`): `useMedleyEdit` (timeline editing with immediate save), `useNicoPlayer` (iframe postMessage), `useCurrentTrack`, `useSongSearch`. These coexist with the newer `src/features/` modules.
+### Auth System (`src/features/auth/context`)
+Single shared password (`EDIT_PASSWORD` env var, server-side only) + user nicknames. No registration. Session via sessionStorage. API: `/api/auth/verify-password/` with rate limiting (5 attempts/10 min). Import: `import { useAuth } from "@/features/auth/context"`.
 
 ### Route Architecture
-- Route group `(app)` at `src/app/(app)/` is transparent in URLs — e.g., `src/app/(app)/[platform]/[videoId]/page.tsx` serves `/:platform/:videoId`
-- Platform-specific routes (`/niconico/[videoId]`, `/youtube/[videoId]`) redirect to the generic `/(app)/[platform]/[videoId]` route
-- Pages using components with `useAuth` need `export const dynamic = "force-dynamic"`
+- Route group `(app)` at `src/app/(app)/` is transparent in URLs
+- `/niconico/[videoId]` and `/youtube/[videoId]` redirect to `/(app)/[platform]/[videoId]`
+- Pages using `useAuth` need `export const dynamic = "force-dynamic"`
+
+### Data Flow
+External API calls (Niconico thumbnails/metadata, Spotify thumbnails) are proxied through Next.js API routes (`src/app/api/`) to avoid CORS. CRUD for medleys is in `src/lib/api/medleys.ts` (Supabase JS); server-side queries in `src/features/medley/queries/functions.ts` (Drizzle, `"use server"`).
 
 ### ID Architecture (3 distinct types)
-| ID | Type | Location | Purpose |
-|----|------|----------|---------|
-| `song_master.id` | UUID | Database | Primary key, FK references |
-| `normalized_id` / `dedupKey` | string | DB + App | Duplicate detection (katakana→hiragana normalization) |
-| `SongSection.id` | string (UUID) | App memory | From `medley_songs.id` |
+| ID | Type | Purpose |
+|----|------|---------|
+| `song_master.id` | UUID | Primary key, FK references |
+| `normalized_id` / `dedupKey` | string | Duplicate detection (katakana→hiragana) |
+| `SongSection.id` | UUID | From `medley_songs.id`, app memory only |
 
-`SongSection.songId` is an optional UUID reference back to `song_master` for library linking.
+`SongSection.songId` optionally references `song_master.id` for library linking.
+
+## Database Schema
+
+1. **`medleys`** — `id`, `video_id` (unique), `platform`, `title`, `creator`, `duration`, **`bpm`**, **`beat_offset`**, timestamps
+2. **`song_master`** — `id`, `title`, `artist` (nullable), `normalized_id` (unique), platform links, `description`, timestamps
+3. **`medley_songs`** — `id`, `medley_id` (FK→medleys, cascade), `song_id` (FK→song_master, nullable), `start_time`/`end_time` (REAL, 0.1s), `order_index`, cached `title`/`artist`/`color`, platform links, timestamps
+4. **`medley_edits`** — `id`, `medley_id` (FK), `song_id` (FK), `editor_nickname`, `action`, `changes` (JSONB), timestamp
+
+`medley_songs.song_id` links to `song_master` for library integration. When registering songs, create `song_master` first, then set `medley_songs.song_id`.
+
+### BPM Feature
+When `medleys.bpm` is set, time inputs switch from seconds to 1-indexed beat numbers. Beat utilities in `src/lib/utils/beat.ts`:
+- `beatToSeconds(beat, bpm, offset)` — 1-indexed beat → seconds
+- `secondsToBeat(seconds, bpm, offset)` — seconds → 1-indexed beat
+- `hasBpm(bpm)` — type guard
 
 ## Critical Constraints
 
@@ -93,66 +121,41 @@ Production (Firebase Hosting) does NOT have `DATABASE_URL`. Pages using Drizzle 
 - **MUST** use `commandInProgress` flag to prevent command overlap
 
 ### TailwindCSS 4
-- **MUST** add explicit `text-gray-900` to all `input` and `textarea` elements — TailwindCSS 4 may render text invisible without it
+- **MUST** add explicit `text-gray-900` to all `input` and `textarea` — TailwindCSS 4 renders text invisible without it
 
 ### Zod v4 + React Hook Form
 - Use untyped `useForm({})` with explicit `as SongFormValues` cast on defaultValues due to stricter type inference
 
 ### useEffect with Continuous Updates
-When components receive rapidly-updating props (e.g., `currentTime` from video playback), do NOT include them in useEffect dependency arrays — this resets form state every ~100ms. Reference the prop directly and add `eslint-disable-next-line react-hooks/exhaustive-deps` with a comment explaining why.
+Do NOT include rapidly-updating props (e.g., `currentTime` from video playback) in useEffect dependency arrays — resets form state every ~100ms. Add `eslint-disable-next-line react-hooks/exhaustive-deps` with an explanation comment.
 
 ### Supabase Client Version
-`@supabase/supabase-js@2.45.0` — Do NOT upgrade without thorough testing; newer versions have breaking type changes.
-
-## Immediate Save System
-
-Operations (add/edit/delete) trigger immediate save to database — no debouncing. Flow:
-1. User operation → `useMedleyEdit` callback triggers
-2. `saveMedleySongs()` writes to DB + creates edit history snapshot
-3. Data refetched from DB to ensure consistency
-4. UI uses `isRefetching` flag (NOT `loading`) to stay visible during background sync
-
-Guard conditions in `useMedleyEdit` state sync prevent race conditions: `!isSaving`, `!isRefetching`, `!hasChanges`, `!saveFailed`.
-
-## Database Schema (4 tables)
-
-1. **`medleys`** — `id` (UUID), `video_id` (unique), `platform`, `title`, `creator`, `duration`, timestamps
-2. **`song_master`** — `id` (UUID), `title`, `artist` (nullable), `normalized_id` (unique), platform links (`niconico_link`, `youtube_link`, `spotify_link`, `applemusic_link`), timestamps
-3. **`medley_songs`** — `id` (UUID), `medley_id` (FK), `song_id` (FK nullable → song_master), `start_time`/`end_time` (REAL, 0.1s precision), `order_index`, cached `title`/`artist`/`color`, platform links, timestamps
-4. **`medley_edits`** — `id` (UUID), `medley_id` (FK), `song_id` (FK), `editor_nickname`, `action`, `changes` (JSONB), timestamp
-
-Key: `medley_songs.song_id` links to `song_master` for library integration. When registering songs, create `song_master` record first, then set `medley_songs.song_id`.
+`@supabase/supabase-js@2.45.0` (exact, no `^`) — newer versions have breaking type changes.
 
 ## Environment Variables
 
 ```bash
-# .env.local (dev)
-EDIT_PASSWORD="..."                    # Server-side only, no NEXT_PUBLIC_ prefix
-NEXT_PUBLIC_SUPABASE_URL=https://...   # Supabase project URL
-NEXT_PUBLIC_SUPABASE_ANON_KEY=...      # Supabase anon key
-DATABASE_URL=postgresql://...          # Optional: only for Drizzle ORM
+EDIT_PASSWORD="..."                    # Server-side only — NO NEXT_PUBLIC_ prefix
+NEXT_PUBLIC_SUPABASE_URL=https://...
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+DATABASE_URL=postgresql://...          # Optional: only for Drizzle ORM (local dev)
 ```
 
-Production env vars set via Firebase console. `EDIT_PASSWORD` must NOT have `NEXT_PUBLIC_` prefix.
+Production env vars set via Firebase console.
 
 ## Common Issues
 
-- **Seek fails**: Check millisecond conversion (`* 1000`) for Niconico
-- **CORS errors**: Must use server-side proxy routes, not direct API calls
+- **Seek fails on Niconico**: Check `* 1000` millisecond conversion
+- **PGRST204 error**: Code references a non-existent DB column; check `src/lib/supabase.ts` type definitions and run `NOTIFY pgrst, 'reload schema';` in Supabase SQL editor after migrations
+- **BPM button not visible after login**: Component renders `null` when `!isAuthenticated && !hasBpm(bpm)`. Reload the page if state doesn't update after login.
 - **Thumbnails not loading**: Check proxy API URLs have trailing slashes
-- **Input text invisible**: Add `text-gray-900` to inputs (TailwindCSS 4 issue)
-- **Build failures with Drizzle pages**: Only Supabase JS client works in Firebase production
-- **PGRST204 error**: Code references non-existent DB columns; check schema
-- **Schema mismatch after migration**: Run `NOTIFY pgrst, 'reload schema';` in Supabase SQL editor
+- **Build failures**: Drizzle imports `net`/`tls` — never use in client components
 - **Form state resets during playback**: Remove `currentTime` from useEffect deps
-- **Stale production JS**: Firebase caches aggressively; use incognito or clear caches
-- **HMR errors in dev**: May be local-only; verify with `npm run build` first, then deploy to production to confirm
+- **Stale production JS**: Firebase caches aggressively; use incognito
 
 ## Code Conventions
 
-- Use `logger.debug/info/warn/error()` instead of `console.log`
-- Import auth: `import { useAuth } from "@/features/auth/context"`
+- Use `logger.debug/info/warn/error()` instead of `console.log` (`src/lib/utils/logger.ts`)
 - Auth guard pattern: `authLoading ? <Loading /> : isAuthenticated ? <EditUI /> : <LoginPrompt />`
 - Conditionally pass edit callbacks: `onEdit={isAuthenticated ? handleEdit : undefined}`
 - All save operations require `nickname` parameter
-- Use exact version for `@supabase/supabase-js` (no `^` prefix)

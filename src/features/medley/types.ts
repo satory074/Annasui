@@ -25,6 +25,8 @@ export interface MedleyMeta {
   title: string;
   creator?: string;
   duration: number;
+  bpm?: number;
+  beatOffset?: number;
   lastEditor?: string;
   lastEditedAt?: string;
   createdAt?: string;

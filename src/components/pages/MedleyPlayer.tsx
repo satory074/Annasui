@@ -28,6 +28,7 @@ import { getNiconicoVideoMetadata } from "@/lib/utils/videoMetadata";
 import MedleyHeader from "@/components/features/medley/MedleyHeader";
 import FixedPlayerBar from "@/components/features/player/FixedPlayerBar";
 import { RightSidebar } from "@/components/features/player/RightSidebar";
+import { BpmSettings } from "@/features/medley/components/BpmSettings";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -1274,6 +1275,18 @@ export default function MedleyPlayer({
                                 </button>
                             </div>
                         </div>
+                    </div>
+                )}
+
+                {/* BPM設定 */}
+                {!loading && (
+                    <div className="px-4 py-2">
+                        <BpmSettings
+                            videoId={videoId}
+                            bpm={medleyData?.bpm ?? undefined}
+                            beatOffset={medleyData?.beatOffset ?? undefined}
+                            isAuthenticated={isAuthenticated}
+                        />
                     </div>
                 )}
 

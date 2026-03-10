@@ -34,6 +34,8 @@ export type Database = {
           title: string
           creator: string | null
           duration: number
+          bpm: number | null
+          beat_offset: number | null
           created_at: string
           updated_at: string
           last_editor: string | null
@@ -46,6 +48,8 @@ export type Database = {
           title: string
           creator?: string | null
           duration: number
+          bpm?: number | null
+          beat_offset?: number | null
           created_at?: string
           updated_at?: string
           last_editor?: string | null
@@ -58,6 +62,8 @@ export type Database = {
           title?: string
           creator?: string | null
           duration?: number
+          bpm?: number | null
+          beat_offset?: number | null
           created_at?: string
           updated_at?: string
           last_editor?: string | null

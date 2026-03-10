@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { SongSection } from "@/types";
 import { parseTimeInput, formatTimeSimple } from "@/lib/utils/time";
+import { beatToSeconds, secondsToBeat, hasBpm } from "@/lib/utils/beat";
 import { logger } from '@/lib/utils/logger';
 
 // セグメント編集状態
@@ -27,6 +28,8 @@ interface SegmentListProps {
   onSeek?: (time: number) => void;
   onTogglePlayPause?: () => void;
   onDeleteSong?: () => void;
+  bpm?: number;
+  beatOffset?: number;
 }
 
 function SegmentList({
@@ -43,8 +46,11 @@ function SegmentList({
   onSetTempTimeValue,
   onSeek,
   onTogglePlayPause,
-  onDeleteSong
+  onDeleteSong,
+  bpm,
+  beatOffset = 0,
 }: SegmentListProps) {
+  const beatMode = hasBpm(bpm);
 
   // キーボード処理
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -68,7 +74,7 @@ function SegmentList({
             <div
               key={segment.id}
               className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg border ${
-                isPreviewPlaying 
+                isPreviewPlaying
                   ? 'bg-orange-100 border-orange-300'
                   : 'bg-gray-50 border-gray-200'
               } hover:bg-gray-100 transition-colors`}
@@ -78,15 +84,17 @@ function SegmentList({
                 区間{segment.segmentNumber}
               </span>
 
-              {/* 開始時間 */}
+              {/* 開始時間 / 拍数 */}
               <div className="flex items-center gap-1">
                 {isEditing && editingSegment.field === 'startTime' ? (
                   <input
-                    type="text"
+                    type={beatMode ? "number" : "text"}
                     value={tempTimeValue}
                     onChange={(e) => onSetTempTimeValue(e.target.value)}
                     onBlur={onFinishEditing}
                     onKeyDown={handleKeyDown}
+                    min={beatMode ? 1 : undefined}
+                    step={beatMode ? 1 : undefined}
                     className={`w-24 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
                       segmentErrors.startTime ? 'border-red-500' : 'border-gray-300'
                     } bg-white text-gray-900`}
@@ -100,20 +108,24 @@ function SegmentList({
                     }`}
                     title="クリックして編集"
                   >
-                    {formatTimeSimple(segment.startTime)}
+                    {beatMode
+                      ? `${secondsToBeat(segment.startTime, bpm!, beatOffset)}拍`
+                      : formatTimeSimple(segment.startTime)}
                   </button>
                 )}
-                
+
                 <span className="text-xs text-gray-400">-</span>
-                
-                {/* 終了時間 */}
+
+                {/* 終了時間 / 拍数 */}
                 {isEditing && editingSegment.field === 'endTime' ? (
                   <input
-                    type="text"
+                    type={beatMode ? "number" : "text"}
                     value={tempTimeValue}
                     onChange={(e) => onSetTempTimeValue(e.target.value)}
                     onBlur={onFinishEditing}
                     onKeyDown={handleKeyDown}
+                    min={beatMode ? 1 : undefined}
+                    step={beatMode ? 1 : undefined}
                     className={`w-24 px-2 py-1 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
                       segmentErrors.endTime ? 'border-red-500' : 'border-gray-300'
                     } bg-white text-gray-900`}
@@ -127,7 +139,9 @@ function SegmentList({
                     }`}
                     title="クリックして編集"
                   >
-                    {formatTimeSimple(segment.endTime)}
+                    {beatMode
+                      ? `${secondsToBeat(segment.endTime, bpm!, beatOffset)}拍`
+                      : formatTimeSimple(segment.endTime)}
                   </button>
                 )}
               </div>
@@ -264,6 +278,9 @@ interface MultiSegmentTimeEditorProps {
   currentSongTitle?: string;
   currentSongArtist?: string;
   onDeleteSong?: () => void; // 楽曲全体を削除
+  // BPM拍数入力モード
+  bpm?: number;
+  beatOffset?: number;
 }
 
 export default function MultiSegmentTimeEditor({
@@ -277,8 +294,11 @@ export default function MultiSegmentTimeEditor({
   allSongs = [],
   currentSongTitle = "",
   currentSongArtist = "",
-  onDeleteSong
+  onDeleteSong,
+  bpm,
+  beatOffset = 0,
 }: MultiSegmentTimeEditorProps) {
+  const beatMode = hasBpm(bpm);
   const [errors, setErrors] = useState<Record<number, { startTime?: string; endTime?: string }>>({});
   const [previewingSegmentId, setPreviewingSegmentId] = useState<number | null>(null);
   const [previewInterval, setPreviewInterval] = useState<NodeJS.Timeout | null>(null);
@@ -319,13 +339,23 @@ export default function MultiSegmentTimeEditor({
   // セグメント編集の開始
   const startEditing = (segmentId: number, field: 'startTime' | 'endTime', currentValue: number) => {
     setEditingSegment({ segmentId, field });
-    setTempTimeValue(formatTimeSimple(currentValue));
+    if (beatMode) {
+      setTempTimeValue(String(secondsToBeat(currentValue, bpm!, beatOffset)));
+    } else {
+      setTempTimeValue(formatTimeSimple(currentValue));
+    }
   };
 
   // セグメント編集の終了
   const finishEditing = () => {
     if (editingSegment.segmentId && editingSegment.field) {
-      const timeValue = parseTimeInput(tempTimeValue);
+      let timeValue: number;
+      if (beatMode) {
+        const beat = parseInt(tempTimeValue, 10);
+        timeValue = isNaN(beat) || beat < 1 ? 0 : beatToSeconds(beat, bpm!, beatOffset);
+      } else {
+        timeValue = parseTimeInput(tempTimeValue);
+      }
       updateSegment(editingSegment.segmentId, editingSegment.field, timeValue);
       
       // 状態クリアを遅延させて更新が完了するのを待つ
@@ -552,8 +582,13 @@ export default function MultiSegmentTimeEditor({
 
       {/* セグメント一覧ヘッダー */}
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-gray-700">
+        <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
           登場区間 ({segments.length}個)
+          {beatMode && (
+            <span className="text-xs font-normal text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded">
+              ♩ 拍入力
+            </span>
+          )}
         </h3>
         <button
           onClick={addSegment}
@@ -582,6 +617,8 @@ export default function MultiSegmentTimeEditor({
         onSeek={onSeek}
         onTogglePlayPause={onTogglePlayPause}
         onDeleteSong={onDeleteSong}
+        bpm={bpm}
+        beatOffset={beatOffset}
       />
 
     </div>

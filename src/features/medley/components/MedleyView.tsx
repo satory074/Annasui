@@ -15,6 +15,7 @@ import { RightSidebar } from "@/features/player/components/RightSidebar";
 import { TimelineSection } from "./TimelineSection";
 import { SongList } from "./SongList";
 import { EditHistoryPanel } from "./EditHistoryPanel";
+import { BpmSettings } from "./BpmSettings";
 import { LoginModal } from "@/features/auth/components/LoginModal";
 import { Button } from "@/components/ui/button";
 import type { PlatformType, SongSection } from "../types";
@@ -183,6 +184,14 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
 
             {/* Player controls */}
             <PlayerControls />
+
+            {/* BPM settings */}
+            <BpmSettings
+              videoId={videoId}
+              bpm={medley?.bpm}
+              beatOffset={medley?.beatOffset}
+              isAuthenticated={isAuthenticated}
+            />
 
             {/* Timeline */}
             <TimelineSection

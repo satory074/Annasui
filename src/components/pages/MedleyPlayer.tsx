@@ -703,10 +703,10 @@ export default function MedleyPlayer({
         setIsNewSong(true);
         setIsChangingSong(false); // 楽曲変更モードではない
 
-        // 楽曲選択モーダルを直接開く
-        setSongSearchModalOpen(true);
+        // 編集モーダルを直接開く（フォームで入力またはDBから検索）
+        setEditModalOpen(true);
 
-        logger.info('✅ New song segment created, opening song search modal', {
+        logger.info('✅ New song segment created, opening edit modal', {
             newSongId: newSong.id,
             startTime: newSong.startTime,
             endTime: newSong.endTime

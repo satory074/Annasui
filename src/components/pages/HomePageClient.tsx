@@ -26,6 +26,8 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     const [searchMode, setSearchMode] = useState<"medley" | "song">("medley");
     const [sortBy, setSortBy] = useState<"title" | "creator" | "duration" | "songCount" | "createdAt" | "updatedAt" | "viewCount" | "random">("createdAt");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+    const [songSortBy, setSongSortBy] = useState<"songTitle" | "artist" | "medleyTitle" | "startTime">("songTitle");
+    const [songSortOrder, setSongSortOrder] = useState<"asc" | "desc">("asc");
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(8);
     const [showCreateMedleyModal, setShowCreateMedleyModal] = useState(false);
@@ -216,18 +218,40 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
         }))
     );
 
-    const filteredSongs = searchMode === "song" ?
-        (searchTerm ?
-            allSongs.filter(song =>
-                song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                song.artist.join(", ").toLowerCase().includes(searchTerm.toLowerCase())
-            )
-        : allSongs)
+    const filteredSongs = searchMode === "song" && searchTerm ?
+        allSongs.filter(song =>
+            song.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            song.artist.join(", ").toLowerCase().includes(searchTerm.toLowerCase())
+        )
     : [];
 
+    // Sort filtered songs
+    const sortedFilteredSongs = [...filteredSongs].sort((a, b) => {
+        switch (songSortBy) {
+            case "songTitle":
+                return songSortOrder === "asc"
+                    ? a.title.localeCompare(b.title, "ja")
+                    : b.title.localeCompare(a.title, "ja");
+            case "artist":
+                return songSortOrder === "asc"
+                    ? a.artist.join(", ").localeCompare(b.artist.join(", "), "ja")
+                    : b.artist.join(", ").localeCompare(a.artist.join(", "), "ja");
+            case "medleyTitle":
+                return songSortOrder === "asc"
+                    ? a.medleyTitle.localeCompare(b.medleyTitle, "ja")
+                    : b.medleyTitle.localeCompare(a.medleyTitle, "ja");
+            case "startTime":
+                return songSortOrder === "asc"
+                    ? a.startTime - b.startTime
+                    : b.startTime - a.startTime;
+            default:
+                return 0;
+        }
+    });
+
     // Pagination for songs
-    const totalSongPages = Math.ceil(filteredSongs.length / itemsPerPage);
-    const paginatedSongs = filteredSongs.slice(
+    const totalSongPages = Math.ceil(sortedFilteredSongs.length / itemsPerPage);
+    const paginatedSongs = sortedFilteredSongs.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
     );
@@ -385,32 +409,54 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
                                         並び順
                                     </label>
-                                    <select
-                                        value={`${sortBy}-${sortOrder}`}
-                                        onChange={(e) => {
-                                            const [newSortBy, newSortOrder] = e.target.value.split('-') as [typeof sortBy, typeof sortOrder];
-                                            setSortBy(newSortBy);
-                                            setSortOrder(newSortOrder);
-                                            setCurrentPage(1);
-                                        }}
-                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
-                                    >
-                                        <option value="createdAt-desc">🆕 新着順</option>
-                                        <option value="viewCount-desc">🔥 人気順（再生回数）</option>
-                                        <option value="updatedAt-desc">📝 更新順</option>
-                                        <option value="random-asc">🎲 ランダム</option>
-                                        <option value="title-asc">タイトル(昇順)</option>
-                                        <option value="title-desc">タイトル(降順)</option>
-                                        <option value="creator-asc">作者名(昇順)</option>
-                                        <option value="creator-desc">作者名(降順)</option>
-                                        <option value="duration-asc">再生時間(短い順)</option>
-                                        <option value="duration-desc">再生時間(長い順)</option>
-                                        <option value="songCount-asc">楽曲数(少ない順)</option>
-                                        <option value="songCount-desc">楽曲数(多い順)</option>
-                                        <option value="createdAt-asc">投稿日(古い順)</option>
-                                        <option value="viewCount-asc">再生回数(少ない順)</option>
-                                        <option value="updatedAt-asc">更新日(古い順)</option>
-                                    </select>
+                                    {searchMode === "medley" ? (
+                                        <select
+                                            value={`${sortBy}-${sortOrder}`}
+                                            onChange={(e) => {
+                                                const [newSortBy, newSortOrder] = e.target.value.split('-') as [typeof sortBy, typeof sortOrder];
+                                                setSortBy(newSortBy);
+                                                setSortOrder(newSortOrder);
+                                                setCurrentPage(1);
+                                            }}
+                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                                        >
+                                            <option value="createdAt-desc">🆕 新着順</option>
+                                            <option value="viewCount-desc">🔥 人気順（再生回数）</option>
+                                            <option value="updatedAt-desc">📝 更新順</option>
+                                            <option value="random-asc">🎲 ランダム</option>
+                                            <option value="title-asc">タイトル(昇順)</option>
+                                            <option value="title-desc">タイトル(降順)</option>
+                                            <option value="creator-asc">作者名(昇順)</option>
+                                            <option value="creator-desc">作者名(降順)</option>
+                                            <option value="duration-asc">再生時間(短い順)</option>
+                                            <option value="duration-desc">再生時間(長い順)</option>
+                                            <option value="songCount-asc">楽曲数(少ない順)</option>
+                                            <option value="songCount-desc">楽曲数(多い順)</option>
+                                            <option value="createdAt-asc">投稿日(古い順)</option>
+                                            <option value="viewCount-asc">再生回数(少ない順)</option>
+                                            <option value="updatedAt-asc">更新日(古い順)</option>
+                                        </select>
+                                    ) : (
+                                        <select
+                                            value={`${songSortBy}-${songSortOrder}`}
+                                            onChange={(e) => {
+                                                const [newSortBy, newSortOrder] = e.target.value.split('-') as [typeof songSortBy, typeof songSortOrder];
+                                                setSongSortBy(newSortBy);
+                                                setSongSortOrder(newSortOrder);
+                                                setCurrentPage(1);
+                                            }}
+                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                                        >
+                                            <option value="songTitle-asc">タイトル(昇順)</option>
+                                            <option value="songTitle-desc">タイトル(降順)</option>
+                                            <option value="artist-asc">アーティスト名(昇順)</option>
+                                            <option value="artist-desc">アーティスト名(降順)</option>
+                                            <option value="medleyTitle-asc">メドレー名(昇順)</option>
+                                            <option value="medleyTitle-desc">メドレー名(降順)</option>
+                                            <option value="startTime-asc">開始時間(早い順)</option>
+                                            <option value="startTime-desc">開始時間(遅い順)</option>
+                                        </select>
+                                    )}
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -455,18 +501,26 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     </div>
                                 ) : (
                                     <div className="flex items-center gap-2">
-                                        <span className="font-medium text-gray-900">
-                                            {filteredSongs.length}件
-                                        </span>
-                                        <span>の楽曲が見つかりました</span>
-                                        {medleys.length > 0 && (
-                                            <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                                                {medleys.length}メドレー中
-                                            </span>
-                                        )}
-                                        {totalSongPages > 1 && (
-                                            <span className="px-2 py-1 bg-gray-100 rounded text-xs">
-                                                {currentPage}/{totalSongPages}ページ
+                                        {searchTerm ? (
+                                            <>
+                                                <span className="font-medium text-gray-900">
+                                                    {sortedFilteredSongs.length}件
+                                                </span>
+                                                <span>の楽曲が見つかりました</span>
+                                                {medleys.length > 0 && (
+                                                    <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                                                        {medleys.length}メドレー中
+                                                    </span>
+                                                )}
+                                                {totalSongPages > 1 && (
+                                                    <span className="px-2 py-1 bg-gray-100 rounded text-xs">
+                                                        {currentPage}/{totalSongPages}ページ
+                                                    </span>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <span className="text-gray-500">
+                                                {allSongs.length}曲が登録されています
                                             </span>
                                         )}
                                     </div>
@@ -492,60 +546,80 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 </div>
 
                 {/* Song search results */}
-                {searchMode === "song" && paginatedSongs.length > 0 && (
+                {searchMode === "song" && searchTerm && paginatedSongs.length > 0 && (
                     <div className="mb-8">
-                        <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                            {paginatedSongs.map((song) => (
-                                <div key={`${song.videoId}-${song.id}-${song.startTime}`} className="group bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-gray-200">
-                                    <Link href={getSongUrl(song)} className="block">
-                                        <div className="aspect-video bg-gray-200 relative overflow-hidden">
-                                            <Image
-                                                src={song.thumbnailUrl}
-                                                alt={song.title}
-                                                fill
-                                                className="object-cover group-hover:scale-105 transition-transform duration-300"
-                                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                                                onError={(e) => {
-                                                    const target = e.target as HTMLImageElement;
-                                                    target.src = '/default-thumbnail.svg';
-                                                }}
-                                            />
-                                            
-                                            {/* Hover Overlay */}
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                                                <div className="bg-white/20 backdrop-blur-sm rounded-full p-4 transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                                                    <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M8 5v10l8-5-8-5z" />
-                                                    </svg>
-                                                </div>
-                                            </div>
+                        <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+                            {paginatedSongs.map((song, index) => (
+                                <Link
+                                    key={`${song.videoId}-${song.id}-${song.startTime}`}
+                                    href={getSongUrl(song)}
+                                    className={`flex items-center gap-4 px-5 py-3 hover:bg-orange-50 transition-colors group ${
+                                        index !== paginatedSongs.length - 1 ? "border-b border-gray-100" : ""
+                                    }`}
+                                >
+                                    {/* Music icon */}
+                                    <div className="flex-shrink-0 w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center text-orange-500 group-hover:bg-orange-200 transition-colors">
+                                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.369 4.369 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+                                        </svg>
+                                    </div>
 
-                                            {/* Time Badge */}
-                                            <div className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md font-medium">
-                                                {formatTime(song.startTime)} - {formatTime(song.endTime)}
-                                            </div>
-                                        </div>
-                                        
-                                        <div className="p-4">
-                                            <h3 className="font-semibold text-gray-900 line-clamp-1 group-hover:text-orange-600 transition-colors">
+                                    {/* Song info */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-medium text-gray-900 line-clamp-1 group-hover:text-orange-600 transition-colors">
                                                 {song.title}
-                                            </h3>
-                                            <p className="text-sm text-gray-600 mt-1 line-clamp-1">
-                                                {song.artist}
-                                            </p>
-                                            <div className="mt-3 pt-3 border-t border-gray-100">
-                                                <p className="text-xs text-gray-500 line-clamp-1">
-                                                    <span className="font-medium">{song.medleyTitle}</span>
-                                                </p>
-                                                <p className="text-xs text-gray-400 mt-1">
-                                                    {song.medleyCreator}
-                                                </p>
-                                            </div>
+                                            </span>
+                                            {song.artist.length > 0 && (
+                                                <span className="text-sm text-gray-500 line-clamp-1 hidden sm:block">
+                                                    {song.artist.join(", ")}
+                                                </span>
+                                            )}
                                         </div>
-                                    </Link>
-                                </div>
+                                        <div className="flex items-center gap-1 text-xs text-gray-400 mt-0.5">
+                                            <span className="line-clamp-1">{song.medleyTitle}</span>
+                                            {song.medleyCreator && (
+                                                <>
+                                                    <span>·</span>
+                                                    <span>{song.medleyCreator}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                        {/* Artist on mobile */}
+                                        {song.artist.length > 0 && (
+                                            <p className="text-sm text-gray-500 line-clamp-1 sm:hidden mt-0.5">
+                                                {song.artist.join(", ")}
+                                            </p>
+                                        )}
+                                    </div>
+
+                                    {/* Time range */}
+                                    <div className="flex-shrink-0 flex items-center gap-2">
+                                        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded font-mono whitespace-nowrap">
+                                            {formatTime(song.startTime)} - {formatTime(song.endTime)}
+                                        </span>
+                                        <svg className="w-4 h-4 text-gray-300 group-hover:text-orange-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                        </svg>
+                                    </div>
+                                </Link>
                             ))}
                         </div>
+                    </div>
+                )}
+
+                {/* Song search empty state (no query) */}
+                {searchMode === "song" && !searchTerm && (
+                    <div className="text-center py-16">
+                        <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg className="w-8 h-8 text-orange-400" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V7.82l8-1.6v5.894A4.369 4.369 0 0015 12c-1.657 0-3 .895-3 2s1.343 2 3 2 3-.895 3-2V3z" />
+                            </svg>
+                        </div>
+                        <p className="text-gray-600 font-medium mb-1">楽曲を検索</p>
+                        <p className="text-sm text-gray-400">
+                            {allSongs.length}曲が登録されています。タイトルまたはアーティスト名で検索してください。
+                        </p>
                     </div>
                 )}
 
@@ -723,8 +797,8 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                 )}
 
                 {/* No search results */}
-                {((searchMode === "medley" && paginatedMedleys.length === 0) || 
-                  (searchMode === "song" && filteredSongs.length === 0)) && 
+                {((searchMode === "medley" && paginatedMedleys.length === 0) ||
+                  (searchMode === "song" && sortedFilteredSongs.length === 0)) &&
                  searchTerm && (
                     <div className="text-center py-12">
                         <div className="text-gray-500 text-lg mb-4">

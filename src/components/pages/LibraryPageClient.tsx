@@ -51,6 +51,7 @@ export default function LibraryPageClient() {
   const [activeTab, setActiveTab] = useState<TabType>("songs");
   const [duplicateGroups, setDuplicateGroups] = useState<DatabaseDuplicateGroup[]>([]);
   const [isLoadingDuplicates, setIsLoadingDuplicates] = useState(false);
+  const [dismissedGroupIds, setDismissedGroupIds] = useState<Set<string>>(new Set());
 
   // Load song database
   useEffect(() => {
@@ -105,17 +106,16 @@ export default function LibraryPageClient() {
   };
 
   // Search and pagination using the extracted hook
-  const { searchResults, totalPages, paginatedResults } = useSongSearch({
+  const { searchResults, totalPages } = useSongSearch({
     songDatabase,
     searchTerm,
     currentPage,
     itemsPerPage: ITEMS_PER_PAGE
   });
 
-  // Sort results
+  // Sort all results then paginate
   const sortedResults = useMemo(() => {
-    const results = [...paginatedResults];
-    results.sort((a, b) => {
+    const sorted = [...searchResults].sort((a, b) => {
       let aValue: string | number;
       let bValue: string | number;
 
@@ -145,8 +145,9 @@ export default function LibraryPageClient() {
       return 0;
     });
 
-    return results;
-  }, [paginatedResults, sortField, sortOrder]);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return sorted.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [searchResults, currentPage, sortField, sortOrder]);
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -209,6 +210,21 @@ export default function LibraryPageClient() {
     const db = await getSongDatabase();
     setSongDatabase(db);
     toast.success(`「${songData.title}」を追加しました`);
+  };
+
+  const handleUseSimilarSong = (song: SongDatabaseEntry) => {
+    setAddSongModalOpen(false);
+    setSelectedSong(song);
+    setEditModalOpen(true);
+  };
+
+  const visibleGroups = useMemo(
+    () => duplicateGroups.filter(g => !dismissedGroupIds.has(g.primarySong.id)),
+    [duplicateGroups, dismissedGroupIds]
+  );
+
+  const handleDismissGroup = (primaryId: string) => {
+    setDismissedGroupIds(prev => new Set(prev).add(primaryId));
   };
 
   const [thumbnailErrors, setThumbnailErrors] = useState<Set<string>>(new Set());
@@ -297,7 +313,7 @@ export default function LibraryPageClient() {
               <p className="text-gray-600">
                 登録されている楽曲: {songDatabase.length}曲
                 {activeTab === "songs" && searchTerm && ` / 検索結果: ${searchResults.length}曲`}
-                {activeTab === "duplicates" && duplicateGroups.length > 0 && ` / 重複候補: ${duplicateGroups.length}グループ`}
+                {activeTab === "duplicates" && visibleGroups.length > 0 && ` / 重複候補: ${visibleGroups.length}グループ`}
               </p>
             </div>
             <button
@@ -333,9 +349,9 @@ export default function LibraryPageClient() {
                 }`}
               >
                 重複管理
-                {duplicateGroups.length > 0 && (
+                {visibleGroups.length > 0 && (
                   <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs">
-                    {duplicateGroups.length}
+                    {visibleGroups.length}
                   </span>
                 )}
               </button>
@@ -362,7 +378,7 @@ export default function LibraryPageClient() {
               <div className="text-center py-12 text-gray-600">
                 重複を検索中...
               </div>
-            ) : duplicateGroups.length === 0 ? (
+            ) : visibleGroups.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-600 mb-2">重複の可能性がある楽曲は見つかりませんでした。</div>
                 <p className="text-sm text-gray-500">
@@ -375,13 +391,15 @@ export default function LibraryPageClient() {
                   <p className="text-sm text-blue-700">
                     <strong>重複管理について:</strong> 表記揺れにより同じ楽曲が複数登録されている可能性があります。
                     マスターとなる楽曲を選択し、「マージ実行」をクリックすると、他の楽曲の参照がマスターに統合されます。
+                    重複でない場合は「重複ではない」をクリックして非表示にできます。
                   </p>
                 </div>
-                {duplicateGroups.map((group, index) => (
+                {visibleGroups.map((group, index) => (
                   <DuplicateGroupCard
                     key={`${group.primarySong.id}-${index}`}
                     group={group}
                     onMergeComplete={handleMergeComplete}
+                    onDismiss={() => handleDismissGroup(group.primarySong.id)}
                   />
                 ))}
               </div>
@@ -666,6 +684,7 @@ export default function LibraryPageClient() {
         isOpen={addSongModalOpen}
         onClose={() => setAddSongModalOpen(false)}
         onSave={handleAddSong}
+        onUseSimilarSong={handleUseSimilarSong}
       />
 
       {/* Delete Confirmation Dialog */}

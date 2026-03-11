@@ -4,16 +4,28 @@ import { useState } from "react";
 import { DatabaseDuplicateGroup, SongDatabaseEntry, mergeDuplicateSongs } from "@/lib/utils/songDatabase";
 import { logger } from "@/lib/utils/logger";
 import Image from "next/image";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface DuplicateGroupCardProps {
   group: DatabaseDuplicateGroup;
   onMergeComplete: () => void;
+  onDismiss: () => void;
 }
 
-export default function DuplicateGroupCard({ group, onMergeComplete }: DuplicateGroupCardProps) {
+export default function DuplicateGroupCard({ group, onMergeComplete, onDismiss }: DuplicateGroupCardProps) {
   const [selectedPrimary, setSelectedPrimary] = useState<string>(group.primarySong.id);
   const [isMerging, setIsMerging] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const allSongs = [group.primarySong, ...group.duplicates];
 
@@ -33,17 +45,14 @@ export default function DuplicateGroupCard({ group, onMergeComplete }: Duplicate
     return "/placeholder-thumbnail.png";
   };
 
-  const handleMerge = async () => {
+  const handleMerge = () => {
     const sourceSongs = allSongs.filter(s => s.id !== selectedPrimary);
-    if (sourceSongs.length === 0) {
-      return;
-    }
+    if (sourceSongs.length === 0) return;
+    setConfirmDialogOpen(true);
+  };
 
-    const confirmMsg = `「${allSongs.find(s => s.id === selectedPrimary)?.title}」をマスターとして、${sourceSongs.length}件の楽曲を統合します。\n\nこの操作は取り消せません。続行しますか？`;
-    if (!confirm(confirmMsg)) {
-      return;
-    }
-
+  const confirmMerge = async () => {
+    const sourceSongs = allSongs.filter(s => s.id !== selectedPrimary);
     setIsMerging(true);
     setError(null);
 
@@ -62,6 +71,9 @@ export default function DuplicateGroupCard({ group, onMergeComplete }: Duplicate
     }
   };
 
+  const primaryTitle = allSongs.find(s => s.id === selectedPrimary)?.title ?? '';
+  const sourceSongsCount = allSongs.filter(s => s.id !== selectedPrimary).length;
+
   return (
     <div className="bg-white rounded-lg shadow p-4 mb-4">
       <div className="flex items-center justify-between mb-3">
@@ -72,14 +84,25 @@ export default function DuplicateGroupCard({ group, onMergeComplete }: Duplicate
           <span className="ml-2 px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded text-xs">
             {group.reason}
           </span>
+          <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 rounded text-xs">
+            類似度 {group.similarity}%
+          </span>
         </div>
-        <button
-          onClick={handleMerge}
-          disabled={isMerging || allSongs.length < 2}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {isMerging ? 'マージ中...' : 'マージ実行'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onDismiss}
+            className="px-3 py-2 text-sm text-gray-500 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+          >
+            重複ではない
+          </button>
+          <button
+            onClick={handleMerge}
+            disabled={isMerging || allSongs.length < 2}
+            className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isMerging ? 'マージ中...' : 'マージ実行'}
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -142,6 +165,26 @@ export default function DuplicateGroupCard({ group, onMergeComplete }: Duplicate
           </label>
         ))}
       </div>
+
+      <AlertDialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>マージの確認</AlertDialogTitle>
+            <AlertDialogDescription>
+              「{primaryTitle}」をマスターとして、{sourceSongsCount}件の楽曲を統合します。この操作は取り消せません。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>キャンセル</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmMerge}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              マージ実行
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

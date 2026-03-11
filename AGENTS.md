@@ -47,7 +47,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | **Supabase JS** | `src/lib/supabase.ts` | `NEXT_PUBLIC_SUPABASE_*` | Yes | Client components, API routes, production |
 | **Drizzle ORM** | `src/lib/db/index.ts` | `DATABASE_URL` | **No** | Server Actions (`"use server"`), local dev, migrations |
 
-Production (Firebase Hosting) does NOT have `DATABASE_URL`. Use Supabase JS for all production paths; Drizzle only for `"use server"` and `drizzle-kit`.
+Production (Firebase Hosting) does NOT have `DATABASE_URL`. Use Supabase JS for all production paths; Drizzle only for `"use server"` and `drizzle-kit`. The Drizzle client uses a lazy Proxy init to avoid throwing at build time.
 
 ### New vs Legacy Component Architecture
 
@@ -66,12 +66,12 @@ Many components exist in both `src/components/features/` (legacy) and `src/featu
 
 ### Zustand Stores (3 stores in `src/features/`)
 
-- `medley/store.ts` — Timeline songs + selection, with temporal middleware (undo/redo)
-- `medley/store-ui.ts` — Modal state (`openModal: ModalId | null`), edit mode toggle
-- `player/store.ts` — Playback state (currentTime, isPlaying, duration, volume)
+- **`medley/store.ts`** — Timeline songs + selection, with `temporal` + `immer` + `devtools` middleware (undo/redo limit 50). Only `songs` array is tracked for undo (not selection). Access via `useTimelineStore()` + `useTimelineHistory()`.
+- **`medley/store-ui.ts`** — Modal state (`openModal: ModalId | null`), edit mode toggle. Modal IDs: `"songEdit"`, `"songSearch"`, `"manualAdd"`, `"login"`, `"restore"`, `"createMedley"`, `"bulkEdit"`, `"importSetlist"`.
+- **`player/store.ts`** — Playback state. Use fine-grained selectors `useCurrentTime()`, `useIsPlaying()`, `useDuration()`, `useVolume()` to minimize re-renders.
 
 ### Provider Hierarchy (`src/app/providers.tsx`)
-QueryClientProvider → AuthProvider → children (+ ReactQueryDevtools)
+QueryClientProvider (staleTime 60s, retry 1) → AuthProvider → Toaster → children (+ ReactQueryDevtools)
 
 ### Auth System (`src/features/auth/context`)
 Single shared password (`EDIT_PASSWORD` env var, server-side only) + user nicknames. No registration. Session via sessionStorage. API: `/api/auth/verify-password/` with rate limiting (5 attempts/10 min). Import: `import { useAuth } from "@/features/auth/context"`.
@@ -82,7 +82,14 @@ Single shared password (`EDIT_PASSWORD` env var, server-side only) + user nickna
 - Pages using `useAuth` need `export const dynamic = "force-dynamic"`
 
 ### Data Flow
-External API calls (Niconico thumbnails/metadata, Spotify thumbnails) are proxied through Next.js API routes (`src/app/api/`) to avoid CORS. CRUD for medleys is in `src/lib/api/medleys.ts` (Supabase JS); server-side queries in `src/features/medley/queries/functions.ts` (Drizzle, `"use server"`).
+1. **Server → Client**: Page prefetches with Drizzle → React Query `HydrationBoundary` → client hydrates
+2. **Edit flow**: User edits Zustand store → Save mutation → Supabase JS → query cache invalidated → store synced
+3. **External APIs** (Niconico thumbnails/metadata, Spotify thumbnails) proxied through `src/app/api/` to avoid CORS
+
+CRUD for medleys is in `src/lib/api/medleys.ts` (Supabase JS, handles validation + sanitization); server-side queries in `src/features/medley/queries/functions.ts` (Drizzle, `"use server"`).
+
+### Player Adapter Pattern
+`PlayerAdapter` interface (`src/features/player/adapters/types.ts`) abstracts `play()`, `pause()`, `seek(seconds)`, `setVolume()`, event handlers, etc. Implementations: `NicoPlayerAdapter` (postMessage) and `YouTubePlayerAdapter` (IFrame API).
 
 ### ID Architecture (3 distinct types)
 | ID | Type | Purpose |
@@ -152,6 +159,7 @@ Production env vars set via Firebase console.
 - **Build failures**: Drizzle imports `net`/`tls` — never use in client components
 - **Form state resets during playback**: Remove `currentTime` from useEffect deps
 - **Stale production JS**: Firebase caches aggressively; use incognito
+- **Static prerendering fails**: Pages using `useAuth` or sessionStorage must have `export const dynamic = "force-dynamic"`
 
 ## Code Conventions
 
@@ -159,3 +167,4 @@ Production env vars set via Firebase console.
 - Auth guard pattern: `authLoading ? <Loading /> : isAuthenticated ? <EditUI /> : <LoginPrompt />`
 - Conditionally pass edit callbacks: `onEdit={isAuthenticated ? handleEdit : undefined}`
 - All save operations require `nickname` parameter
+- `Searchable` interface must accept `null` for `artist` field (Drizzle schema has `text("artist")` which is `string | null`)

@@ -62,12 +62,16 @@ Production (Firebase Hosting) does NOT have `DATABASE_URL`. Use Supabase JS for 
 - Immediate-save system with `!isSaving`, `!isRefetching` guard conditions
 - Still in use; do not delete until fully migrated
 
-Many components exist in both `src/components/features/` (legacy) and `src/features/` (new). Prefer `src/features/` for new code.
+Many components exist in both `src/components/features/` (legacy) and `src/features/` (new). Prefer `src/features/` for new code. Example: `src/features/medley/components/SongEditModal.tsx` (new, `id: string` UUID) supersedes `src/components/features/medley/SongEditModal.tsx` (legacy, `id: number`).
 
 ### Zustand Stores (3 stores in `src/features/`)
 
 - **`medley/store.ts`** — Timeline songs + selection, with `temporal` + `immer` + `devtools` middleware (undo/redo limit 50). Only `songs` array is tracked for undo (not selection). Access via `useTimelineStore()` + `useTimelineHistory()`.
+  - Store API: `setSongs(songs)`, `addSong(song)`, `updateSong(id, partial)`, `deleteSong(id)`, `selectSong(id|null)`, `reorderSongs(songIds[])`
+  - Inside `useCallback`, use `useTimelineStore.getState().updateSong(...)` (imperative) instead of the hook to avoid stale closures
 - **`medley/store-ui.ts`** — Modal state (`openModal: ModalId | null`), edit mode toggle. Modal IDs: `"songEdit"`, `"songSearch"`, `"manualAdd"`, `"login"`, `"restore"`, `"createMedley"`, `"bulkEdit"`, `"importSetlist"`.
+  - Open with data: `openModalWith("songEdit", { song })` — read back via `(modalData.song as SongSection) ?? null`
+  - New song: `openModalWith("songEdit", { song: null, isNew: true })` — modal checks `isNew={!modalData.song}`
 - **`player/store.ts`** — Playback state. Use fine-grained selectors `useCurrentTime()`, `useIsPlaying()`, `useDuration()`, `useVolume()` to minimize re-renders.
 
 ### Provider Hierarchy (`src/app/providers.tsx`)
@@ -168,3 +172,4 @@ Production env vars set via Firebase console.
 - Conditionally pass edit callbacks: `onEdit={isAuthenticated ? handleEdit : undefined}`
 - All save operations require `nickname` parameter
 - `Searchable` interface must accept `null` for `artist` field (Drizzle schema has `text("artist")` which is `string | null`)
+- Modal upsert pattern: `const exists = songs.find(s => s.id === song.id); exists ? updateSong(id, song) : addSong(song)` — used in `handleModalSave` in MedleyView

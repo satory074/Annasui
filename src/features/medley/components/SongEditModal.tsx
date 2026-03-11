@@ -20,6 +20,7 @@ interface SongEditModalProps {
   onClose: () => void;
   song: SongSection | null;
   isNew?: boolean;
+  prefill?: { title?: string; artist?: string[] };
   allSongs?: SongSection[];
   currentTime?: number;
   maxDuration?: number;
@@ -52,6 +53,7 @@ export function SongEditModal({
   onClose,
   song,
   isNew = false,
+  prefill,
   allSongs = [],
   currentTime = 0,
   maxDuration = 0,
@@ -76,9 +78,9 @@ export function SongEditModal({
       setStartTimeInput(formatTimeSimple(song.startTime));
       setEndTimeInput(formatTimeSimple(song.endTime));
     } else {
-      // New song mode
-      setTitle("");
-      setArtistInput("");
+      // New song mode — apply prefill if provided
+      setTitle(prefill?.title ?? "");
+      setArtistInput(prefill?.artist?.join(", ") ?? "");
       setStartTimeInput(formatTimeSimple(currentTime));
       setEndTimeInput(
         formatTimeSimple(Math.min(currentTime + 30, maxDuration || currentTime + 30))

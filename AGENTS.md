@@ -51,13 +51,15 @@ Production (Firebase Hosting) does NOT have `DATABASE_URL`. Use Supabase JS for 
 
 ### New vs Legacy Component Architecture
 
-**New (active)** — `src/features/medley/components/MedleyView.tsx`:
-- Used by the main page `src/app/(app)/[platform]/[videoId]/page.tsx`
+**New (active, not yet user-facing)** — `src/features/medley/components/MedleyView.tsx`:
+- Used by `src/app/(app)/[platform]/[videoId]/page.tsx` — but unreachable for niconico/youtube (see Route Architecture)
 - Server page prefetches data with `HydrationBoundary` + React Query
 - Zustand stores for timeline and UI state; React Query mutations for saves
 - Player abstracted via `PlayerAdapter` interface (`src/features/player/adapters/types.ts`)
+- `handleAddSong` opens `SongSearchModal` → user selects from DB → `SongEditModal` opens with `prefill`
 
-**Legacy (being replaced)** — `src/components/pages/MedleyPlayer.tsx`:
+**Legacy (currently user-facing)** — `src/components/pages/MedleyPlayer.tsx`:
+- Rendered by `src/app/niconico/[videoId]/page.tsx` and `src/app/youtube/[videoId]/page.tsx`
 - Large monolithic component using `useMedleyEdit` + `useMedleyDataApi` hooks from `src/hooks/`
 - Immediate-save system with `!isSaving`, `!isRefetching` guard conditions
 - Still in use; do not delete until fully migrated
@@ -72,6 +74,7 @@ Many components exist in both `src/components/features/` (legacy) and `src/featu
 - **`medley/store-ui.ts`** — Modal state (`openModal: ModalId | null`), edit mode toggle. Modal IDs: `"songEdit"`, `"songSearch"`, `"manualAdd"`, `"login"`, `"restore"`, `"createMedley"`, `"bulkEdit"`, `"importSetlist"`.
   - Open with data: `openModalWith("songEdit", { song })` — read back via `(modalData.song as SongSection) ?? null`
   - New song: `openModalWith("songEdit", { song: null, isNew: true })` — modal checks `isNew={!modalData.song}`
+  - Prefilled new song (from SongSearchModal): `openModalWith("songEdit", { song: null, isNew: true, prefill: { title, artist: string[] } })` — `SongEditModal` reads `prefill` prop to pre-populate title/artist fields
 - **`player/store.ts`** — Playback state. Use fine-grained selectors `useCurrentTime()`, `useIsPlaying()`, `useDuration()`, `useVolume()` to minimize re-renders.
 
 ### Provider Hierarchy (`src/app/providers.tsx`)
@@ -82,7 +85,9 @@ Single shared password (`EDIT_PASSWORD` env var, server-side only) + user nickna
 
 ### Route Architecture
 - Route group `(app)` at `src/app/(app)/` is transparent in URLs
-- `/niconico/[videoId]` and `/youtube/[videoId]` redirect to `/(app)/[platform]/[videoId]`
+- **`src/app/(app)/[platform]/[videoId]/page.tsx`** renders `MedleyView` (new). Uses Drizzle `HydrationBoundary` prefetch — requires `DATABASE_URL` (unavailable in Firebase production).
+- **`src/app/niconico/[videoId]/page.tsx`** and **`src/app/youtube/[videoId]/page.tsx`** render `MedleyPageClient` (legacy). Static segments take priority over `[platform]`, so niconico/youtube URLs never reach the `(app)` route.
+- To access `MedleyView` via URL, use a platform value other than `niconico`/`youtube` (e.g. `/nico/sm123`), or migrate the legacy pages.
 - Pages using `useAuth` need `export const dynamic = "force-dynamic"`
 
 ### Data Flow
@@ -187,6 +192,8 @@ Production env vars set via Firebase console.
 - **Stale production JS**: Firebase caches aggressively; use incognito
 - **Static prerendering fails**: Pages using `useAuth` or sessionStorage must have `export const dynamic = "force-dynamic"`
 - **Artist not updating after merge**: `song_master.artist` is NOT displayed in library; artist display comes from `song_artist_relations`. Use `upsertArtist()` + delete/insert on `song_artist_relations` to update. Updating `song_master.artist` alone has no visible effect.
+- **MedleyView not loading in (app) route**: Requires `DATABASE_URL` for Drizzle HydrationBoundary prefetch. Without it, `fetchMedley` returns null and view shows "メドレーが見つかりません". Set `DATABASE_URL` in `.env.local` for local testing of `MedleyView`.
+- **SongSearchModal not appearing on niconico/youtube pages**: Those pages use the legacy `MedleyPageClient`, not `MedleyView`. The new SongSearchModal (DB-backed search) only exists in `MedleyView`.
 
 ## Code Conventions
 

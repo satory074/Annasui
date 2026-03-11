@@ -107,11 +107,33 @@ CRUD for medleys is in `src/lib/api/medleys.ts` (Supabase JS, handles validation
 ## Database Schema
 
 1. **`medleys`** — `id`, `video_id` (unique), `platform`, `title`, `creator`, `duration`, **`bpm`**, **`beat_offset`**, timestamps
-2. **`song_master`** — `id`, `title`, `artist` (nullable), `normalized_id` (unique), platform links, `description`, timestamps
-3. **`medley_songs`** — `id`, `medley_id` (FK→medleys, cascade), `song_id` (FK→song_master, nullable), `start_time`/`end_time` (REAL, 0.1s), `order_index`, cached `title`/`artist`/`color`, platform links, timestamps
-4. **`medley_edits`** — `id`, `medley_id` (FK), `song_id` (FK), `editor_nickname`, `action`, `changes` (JSONB), timestamp
+2. **`song_master`** — `id`, `title`, `artist` (nullable, **legacy — NOT used for display**), `normalized_id` (unique), platform links, `description`, timestamps
+3. **`artists`** — `id`, `name`, `normalized_name` (required, `name.toLowerCase()`), timestamps
+4. **`song_artist_relations`** — `id`, `song_id` (FK→song_master), `artist_id` (FK→artists), `role` (`'artist'|'composer'|'arranger'`), `order_index`, `created_at`
+5. **`medley_songs`** — `id`, `medley_id` (FK→medleys, cascade), `song_id` (FK→song_master, nullable), `start_time`/`end_time` (REAL, 0.1s), `order_index`, cached `title`/`artist`/`color`, platform links, timestamps
+6. **`medley_edits`** — `id`, `medley_id` (FK), `song_id` (FK), `editor_nickname`, `action`, `changes` (JSONB), timestamp
 
 `medley_songs.song_id` links to `song_master` for library integration. When registering songs, create `song_master` first, then set `medley_songs.song_id`.
+
+### Artist Display Pipeline (CRITICAL)
+
+`SongDatabaseEntry.artist` (shown in library UI) comes from `song_artist_relations` JOIN `artists` (role=`'artist'`), **NOT** from `song_master.artist`. The `song_master.artist` column is a legacy string, kept for historical reasons but not used for display.
+
+- **To create/find an artist**: Use `upsertArtist(name: string)` in `songDatabase.ts` — handles `normalized_name = name.toLowerCase()` requirement automatically.
+- **To update displayed artist on a song**: Delete existing `song_artist_relations` (role='artist') then insert new row with the artist ID from `upsertArtist()`.
+- Falls back to `DEFAULT_ARTIST = "Unknown Artist"` when no relations exist.
+
+### Duplicate Merge (`mergeDuplicateSongs`)
+
+`mergeDuplicateSongs(targetId, sourceIds, overrides?)` in `songDatabase.ts` accepts `MergeOverrides`:
+```typescript
+export interface MergeOverrides {
+  title?: string; artist?: string;
+  niconicoLink?: string | null; youtubeLink?: string | null;
+  spotifyLink?: string | null; applemusicLink?: string | null;
+}
+```
+When `overrides.artist` is provided, the function updates `song_artist_relations` (not just `song_master.artist`) so the library reflects the change. Always pass `artist` in overrides when merging — even when unchanged — to ensure relations are synced.
 
 ### BPM Feature
 When `medleys.bpm` is set, time inputs switch from seconds to 1-indexed beat numbers. Beat utilities in `src/lib/utils/beat.ts`:
@@ -164,6 +186,7 @@ Production env vars set via Firebase console.
 - **Form state resets during playback**: Remove `currentTime` from useEffect deps
 - **Stale production JS**: Firebase caches aggressively; use incognito
 - **Static prerendering fails**: Pages using `useAuth` or sessionStorage must have `export const dynamic = "force-dynamic"`
+- **Artist not updating after merge**: `song_master.artist` is NOT displayed in library; artist display comes from `song_artist_relations`. Use `upsertArtist()` + delete/insert on `song_artist_relations` to update. Updating `song_master.artist` alone has no visible effect.
 
 ## Code Conventions
 

@@ -18,8 +18,10 @@ import { EditHistoryPanel } from "./EditHistoryPanel";
 import { BpmSettings } from "./BpmSettings";
 import { LoginModal } from "@/features/auth/components/LoginModal";
 import { SongEditModal } from "./SongEditModal";
+import { SongSearchModal } from "@/features/song-database/components/SongSearchModal";
 import { Button } from "@/components/ui/button";
 import type { PlatformType, SongSection } from "../types";
+import type { SongDatabaseEntry } from "@/lib/utils/songDatabase";
 
 interface MedleyViewProps {
   platform: string;
@@ -148,8 +150,25 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
       openModalWith("login");
       return;
     }
-    openModalWith("songEdit", { song: null, isNew: true });
+    openModalWith("songSearch");
   }, [isAuthenticated, openModalWith]);
+
+  const handleSongSearchSelect = useCallback(
+    (song: SongDatabaseEntry) => {
+      closeModal();
+      openModalWith("songEdit", {
+        song: null,
+        isNew: true,
+        prefill: { title: song.title, artist: song.artist.map((a) => a.name) },
+      });
+    },
+    [closeModal, openModalWith]
+  );
+
+  const handleSongSearchManualAdd = useCallback(() => {
+    closeModal();
+    openModalWith("songEdit", { song: null, isNew: true });
+  }, [closeModal, openModalWith]);
 
   const handleModalSave = useCallback((song: SongSection) => {
     const { songs: current } = useTimelineStore.getState();
@@ -284,12 +303,21 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
         onOpenChange={(v) => (v ? openModalWith("login") : closeModal())}
       />
 
+      {/* Song search modal */}
+      <SongSearchModal
+        open={openModal === "songSearch"}
+        onOpenChange={(v) => (v ? openModalWith("songSearch") : closeModal())}
+        onSelect={handleSongSearchSelect}
+        onManualAdd={handleSongSearchManualAdd}
+      />
+
       {/* Song edit modal */}
       <SongEditModal
         isOpen={openModal === "songEdit"}
         onClose={closeModal}
         song={(modalData.song as SongSection) ?? null}
         isNew={!modalData.song}
+        prefill={modalData.prefill as { title?: string; artist?: string[] } | undefined}
         allSongs={timelineSongs}
         currentTime={currentTime}
         maxDuration={duration}

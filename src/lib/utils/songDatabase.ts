@@ -1236,11 +1236,19 @@ export async function findDuplicateGroups(): Promise<DatabaseDuplicateGroup[]> {
     if (similarSongs.length > 0) {
       const allSongs = [song, ...similarSongs].sort((a, b) => b.usageCount - a.usageCount);
 
+      const songTitleNorm = song.dedupKey.split('_')[0];
+      const maxSimilarity = Math.round(
+        Math.max(...similarSongs.map(s => {
+          const sTitleNorm = s.dedupKey.split('_')[0];
+          return calculateStringSimilarity(songTitleNorm, sTitleNorm);
+        })) * 100
+      );
+
       groups.push({
         primarySong: allSongs[0],
         duplicates: allSongs.slice(1),
-        similarity: 85,
-        reason: 'タイトルの表記揺れ'
+        similarity: maxSimilarity,
+        reason: maxSimilarity >= 95 ? '表記ゆれの可能性が高い' : 'タイトルの表記揺れ'
       });
 
       // UUIDを処理済みセットに追加

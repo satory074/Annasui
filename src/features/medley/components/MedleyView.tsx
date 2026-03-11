@@ -17,6 +17,7 @@ import { SongList } from "./SongList";
 import { EditHistoryPanel } from "./EditHistoryPanel";
 import { BpmSettings } from "./BpmSettings";
 import { LoginModal } from "@/features/auth/components/LoginModal";
+import { SongEditModal } from "./SongEditModal";
 import { Button } from "@/components/ui/button";
 import type { PlatformType, SongSection } from "../types";
 
@@ -53,6 +54,7 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   const isEditMode = useUIStore((s) => s.isEditMode);
   const setEditMode = useUIStore((s) => s.setEditMode);
   const openModal = useUIStore((s) => s.openModal);
+  const modalData = useUIStore((s) => s.modalData);
   const openModalWith = useUIStore((s) => s.openModalWith);
   const closeModal = useUIStore((s) => s.closeModal);
 
@@ -130,6 +132,44 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     setEditMode(!isEditMode);
   }, [isAuthenticated, isEditMode, setEditMode, openModalWith]);
 
+  const handleSongTimeChange = useCallback(
+    (songId: string, startTime: number, endTime: number) => {
+      useTimelineStore.getState().updateSong(songId, { startTime, endTime });
+    },
+    []
+  );
+
+  const handleReorder = useCallback((reorderedSongs: SongSection[]) => {
+    useTimelineStore.getState().setSongs(reorderedSongs);
+  }, []);
+
+  const handleAddSong = useCallback(() => {
+    if (!isAuthenticated) {
+      openModalWith("login");
+      return;
+    }
+    openModalWith("songEdit", { song: null, isNew: true });
+  }, [isAuthenticated, openModalWith]);
+
+  const handleModalSave = useCallback((song: SongSection) => {
+    const { songs: current } = useTimelineStore.getState();
+    const exists = current.find((s) => s.id === song.id);
+    if (exists) {
+      useTimelineStore.getState().updateSong(song.id, song);
+    } else {
+      useTimelineStore.getState().addSong(song);
+    }
+    closeModal();
+  }, [closeModal]);
+
+  const handleModalDelete = useCallback(
+    (id: string) => {
+      useTimelineStore.getState().deleteSong(id);
+      closeModal();
+    },
+    [closeModal]
+  );
+
   if (!medley && !songsLoading) {
     return (
       <div className="text-center py-16 text-gray-500">
@@ -199,6 +239,7 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
               duration={duration}
               currentTime={currentTime}
               onSeek={handleSeek}
+              onSongTimeChange={isEditMode ? handleSongTimeChange : undefined}
             />
 
             {/* Song list */}
@@ -209,7 +250,18 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
               onSeek={handleSeek}
               onEdit={isAuthenticated ? handleEditSong : undefined}
               onDelete={isAuthenticated ? handleDeleteSong : undefined}
+              onReorder={isAuthenticated ? handleReorder : undefined}
             />
+
+            {/* Add song button (edit mode only) */}
+            {isEditMode && (
+              <button
+                onClick={handleAddSong}
+                className="w-full py-2 text-sm border-2 border-dashed border-gray-300 text-gray-500 hover:border-orange-400 hover:text-orange-600 rounded-lg transition-colors"
+              >
+                + 楽曲を追加
+              </button>
+            )}
 
             {/* Edit history */}
             <EditHistoryPanel
@@ -230,6 +282,20 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
       <LoginModal
         open={openModal === "login"}
         onOpenChange={(v) => (v ? openModalWith("login") : closeModal())}
+      />
+
+      {/* Song edit modal */}
+      <SongEditModal
+        isOpen={openModal === "songEdit"}
+        onClose={closeModal}
+        song={(modalData.song as SongSection) ?? null}
+        isNew={!modalData.song}
+        allSongs={timelineSongs}
+        currentTime={currentTime}
+        maxDuration={duration}
+        onSave={handleModalSave}
+        onDelete={handleModalDelete}
+        onSeek={handleSeek}
       />
     </div>
   );

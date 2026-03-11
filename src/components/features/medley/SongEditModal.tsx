@@ -418,7 +418,8 @@ export default function SongEditModal({
           {/* ヘッダー行 */}
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-medium text-gray-700">楽曲情報</h3>
-            {onChangeSong && (
+            {/* 楽曲設定済みの場合のみ「DBから変更」を小さく表示 */}
+            {formData.title && onChangeSong && (
               <button
                 onClick={async () => {
                   if (autoSave) await performAutoSave();
@@ -427,10 +428,31 @@ export default function SongEditModal({
                 className="px-3 py-1 text-xs bg-orange-100 text-orange-700 border border-orange-300 rounded-md hover:bg-orange-200 transition-colors"
                 disabled={isAutoSaving}
               >
-                🎵 DBから検索
+                🎵 DBから変更
               </button>
             )}
           </div>
+
+          {/* 楽曲未設定時: 大きなDBボタン + 区切り線 */}
+          {!formData.title && onChangeSong && (
+            <>
+              <button
+                onClick={async () => {
+                  if (autoSave) await performAutoSave();
+                  onChangeSong();
+                }}
+                className="w-full px-4 py-3 bg-orange-600 text-white rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-600 font-medium text-base transition-colors mb-4"
+                disabled={isAutoSaving}
+              >
+                🎵 楽曲データベースから選択
+              </button>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex-1 h-px bg-gray-300" />
+                <span className="text-xs text-gray-500">または手動で入力</span>
+                <div className="flex-1 h-px bg-gray-300" />
+              </div>
+            </>
+          )}
 
           <div className="flex items-start gap-4">
             {/* サムネイル（リンクがある場合のみ） */}

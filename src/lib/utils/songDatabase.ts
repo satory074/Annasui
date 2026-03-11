@@ -1267,9 +1267,19 @@ export async function findDuplicateGroups(): Promise<DatabaseDuplicateGroup[]> {
  * @param targetId マージ先のID（UUIDまたはdedupKey）
  * @param sourceIds マージ元のID配列（UUIDまたはdedupKey）
  */
+export interface MergeOverrides {
+  title?: string;
+  artist?: string;
+  niconicoLink?: string | null;
+  youtubeLink?: string | null;
+  spotifyLink?: string | null;
+  applemusicLink?: string | null;
+}
+
 export async function mergeDuplicateSongs(
   targetId: string,
-  sourceIds: string[]
+  sourceIds: string[],
+  overrides?: MergeOverrides
 ): Promise<{ success: boolean; updatedCount: number; deletedCount: number }> {
   if (!supabase) throw new Error('Supabase client is not initialized');
 
@@ -1355,6 +1365,57 @@ export async function mergeDuplicateSongs(
       targetUuid = (targetData as { id: string; title: string; artist: string }).id;
       targetTitle = (targetData as { id: string; title: string; artist: string }).title;
       targetArtist = (targetData as { id: string; title: string; artist: string }).artist;
+    }
+  }
+
+  // Apply overrides and update song_master target record
+  if (overrides) {
+    if (overrides.title) targetTitle = overrides.title;
+    if (overrides.artist) targetArtist = overrides.artist;
+
+    const updatePayload: Record<string, unknown> = {};
+    if (overrides.title) updatePayload.title = overrides.title;
+    if (overrides.artist) updatePayload.artist = overrides.artist;
+    if (overrides.niconicoLink !== undefined) updatePayload.niconico_link = overrides.niconicoLink;
+    if (overrides.youtubeLink !== undefined) updatePayload.youtube_link = overrides.youtubeLink;
+    if (overrides.spotifyLink !== undefined) updatePayload.spotify_link = overrides.spotifyLink;
+    if (overrides.applemusicLink !== undefined) updatePayload.applemusic_link = overrides.applemusicLink;
+
+    if (Object.keys(updatePayload).length > 0) {
+      const { error: overrideError } = await supabase
+        .from('song_master')
+        .update(updatePayload)
+        .eq('id', targetUuid);
+      if (overrideError) {
+        logger.error('Failed to apply overrides to song_master:', overrideError);
+      }
+    }
+
+    // Artist display is driven by song_artist_relations + artists tables (not song_master.artist).
+    // Sync relational tables when artist override is specified.
+    if (overrides.artist) {
+      try {
+        const artistId = await upsertArtist(overrides.artist);
+
+        // Remove existing artist relations for target song
+        await supabase
+          .from('song_artist_relations')
+          .delete()
+          .eq('song_id', targetUuid)
+          .eq('role', 'artist');
+
+        // Insert new artist relation
+        const { error: relInsertError } = await supabase
+          .from('song_artist_relations')
+          .insert({ song_id: targetUuid, artist_id: artistId, role: 'artist', order_index: 0 });
+        if (relInsertError) {
+          logger.error('Failed to insert song_artist_relation:', relInsertError);
+        } else {
+          logger.info('Updated artist relation for target song:', { targetUuid, artistName: overrides.artist });
+        }
+      } catch (artistErr) {
+        logger.error('Failed to sync artist relation:', artistErr);
+      }
     }
   }
 

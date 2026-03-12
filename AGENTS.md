@@ -97,6 +97,19 @@ Single shared password (`EDIT_PASSWORD` env var, server-side only) + user nickna
 
 CRUD for medleys is in `src/lib/api/medleys.ts` (Supabase JS, handles validation + sanitization); server-side queries in `src/features/medley/queries/functions.ts` (Drizzle, `"use server"`).
 
+### Song Database Feature (`src/features/song-database/`)
+
+Parallel to `src/components/features/` (legacy). Used in `MedleyView` for DB-backed song search.
+
+- **`SongSearchModal`** — Searches `song_master` via `useSongSearch` hook with 5-tier scoring: exact (100) → startsWith (80) → wordMatch (60) → partialMatch (40) → fuzzyMatch (similarity > 0.6). On select, opens `SongEditModal` with prefill.
+- **`useSongSearch`** (`src/features/song-database/hooks/`) — Client-side search with pagination + sort. When `query` is set, results are ordered by score; otherwise sorted by `sortKey`/`sortDir`. Legacy hook also exists at `src/hooks/useSongSearch.ts` — prefer the `features/` version.
+- **`normalize.ts`** — `normalizeSongInfo(title, artist)` generates `dedupKey` (katakana→hiragana, lowercase). Used by both client search and `song_master.normalized_id`.
+- **`SongDatabaseEntry.artist`** type is `Array<{ id: string; name: string }>` (from `song_artist_relations`), unlike `SongSection.artist` which is `string[]`. Don't conflate them.
+
+### Library Page (`/library`)
+
+`src/app/library/page.tsx` → `LibraryPageClient` — shows `song_master` with usage counts, duplicate detection (`src/lib/utils/duplicateSongs.ts`), and merge UI. Requires `force-dynamic`. `upsertArtist()` and `mergeDuplicateSongs()` are in `src/lib/utils/songDatabase.ts`.
+
 ### Player Adapter Pattern
 `PlayerAdapter` interface (`src/features/player/adapters/types.ts`) abstracts `play()`, `pause()`, `seek(seconds)`, `setVolume()`, event handlers, etc. Implementations: `NicoPlayerAdapter` (postMessage) and `YouTubePlayerAdapter` (IFrame API).
 
@@ -124,13 +137,13 @@ CRUD for medleys is in `src/lib/api/medleys.ts` (Supabase JS, handles validation
 
 `SongDatabaseEntry.artist` (shown in library UI) comes from `song_artist_relations` JOIN `artists` (role=`'artist'`), **NOT** from `song_master.artist`. The `song_master.artist` column is a legacy string, kept for historical reasons but not used for display.
 
-- **To create/find an artist**: Use `upsertArtist(name: string)` in `songDatabase.ts` — handles `normalized_name = name.toLowerCase()` requirement automatically.
+- **To create/find an artist**: Use `upsertArtist(name: string)` in `src/lib/utils/songDatabase.ts` — handles `normalized_name = name.toLowerCase()` requirement automatically.
 - **To update displayed artist on a song**: Delete existing `song_artist_relations` (role='artist') then insert new row with the artist ID from `upsertArtist()`.
 - Falls back to `DEFAULT_ARTIST = "Unknown Artist"` when no relations exist.
 
 ### Duplicate Merge (`mergeDuplicateSongs`)
 
-`mergeDuplicateSongs(targetId, sourceIds, overrides?)` in `songDatabase.ts` accepts `MergeOverrides`:
+`mergeDuplicateSongs(targetId, sourceIds, overrides?)` in `src/lib/utils/songDatabase.ts` accepts `MergeOverrides`:
 ```typescript
 export interface MergeOverrides {
   title?: string; artist?: string;

@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Design reference**: See [`TONMANUAL.md`](./TONMANUAL.md) for the full Tone & Manner guide — color system, typography, component patterns, voice & tone, and accessibility standards.
+
 ## Commands
 
 ### Development

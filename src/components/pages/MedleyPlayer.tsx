@@ -29,6 +29,7 @@ import MedleyHeader from "@/components/features/medley/MedleyHeader";
 import FixedPlayerBar from "@/components/features/player/FixedPlayerBar";
 import { RightSidebar } from "@/components/features/player/RightSidebar";
 import { BpmSettings } from "@/features/medley/components/BpmSettings";
+import { Button } from "@/components/ui/button";
 
 interface MedleyPlayerProps {
   initialVideoId?: string;
@@ -1431,12 +1432,12 @@ export default function MedleyPlayer({
                                             </div>
                                             
                                             <div className="mt-4 text-center">
-                                                <button
+                                                <Button
+                                                    size="sm"
                                                     onClick={handleAddNewSong}
-                                                    className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
                                                 >
                                                     楽曲データベースから選択
-                                                </button>
+                                                </Button>
                                             </div>
                                             
                                             {/* 楽曲が追加された場合の保存機能 */}

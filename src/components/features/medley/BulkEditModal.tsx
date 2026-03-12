@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { SongSection } from "@/types";
 import BaseModal from "@/components/ui/modal/BaseModal";
+import { Button } from "@/components/ui/button";
 
 interface BulkEditModalProps {
   isOpen: boolean;
@@ -328,13 +329,12 @@ export default function BulkEditModal({
           >
             キャンセル
           </button>
-          <button
+          <Button
             onClick={handleBulkUpdate}
             disabled={selectedCount === 0}
-            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
           >
             {selectedCount}曲を一括更新
-          </button>
+          </Button>
         </div>
       </div>
     </BaseModal>

@@ -6,6 +6,7 @@ import { getSongDatabase, SongDatabaseEntry, deleteManualSong, findDuplicateGrou
 import { useSongSearch } from "@/hooks/useSongSearch";
 import { logger } from "@/lib/utils/logger";
 import AppHeader from "@/components/layout/AppHeader";
+import { Button } from "@/components/ui/button";
 import LoginModal from "@/components/features/auth/LoginModal";
 import SongDatabaseEditModal from "@/components/features/library/SongDatabaseEditModal";
 import DuplicateGroupCard from "@/components/features/library/DuplicateGroupCard";
@@ -288,12 +289,12 @@ export default function LibraryPageClient() {
             <p className="text-gray-600 mb-6">
               楽曲ライブラリを表示するには、ログインしてください。
             </p>
-            <button
+            <Button
               onClick={() => setLoginModalOpen(true)}
-              className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              className="w-full"
             >
               ログイン
-            </button>
+            </Button>
           </div>
         </div>
         <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />

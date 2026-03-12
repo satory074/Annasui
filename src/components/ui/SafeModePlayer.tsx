@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 interface SafeModePlayerProps {
   videoId: string;
   onRetry: () => void;
@@ -37,21 +39,25 @@ export default function SafeModePlayer({ videoId, onRetry }: SafeModePlayerProps
         </div>
 
         <div className="space-y-3">
-          <button
+          <Button
             onClick={onRetry}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-6 rounded transition-colors"
+            className="w-full"
           >
             🔄 プレイヤーを再読み込み
-          </button>
-          
-          <a
-            href={nicoVideoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded transition-colors"
+          </Button>
+
+          <Button
+            asChild
+            className="w-full"
           >
-            🎥 ニコニコ動画で視聴
-          </a>
+            <a
+              href={nicoVideoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              🎥 ニコニコ動画で視聴
+            </a>
+          </Button>
           
           <button
             onClick={() => window.location.reload()}

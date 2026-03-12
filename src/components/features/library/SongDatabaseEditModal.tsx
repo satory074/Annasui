@@ -17,6 +17,7 @@ import SongThumbnail from "@/components/ui/song/SongThumbnail";
 import ArtistSelector from "@/components/ui/form/ArtistSelector";
 import { logger } from "@/lib/utils/logger";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 interface Artist {
   id: string;
@@ -287,13 +288,12 @@ export default function SongDatabaseEditModal({
             >
               キャンセル
             </button>
-            <button
+            <Button
               onClick={handleSave}
               disabled={isSaving || isDeleting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSaving ? '保存中...' : '保存'}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

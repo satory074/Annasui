@@ -7,6 +7,7 @@ import { findSimilarSongsInDatabase, SimilarSongResult, SongDatabaseEntry } from
 import { logger } from "@/lib/utils/logger";
 import { SongSection } from "@/types";
 import ArtistSelector from "@/components/ui/form/ArtistSelector";
+import { Button } from "@/components/ui/button";
 
 interface ManualSongAddModalProps {
   isOpen: boolean;
@@ -353,16 +354,17 @@ export default function ManualSongAddModal({
                         </span>
                       </div>
                       {onUseSimilarSong && (
-                        <button
+                        <Button
                           type="button"
+                          size="sm"
                           onClick={(e) => {
                             e.preventDefault();
                             onUseSimilarSong(result.song);
                           }}
-                          className="flex-shrink-0 px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700"
+                          className="flex-shrink-0"
                         >
                           この楽曲を使用
-                        </button>
+                        </Button>
                       )}
                     </li>
                   ))}

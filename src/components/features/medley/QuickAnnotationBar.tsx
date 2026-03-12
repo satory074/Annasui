@@ -115,7 +115,7 @@ export default function QuickAnnotationBar({
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="楽曲名を入力..."
-                className="w-full px-3 py-1.5 text-sm border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-3 py-1.5 text-sm border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
                 onKeyDown={handleKeyDown}
               />
             </div>
@@ -127,7 +127,7 @@ export default function QuickAnnotationBar({
                 value={artist}
                 onChange={(e) => setArtist(e.target.value)}
                 placeholder="アーティスト名（任意）"
-                className="w-full px-3 py-1.5 text-sm border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full px-3 py-1.5 text-sm border border-orange-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900"
                 onKeyDown={handleKeyDown}
               />
             </div>

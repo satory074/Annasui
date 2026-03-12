@@ -10,8 +10,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run dev` — Start dev server (http://localhost:3000)
 - `npm run build` — Production build
 - `npm run lint` — ESLint (ignored during builds via `ignoreDuringBuilds: true`)
-- `npx tsc --noEmit` — TypeScript type checking
-- `npm run build && npx tsc --noEmit && npm run lint` — Pre-deployment validation
+- `npm run typecheck` — TypeScript type checking (`tsc --noEmit`)
+- `npm run build && npm run typecheck && npm run lint` — Pre-deployment validation
 
 ### Testing
 - `npm run test` — Run unit tests (Vitest, jsdom, files in `src/**/__tests__/`)
@@ -213,6 +213,7 @@ Production env vars set via Firebase console.
 ## Code Conventions
 
 - Use `logger.debug/info/warn/error()` instead of `console.log` (`src/lib/utils/logger.ts`)
+- **Never use raw `bg-blue-*` for action buttons** — always use `<Button>` from `src/components/ui/button`. Variants: `default` (orange, primary actions), `destructive` (red, deletes), `outline` (secondary), `secondary` (gray, auxiliary), `ghost` (toolbar/inline), `link`. Exception: `bg-blue-*` is allowed only for brand-color labels (e.g. Facebook) and non-interactive badges.
 - Auth guard pattern: `authLoading ? <Loading /> : isAuthenticated ? <EditUI /> : <LoginPrompt />`
 - Conditionally pass edit callbacks: `onEdit={isAuthenticated ? handleEdit : undefined}`
 - All save operations require `nickname` parameter

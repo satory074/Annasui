@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
+import { Button } from "@/components/ui/button";
 
 interface HeaderProps {
   inputVideoId: string;
@@ -67,15 +68,12 @@ export default function Header({
                   className="pl-10 pr-4 py-2 text-gray-900 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
-              <button 
-                type="submit" 
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-medium flex items-center gap-2"
-              >
+              <Button type="submit">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd"/>
                 </svg>
                 表示
-              </button>
+              </Button>
             </form>
           )}
         </div>

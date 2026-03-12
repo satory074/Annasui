@@ -172,6 +172,7 @@ export default function AppHeader({
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              aria-label={isMobileMenuOpen ? "メニューを閉じる" : "メニューを開く"}
               className={`md:hidden p-2 rounded-lg transition-colors ${
                 variant === "home"
                   ? "text-gray-600 hover:text-orange-600 hover:bg-orange-50"

@@ -5,6 +5,7 @@ import { SongSection } from "@/types";
 import { parseTimeInput, formatTimeSimple } from "@/lib/utils/time";
 import { beatToSeconds, secondsToBeat, hasBpm } from "@/lib/utils/beat";
 import { logger } from '@/lib/utils/logger';
+import { Button } from "@/components/ui/button";
 
 export interface TimeSegment {
   id: number;
@@ -154,9 +155,10 @@ function SegmentRow({
 
         {/* プレビューボタン（ラスト5秒前から） */}
         {onSeek && onTogglePlayPause && (
-          <button
+          <Button
+            size="sm"
             onClick={() => onToggleEndPreview(segment.id)}
-            className="p-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-1 focus:ring-blue-600 relative"
+            className="p-1 relative"
             title={isPreviewPlaying ? "プレビュー停止" : "ラスト5秒前から再生"}
           >
             {isPreviewPlaying ? (
@@ -172,7 +174,7 @@ function SegmentRow({
                 <span className="absolute -bottom-0.5 -right-1 text-[6px] font-bold">-5s</span>
               </div>
             )}
-          </button>
+          </Button>
         )}
 
         {/* 削除ボタン */}

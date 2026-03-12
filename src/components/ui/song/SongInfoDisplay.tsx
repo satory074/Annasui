@@ -3,6 +3,7 @@
 import { SongSection } from "@/types";
 import { formatTime, formatDuration } from "@/lib/utils/time";
 import SongThumbnail from "./SongThumbnail";
+import { Button } from "@/components/ui/button";
 
 // プラットフォーム表示用の設定
 const PLATFORM_CONFIG = {
@@ -173,15 +174,15 @@ export default function SongInfoDisplay({
           <div className="pt-3 border-t border-gray-200">
             <div className="flex gap-2">
               {onSeek && (
-                <button
+                <Button
                   onClick={handlePlayFromHere}
-                  className="flex-1 px-3 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center gap-2 transition-colors"
+                  className="flex-1"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h1m4 0h1m6-10V4a2 2 0 00-2-2H6a2 2 0 00-2 2v16c0 1.1.9 2 2 2h12a2 2 0 002-2V6z" />
                   </svg>
                   この曲から再生
-                </button>
+                </Button>
               )}
               {onEdit && (
                 <button

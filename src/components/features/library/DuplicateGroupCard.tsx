@@ -14,6 +14,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Button, buttonVariants } from "@/components/ui/button";
 
 interface DuplicateGroupCardProps {
   group: DatabaseDuplicateGroup;
@@ -192,13 +193,13 @@ export default function DuplicateGroupCard({ group, onMergeComplete, onDismiss }
               >
                 重複ではない
               </button>
-              <button
+              <Button
+                size="sm"
                 onClick={handleMerge}
                 disabled={isMerging || allSongs.length < 2}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {isMerging ? 'マージ中...' : 'マージ実行'}
-              </button>
+              </Button>
             </>
           )}
           {mergeStep === 'select-values' && (
@@ -209,13 +210,13 @@ export default function DuplicateGroupCard({ group, onMergeComplete, onDismiss }
               >
                 ← 戻る
               </button>
-              <button
+              <Button
+                size="sm"
                 onClick={handleProceedToConfirm}
                 disabled={isMerging}
-                className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 マージ確認 →
-              </button>
+              </Button>
             </>
           )}
         </div>
@@ -419,7 +420,7 @@ export default function DuplicateGroupCard({ group, onMergeComplete, onDismiss }
             <AlertDialogCancel>キャンセル</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmMerge}
-              className="bg-blue-600 hover:bg-blue-700"
+              className={buttonVariants({ variant: "default" })}
             >
               マージ実行
             </AlertDialogAction>

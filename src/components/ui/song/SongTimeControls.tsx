@@ -1,6 +1,7 @@
 "use client";
 
 import { formatTimeSimple, parseTimeInput } from "@/lib/utils/time";
+import { Button } from "@/components/ui/button";
 
 interface SongTimeControlsProps {
   label: string;
@@ -66,7 +67,7 @@ export default function SongTimeControls({
           type="text"
           value={formatTimeSimple(value)}
           onChange={handleInputChange}
-          className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 ${
+          className={`flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-orange-600 text-gray-900 ${
             error ? 'border-red-500' : 'border-gray-300'
           }`}
           placeholder={placeholder}
@@ -101,14 +102,14 @@ export default function SongTimeControls({
       {/* 隣接楽曲との時刻合わせボタン */}
       {adjacentTime !== undefined && adjacentLabel && (
         <div className="mt-2">
-          <button
+          <Button
             type="button"
+            size="sm"
             onClick={handleAdjacentTimeClick}
-            className="px-3 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-600 text-sm font-medium transition-colors"
             title={`${adjacentLabel}（${formatTimeSimple(adjacentTime)}）`}
           >
             {adjacentLabel}
-          </button>
+          </Button>
         </div>
       )}
       {error && (

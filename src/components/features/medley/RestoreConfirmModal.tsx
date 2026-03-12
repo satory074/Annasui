@@ -2,6 +2,7 @@
 
 import React from 'react'
 import type { MedleySnapshot } from '@/types'
+import { Button } from "@/components/ui/button";
 
 interface RestoreConfirmModalProps {
   isOpen: boolean
@@ -154,11 +155,11 @@ export default function RestoreConfirmModal({
             >
               キャンセル
             </button>
-            <button
+            <Button
               type="button"
               onClick={onConfirm}
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="flex-1"
             >
               {isLoading ? (
                 <>
@@ -171,7 +172,7 @@ export default function RestoreConfirmModal({
               ) : (
                 '復元する'
               )}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

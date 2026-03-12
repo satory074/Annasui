@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { SongSection } from "@/types";
 import BaseModal from "@/components/ui/modal/BaseModal";
+import { Button } from "@/components/ui/button";
 
 interface ImportSetlistModalProps {
   isOpen: boolean;
@@ -271,13 +272,13 @@ export default function ImportSetlistModal({
         </div>
 
         {/* プレビューボタン */}
-        <button
+        <Button
           onClick={handlePreview}
           disabled={!textInput.trim()}
-          className="w-full px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          className="w-full"
         >
           プレビュー
-        </button>
+        </Button>
 
         {/* エラー表示 */}
         {parseError && (
@@ -327,13 +328,12 @@ export default function ImportSetlistModal({
         >
           キャンセル
         </button>
-        <button
+        <Button
           onClick={handleImport}
           disabled={previewSongs.length === 0}
-          className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
         >
           {previewSongs.length}曲をインポート
-        </button>
+        </Button>
       </div>
     </BaseModal>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { logger } from "@/lib/utils/logger";
+import { Button } from "@/components/ui/button";
 
 export default function Error({
   error,
@@ -55,19 +56,20 @@ export default function Error({
         </div>
         
         <div className="space-y-3">
-          <button
+          <Button
             onClick={reset}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded transition-colors"
+            className="w-full"
           >
             再試行
-          </button>
-          
-          <button
+          </Button>
+
+          <Button
+            variant="secondary"
             onClick={() => window.location.href = "/"}
-            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded transition-colors"
+            className="w-full"
           >
             ホームに戻る
-          </button>
+          </Button>
           
           <a
             href="https://github.com/anthropics/claude-code/issues"

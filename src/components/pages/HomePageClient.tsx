@@ -13,6 +13,7 @@ import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
 import { autoCorrectPlatform } from "@/lib/utils/platformDetection";
 import { logger } from "@/lib/utils/logger";
 import { useAuth } from "@/features/auth/context";
+import { Button } from "@/components/ui/button";
 
 interface HomePageClientProps {
     initialMedleys: MedleyData[];
@@ -770,16 +771,13 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                             {index > 0 && array[index - 1] !== page - 1 && (
                                                 <span className="px-2 text-gray-500">...</span>
                                             )}
-                                            <button
+                                            <Button
+                                                size="sm"
+                                                variant={currentPage === page ? "default" : "secondary"}
                                                 onClick={() => setCurrentPage(page)}
-                                                className={`px-3 py-2 rounded ${
-                                                    currentPage === page
-                                                        ? "bg-blue-500 text-white"
-                                                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                                                }`}
                                             >
                                                 {page}
-                                            </button>
+                                            </Button>
                                         </div>
                                     ))
                                 }
@@ -804,15 +802,15 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                         <div className="text-gray-500 text-lg mb-4">
                             {searchMode === "medley" ? "検索条件に一致するメドレーが見つかりませんでした" : "検索条件に一致する楽曲が見つかりませんでした"}
                         </div>
-                        <button
+                        <Button
+                            size="sm"
                             onClick={() => {
                                 setSearchTerm("");
                                 setCurrentPage(1);
                             }}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                         >
                             フィルターをリセット
-                        </button>
+                        </Button>
                     </div>
                 )}
 

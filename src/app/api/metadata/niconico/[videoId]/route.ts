@@ -9,6 +9,7 @@ export interface NiconicoMetadataResponse {
   creator?: string;
   duration?: number; // 秒数
   thumbnail?: string;
+  description?: string; // 動画説明文（HTMLタグ除去済み）
   error?: string;
   debugInfo?: {
     apiUrl: string;
@@ -84,6 +85,24 @@ async function fetchNiconicoMetadata(videoId: string): Promise<NiconicoMetadataR
     const creator = creatorMatch ? creatorMatch[1] : '';
     const lengthStr = lengthMatch ? lengthMatch[1] : '';
     const thumbnail = thumbnailMatch ? thumbnailMatch[1] : '';
+
+    // 動画説明文を <thumb> ブロック内から抽出（エラー要素の <description> と区別）
+    const thumbBlockMatch = xmlText.match(/<thumb>([\s\S]*?)<\/thumb>/);
+    const thumbContent = thumbBlockMatch ? thumbBlockMatch[1] : '';
+    const videoDescMatch = thumbContent.match(/<description[^>]*>([\s\S]*?)<\/description>/);
+    const rawDescription = videoDescMatch ? videoDescMatch[1] : '';
+    // CDATA, HTMLタグ, HTMLエンティティを除去
+    const description = rawDescription
+      .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+      .replace(/<br\s*\/?>/gi, '\n')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;/g, "'")
+      .replace(/&nbsp;/g, ' ')
+      .trim();
     
     logger.debug(`[Metadata API] Extracted data:`, { title, creator, lengthStr, thumbnail });
     
@@ -105,6 +124,7 @@ async function fetchNiconicoMetadata(videoId: string): Promise<NiconicoMetadataR
       creator,
       duration,
       thumbnail: thumbnail || undefined,
+      description: description || undefined,
       debugInfo: {
         apiUrl,
         responseStatus: response.status,

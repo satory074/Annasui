@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { medleyKeys } from "../queries/keys";
 import { fetchMedley, fetchMedleySongs, fetchEditHistory } from "../queries/functions";
 import { useTimelineStore, useTimelineHistory } from "../store";
 import { useUIStore } from "../store-ui";
-import { usePlayerStore, useCurrentTime } from "@/features/player/store";
+import { usePlayerStore, useCurrentTime, useLiveMode } from "@/features/player/store";
 import { useAuth } from "@/features/auth/context";
 import { useSaveSongs, useRestoreSnapshot } from "../hooks/useMedleyMutations";
 import { VideoPlayer } from "@/features/player/components/VideoPlayer";
@@ -19,8 +19,11 @@ import { BpmSettings } from "./BpmSettings";
 import { LoginModal } from "@/features/auth/components/LoginModal";
 import { SongEditModal } from "./SongEditModal";
 import { SongSearchModal } from "@/features/song-database/components/SongSearchModal";
+import { LiveAnnotationBar } from "./LiveAnnotationBar";
+import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
 import { Button } from "@/components/ui/button";
 import type { PlatformType, SongSection } from "../types";
+import type { SongSection as LegacySongSection } from "@/types";
 import type { SongDatabaseEntry } from "@/lib/utils/songDatabase";
 
 interface MedleyViewProps {
@@ -32,6 +35,10 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   const { isAuthenticated, nickname, loading: authLoading } = useAuth();
   const currentTime = useCurrentTime();
   const duration = usePlayerStore((s) => s.duration);
+  const liveMode = useLiveMode();
+
+  const [descriptionLoading, setDescriptionLoading] = useState(false);
+  const [descriptionError, setDescriptionError] = useState<string>("");
 
   // Data queries
   const { data: medley } = useQuery({
@@ -153,6 +160,79 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     openModalWith("songSearch");
   }, [isAuthenticated, openModalWith]);
 
+  const handleOpenImportSetlist = useCallback(() => {
+    if (!isAuthenticated) {
+      openModalWith("login");
+      return;
+    }
+    openModalWith("importSetlist");
+  }, [isAuthenticated, openModalWith]);
+
+  const handleImportSetlist = useCallback(
+    (legacySongs: LegacySongSection[]) => {
+      const base = useTimelineStore.getState().songs.length;
+      legacySongs.forEach((song, index) => {
+        useTimelineStore.getState().addSong({
+          id: crypto.randomUUID(),
+          orderIndex: base + index,
+          title: song.title,
+          artist: song.artist,
+          startTime: song.startTime,
+          endTime: song.endTime,
+          color: song.color,
+          songId: song.songId,
+          niconicoLink: song.niconicoLink ?? "",
+          youtubeLink: song.youtubeLink ?? "",
+          spotifyLink: song.spotifyLink ?? "",
+          applemusicLink: song.applemusicLink ?? "",
+        });
+      });
+      closeModal();
+    },
+    [closeModal]
+  );
+
+  const handleFetchDescription = useCallback(async () => {
+    if (!isAuthenticated) {
+      openModalWith("login");
+      return;
+    }
+
+    setDescriptionError("");
+    setDescriptionLoading(true);
+
+    try {
+      const apiPath =
+        platform === "youtube"
+          ? `/api/metadata/youtube/${videoId}/`
+          : `/api/metadata/niconico/${videoId}/`;
+
+      const res = await fetch(apiPath);
+      const data = await res.json();
+
+      if (data.success && data.description) {
+        openModalWith("importSetlist", { prefillText: data.description });
+      } else if (data.success) {
+        setDescriptionError("この動画の説明文が見つかりませんでした。");
+      } else {
+        setDescriptionError(data.error ?? "説明文の取得に失敗しました。");
+      }
+    } catch {
+      setDescriptionError("説明文の取得中にエラーが発生しました。");
+    } finally {
+      setDescriptionLoading(false);
+    }
+  }, [isAuthenticated, platform, videoId, openModalWith]);
+
+  const handleToggleLiveMode = useCallback(() => {
+    if (!isAuthenticated) {
+      openModalWith("login");
+      return;
+    }
+    const current = usePlayerStore.getState().liveMode;
+    usePlayerStore.getState().setLiveMode(!current);
+  }, [isAuthenticated, openModalWith]);
+
   const handleSongSearchSelect = useCallback(
     (song: SongDatabaseEntry) => {
       closeModal();
@@ -220,7 +300,36 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
                 )}
               </div>
               {!authLoading && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
+                  {isEditMode && (
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleOpenImportSetlist}
+                        title="セットリストテキストから一括インポート"
+                      >
+                        一括インポート
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleFetchDescription}
+                        disabled={descriptionLoading}
+                        title="動画の説明文からセットリストを取り込む"
+                      >
+                        {descriptionLoading ? "取得中..." : "説明文から取り込む"}
+                      </Button>
+                      <Button
+                        variant={liveMode ? "default" : "outline"}
+                        size="sm"
+                        onClick={handleToggleLiveMode}
+                        title="ライブ入力モード (Ctrl+L)"
+                      >
+                        {liveMode ? "ライブ入力中" : "ライブ入力"}
+                      </Button>
+                    </>
+                  )}
                   <Button
                     variant={isEditMode ? "default" : "outline"}
                     size="sm"
@@ -238,6 +347,9 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
                     </Button>
                   )}
                 </div>
+              )}
+              {descriptionError && (
+                <p className="text-xs text-red-600 mt-1">{descriptionError}</p>
               )}
             </div>
 
@@ -325,6 +437,19 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
         onDelete={handleModalDelete}
         onSeek={handleSeek}
       />
+
+      {/* Import setlist modal */}
+      <ImportSetlistModal
+        isOpen={openModal === "importSetlist"}
+        onClose={closeModal}
+        onImport={handleImportSetlist}
+        prefillText={modalData.prefillText as string | undefined}
+      />
+
+      {/* Live annotation bar */}
+      {liveMode && isEditMode && (
+        <LiveAnnotationBar onClose={() => usePlayerStore.getState().setLiveMode(false)} />
+      )}
     </div>
   );
 }

@@ -26,6 +26,7 @@ import { ActiveSongPopup } from "@/components/ui/song/ActiveSongPopup";
 import { ActiveSongDebugPanel } from "@/components/ui/debug/ActiveSongDebugPanel";
 import { getNiconicoVideoMetadata } from "@/lib/utils/videoMetadata";
 import MedleyHeader from "@/components/features/medley/MedleyHeader";
+import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
 import FixedPlayerBar from "@/components/features/player/FixedPlayerBar";
 import { RightSidebar } from "@/components/features/player/RightSidebar";
 import { BpmSettings } from "@/features/medley/components/BpmSettings";
@@ -95,6 +96,11 @@ export default function MedleyPlayer({
     const [restoreSnapshot, setRestoreSnapshot] = useState<MedleySnapshot | null>(null);
     const [restoreCreatedAt, setRestoreCreatedAt] = useState<Date | null>(null);
     const [isRestoring, setIsRestoring] = useState<boolean>(false);
+
+    // セットリストインポートモーダル関連
+    const [importSetlistModalOpen, setImportSetlistModalOpen] = useState<boolean>(false);
+    const [importSetlistPrefillText, setImportSetlistPrefillText] = useState<string>("");
+    const [fetchingDescription, setFetchingDescription] = useState<boolean>(false);
 
     // 楽曲選択とツールチップ関連の状態
     const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
@@ -1142,6 +1148,40 @@ export default function MedleyPlayer({
 
 
 
+    // 説明文取得 → ImportSetlistModal を開く
+    const handleFetchDescriptionForImport = async () => {
+        if (!isAuthenticated) {
+            setLoginModalOpen(true);
+            return;
+        }
+        setFetchingDescription(true);
+        try {
+            const apiPath = platform === 'youtube'
+                ? `/api/metadata/youtube/${videoId}/`
+                : `/api/metadata/niconico/${videoId}/`;
+            const res = await fetch(apiPath);
+            const data = await res.json();
+            if (data.success && data.description) {
+                setImportSetlistPrefillText(data.description);
+                setImportSetlistModalOpen(true);
+            } else {
+                setImportSetlistPrefillText('');
+                setImportSetlistModalOpen(true);
+            }
+        } catch {
+            setImportSetlistPrefillText('');
+            setImportSetlistModalOpen(true);
+        } finally {
+            setFetchingDescription(false);
+        }
+    };
+
+    // ImportSetlistModal からのインポート
+    const handleImportSetlistSongs = (songs: SongSection[]) => {
+        songs.forEach(song => addSong(song));
+        setImportSetlistModalOpen(false);
+    };
+
     // 元動画URL生成
     const generateOriginalVideoUrl = () => {
         if (platform === 'youtube') {
@@ -1376,6 +1416,13 @@ export default function MedleyPlayer({
                                             >
                                                 楽曲を追加して編集開始
                                             </button>
+                                            <button
+                                                onClick={handleFetchDescriptionForImport}
+                                                disabled={fetchingDescription}
+                                                className="w-full px-6 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors duration-200 font-medium disabled:opacity-50"
+                                            >
+                                                {fetchingDescription ? '取得中...' : '説明文からセットリストを取り込む'}
+                                            </button>
                                             <p className="text-xs text-gray-500">
                                                 編集モードでは、動画の再生時間に楽曲情報を追加できます。
                                                 <br />
@@ -1561,6 +1608,14 @@ export default function MedleyPlayer({
                 onSave={handleManualSongSave}
                 existingSongs={displaySongs}
                 onUseSimilarSong={handleUseSimilarSong}
+            />
+
+            {/* セットリストインポートモーダル */}
+            <ImportSetlistModal
+                isOpen={importSetlistModalOpen}
+                onClose={() => setImportSetlistModalOpen(false)}
+                onImport={handleImportSetlistSongs}
+                prefillText={importSetlistPrefillText}
             />
 
             

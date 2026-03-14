@@ -77,7 +77,7 @@ Many components exist in both `src/components/features/` (legacy) and `src/featu
   - Open with data: `openModalWith("songEdit", { song })` — read back via `(modalData.song as SongSection) ?? null`
   - New song: `openModalWith("songEdit", { song: null, isNew: true })` — modal checks `isNew={!modalData.song}`
   - Prefilled new song (from SongSearchModal): `openModalWith("songEdit", { song: null, isNew: true, prefill: { title, artist: string[] } })` — `SongEditModal` reads `prefill` prop to pre-populate title/artist fields
-- **`player/store.ts`** — Playback state. Use fine-grained selectors `useCurrentTime()`, `useIsPlaying()`, `useDuration()`, `useVolume()` to minimize re-renders.
+- **`player/store.ts`** — Playback state. Use fine-grained selectors `useCurrentTime()`, `useIsPlaying()`, `useDuration()`, `useVolume()`, `useLiveMode()` to minimize re-renders. Includes `liveMode: boolean` + `setLiveMode()` for live annotation mode.
 
 ### Provider Hierarchy (`src/app/providers.tsx`)
 QueryClientProvider (staleTime 60s, retry 1) → AuthProvider → Toaster → children (+ ReactQueryDevtools)
@@ -107,6 +107,24 @@ Parallel to `src/components/features/` (legacy). Used in `MedleyView` for DB-bac
 - **`useSongSearch`** (`src/features/song-database/hooks/`) — Client-side search with pagination + sort. When `query` is set, results are ordered by score; otherwise sorted by `sortKey`/`sortDir`. Legacy hook also exists at `src/hooks/useSongSearch.ts` — prefer the `features/` version.
 - **`normalize.ts`** — `normalizeSongInfo(title, artist)` generates `dedupKey` (katakana→hiragana, lowercase). Used by both client search and `song_master.normalized_id`.
 - **`SongDatabaseEntry.artist`** type is `Array<{ id: string; name: string }>` (from `song_artist_relations`), unlike `SongSection.artist` which is `string[]`. Don't conflate them.
+- **`useAutoMatcher`** (`src/features/song-database/hooks/useAutoMatcher.ts`) — Lazy-loads the full song DB and computes best-match scores for `ParsedSetlistEntry[]` via `searchSongs()`. Adapts `.artist` from `{id,name}[]` to `string[]` before scoring. Returns `{ results: AutoMatchResult[], isLoading }`. Score thresholds: ≥80 = green (auto-confirm), 40–79 = yellow (needs review), <40 = no match.
+
+### ImportSetlistModal (`src/components/features/medley/ImportSetlistModal.tsx`)
+
+Enhanced for bulk import:
+- **`prefillText?: string`** prop — auto-fills textarea when modal opens (used by "説明文から取り込む")
+- **AI mode toggle** — calls `POST /api/import/parse-setlist/` (Gemini 1.5 Flash); falls back to regex with warning banner if `GEMINI_API_KEY` is unset or call fails
+- **CSV/TSV tab** — paste or file-upload; auto-detects delimiter + header; column mapping by keyword (title/タイトル/曲名, artist/アーティスト, start/開始, end/終了)
+- **DB auto-matching** — `useAutoMatcher` adds color-coded badges per row; confirm (✓) / reject (✕) buttons; confirmed rows get `songId` set on import
+- `ParsedSetlistEntry` type lives in `src/features/medley/import/types.ts`
+
+### LiveAnnotationBar (`src/features/medley/components/LiveAnnotationBar.tsx`)
+
+Fixed-bottom bar for real-time annotation during playback (edit mode only in `MedleyView`):
+- **Space** (focus outside input): marks current time as song start
+- **Enter**: commits song (updates previous song's endTime, adds new song, clears title, keeps artist)
+- **Ctrl+L**: exits live mode, sets last song's endTime to currentTime
+- Activated via "ライブ入力" button in edit toolbar; controlled by `liveMode` in `player/store.ts`
 
 ### Library Page (`/library`)
 
@@ -192,6 +210,7 @@ EDIT_PASSWORD="..."                    # Server-side only — NO NEXT_PUBLIC_ pr
 NEXT_PUBLIC_SUPABASE_URL=https://...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 DATABASE_URL=postgresql://...          # Optional: only for Drizzle ORM (local dev)
+GEMINI_API_KEY=...                     # Server-side only — for AI setlist parser (F1). Without it, AI mode falls back to regex with warning banner.
 ```
 
 Production env vars set via Firebase console.
@@ -209,6 +228,9 @@ Production env vars set via Firebase console.
 - **Artist not updating after merge**: `song_master.artist` is NOT displayed in library; artist display comes from `song_artist_relations`. Use `upsertArtist()` + delete/insert on `song_artist_relations` to update. Updating `song_master.artist` alone has no visible effect.
 - **MedleyView not loading in (app) route**: Requires `DATABASE_URL` for Drizzle HydrationBoundary prefetch. Without it, `fetchMedley` returns null and view shows "メドレーが見つかりません". Set `DATABASE_URL` in `.env.local` for local testing of `MedleyView`.
 - **SongSearchModal not appearing on niconico/youtube pages**: Those pages use the legacy `MedleyPageClient`, not `MedleyView`. The new SongSearchModal (DB-backed search) only exists in `MedleyView`.
+- **AI setlist parser returns error**: `GEMINI_API_KEY` not set in Firebase console → UI falls back to regex automatically with a warning banner. Set the key in Firebase App Hosting environment config.
+- **「説明文から取り込む」shows no description on YouTube**: YouTube oEmbed doesn't include video descriptions. This is expected; button will show "この動画の説明文が見つかりませんでした".
+- **LiveAnnotationBar Space key not working**: Space only marks time when focus is outside an input. If an input is focused, Space types a space character instead.
 
 ## Code Conventions
 

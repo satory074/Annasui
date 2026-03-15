@@ -143,12 +143,15 @@ Shared player bar used by both legacy pages. Key implementation details:
 
 ### SongListGrouped (`src/components/features/medley/SongListGrouped.tsx`)
 
-Song list used by both legacy pages (`MedleyPageClient`). Design: flat list sorted by `startTime`, no grouping.
+Song list used by both legacy pages (`MedleyPageClient`). Songs with the same `songId` (or same title+artist if `songId` is absent) are grouped into a single row showing all their segments.
 
-- **Per-song mini-timeline** (`h-2` strip at bottom of each row): gray background = full video duration; colored segment bar = this song's `startTime`→`endTime`; red playhead = `currentTime`. Minimum segment width `max(widthPct%, 3px)`. Click anywhere on the mini-timeline to seek to that position.
-- **Color system**: 10-color array `SONG_COLORS`, assigned by position index (`i % 10`) via `useMemo` `Map<songId, color>`. Colors stay stable as long as sort order doesn't change.
-- **Row states**: `bg-blue-50` (active/playing), `bg-orange-50` (selected), `bg-red-50 opacity-60` (beyond `actualPlayerDuration`).
-- Do **not** restore a unified single-bar timeline spanning all songs — individual per-row timelines are intentional UX.
+- **Grouping**: `SongGroup { key, color, groupIndex, segments[] }`. Group key = `songId` if present, else `title|artist.join(",")`. Groups ordered by first-appearance (min `startTime`). Header shows `"N楽曲 (M区間)"` when any group has multiple segments, otherwise `"N曲"`.
+- **×2 badge**: shown in indigo when `segments.length > 1`. Each segment gets its own time range + edit button in a vertical list.
+- **Per-group mini-timeline** (`h-2` strip): one colored bar per segment in the group; red playhead shared. Minimum segment width `max(widthPct%, 3px)`. Click to seek.
+- **Color system**: 10-color array `SONG_COLORS`, assigned by group index (`groupIndex % 10`). Stable as long as first-appearance order doesn't change.
+- **Row states**: `bg-blue-50` (any segment active), `bg-orange-50` (any segment selected), `bg-red-50 opacity-60` (all segments beyond `actualPlayerDuration`).
+- Row click: seeks to active segment's `startTime` if currently playing, else first segment's `startTime`.
+- Do **not** revert to a flat per-song list — the grouped design with per-row mini-timelines is intentional UX.
 
 ### ID Architecture (3 distinct types)
 | ID | Type | Purpose |

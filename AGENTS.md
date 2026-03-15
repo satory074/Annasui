@@ -141,6 +141,15 @@ Shared player bar used by both legacy pages. Key implementation details:
 - **Mute state**: Local `isMuted` + `preMuteVolume` state in `FixedPlayerBar`. Passed to `VolumeSlider` via `onMuteToggle`/`isMuted` props. `VolumeSlider` speaker icon is a `<button>` with 3 SVG states (muted / low volume / normal).
 - **Keyboard**: `role="slider"` + `tabIndex={0}` + `onKeyDown` (←/→ = ±5s).
 
+### SongListGrouped (`src/components/features/medley/SongListGrouped.tsx`)
+
+Song list used by both legacy pages (`MedleyPageClient`). Design: flat list sorted by `startTime`, no grouping.
+
+- **Per-song mini-timeline** (`h-2` strip at bottom of each row): gray background = full video duration; colored segment bar = this song's `startTime`→`endTime`; red playhead = `currentTime`. Minimum segment width `max(widthPct%, 3px)`. Click anywhere on the mini-timeline to seek to that position.
+- **Color system**: 10-color array `SONG_COLORS`, assigned by position index (`i % 10`) via `useMemo` `Map<songId, color>`. Colors stay stable as long as sort order doesn't change.
+- **Row states**: `bg-blue-50` (active/playing), `bg-orange-50` (selected), `bg-red-50 opacity-60` (beyond `actualPlayerDuration`).
+- Do **not** restore a unified single-bar timeline spanning all songs — individual per-row timelines are intentional UX.
+
 ### ID Architecture (3 distinct types)
 | ID | Type | Purpose |
 |----|------|---------|

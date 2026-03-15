@@ -133,6 +133,14 @@ Fixed-bottom bar for real-time annotation during playback (edit mode only in `Me
 ### Player Adapter Pattern
 `PlayerAdapter` interface (`src/features/player/adapters/types.ts`) abstracts `play()`, `pause()`, `seek(seconds)`, `setVolume()`, event handlers, etc. Implementations: `NicoPlayerAdapter` (postMessage) and `YouTubePlayerAdapter` (IFrame API).
 
+### FixedPlayerBar (`src/components/features/player/FixedPlayerBar.tsx`)
+
+Shared player bar used by both legacy pages. Key implementation details:
+- **Drag-to-seek**: `onMouseDown` → `document.mousemove/mouseup` via `useEffect`. `isDraggingRef` (ref) + `dragTime` (state). Display position = `dragTime ?? currentTime`. Full-screen overlay during drag prevents text selection.
+- **Hover tooltip**: `hoverTime` state + absolute tooltip above seek bar. Shows time at cursor position.
+- **Mute state**: Local `isMuted` + `preMuteVolume` state in `FixedPlayerBar`. Passed to `VolumeSlider` via `onMuteToggle`/`isMuted` props. `VolumeSlider` speaker icon is a `<button>` with 3 SVG states (muted / low volume / normal).
+- **Keyboard**: `role="slider"` + `tabIndex={0}` + `onKeyDown` (←/→ = ±5s).
+
 ### ID Architecture (3 distinct types)
 | ID | Type | Purpose |
 |----|------|---------|
@@ -231,6 +239,7 @@ Production env vars set via Firebase console.
 - **AI setlist parser returns error**: `GEMINI_API_KEY` not set in Firebase console → UI falls back to regex automatically with a warning banner. Set the key in Firebase App Hosting environment config.
 - **「説明文から取り込む」shows no description on YouTube**: YouTube oEmbed doesn't include video descriptions. This is expected; button will show "この動画の説明文が見つかりませんでした".
 - **LiveAnnotationBar Space key not working**: Space only marks time when focus is outside an input. If an input is focused, Space types a space character instead.
+- **FixedPlayerBar drag seek not firing**: `document.mousemove/mouseup` listeners are registered in `useEffect` — ensure `onSeek` and `duration` are stable references or the effect re-registers correctly. The drag overlay (`pointer-events: all`) must cover the full viewport to capture fast mouse movements.
 
 ## Code Conventions
 

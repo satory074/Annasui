@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState, useEffect, useCallback } from "react";
 import PlayPauseButton from "@/components/ui/PlayPauseButton";
 import VolumeSlider from "./VolumeSlider";
 import { formatTime } from "@/lib/utils/time";
@@ -36,23 +37,113 @@ export default function FixedPlayerBar({
   onVolumeChange,
   onToggleFullscreen,
 }: FixedPlayerBarProps) {
-  // シークバーの位置と値を計算
-  const getSeekBarPosition = (time: number): number => {
-    if (duration <= 0) return 0;
-    return (time / duration) * 100;
+  const seekBarRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [dragTime, setDragTime] = useState<number | null>(null);
+  const [isHoveringSeek, setIsHoveringSeek] = useState(false);
+
+  // ミュート状態管理
+  const [isMuted, setIsMuted] = useState(false);
+  const [preMuteVolume, setPreMuteVolume] = useState(volume);
+
+  const getTimeFromMouseEvent = useCallback(
+    (e: MouseEvent | React.MouseEvent): number => {
+      if (!seekBarRef.current || duration <= 0) return 0;
+      const rect = seekBarRef.current.getBoundingClientRect();
+      const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+      return pct * duration;
+    },
+    [duration]
+  );
+
+  // ドラッグ中のグローバルイベント登録
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      setDragTime(getTimeFromMouseEvent(e));
+    };
+
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      isDraggingRef.current = false;
+      const t = getTimeFromMouseEvent(e);
+      setDragTime(null);
+      onSeek(Math.max(0, Math.min(duration, t)));
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [getTimeFromMouseEvent, duration, onSeek]);
+
+  const handleSeekMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    setDragTime(getTimeFromMouseEvent(e));
   };
 
-  const getTimeFromPosition = (percentage: number): number => {
-    return (percentage / 100) * duration;
+  const handleSeekMouseMove = (e: React.MouseEvent) => {
+    setHoverTime(getTimeFromMouseEvent(e));
   };
+
+  const handleSeekMouseLeave = () => {
+    setHoverTime(null);
+    setIsHoveringSeek(false);
+  };
+
+  const handleSeekMouseEnter = () => {
+    setIsHoveringSeek(true);
+  };
+
+  // キーボードでシーク（←/→ 5秒移動）
+  const handleSeekKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      onSeek(Math.max(0, currentTime - 5));
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      onSeek(Math.min(duration, currentTime + 5));
+    }
+  };
+
+  // ミュートトグル
+  const handleMuteToggle = () => {
+    if (isMuted) {
+      onVolumeChange({ target: { value: String(preMuteVolume) } } as React.ChangeEvent<HTMLInputElement>);
+      setIsMuted(false);
+    } else {
+      setPreMuteVolume(volume);
+      onVolumeChange({ target: { value: "0" } } as React.ChangeEvent<HTMLInputElement>);
+      setIsMuted(true);
+    }
+  };
+
+  // 表示する再生位置（ドラッグ中はdragTime優先）
+  const displayTime = dragTime ?? currentTime;
+  const progressPct = duration > 0 ? Math.max(0, Math.min(100, (displayTime / duration) * 100)) : 0;
+
+  // ホバー時のtooltip位置（%）
+  const hoverPct = hoverTime !== null && duration > 0
+    ? Math.max(0, Math.min(100, (hoverTime / duration) * 100))
+    : null;
+
+  const showThumb = isHoveringSeek || isDraggingRef.current || dragTime !== null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-gray-800 text-white shadow-2xl border-t border-gray-700">
+      {/* ドラッグ中のテキスト選択防止オーバーレイ */}
+      {dragTime !== null && (
+        <div className="fixed inset-0 z-40 cursor-grabbing" style={{ pointerEvents: "all" }} />
+      )}
+
       <div className="flex items-center px-4 py-3 gap-4">
 
-        {/* 左側セクション: タイトル情報 (30%) */}
-        <div className="w-1/4 min-w-[200px] flex items-center gap-3">
-          {/* タイトル・制作者情報 */}
+        {/* 左側セクション: タイトル情報 (25%) — sm未満で非表示 */}
+        <div className="hidden sm:flex w-1/4 min-w-[160px] items-center gap-3">
           <div className="flex-1 min-w-0">
             {title && (
               originalVideoUrl ? (
@@ -79,7 +170,7 @@ export default function FixedPlayerBar({
           </div>
         </div>
 
-        {/* 中央セクション: 再生コントロール + シークバー (50%) */}
+        {/* 中央セクション: 再生コントロール + シークバー */}
         <div className="flex-1 flex flex-col gap-2">
           {/* 再生コントロールボタン */}
           <div className="flex items-center justify-center gap-2">
@@ -96,14 +187,14 @@ export default function FixedPlayerBar({
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
-                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/>
+                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
               </svg>
             </button>
 
             {/* 5秒戻るボタン */}
             <button
               onClick={() => onSeek(Math.max(0, currentTime - 5))}
-              className="text-gray-300 hover:text-white transition-all p-1 rounded-full hover:bg-gray-700 relative"
+              className="flex flex-col items-center text-gray-300 hover:text-white transition-all p-1 rounded-full hover:bg-gray-700"
               aria-label="5秒戻る"
               title="5秒戻る"
             >
@@ -118,7 +209,7 @@ export default function FixedPlayerBar({
                 <polyline points="11 17 6 12 11 7" />
                 <polyline points="18 17 13 12 18 7" />
               </svg>
-              <span className="absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 text-[10px] text-orange-400 font-bold">5</span>
+              <span className="text-[9px] text-orange-400 font-bold leading-none">5</span>
             </button>
 
             {/* 再生/一時停止ボタン */}
@@ -131,7 +222,7 @@ export default function FixedPlayerBar({
             {/* 5秒進むボタン */}
             <button
               onClick={() => onSeek(Math.min(duration, currentTime + 5))}
-              className="text-gray-300 hover:text-white transition-all p-1 rounded-full hover:bg-gray-700 relative"
+              className="flex flex-col items-center text-gray-300 hover:text-white transition-all p-1 rounded-full hover:bg-gray-700"
               aria-label="5秒進む"
               title="5秒進む"
             >
@@ -146,64 +237,73 @@ export default function FixedPlayerBar({
                 <polyline points="13 17 18 12 13 7" />
                 <polyline points="6 17 11 12 6 7" />
               </svg>
-              <span className="absolute -bottom-0.5 left-1/2 transform -translate-x-1/2 text-[10px] text-orange-400 font-bold">5</span>
+              <span className="text-[9px] text-orange-400 font-bold leading-none">5</span>
             </button>
           </div>
 
           {/* シークバーと時間表示 */}
           <div className="flex items-center gap-3">
             {/* 現在時刻 */}
-            <div className="text-xs text-gray-300 min-w-[45px] text-right">
-              {formatTime(currentTime)}
+            <div className="text-xs text-gray-300 min-w-[45px] text-right tabular-nums">
+              {formatTime(displayTime)}
             </div>
 
-            {/* タイムライン風のシークバー */}
+            {/* シークバー */}
             <div
-              className="flex-1 relative w-full h-2 bg-gray-600 rounded cursor-pointer hover:h-3 transition-all"
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const percentage = (clickX / rect.width) * 100;
-                const seekTime = getTimeFromPosition(percentage);
-                onSeek(Math.max(0, Math.min(duration, seekTime)));
-              }}
+              ref={seekBarRef}
+              role="slider"
+              aria-label="再生位置"
+              aria-valuenow={Math.round(displayTime)}
+              aria-valuemin={0}
+              aria-valuemax={Math.round(duration)}
+              tabIndex={0}
+              className="flex-1 relative h-2 bg-gray-600 rounded cursor-pointer hover:h-3 transition-[height] focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-1 focus:ring-offset-gray-800"
+              onMouseDown={handleSeekMouseDown}
+              onMouseMove={handleSeekMouseMove}
+              onMouseEnter={handleSeekMouseEnter}
+              onMouseLeave={handleSeekMouseLeave}
+              onKeyDown={handleSeekKeyDown}
             >
-              {/* 背景グリッド */}
-              <div className="absolute inset-0 flex">
-                {Array.from({ length: 11 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="border-l border-gray-500 opacity-30"
-                    style={{ left: `${(i / 10) * 100}%` }}
-                  />
-                ))}
-              </div>
-
               {/* 進行状況バー */}
               <div
-                className="absolute top-0 bottom-0 rounded-l bg-orange-500"
-                style={{
-                  width: `${Math.max(0, getSeekBarPosition(currentTime))}%`
-                }}
+                className="absolute top-0 bottom-0 rounded-l bg-orange-500 pointer-events-none"
+                style={{ width: `${progressPct}%` }}
               />
 
-              {/* 再生位置インジケーター（赤い線） */}
-              <div
-                className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
-                style={{ left: `${getSeekBarPosition(currentTime)}%` }}
-              />
+              {/* サム（白い丸） - ホバー/ドラッグ時に表示 */}
+              {showThumb && (
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 w-3 h-3 bg-white rounded-full shadow pointer-events-none z-10"
+                  style={{ left: `${progressPct}%`, transform: "translate(-50%, -50%)" }}
+                />
+              )}
+
+              {/* ホバー時刻 tooltip */}
+              {hoverTime !== null && hoverPct !== null && (
+                <div
+                  className="absolute bottom-full mb-2 -translate-x-1/2 bg-gray-900 text-white text-xs px-1.5 py-0.5 rounded pointer-events-none whitespace-nowrap z-20"
+                  style={{ left: `${hoverPct}%` }}
+                >
+                  {formatTime(hoverTime)}
+                </div>
+              )}
             </div>
 
             {/* 総時間 */}
-            <div className="text-xs text-gray-300 min-w-[45px]">
+            <div className="text-xs text-gray-300 min-w-[45px] tabular-nums">
               {formatTime(duration)}
             </div>
           </div>
         </div>
 
-        {/* 右側セクション: ボリューム + フルスクリーン (20%) */}
+        {/* 右側セクション: ボリューム + フルスクリーン */}
         <div className="w-1/6 min-w-[150px] flex items-center justify-end gap-3">
-          <VolumeSlider volume={volume} onChange={onVolumeChange} />
+          <VolumeSlider
+            volume={volume}
+            onChange={onVolumeChange}
+            onMuteToggle={handleMuteToggle}
+            isMuted={isMuted}
+          />
 
           <button
             onClick={onToggleFullscreen}
@@ -228,4 +328,4 @@ export default function FixedPlayerBar({
   );
 }
 
-FixedPlayerBar.displayName = 'FixedPlayerBar';
+FixedPlayerBar.displayName = "FixedPlayerBar";

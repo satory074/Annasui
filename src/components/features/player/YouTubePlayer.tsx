@@ -66,7 +66,12 @@ export default function YouTubePlayer({
 
     return (
         <div className="relative">
-            <div className="aspect-video bg-black relative">
+            <div
+                className="aspect-video bg-black relative"
+                style={{
+                    width: 'min(100%, calc((100svh - 12.5rem) * 16 / 9))',
+                }}
+            >
                 <iframe
                     ref={iframeRef}
                     className={className}

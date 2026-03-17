@@ -41,7 +41,12 @@ export default function NicoPlayer({
   return (
     <div className="relative">
       {/* niconicoの埋め込みプレイヤー (2024年8月5日以降のAPI対応) */}
-      <div className="aspect-video bg-black relative">
+      <div
+        className="aspect-video bg-black relative"
+        style={{
+          width: 'min(100%, calc((100svh - 12.5rem) * 16 / 9))',
+        }}
+      >
         {browserReady && (
           <>
             {process.env.NODE_ENV === 'development' && (

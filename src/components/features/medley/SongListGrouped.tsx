@@ -209,21 +209,21 @@ export default function SongListGrouped({
                 onMouseLeave={() => onSongHoverEnd?.()}
               >
                 {/* Meta info row */}
-                <div className="flex items-start gap-2 px-2 py-1.5">
+                <div className="flex items-center gap-2 px-2 py-1">
                   {/* Color stripe */}
                   <div
-                    className="flex-shrink-0 w-1 self-stretch rounded-full mt-0.5"
+                    className="flex-shrink-0 w-1 self-stretch rounded-full"
                     style={{ backgroundColor: color }}
                   />
 
                   {/* Index */}
-                  <span className="flex-shrink-0 text-[10px] text-gray-400 w-5 text-right font-mono mt-0.5">
+                  <span className="flex-shrink-0 text-[10px] text-gray-400 w-5 text-right font-mono">
                     #{group.groupIndex + 1}
                   </span>
 
                   {/* Playing indicator */}
                   <span
-                    className={`flex-shrink-0 text-blue-500 text-xs transition-opacity mt-0.5 ${
+                    className={`flex-shrink-0 text-blue-500 text-xs transition-opacity ${
                       isActive ? "opacity-100" : "opacity-0"
                     }`}
                   >
@@ -241,16 +241,14 @@ export default function SongListGrouped({
                         <span className="mr-1 text-orange-500">⚠</span>
                       )}
                       {firstSeg.title}
+                      {firstSeg.artist.length > 0 && (
+                        <span className="font-normal text-gray-400 text-xs"> / {firstSeg.artist.join(", ")}</span>
+                      )}
                     </div>
-                    {firstSeg.artist.length > 0 && (
-                      <div className="text-xs text-gray-500 truncate">
-                        {firstSeg.artist.join(", ")}
-                      </div>
-                    )}
                   </div>
 
                   {/* Badges */}
-                  <div className="flex-shrink-0 flex items-center gap-1 mt-0.5">
+                  <div className="flex-shrink-0 flex items-center gap-1">
                     {isMulti && (
                       <span className="text-[10px] text-indigo-600 bg-indigo-100 px-1 rounded font-mono">
                         ×{group.segments.length}
@@ -272,20 +270,13 @@ export default function SongListGrouped({
                   {isMulti ? (
                     <div className="flex-shrink-0 flex flex-col gap-0.5">
                       {group.segments.map((seg) => {
-                        const segLength = seg.endTime - seg.startTime;
                         return (
                           <div
                             key={seg.id}
                             className="flex items-center gap-1"
                           >
                             <div className="text-[10px] text-gray-400 font-mono text-right leading-tight">
-                              <span>
-                                {formatTime(seg.startTime)} →{" "}
-                                {formatTime(seg.endTime)}
-                              </span>
-                              <span className="ml-1 text-gray-300">
-                                ({formatTime(segLength)})
-                              </span>
+                              {formatTime(seg.startTime)}→{formatTime(seg.endTime)}
                             </div>
                             {onEditSong && (
                               <Button
@@ -320,13 +311,7 @@ export default function SongListGrouped({
                   ) : (
                     <>
                       <div className="flex-shrink-0 text-[10px] text-gray-400 font-mono text-right leading-tight">
-                        <div>
-                          {formatTime(firstSeg.startTime)} →{" "}
-                          {formatTime(firstSeg.endTime)}
-                        </div>
-                        <div className="text-gray-300">
-                          {formatTime(firstSeg.endTime - firstSeg.startTime)}
-                        </div>
+                        {formatTime(firstSeg.startTime)}→{formatTime(firstSeg.endTime)}
                       </div>
                       {onEditSong && (
                         <Button

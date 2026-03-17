@@ -98,7 +98,7 @@ export default function BaseModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 pt-16 pb-24"
       onClick={onClose}
       role="presentation"
     >
@@ -109,7 +109,7 @@ export default function BaseModal({
         aria-label={ariaLabel}
         aria-describedby={ariaLabel ? undefined : `${modalId}-content`}
         tabIndex={-1}
-        className={`bg-white rounded-2xl p-6 w-full ${maxWidthClasses[maxWidth]} mx-4 max-h-[90vh] overflow-y-auto ${className} focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2`}
+        className={`bg-white rounded-2xl p-6 w-full ${maxWidthClasses[maxWidth]} mx-4 max-h-full overflow-y-auto ${className} focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2`}
         onClick={(e) => e.stopPropagation()}
       >
         <div id={`${modalId}-content`}>

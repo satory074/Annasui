@@ -560,6 +560,13 @@ export default function MultiSegmentTimeEditor({
         </button>
       </div>
 
+      {/* 時刻入力ヒント */}
+      {beatMode ? (
+        <p className="text-xs text-gray-500 -mt-2">拍数（1始まり）で入力します</p>
+      ) : (
+        <p className="text-xs text-gray-500 -mt-2">時刻は「分:秒」形式で入力（例: 1:23）またはプレイヤーを再生中に▶ボタンで確認できます</p>
+      )}
+
       {/* セグメント一覧 */}
       <SegmentList
         segments={segments}

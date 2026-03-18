@@ -11,6 +11,7 @@ dependencies = [
     "torch>=2.3.0",
     "pydantic>=2.0.0",
     "cside",
+    "python-multipart>=0.0.22",
 ]
 
 [tool.uv.sources]

@@ -13,6 +13,8 @@ interface ImportSetlistModalProps {
   onImport: (songs: SongSection[]) => void;
   /** 動画説明文など、あらかじめ入力するテキスト */
   prefillText?: string;
+  /** Chrome拡張から自動入力する解析済みエントリ */
+  prefillEntries?: ParsedSetlistEntry[];
 }
 
 type ParseMode = "regex" | "ai";
@@ -23,6 +25,7 @@ export default function ImportSetlistModal({
   onClose,
   onImport,
   prefillText,
+  prefillEntries,
 }: ImportSetlistModalProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("text");
   const [parseMode, setParseMode] = useState<ParseMode>("regex");
@@ -55,36 +58,15 @@ export default function ImportSetlistModal({
     }
   }, [isOpen, prefillText]);
 
-  // Chrome 拡張機能からの自動解析結果を受信
+  // Chrome 拡張から prefillEntries が渡されたときにプレビューへセット
   useEffect(() => {
-    const handler = (event: MessageEvent) => {
-      if (
-        event.source !== window ||
-        event.data?.source !== "MEDLEAN_EXTENSION" ||
-        event.data?.type !== "CSIDE_ANALYSIS_RESULT"
-      ) {
-        return;
-      }
-
-      const entries: ParsedSetlistEntry[] = (event.data.entries ?? []).map(
-        (e: ParsedSetlistEntry) => ({
-          ...e,
-          startTime: Number(e.startTime) || 0,
-          endTime: Number(e.endTime) || undefined,
-        })
-      );
-
-      if (entries.length > 0) {
-        setPreviewSongs(entries);
-        setMatchOverrides({});
-        setParseError("");
-        setAiFallbackWarning("");
-      }
-    };
-
-    window.addEventListener("message", handler);
-    return () => window.removeEventListener("message", handler);
-  }, []);
+    if (isOpen && prefillEntries && prefillEntries.length > 0) {
+      setPreviewSongs(prefillEntries);
+      setMatchOverrides({});
+      setParseError("");
+      setAiFallbackWarning("");
+    }
+  }, [isOpen, prefillEntries]);
 
   // Reset when closed
   const handleClose = useCallback(() => {

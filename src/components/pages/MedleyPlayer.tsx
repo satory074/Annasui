@@ -27,6 +27,7 @@ import { ActiveSongDebugPanel } from "@/components/ui/debug/ActiveSongDebugPanel
 import { getNiconicoVideoMetadata } from "@/lib/utils/videoMetadata";
 import MedleyHeader from "@/components/features/medley/MedleyHeader";
 import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
+import type { ParsedSetlistEntry } from "@/features/medley/import/types";
 import FixedPlayerBar from "@/components/features/player/FixedPlayerBar";
 import { RightSidebar } from "@/components/features/player/RightSidebar";
 import { BpmSettings } from "@/features/medley/components/BpmSettings";
@@ -100,7 +101,35 @@ export default function MedleyPlayer({
     // セットリストインポートモーダル関連
     const [importSetlistModalOpen, setImportSetlistModalOpen] = useState<boolean>(false);
     const [importSetlistPrefillText, setImportSetlistPrefillText] = useState<string>("");
+    const [importSetlistPrefillEntries, setImportSetlistPrefillEntries] = useState<ParsedSetlistEntry[] | undefined>(undefined);
     const [fetchingDescription, setFetchingDescription] = useState<boolean>(false);
+
+    // Chrome拡張機能からの自動解析結果を受信してモーダルを開く
+    useEffect(() => {
+      const handler = (event: MessageEvent) => {
+        if (
+          event.source !== window ||
+          event.data?.source !== "MEDLEAN_EXTENSION" ||
+          event.data?.type !== "CSIDE_ANALYSIS_RESULT"
+        ) {
+          return;
+        }
+        const entries: ParsedSetlistEntry[] = (event.data.entries ?? []).map(
+          (e: ParsedSetlistEntry) => ({
+            ...e,
+            startTime: Number(e.startTime) || 0,
+            endTime: Number(e.endTime) || undefined,
+          })
+        );
+        if (entries.length > 0) {
+          setImportSetlistPrefillEntries(entries);
+          setImportSetlistPrefillText("");
+          setImportSetlistModalOpen(true);
+        }
+      };
+      window.addEventListener("message", handler);
+      return () => window.removeEventListener("message", handler);
+    }, []);
 
     // 楽曲選択とツールチップ関連の状態
     const [selectedSong, setSelectedSong] = useState<SongSection | null>(null);
@@ -1616,6 +1645,7 @@ export default function MedleyPlayer({
                 onClose={() => setImportSetlistModalOpen(false)}
                 onImport={handleImportSetlistSongs}
                 prefillText={importSetlistPrefillText}
+                prefillEntries={importSetlistPrefillEntries}
             />
 
             

@@ -55,6 +55,37 @@ export default function ImportSetlistModal({
     }
   }, [isOpen, prefillText]);
 
+  // Chrome 拡張機能からの自動解析結果を受信
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (
+        event.source !== window ||
+        event.data?.source !== "MEDLEAN_EXTENSION" ||
+        event.data?.type !== "CSIDE_ANALYSIS_RESULT"
+      ) {
+        return;
+      }
+
+      const entries: ParsedSetlistEntry[] = (event.data.entries ?? []).map(
+        (e: ParsedSetlistEntry) => ({
+          ...e,
+          startTime: Number(e.startTime) || 0,
+          endTime: Number(e.endTime) || undefined,
+        })
+      );
+
+      if (entries.length > 0) {
+        setPreviewSongs(entries);
+        setMatchOverrides({});
+        setParseError("");
+        setAiFallbackWarning("");
+      }
+    };
+
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
+
   // Reset when closed
   const handleClose = useCallback(() => {
     onClose();

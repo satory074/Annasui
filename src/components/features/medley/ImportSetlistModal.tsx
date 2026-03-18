@@ -13,8 +13,6 @@ interface ImportSetlistModalProps {
   onImport: (songs: SongSection[]) => void;
   /** 動画説明文など、あらかじめ入力するテキスト */
   prefillText?: string;
-  /** Chrome拡張から自動入力する解析済みエントリ */
-  prefillEntries?: ParsedSetlistEntry[];
 }
 
 type ParseMode = "regex" | "ai";
@@ -25,7 +23,6 @@ export default function ImportSetlistModal({
   onClose,
   onImport,
   prefillText,
-  prefillEntries,
 }: ImportSetlistModalProps) {
   const [activeTab, setActiveTab] = useState<ActiveTab>("text");
   const [parseMode, setParseMode] = useState<ParseMode>("regex");
@@ -57,16 +54,6 @@ export default function ImportSetlistModal({
       setMatchOverrides({});
     }
   }, [isOpen, prefillText]);
-
-  // Chrome 拡張から prefillEntries が渡されたときにプレビューへセット
-  useEffect(() => {
-    if (isOpen && prefillEntries && prefillEntries.length > 0) {
-      setPreviewSongs(prefillEntries);
-      setMatchOverrides({});
-      setParseError("");
-      setAiFallbackWarning("");
-    }
-  }, [isOpen, prefillEntries]);
 
   // Reset when closed
   const handleClose = useCallback(() => {

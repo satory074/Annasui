@@ -81,8 +81,6 @@ export type Database = {
           spotify_link: string | null
           applemusic_link: string | null
           description: string | null
-          /** pgvector: 1024次元 MuQ 埋め込み (NULL = 未登録) */
-          embedding: number[] | null
           created_at: string
           updated_at: string
         }
@@ -96,7 +94,6 @@ export type Database = {
           spotify_link?: string | null
           applemusic_link?: string | null
           description?: string | null
-          embedding?: number[] | null
           created_at?: string
           updated_at?: string
         }
@@ -110,7 +107,6 @@ export type Database = {
           spotify_link?: string | null
           applemusic_link?: string | null
           description?: string | null
-          embedding?: number[] | null
           created_at?: string
           updated_at?: string
         }

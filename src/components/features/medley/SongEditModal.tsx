@@ -106,6 +106,7 @@ export default function SongEditModal({
   const [discardDialogOpen, setDiscardDialogOpen] = useState<boolean>(false);
   const [initialFormData, setInitialFormData] = useState<SongSection | null>(null);
   const [lastAutoSaveTime, setLastAutoSaveTime] = useState<number>(0);
+  const [helpOpen, setHelpOpen] = useState<boolean>(isNew);
 
   // 自動保存機能
   const performAutoSave = useCallback(async () => {
@@ -399,9 +400,56 @@ export default function SongEditModal({
 
   return (
     <BaseModal isOpen={isOpen} onClose={handleCloseWithGuard} maxWidth="lg" ariaLabel={isNew ? "楽曲を追加" : "楽曲を編集"}>
-      <h2 id="modal-title" className="text-xl font-bold mb-4 text-gray-900">
-        {isNew ? "楽曲を追加" : "楽曲を編集"}
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 id="modal-title" className="text-xl font-bold text-gray-900">
+          {isNew ? "楽曲を追加" : "楽曲を編集"}
+        </h2>
+        <button
+          onClick={() => setHelpOpen(prev => !prev)}
+          className={`w-7 h-7 flex items-center justify-center rounded-full text-sm font-bold border transition-colors ${
+            helpOpen
+              ? "bg-orange-50 text-orange-700 border-orange-300"
+              : "bg-gray-100 text-gray-500 border-gray-300 hover:bg-gray-200"
+          }`}
+          title="使い方を表示"
+          aria-expanded={helpOpen}
+        >
+          ?
+        </button>
+      </div>
+
+      {/* ヘルプパネル */}
+      {helpOpen && (
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-900">
+          <p className="font-semibold mb-2">📌 楽曲編集の使い方</p>
+          <dl className="space-y-1">
+            <div className="flex gap-2">
+              <dt className="font-medium whitespace-nowrap">楽曲名</dt>
+              <dd className="text-blue-800">この動画の中で流れる曲名を入力してください（必須）</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-medium whitespace-nowrap">アーティスト</dt>
+              <dd className="text-blue-800">曲のアーティスト名。複数いる場合はカンマ「,」で区切ります</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-medium whitespace-nowrap">登場区間</dt>
+              <dd className="text-blue-800">
+                この曲が動画の何秒〜何秒の間に流れるかを指定します。
+                時刻は「分:秒」形式で入力（例: 1:23 = 1分23秒）。
+                同じ曲が複数回登場する場合は「区間を追加」で増やせます。
+              </dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-medium whitespace-nowrap">▶ ボタン</dt>
+              <dd className="text-blue-800">区間の最初から再生してタイミングを確認できます</dd>
+            </div>
+            <div className="flex gap-2">
+              <dt className="font-medium whitespace-nowrap">-5s ボタン</dt>
+              <dd className="text-blue-800">区間終了の5秒前から再生して終了タイミングを確認できます</dd>
+            </div>
+          </dl>
+        </div>
+      )}
 
       {/* Validation error summary */}
       {Object.keys(errors).length > 0 && (

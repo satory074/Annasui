@@ -59,6 +59,8 @@ Production (Firebase Hosting) does NOT have `DATABASE_URL`. Use Supabase JS for 
 - Zustand stores for timeline and UI state; React Query mutations for saves
 - Player abstracted via `PlayerAdapter` interface (`src/features/player/adapters/types.ts`)
 - `handleAddSong` opens `SongSearchModal` → user selects from DB → `SongEditModal` opens with `prefill`
+- **Keyboard shortcuts** (edit mode): `Ctrl+Z` undo, `Ctrl+Shift+Z` / `Ctrl+Y` redo — skipped when INPUT/TEXTAREA focused
+- Inline shortcut help bar shown below `PlayerControls` (user: `←`/`→` ±5s; editor adds undo/redo/live)
 
 **Legacy (currently user-facing)** — `src/components/pages/MedleyPlayer.tsx`:
 - Rendered by `src/app/niconico/[videoId]/page.tsx` and `src/app/youtube/[videoId]/page.tsx`
@@ -121,10 +123,12 @@ Enhanced for bulk import:
 ### LiveAnnotationBar (`src/features/medley/components/LiveAnnotationBar.tsx`)
 
 Fixed-bottom bar for real-time annotation during playback (edit mode only in `MedleyView`):
-- **Space** (focus outside input): marks current time as song start
-- **Enter**: commits song (updates previous song's endTime, adds new song, clears title, keeps artist)
-- **Ctrl+L**: exits live mode, sets last song's endTime to currentTime
+- **Space** (focus outside input): marks current time as song start (snapped if BPM set)
+- **Enter**: commits song (updates previous song's endTime, adds new song, clears title, keeps artist) (snapped if BPM set)
+- **Tab**: cycles between title and artist fields
+- **Ctrl+L**: exits live mode, sets last song's endTime to currentTime (snapped if BPM set)
 - Activated via "ライブ入力" button in edit toolbar; controlled by `liveMode` in `player/store.ts`
+- Props: `onClose`, `bpm?`, `beatOffset?`
 
 ### Library Page (`/library`)
 
@@ -198,6 +202,9 @@ When `medleys.bpm` is set, time inputs switch from seconds to 1-indexed beat num
 - `beatToSeconds(beat, bpm, offset)` — 1-indexed beat → seconds
 - `secondsToBeat(seconds, bpm, offset)` — seconds → 1-indexed beat
 - `hasBpm(bpm)` — type guard
+- `snapToSixteenth(seconds, bpm, offset)` — snaps seconds to nearest 16th note boundary (clamps to ≥ 0)
+
+`LiveAnnotationBar` and `SongEditModal` accept `bpm?` / `beatOffset?` props. When `hasBpm(bpm)` is true, all time recording (Space mark, Enter commit, "現在" buttons) auto-snaps to the nearest 16th note.
 
 ## Critical Constraints
 

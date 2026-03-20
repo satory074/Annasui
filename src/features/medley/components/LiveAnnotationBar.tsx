@@ -4,9 +4,12 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { usePlayerStore } from "@/features/player/store";
 import { useTimelineStore } from "../store";
 import { Button } from "@/components/ui/button";
+import { hasBpm, snapToSixteenth } from "@/lib/utils/beat";
 
 interface LiveAnnotationBarProps {
   onClose: () => void;
+  bpm?: number;
+  beatOffset?: number;
 }
 
 /**
@@ -18,7 +21,7 @@ interface LiveAnnotationBarProps {
  *   Tab         — cycle between title and artist fields
  *   Space (when focus is outside an input) — mark the current time
  */
-export function LiveAnnotationBar({ onClose }: LiveAnnotationBarProps) {
+export function LiveAnnotationBar({ onClose, bpm, beatOffset }: LiveAnnotationBarProps) {
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [markedTime, setMarkedTime] = useState<number | null>(null);
@@ -32,6 +35,10 @@ export function LiveAnnotationBar({ onClose }: LiveAnnotationBarProps) {
     currentTimeRef.current = currentTime;
   }, [currentTime]);
 
+  const snapTime = useCallback((t: number): number => {
+    return hasBpm(bpm) ? snapToSixteenth(t, bpm, beatOffset ?? 0) : t;
+  }, [bpm, beatOffset]);
+
   const formatTime = (seconds: number): string => {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
@@ -41,8 +48,8 @@ export function LiveAnnotationBar({ onClose }: LiveAnnotationBarProps) {
   const handleCommit = useCallback(() => {
     if (!title.trim()) return;
 
-    const startTime = markedTime ?? currentTimeRef.current;
-    const endTime = currentTimeRef.current;
+    const startTime = snapTime(markedTime ?? currentTimeRef.current);
+    const endTime = snapTime(currentTimeRef.current);
 
     const { songs } = useTimelineStore.getState();
 
@@ -82,11 +89,11 @@ export function LiveAnnotationBar({ onClose }: LiveAnnotationBarProps) {
       const last = songs[songs.length - 1];
       useTimelineStore
         .getState()
-        .updateSong(last.id, { endTime: currentTimeRef.current });
+        .updateSong(last.id, { endTime: snapTime(currentTimeRef.current) });
     }
     usePlayerStore.getState().setLiveMode(false);
     onClose();
-  }, [onClose]);
+  }, [onClose, snapTime]);
 
   // Intercept Space (when focus outside input) and Ctrl+L globally
   useEffect(() => {
@@ -98,7 +105,7 @@ export function LiveAnnotationBar({ onClose }: LiveAnnotationBarProps) {
       if (e.key === " " && !isInput) {
         e.preventDefault();
         e.stopPropagation();
-        setMarkedTime(currentTimeRef.current);
+        setMarkedTime(snapTime(currentTimeRef.current));
       }
 
       if (e.key === "l" && e.ctrlKey) {
@@ -109,7 +116,7 @@ export function LiveAnnotationBar({ onClose }: LiveAnnotationBarProps) {
 
     window.addEventListener("keydown", handler, { capture: true });
     return () => window.removeEventListener("keydown", handler, { capture: true });
-  }, [handleClose]);
+  }, [handleClose, snapTime]);
 
   // Focus title on mount
   useEffect(() => {
@@ -197,6 +204,9 @@ export function LiveAnnotationBar({ onClose }: LiveAnnotationBarProps) {
           <span>
             <kbd className="px-1 bg-gray-700 rounded">Ctrl+L</kbd> 終了
           </span>
+          {hasBpm(bpm) && (
+            <span className="text-blue-400">♩ 16分音符スナップ中</span>
+          )}
           {markedTime !== null && (
             <span className="text-orange-400">
               ● {formatTime(markedTime)} にマーク済み

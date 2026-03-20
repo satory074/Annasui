@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { parseTimeInput, formatTimeSimple } from "@/lib/utils/time";
+import { hasBpm, snapToSixteenth } from "@/lib/utils/beat";
 import type { SongSection } from "../types";
 
 interface SongEditModalProps {
@@ -27,6 +28,8 @@ interface SongEditModalProps {
   onSave: (song: SongSection) => void;
   onDelete?: (id: string) => void;
   onSeek?: (time: number) => void;
+  bpm?: number;
+  beatOffset?: number;
 }
 
 function randomPastelColor(): string {
@@ -60,6 +63,8 @@ export function SongEditModal({
   onSave,
   onDelete,
   onSeek,
+  bpm,
+  beatOffset,
 }: SongEditModalProps) {
   const [title, setTitle] = useState("");
   const [artistInput, setArtistInput] = useState("");
@@ -223,7 +228,12 @@ export function SongEditModal({
               />
               <button
                 type="button"
-                onClick={() => setStartTimeInput(formatTimeSimple(currentTime))}
+                onClick={() => {
+                  const snapped = hasBpm(bpm)
+                    ? snapToSixteenth(currentTime, bpm, beatOffset ?? 0)
+                    : currentTime;
+                  setStartTimeInput(formatTimeSimple(snapped));
+                }}
                 className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md text-gray-600 whitespace-nowrap"
                 title="現在時刻を設定"
               >
@@ -247,7 +257,12 @@ export function SongEditModal({
               />
               <button
                 type="button"
-                onClick={() => setEndTimeInput(formatTimeSimple(currentTime))}
+                onClick={() => {
+                  const snapped = hasBpm(bpm)
+                    ? snapToSixteenth(currentTime, bpm, beatOffset ?? 0)
+                    : currentTime;
+                  setEndTimeInput(formatTimeSimple(snapped));
+                }}
                 className="px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-md text-gray-600 whitespace-nowrap"
                 title="現在時刻を設定"
               >

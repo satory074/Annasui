@@ -67,6 +67,9 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   const openModalWith = useUIStore((s) => s.openModalWith);
   const closeModal = useUIStore((s) => s.closeModal);
 
+  // Undo/Redo
+  const { undo, redo } = useTimelineHistory();
+
   // Mutations
   const saveSongs = useSaveSongs(videoId);
   const restoreSnapshot = useRestoreSnapshot(videoId);
@@ -140,6 +143,25 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     }
     setEditMode(!isEditMode);
   }, [isAuthenticated, isEditMode, setEditMode, openModalWith]);
+
+  // Ctrl+Z / Ctrl+Shift+Z undo/redo (edit mode only)
+  useEffect(() => {
+    if (!isEditMode) return;
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      if (e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      } else if ((e.key === "z" && e.shiftKey) || e.key === "y") {
+        e.preventDefault();
+        redo();
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isEditMode, undo, redo]);
 
   const handleSongTimeChange = useCallback(
     (songId: string, startTime: number, endTime: number) => {
@@ -356,6 +378,31 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
             {/* Player controls */}
             <PlayerControls />
 
+            {/* Keyboard shortcuts help */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
+              <span>
+                <kbd className="px-1 bg-gray-100 border border-gray-300 rounded">←</kbd>{" "}
+                <kbd className="px-1 bg-gray-100 border border-gray-300 rounded">→</kbd>{" "}
+                シーク ±5秒
+              </span>
+              {isEditMode && (
+                <>
+                  <span>
+                    <kbd className="px-1 bg-gray-100 border border-gray-300 rounded">Ctrl+Z</kbd>{" "}
+                    元に戻す
+                  </span>
+                  <span>
+                    <kbd className="px-1 bg-gray-100 border border-gray-300 rounded">Ctrl+Shift+Z</kbd>{" "}
+                    やり直す
+                  </span>
+                  <span>
+                    <kbd className="px-1 bg-gray-100 border border-gray-300 rounded">Ctrl+L</kbd>{" "}
+                    ライブ入力
+                  </span>
+                </>
+              )}
+            </div>
+
             {/* BPM settings */}
             <BpmSettings
               videoId={videoId}
@@ -436,6 +483,8 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
         onSave={handleModalSave}
         onDelete={handleModalDelete}
         onSeek={handleSeek}
+        bpm={medley?.bpm}
+        beatOffset={medley?.beatOffset}
       />
 
       {/* Import setlist modal */}
@@ -448,7 +497,11 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
 
       {/* Live annotation bar */}
       {liveMode && isEditMode && (
-        <LiveAnnotationBar onClose={() => usePlayerStore.getState().setLiveMode(false)} />
+        <LiveAnnotationBar
+          onClose={() => usePlayerStore.getState().setLiveMode(false)}
+          bpm={medley?.bpm}
+          beatOffset={medley?.beatOffset}
+        />
       )}
     </div>
   );

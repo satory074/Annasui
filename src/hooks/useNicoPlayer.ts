@@ -3,6 +3,7 @@ import { PLAYER_CONFIG, PLAYER_STATUS } from '@/lib/constants/player';
 import { normalizeTimeValue } from '@/lib/utils/time';
 import { VideoInfo, normalizeVideoInfo } from '@/lib/utils/videoInfo';
 import { logger } from '@/lib/utils/logger';
+import { usePlayerStore } from '@/features/player/store';
 
 interface UseNicoPlayerProps {
     videoId: string;
@@ -52,6 +53,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
     const initTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
     const previousTimeRef = useRef<number>(0); // 前回の正常な時間値を保持
+    const playerReadyRef = useRef(false); // クロージャ問題を回避するための ref
 
     // プレイヤー初期化リトライ用の状態
     const [initRetryCount, setInitRetryCount] = useState(0);
@@ -115,12 +117,17 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
         }
     }, []);
 
+    // playerReady を ref に同期（インターバル内クロージャから最新値を読めるようにする）
+    useEffect(() => {
+        playerReadyRef.current = playerReady;
+    }, [playerReady]);
+
     // 時間同期インターバルの開始（改善版）
     const startTimeSyncInterval = useCallback(() => {
         if (syncIntervalRef.current) return;
-        
+
         syncIntervalRef.current = setInterval(() => {
-            if (playerReady) {
+            if (playerReadyRef.current) { // ref を使用してクロージャの陳腐化を回避
                 sendMessageToPlayer({
                     sourceConnectorType: PLAYER_CONFIG.SOURCE_CONNECTOR_TYPE,
                     playerId: PLAYER_CONFIG.PLAYER_ID,
@@ -128,7 +135,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                 });
             }
         }, 250); // ポーリング間隔を250msに変更（負荷軽減）
-    }, [playerReady, sendMessageToPlayer]);
+    }, [sendMessageToPlayer]); // playerReady は ref 経由で読むため deps 不要
 
     // 時間同期インターバルの停止
     const stopTimeSyncInterval = useCallback(() => {
@@ -300,6 +307,8 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                                         setCurrentTime(validatedTime);
                                         onTimeUpdate?.(validatedTime);
                                         previousTimeRef.current = validatedTime;
+                                        // useMetronome のドリフト検出が依存するため store も更新
+                                        usePlayerStore.getState().setCurrentTime(validatedTime);
                                     }
                                 }
 
@@ -328,6 +337,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                             if (data.data && data.data.playerStatus !== undefined) {
                                 const newIsPlaying = data.data.playerStatus === PLAYER_STATUS.PLAYING;
                                 setIsPlaying(newIsPlaying);
+                                usePlayerStore.getState().setIsPlaying(newIsPlaying);
                                 onPlayingChange?.(newIsPlaying);
                                 
                                 // 再生状態に応じて時間同期の開始/停止

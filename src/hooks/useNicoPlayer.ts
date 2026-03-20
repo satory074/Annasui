@@ -134,7 +134,7 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                     eventName: "getStatus",
                 });
             }
-        }, 250); // ポーリング間隔を250msに変更（負荷軽減）
+        }, 100); // 100ms polling — improves metronome sync accuracy (max drift ≈ 100ms)
     }, [sendMessageToPlayer]); // playerReady は ref 経由で読むため deps 不要
 
     // 時間同期インターバルの停止

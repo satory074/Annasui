@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { usePlayerStore } from "@/features/player/store";
 import { hasBpm } from "@/lib/utils/beat";
 
@@ -13,7 +13,7 @@ interface UseMetronomeOptions {
 /**
  * Web Audio API lookahead metronome for BPM/offset verification.
  * Plays click sounds synced to video playback position.
- * Auto-stops when paused; resyncs on seek (drift > 0.5s detected in scheduler).
+ * Auto-stops when paused; resyncs on seek via Zustand subscribe.
  *
  * bpm/beatOffset are held in refs so the interval never restarts when they change —
  * changes are detected inside the interval callback and trigger a resync only.
@@ -37,6 +37,54 @@ export function useMetronome({ bpm, beatOffset = 0, enabled }: UseMetronomeOptio
 
   // Track scheduled nodes so we can cancel them on BPM/offset change or seek
   const scheduledRef = useRef<Array<{ osc: OscillatorNode; gain: GainNode; time: number }>>([]);
+
+  // Extracted as useCallback so it can be referenced by the subscribe Effect
+  const cancelFutureBeats = useCallback((ctx: AudioContext) => {
+    const now = ctx.currentTime;
+    for (const { osc, gain, time } of scheduledRef.current) {
+      if (time > now) {
+        try {
+          gain.gain.cancelScheduledValues(now);
+          gain.gain.setValueAtTime(0, now);
+          osc.stop(now);
+        } catch {
+          // already stopped — ignore
+        }
+      }
+    }
+    scheduledRef.current = [];
+  }, []); // scheduledRef is a ref — no deps needed
+
+  // Subscribe to Zustand store to continuously update syncRef with real measured values.
+  // This prevents drift accumulation: instead of relying on linear interpolation from
+  // a stale sync point, we update syncRef every time Niconico reports a new currentTime
+  // (approx. every 100ms after the polling interval change in useNicoPlayer).
+  useEffect(() => {
+    if (!shouldRun) return;
+
+    const unsub = usePlayerStore.subscribe((state, prevState) => {
+      if (state.currentTime === prevState.currentTime) return;
+      const newVideoTime = state.currentTime;
+      const ctx = audioCtxRef.current;
+      if (!ctx || !syncRef.current) return;
+
+      // Seek detection: compare reported time vs linear estimate from last sync
+      const estimated = syncRef.current.videoTime + (ctx.currentTime - syncRef.current.audioCtxTime);
+      if (Math.abs(newVideoTime - estimated) > 0.5) {
+        cancelFutureBeats(ctx);
+        const currentBpm = bpmRef.current;
+        const currentOffset = beatOffsetRef.current;
+        if (hasBpm(currentBpm)) {
+          nextBeatIndexRef.current = Math.max(0, Math.ceil((newVideoTime - currentOffset) / (60 / currentBpm)));
+        }
+      }
+
+      // Always update syncRef with the latest real measurement — prevents drift accumulation
+      syncRef.current = { videoTime: newVideoTime, audioCtxTime: ctx.currentTime };
+    });
+
+    return unsub;
+  }, [shouldRun, cancelFutureBeats]);
 
   useEffect(() => {
     if (!shouldRun) {
@@ -81,23 +129,6 @@ export function useMetronome({ bpm, beatOffset = 0, enabled }: UseMetronomeOptio
     const LOOKAHEAD = 0.3; // seconds to schedule ahead (buffer for JS scheduler jitter)
     const SCHEDULE_INTERVAL = 25; // ms polling interval
 
-    // Cancel all future-scheduled beats immediately (silence old BPM on change/seek)
-    const cancelFutureBeats = (ctx: AudioContext) => {
-      const now = ctx.currentTime;
-      for (const { osc, gain, time } of scheduledRef.current) {
-        if (time > now) {
-          try {
-            gain.gain.cancelScheduledValues(now);
-            gain.gain.setValueAtTime(0, now);
-            osc.stop(now);
-          } catch {
-            // already stopped — ignore
-          }
-        }
-      }
-      scheduledRef.current = [];
-    };
-
     const scheduleClick = (ctx: AudioContext, time: number) => {
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
@@ -115,6 +146,12 @@ export function useMetronome({ bpm, beatOffset = 0, enabled }: UseMetronomeOptio
       const ctx = audioCtxRef.current;
       const sync = syncRef.current;
       if (!ctx || !sync) return;
+
+      // Resume AudioContext if it became suspended (e.g. browser auto-suspend on tab switch)
+      if (ctx.state !== "running") {
+        void ctx.resume();
+        return; // retry on next tick
+      }
 
       const currentBpmNow = bpmRef.current;
       const currentBeatOffsetNow = beatOffsetRef.current;
@@ -135,23 +172,10 @@ export function useMetronome({ bpm, beatOffset = 0, enabled }: UseMetronomeOptio
 
       const beatDurationNow = 60 / currentBpmNow;
 
-      // Detect seek: compare estimated video time vs actual
-      const actualVideoTime = usePlayerStore.getState().currentTime;
+      // Estimate current video time from the most recently updated sync point.
+      // syncRef is continuously updated by the Zustand subscribe Effect, so
+      // this estimate stays accurate (max error ≈ polling interval of useNicoPlayer, ~100ms).
       const estimatedVideoTime = sync.videoTime + (ctx.currentTime - sync.audioCtxTime);
-      const drift = Math.abs(actualVideoTime - estimatedVideoTime);
-
-      if (drift > 0.5) {
-        // Cancel old beats and resync after seek
-        cancelFutureBeats(ctx);
-        syncRef.current = {
-          videoTime: actualVideoTime,
-          audioCtxTime: ctx.currentTime,
-        };
-        const beats = (actualVideoTime - currentBeatOffsetNow) / beatDurationNow;
-        nextBeatIndexRef.current = Math.max(0, Math.ceil(beats));
-        return; // skip scheduling this tick to let sync settle
-      }
-
       const scheduleUntil = estimatedVideoTime + LOOKAHEAD;
 
       // Schedule all beats within lookahead window
@@ -179,8 +203,9 @@ export function useMetronome({ bpm, beatOffset = 0, enabled }: UseMetronomeOptio
       syncRef.current = null;
     };
     // bpm/beatOffset intentionally excluded — held in refs and read inside the interval
+    // cancelFutureBeats is stable (useCallback with no deps)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shouldRun]);
+  }, [shouldRun, cancelFutureBeats]);
 
   // Cleanup AudioContext on unmount
   useEffect(() => {

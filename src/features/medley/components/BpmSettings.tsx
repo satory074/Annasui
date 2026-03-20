@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { medleyKeys } from "../queries/keys";
 import { supabase } from "@/lib/supabase";
@@ -50,6 +50,21 @@ export function BpmSettings({ videoId, bpm, beatOffset, isAuthenticated }: BpmSe
       : null;
 
   const currentBeat = active ? Math.max(1, secondsToBeat(currentTime, localBpm!, localBeatOffset ?? 0)) : null;
+
+  // Flash beat indicator when beat changes while metronome is ON
+  const [beatFlash, setBeatFlash] = useState(false);
+  const prevBeatRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (!metronomeEnabled) { prevBeatRef.current = null; return; }
+    const beat = editingBeat ?? currentBeat;
+    if (beat === null) return;
+    if (beat !== prevBeatRef.current) {
+      prevBeatRef.current = beat;
+      setBeatFlash(true);
+      const t = setTimeout(() => setBeatFlash(false), 80);
+      return () => clearTimeout(t);
+    }
+  }, [editingBeat, currentBeat, metronomeEnabled]);
 
   const updateBpm = async (bpm: number | null, beatOffset: number | null): Promise<{ success: boolean; error?: string }> => {
     if (!supabase) return { success: false, error: "Supabase client not available" };
@@ -149,7 +164,9 @@ export function BpmSettings({ videoId, bpm, beatOffset, isAuthenticated }: BpmSe
 
         {/* Beat indicator */}
         {active && currentBeat !== null && (
-          <span className="text-sm text-gray-500 tabular-nums">
+          <span className={`text-sm tabular-nums px-1.5 py-0.5 rounded transition-colors ${
+            beatFlash ? "bg-orange-500 text-white" : metronomeEnabled ? "text-orange-600 font-medium" : "text-gray-500"
+          }`}>
             Beat: {currentBeat}
           </span>
         )}
@@ -215,7 +232,11 @@ export function BpmSettings({ videoId, bpm, beatOffset, isAuthenticated }: BpmSe
 
       {/* Beat インジケーター（編集中） */}
       {editingInputsValid && editingBeat !== null && (
-        <span className="text-sm text-gray-500 tabular-nums">Beat: {editingBeat}</span>
+        <span className={`text-sm tabular-nums px-1.5 py-0.5 rounded transition-colors ${
+          beatFlash ? "bg-orange-500 text-white" : metronomeEnabled ? "text-orange-600 font-medium" : "text-gray-500"
+        }`}>
+          Beat: {editingBeat}
+        </span>
       )}
 
       <button

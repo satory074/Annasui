@@ -46,8 +46,6 @@ export type MedleyData = {
   title: string;        // メドレータイトル
   creator?: string;     // 制作者
   duration: number;     // 総再生時間（秒）
-  bpm?: number;         // BPM（拍数入力モード用、NULLの場合は秒入力）
-  beatOffset?: number;  // ビートオフセット（秒）：最初の拍が始まる時刻
   songs: SongSection[]; // 楽曲セクション配列
   platform?: 'niconico' | 'youtube'; // プラットフォーム（オプション、デフォルトは'niconico'）
   user_id?: string;     // 作成者のユーザーID（認証済みユーザーの場合）

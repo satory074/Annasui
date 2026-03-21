@@ -199,8 +199,6 @@ function convertDbRowToMedleyData(medley: MedleyRow, songs: SongRow[]): MedleyDa
     title: medley.title,
     creator: medley.creator || '',
     duration: medley.duration,
-    bpm: (medley as Record<string, unknown>).bpm as number | undefined || undefined,
-    beatOffset: (medley as Record<string, unknown>).beat_offset as number | undefined || undefined,
     platform: medley.platform as 'niconico' | 'youtube',
     createdAt: medley.created_at,
     updatedAt: medley.updated_at,

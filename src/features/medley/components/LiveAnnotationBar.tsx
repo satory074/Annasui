@@ -4,12 +4,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { usePlayerStore } from "@/features/player/store";
 import { useTimelineStore } from "../store";
 import { Button } from "@/components/ui/button";
-import { hasBpm, snapToSixteenth } from "@/lib/utils/beat";
 
 interface LiveAnnotationBarProps {
   onClose: () => void;
-  bpm?: number;
-  beatOffset?: number;
 }
 
 /**
@@ -21,7 +18,7 @@ interface LiveAnnotationBarProps {
  *   Tab         — cycle between title and artist fields
  *   Space (when focus is outside an input) — mark the current time
  */
-export function LiveAnnotationBar({ onClose, bpm, beatOffset }: LiveAnnotationBarProps) {
+export function LiveAnnotationBar({ onClose }: LiveAnnotationBarProps) {
   const [title, setTitle] = useState("");
   const [artist, setArtist] = useState("");
   const [markedTime, setMarkedTime] = useState<number | null>(null);
@@ -35,9 +32,7 @@ export function LiveAnnotationBar({ onClose, bpm, beatOffset }: LiveAnnotationBa
     currentTimeRef.current = currentTime;
   }, [currentTime]);
 
-  const snapTime = useCallback((t: number): number => {
-    return hasBpm(bpm) ? snapToSixteenth(t, bpm, beatOffset ?? 0) : t;
-  }, [bpm, beatOffset]);
+  const snapTime = useCallback((t: number): number => t, []);
 
   const formatTime = (seconds: number): string => {
     const m = Math.floor(seconds / 60);
@@ -204,9 +199,6 @@ export function LiveAnnotationBar({ onClose, bpm, beatOffset }: LiveAnnotationBa
           <span>
             <kbd className="px-1 bg-gray-700 rounded">Ctrl+L</kbd> 終了
           </span>
-          {hasBpm(bpm) && (
-            <span className="text-blue-400">♩ 16分音符スナップ中</span>
-          )}
           {markedTime !== null && (
             <span className="text-orange-400">
               ● {formatTime(markedTime)} にマーク済み

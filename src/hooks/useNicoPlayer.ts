@@ -307,7 +307,6 @@ export function useNicoPlayer({ videoId, onTimeUpdate, onDurationChange, onPlayi
                                         setCurrentTime(validatedTime);
                                         onTimeUpdate?.(validatedTime);
                                         previousTimeRef.current = validatedTime;
-                                        // useMetronome のドリフト検出が依存するため store も更新
                                         usePlayerStore.getState().setCurrentTime(validatedTime);
                                     }
                                 }

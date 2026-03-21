@@ -29,7 +29,6 @@ import MedleyHeader from "@/components/features/medley/MedleyHeader";
 import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
 import FixedPlayerBar from "@/components/features/player/FixedPlayerBar";
 import { RightSidebar } from "@/components/features/player/RightSidebar";
-import { BpmSettings } from "@/features/medley/components/BpmSettings";
 import { Button } from "@/components/ui/button";
 
 interface MedleyPlayerProps {
@@ -1316,18 +1315,6 @@ export default function MedleyPlayer({
                                 </button>
                             </div>
                         </div>
-                    </div>
-                )}
-
-                {/* BPM設定 */}
-                {!loading && (
-                    <div className="px-4 py-2">
-                        <BpmSettings
-                            videoId={videoId}
-                            bpm={medleyData?.bpm ?? undefined}
-                            beatOffset={medleyData?.beatOffset ?? undefined}
-                            isAuthenticated={isAuthenticated}
-                        />
                     </div>
                 )}
 

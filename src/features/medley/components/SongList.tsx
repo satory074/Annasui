@@ -149,11 +149,7 @@ export function SongList({
               </p>
             </div>
 
-            {/* Time badge */}
-            <Badge variant="secondary" className="text-xs shrink-0 font-mono">
-              {formatTimeSimple(song.startTime)} -{" "}
-              {formatTimeSimple(song.endTime)}
-            </Badge>
+            {/* Time badge — hidden per design decision */}
 
             {/* Edit controls */}
             {isEditMode && (

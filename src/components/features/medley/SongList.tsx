@@ -452,7 +452,7 @@ export default function SongList({
                       onMouseDown={undefined}
                       onMouseEnter={(e) => handleSongHover(e, song)}
                       onMouseLeave={handleSongLeave}
-                      title={`${song.title} - ${song.artist}: ${formatTime(song.startTime)} - ${formatTime(song.endTime)}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''} | クリックで再生`}
+                      title={`${song.title} - ${song.artist}${isBeyondActualDuration ? ' | ℹ️ 実際の動画長を超過（自動調整済み）' : ''}${hasOverlap ? ` (${overlappingSongs.length}曲と重複)` : ''} | クリックで再生`}
                     >
                       <div className="text-[10px] text-gray-800 font-medium px-2 leading-4 relative z-30 whitespace-nowrap flex items-center gap-1"
                            style={{

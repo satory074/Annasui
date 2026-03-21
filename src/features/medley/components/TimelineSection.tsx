@@ -182,7 +182,7 @@ export function TimelineSection({
                 top: `${row * 28 + 4}px`,
                 backgroundColor: song.color,
               }}
-              title={`${song.title} (${formatTimeSimple(song.startTime)} - ${formatTimeSimple(song.endTime)})`}
+              title={song.title}
             >
               {/* Left drag handle */}
               {onSongTimeChange && (

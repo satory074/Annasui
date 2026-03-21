@@ -20,8 +20,6 @@ export const medleys = pgTable("medleys", {
   title: text("title").notNull(),
   creator: text("creator"),
   duration: real("duration"),
-  bpm: real("bpm"),
-  beatOffset: real("beat_offset"),
   lastEditor: text("last_editor"),
   lastEditedAt: timestamp("last_edited_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),

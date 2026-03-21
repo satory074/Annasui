@@ -36,7 +36,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Medlean** — Multi-platform medley annotation platform. Supports Niconico (full iframe integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking, BPM-based beat input.
+**Medlean** — Multi-platform medley annotation platform. Supports Niconico (full iframe integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking.
 
 **Tech Stack**: Next.js 15.5.7, React 19, TypeScript, TailwindCSS 4, Supabase 2.45.0, Firebase Hosting, Zustand (state + temporal undo/redo via zundo), React Query v5, React Hook Form + Zod v4, Drizzle ORM (local dev only)
 
@@ -123,12 +123,12 @@ Enhanced for bulk import:
 ### LiveAnnotationBar (`src/features/medley/components/LiveAnnotationBar.tsx`)
 
 Fixed-bottom bar for real-time annotation during playback (edit mode only in `MedleyView`):
-- **Space** (focus outside input): marks current time as song start (snapped if BPM set)
-- **Enter**: commits song (updates previous song's endTime, adds new song, clears title, keeps artist) (snapped if BPM set)
+- **Space** (focus outside input): marks current time as song start
+- **Enter**: commits song (updates previous song's endTime, adds new song, clears title, keeps artist)
 - **Tab**: cycles between title and artist fields
-- **Ctrl+L**: exits live mode, sets last song's endTime to currentTime (snapped if BPM set)
+- **Ctrl+L**: exits live mode, sets last song's endTime to currentTime
 - Activated via "ライブ入力" button in edit toolbar; controlled by `liveMode` in `player/store.ts`
-- Props: `onClose`, `bpm?`, `beatOffset?`
+- Props: `onClose`
 
 ### Library Page (`/library`)
 
@@ -168,7 +168,7 @@ Song list used by both legacy pages (`MedleyPageClient`). Songs with the same `s
 
 ## Database Schema
 
-1. **`medleys`** — `id`, `video_id` (unique), `platform`, `title`, `creator`, `duration`, **`bpm`**, **`beat_offset`**, timestamps
+1. **`medleys`** — `id`, `video_id` (unique), `platform`, `title`, `creator`, `duration`, timestamps
 2. **`song_master`** — `id`, `title`, `artist` (nullable, **legacy — NOT used for display**), `normalized_id` (unique), platform links, `description`, timestamps
 3. **`artists`** — `id`, `name`, `normalized_name` (required, `name.toLowerCase()`), timestamps
 4. **`song_artist_relations`** — `id`, `song_id` (FK→song_master), `artist_id` (FK→artists), `role` (`'artist'|'composer'|'arranger'`), `order_index`, `created_at`
@@ -196,15 +196,6 @@ export interface MergeOverrides {
 }
 ```
 When `overrides.artist` is provided, the function updates `song_artist_relations` (not just `song_master.artist`) so the library reflects the change. Always pass `artist` in overrides when merging — even when unchanged — to ensure relations are synced.
-
-### BPM Feature
-When `medleys.bpm` is set, time inputs switch from seconds to 1-indexed beat numbers. Beat utilities in `src/lib/utils/beat.ts`:
-- `beatToSeconds(beat, bpm, offset)` — 1-indexed beat → seconds
-- `secondsToBeat(seconds, bpm, offset)` — seconds → 1-indexed beat
-- `hasBpm(bpm)` — type guard
-- `snapToSixteenth(seconds, bpm, offset)` — snaps seconds to nearest 16th note boundary (clamps to ≥ 0)
-
-`LiveAnnotationBar` and `SongEditModal` accept `bpm?` / `beatOffset?` props. When `hasBpm(bpm)` is true, all time recording (Space mark, Enter commit, "現在" buttons) auto-snaps to the nearest 16th note.
 
 ## Critical Constraints
 
@@ -246,7 +237,6 @@ Production env vars set via Firebase console.
 
 - **Seek fails on Niconico**: Check `* 1000` millisecond conversion
 - **PGRST204 error**: Code references a non-existent DB column; check `src/lib/supabase.ts` type definitions and run `NOTIFY pgrst, 'reload schema';` in Supabase SQL editor after migrations
-- **BPM button not visible after login**: Component renders `null` when `!isAuthenticated && !hasBpm(bpm)`. Reload the page if state doesn't update after login.
 - **Thumbnails not loading**: Check proxy API URLs have trailing slashes
 - **Build failures**: Drizzle imports `net`/`tls` — never use in client components
 - **Form state resets during playback**: Remove `currentTime` from useEffect deps

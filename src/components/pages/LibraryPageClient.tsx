@@ -2,14 +2,13 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/features/auth/context";
-import { getSongDatabase, SongDatabaseEntry, deleteManualSong, findDuplicateGroups, DatabaseDuplicateGroup } from "@/lib/utils/songDatabase";
-import { useSongSearch } from "@/hooks/useSongSearch";
+import { getSongDatabase, SongDatabaseEntry, deleteManualSong, findDuplicateGroups, DatabaseDuplicateGroup, searchSongs } from "@/lib/utils/songDatabase";
 import { logger } from "@/lib/utils/logger";
 import AppHeader from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
 import { LoginModal } from "@/features/auth/components/LoginModal";
-import SongDatabaseEditModal from "@/components/features/library/SongDatabaseEditModal";
-import DuplicateGroupCard from "@/components/features/library/DuplicateGroupCard";
+import SongDatabaseEditModal from "@/features/song-database/components/SongDatabaseEditModal";
+import DuplicateGroupCard from "@/features/song-database/components/DuplicateGroupCard";
 import Image from "next/image";
 import {
   AlertDialog,
@@ -21,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import ManualSongAddModal from "@/components/features/medley/ManualSongAddModal";
+import ManualSongAddModal from "@/features/song-database/components/ManualSongAddModal";
 import { toast } from "sonner";
 
 type SortField = "title" | "artist" | "updatedAt" | "createdAt";
@@ -106,13 +105,9 @@ export default function LibraryPageClient() {
     logger.info('Data refreshed after merge');
   };
 
-  // Search and pagination using the extracted hook
-  const { searchResults, totalPages } = useSongSearch({
-    songDatabase,
-    searchTerm,
-    currentPage,
-    itemsPerPage: ITEMS_PER_PAGE
-  });
+  // Search results
+  const searchResults = useMemo(() => searchSongs(songDatabase, searchTerm), [songDatabase, searchTerm]);
+  const totalPages = Math.ceil(searchResults.length / ITEMS_PER_PAGE);
 
   // Sort all results then paginate
   const sortedResults = useMemo(() => {

@@ -7,7 +7,7 @@ import { useSongSearch } from "@/hooks/useSongSearch";
 import { logger } from "@/lib/utils/logger";
 import AppHeader from "@/components/layout/AppHeader";
 import { Button } from "@/components/ui/button";
-import LoginModal from "@/components/features/auth/LoginModal";
+import { LoginModal } from "@/features/auth/components/LoginModal";
 import SongDatabaseEditModal from "@/components/features/library/SongDatabaseEditModal";
 import DuplicateGroupCard from "@/components/features/library/DuplicateGroupCard";
 import Image from "next/image";
@@ -297,7 +297,7 @@ export default function LibraryPageClient() {
             </Button>
           </div>
         </div>
-        <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
+        <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
       </>
     );
   }
@@ -662,7 +662,7 @@ export default function LibraryPageClient() {
       </div>
 
       {/* Modals */}
-      <LoginModal isOpen={loginModalOpen} onClose={() => setLoginModalOpen(false)} />
+      <LoginModal open={loginModalOpen} onOpenChange={setLoginModalOpen} />
       <SongDatabaseEditModal
         isOpen={editModalOpen}
         onClose={() => {

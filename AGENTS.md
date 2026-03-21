@@ -36,39 +36,33 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Medlean** — Multi-platform medley annotation platform. Supports Niconico (full iframe integration), YouTube (embed), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking.
+**Medlean** — Multi-platform medley annotation platform. Supports Niconico (full iframe integration), YouTube (full IFrame API integration), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking.
 
 **Tech Stack**: Next.js 15.5.7, React 19, TypeScript, TailwindCSS 4, Supabase 2.45.0, Firebase Hosting, Zustand (state + temporal undo/redo via zundo), React Query v5, React Hook Form + Zod v4, Drizzle ORM (local dev only)
 
 ## Core Architecture
 
-### Dual Database Client Architecture (CRITICAL)
+### Database Client Architecture
 
 | Client | Location | Env Var | Works in Firebase? | Use Case |
 |--------|----------|---------|-------------------|----------|
-| **Supabase JS** | `src/lib/supabase.ts` | `NEXT_PUBLIC_SUPABASE_*` | Yes | Client components, API routes, production |
-| **Drizzle ORM** | `src/lib/db/index.ts` | `DATABASE_URL` | **No** | Server Actions (`"use server"`), local dev, migrations |
+| **Supabase JS** | `src/lib/supabase.ts` | `NEXT_PUBLIC_SUPABASE_*` | Yes | All runtime paths (client, server, production) |
+| **Drizzle ORM** | `src/lib/db/index.ts` | `DATABASE_URL` | **No** | `drizzle-kit` only (migrations, studio) — NOT used at runtime |
 
-Production (Firebase Hosting) does NOT have `DATABASE_URL`. Use Supabase JS for all production paths; Drizzle only for `"use server"` and `drizzle-kit`. The Drizzle client uses a lazy Proxy init to avoid throwing at build time.
+All runtime data fetching and mutations use Supabase JS via `src/lib/api/medleys.ts` and `src/features/medley/queries/functions-supabase.ts`. Drizzle is retained only for `drizzle-kit` tooling (schema management, studio). The Drizzle client uses a lazy Proxy init to avoid throwing at build time.
 
-### New vs Legacy Component Architecture
+### Component Architecture
 
-**New (active, not yet user-facing)** — `src/features/medley/components/MedleyView.tsx`:
-- Used by `src/app/(app)/[platform]/[videoId]/page.tsx` — but unreachable for niconico/youtube (see Route Architecture)
-- Server page prefetches data with `HydrationBoundary` + React Query
+**MedleyView** — `src/features/medley/components/MedleyView.tsx`:
+- Rendered by both `src/app/niconico/[videoId]/page.tsx` and `src/app/youtube/[videoId]/page.tsx`
+- Server pages prefetch data via Supabase JS with `HydrationBoundary` + React Query
 - Zustand stores for timeline and UI state; React Query mutations for saves
 - Player abstracted via `PlayerAdapter` interface (`src/features/player/adapters/types.ts`)
 - `handleAddSong` opens `SongSearchModal` → user selects from DB → `SongEditModal` opens with `prefill`
 - **Keyboard shortcuts** (edit mode): `Ctrl+Z` undo, `Ctrl+Shift+Z` / `Ctrl+Y` redo — skipped when INPUT/TEXTAREA focused
 - Inline shortcut help bar shown below `PlayerControls` (user: `←`/`→` ±5s; editor adds undo/redo/live)
 
-**Legacy (currently user-facing)** — `src/components/pages/MedleyPlayer.tsx`:
-- Rendered by `src/app/niconico/[videoId]/page.tsx` and `src/app/youtube/[videoId]/page.tsx`
-- Large monolithic component using `useMedleyEdit` + `useMedleyDataApi` hooks from `src/hooks/`
-- Immediate-save system with `!isSaving`, `!isRefetching` guard conditions
-- Still in use; do not delete until fully migrated
-
-Many components exist in both `src/components/features/` (legacy) and `src/features/` (new). Prefer `src/features/` for new code. Example: `src/features/medley/components/SongEditModal.tsx` (new, `id: string` UUID) supersedes `src/components/features/medley/SongEditModal.tsx` (legacy, `id: number`).
+All new code goes in `src/features/`. Legacy `src/components/features/` retains only `ImportSetlistModal`, `ManualSongAddModal`, `CreateMedleyModal`, and library components still used by active pages.
 
 ### Zustand Stores (3 stores in `src/features/`)
 
@@ -88,18 +82,15 @@ QueryClientProvider (staleTime 60s, retry 1) → AuthProvider → Toaster → ch
 Single shared password (`EDIT_PASSWORD` env var, server-side only) + user nicknames. No registration. Session via sessionStorage. API: `/api/auth/verify-password/` with rate limiting (5 attempts/10 min). Import: `import { useAuth } from "@/features/auth/context"`.
 
 ### Route Architecture
-- Route group `(app)` at `src/app/(app)/` is transparent in URLs
-- **`src/app/(app)/[platform]/[videoId]/page.tsx`** renders `MedleyView` (new). Uses Drizzle `HydrationBoundary` prefetch — requires `DATABASE_URL` (unavailable in Firebase production).
-- **`src/app/niconico/[videoId]/page.tsx`** and **`src/app/youtube/[videoId]/page.tsx`** render `MedleyPageClient` (legacy). Static segments take priority over `[platform]`, so niconico/youtube URLs never reach the `(app)` route.
-- To access `MedleyView` via URL, use a platform value other than `niconico`/`youtube` (e.g. `/nico/sm123`), or migrate the legacy pages.
+- **`src/app/niconico/[videoId]/page.tsx`** and **`src/app/youtube/[videoId]/page.tsx`** render `MedleyView` with Supabase JS `HydrationBoundary` prefetch
 - Pages using `useAuth` need `export const dynamic = "force-dynamic"`
 
 ### Data Flow
-1. **Server → Client**: Page prefetches with Drizzle → React Query `HydrationBoundary` → client hydrates
-2. **Edit flow**: User edits Zustand store → Save mutation → Supabase JS → query cache invalidated → store synced
+1. **Server → Client**: Page prefetches with Supabase JS (`functions-supabase.ts`) → React Query `HydrationBoundary` → client hydrates
+2. **Edit flow**: User edits Zustand store → Save mutation (`saveMedley-supabase.ts`) → Supabase JS → query cache invalidated → store synced
 3. **External APIs** (Niconico thumbnails/metadata, Spotify thumbnails) proxied through `src/app/api/` to avoid CORS
 
-CRUD for medleys is in `src/lib/api/medleys.ts` (Supabase JS, handles validation + sanitization); server-side queries in `src/features/medley/queries/functions.ts` (Drizzle, `"use server"`).
+CRUD for medleys is in `src/lib/api/medleys.ts` (Supabase JS, handles validation + sanitization); query wrappers in `src/features/medley/queries/functions-supabase.ts`.
 
 ### Song Database Feature (`src/features/song-database/`)
 
@@ -136,26 +127,6 @@ Fixed-bottom bar for real-time annotation during playback (edit mode only in `Me
 
 ### Player Adapter Pattern
 `PlayerAdapter` interface (`src/features/player/adapters/types.ts`) abstracts `play()`, `pause()`, `seek(seconds)`, `setVolume()`, event handlers, etc. Implementations: `NicoPlayerAdapter` (postMessage) and `YouTubePlayerAdapter` (IFrame API).
-
-### FixedPlayerBar (`src/components/features/player/FixedPlayerBar.tsx`)
-
-Shared player bar used by both legacy pages. Key implementation details:
-- **Drag-to-seek**: `onMouseDown` → `document.mousemove/mouseup` via `useEffect`. `isDraggingRef` (ref) + `dragTime` (state). Display position = `dragTime ?? currentTime`. Full-screen overlay during drag prevents text selection.
-- **Hover tooltip**: `hoverTime` state + absolute tooltip above seek bar. Shows time at cursor position.
-- **Mute state**: Local `isMuted` + `preMuteVolume` state in `FixedPlayerBar`. Passed to `VolumeSlider` via `onMuteToggle`/`isMuted` props. `VolumeSlider` speaker icon is a `<button>` with 3 SVG states (muted / low volume / normal).
-- **Keyboard**: `role="slider"` + `tabIndex={0}` + `onKeyDown` (←/→ = ±5s).
-
-### SongListGrouped (`src/components/features/medley/SongListGrouped.tsx`)
-
-Song list used by both legacy pages (`MedleyPageClient`). Songs with the same `songId` (or same title+artist if `songId` is absent) are grouped into a single row showing all their segments.
-
-- **Grouping**: `SongGroup { key, color, groupIndex, segments[] }`. Group key = `songId` if present, else `title|artist.join(",")`. Groups ordered by first-appearance (min `startTime`). Header shows `"N楽曲 (M区間)"` when any group has multiple segments, otherwise `"N曲"`.
-- **×2 badge**: shown in indigo when `segments.length > 1`. Each segment gets its own time range + edit button in a vertical list.
-- **Per-group mini-timeline** (`h-2` strip): one colored bar per segment in the group; red playhead shared. Minimum segment width `max(widthPct%, 3px)`. Click to seek.
-- **Color system**: 10-color array `SONG_COLORS`, assigned by group index (`groupIndex % 10`). Stable as long as first-appearance order doesn't change.
-- **Row states**: `bg-blue-50` (any segment active), `bg-orange-50` (any segment selected), `bg-red-50 opacity-60` (all segments beyond `actualPlayerDuration`).
-- Row click: seeks to active segment's `startTime` if currently playing, else first segment's `startTime`.
-- Do **not** revert to a flat per-song list — the grouped design with per-row mini-timelines is intentional UX.
 
 ### ID Architecture (3 distinct types)
 | ID | Type | Purpose |
@@ -227,7 +198,7 @@ Do NOT include rapidly-updating props (e.g., `currentTime` from video playback) 
 EDIT_PASSWORD="..."                    # Server-side only — NO NEXT_PUBLIC_ prefix
 NEXT_PUBLIC_SUPABASE_URL=https://...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-DATABASE_URL=postgresql://...          # Optional: only for Drizzle ORM (local dev)
+DATABASE_URL=postgresql://...          # Optional: only for drizzle-kit (migrations, studio) — NOT used at runtime
 GEMINI_API_KEY=...                     # Server-side only — for AI setlist parser (F1). Without it, AI mode falls back to regex with warning banner.
 ```
 
@@ -243,12 +214,9 @@ Production env vars set via Firebase console.
 - **Stale production JS**: Firebase caches aggressively; use incognito
 - **Static prerendering fails**: Pages using `useAuth` or sessionStorage must have `export const dynamic = "force-dynamic"`
 - **Artist not updating after merge**: `song_master.artist` is NOT displayed in library; artist display comes from `song_artist_relations`. Use `upsertArtist()` + delete/insert on `song_artist_relations` to update. Updating `song_master.artist` alone has no visible effect.
-- **MedleyView not loading in (app) route**: Requires `DATABASE_URL` for Drizzle HydrationBoundary prefetch. Without it, `fetchMedley` returns null and view shows "メドレーが見つかりません". Set `DATABASE_URL` in `.env.local` for local testing of `MedleyView`.
-- **SongSearchModal not appearing on niconico/youtube pages**: Those pages use the legacy `MedleyPageClient`, not `MedleyView`. The new SongSearchModal (DB-backed search) only exists in `MedleyView`.
 - **AI setlist parser returns error**: `GEMINI_API_KEY` not set in Firebase console → UI falls back to regex automatically with a warning banner. Set the key in Firebase App Hosting environment config.
 - **「説明文から取り込む」shows no description on YouTube**: YouTube oEmbed doesn't include video descriptions. This is expected; button will show "この動画の説明文が見つかりませんでした".
 - **LiveAnnotationBar Space key not working**: Space only marks time when focus is outside an input. If an input is focused, Space types a space character instead.
-- **FixedPlayerBar drag seek not firing**: `document.mousemove/mouseup` listeners are registered in `useEffect` — ensure `onSeek` and `duration` are stable references or the effect re-registers correctly. The drag overlay (`pointer-events: all`) must cover the full viewport to capture fast mouse movements.
 
 ## Code Conventions
 

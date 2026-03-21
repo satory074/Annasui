@@ -366,7 +366,7 @@ export default function SongListGrouped({
                             key={seg.id}
                             className="flex items-center gap-1"
                           >
-                            <div className="text-[10px] text-gray-400 font-mono text-right leading-tight">
+                            <div className="text-[10px] text-gray-400 font-mono text-right leading-tight hidden">
                               {formatTime(seg.startTime)}→{formatTime(seg.endTime)}
                             </div>
                             {onUpdateSongTime && (
@@ -410,7 +410,7 @@ export default function SongListGrouped({
                     </div>
                   ) : (
                     <>
-                      <div className="flex-shrink-0 text-[10px] text-gray-400 font-mono text-right leading-tight">
+                      <div className="flex-shrink-0 text-[10px] text-gray-400 font-mono text-right leading-tight hidden">
                         {formatTime(firstSeg.startTime)}→{formatTime(firstSeg.endTime)}
                       </div>
                       {onUpdateSongTime && (

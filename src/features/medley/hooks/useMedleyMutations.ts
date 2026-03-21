@@ -2,8 +2,8 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { medleyKeys } from "../queries/keys";
-import { saveMedleySongs } from "../actions/saveMedley";
-import { restoreFromSnapshot } from "../actions/deleteSong";
+import { saveMedleySongs } from "../actions/saveMedley-supabase";
+import { restoreFromSnapshot } from "../actions/saveMedley-supabase";
 import type { SongSection } from "../types";
 
 export function useSaveSongs(videoId: string) {

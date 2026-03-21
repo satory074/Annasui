@@ -3,7 +3,7 @@
 import { useEffect, useCallback, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { medleyKeys } from "../queries/keys";
-import { fetchMedley, fetchMedleySongs, fetchEditHistory } from "../queries/functions";
+import { fetchMedley, fetchMedleySongs, fetchEditHistory } from "../queries/functions-supabase";
 import { useTimelineStore, useTimelineHistory } from "../store";
 import { useUIStore } from "../store-ui";
 import { usePlayerStore, useCurrentTime, useLiveMode } from "@/features/player/store";

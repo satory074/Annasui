@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Logo from "@/components/ui/Logo";
 import VersionInfoModal from "@/components/ui/VersionInfoModal";
-import LoginModal from "@/components/features/auth/LoginModal";
+import { LoginModal } from "@/features/auth/components/LoginModal";
 import { useAuth } from "@/features/auth/context";
 
 interface AppHeaderProps {
@@ -290,11 +290,8 @@ export default function AppHeader({
       />
 
       <LoginModal
-        isOpen={loginModalOpen}
-        onClose={() => setLoginModalOpen(false)}
-        onLoginSuccess={() => {
-          setLoginModalOpen(false);
-        }}
+        open={loginModalOpen}
+        onOpenChange={setLoginModalOpen}
       />
     </header>
   );

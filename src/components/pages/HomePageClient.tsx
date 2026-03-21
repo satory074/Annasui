@@ -8,7 +8,7 @@ import { createMedley, deleteMedley } from "@/lib/api/medleys";
 import { MedleyData, SongSection } from "@/types";
 import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
 import AppHeader from "@/components/layout/AppHeader";
-import LoginModal from "@/components/features/auth/LoginModal";
+import { LoginModal } from "@/features/auth/components/LoginModal";
 import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";
 import { autoCorrectPlatform } from "@/lib/utils/platformDetection";
 import { logger } from "@/lib/utils/logger";
@@ -836,10 +836,9 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
 
             {/* Login modal */}
             <LoginModal
-                isOpen={showLoginModal}
-                onClose={() => setShowLoginModal(false)}
-                onLoginSuccess={() => {
-                    setShowLoginModal(false);
+                open={showLoginModal}
+                onOpenChange={setShowLoginModal}
+                onSuccess={() => {
                     setShowCreateMedleyModal(true);
                 }}
             />

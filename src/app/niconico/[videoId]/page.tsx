@@ -1,9 +1,14 @@
 import { Metadata } from 'next'
-import MedleyPageClient from "@/components/pages/MedleyPageClient";
+import { dehydrate, HydrationBoundary, QueryClient } from "@tanstack/react-query";
+import { medleyKeys } from "@/features/medley/queries/keys";
+import { fetchMedley, fetchMedleySongs } from "@/features/medley/queries/functions-supabase";
+import { MedleyView } from "@/features/medley/components/MedleyView";
 import { getMedleyByVideoId } from "@/lib/api/medleys";
 import { getThumbnailUrl } from "@/lib/utils/thumbnail";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { logger } from '@/lib/utils/logger';
+
+export const dynamic = "force-dynamic";
 
 interface MedleyPageProps {
     params: Promise<{
@@ -14,10 +19,10 @@ interface MedleyPageProps {
 export async function generateMetadata({ params }: MedleyPageProps): Promise<Metadata> {
   const resolvedParams = await params;
   const { videoId } = resolvedParams;
-  
+
   try {
     const medleyData = await getMedleyByVideoId(videoId);
-    
+
     if (!medleyData) {
       return {
         title: `Medlean - ${videoId}`,
@@ -31,7 +36,7 @@ export async function generateMetadata({ params }: MedleyPageProps): Promise<Met
     const durationMinutes = Math.floor(medleyData.duration / 60);
     const durationSeconds = medleyData.duration % 60;
     const songTitles = medleyData.songs.slice(0, 5).map(song => song.title).join('、');
-    
+
     const title = `Medlean - ${medleyData.title}`;
     const description = `${medleyData.title}の詳細なアノテーション情報。収録楽曲${songCount}曲、再生時間${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}。収録曲: ${songTitles}${songCount > 5 ? '他' : ''}`;
 
@@ -112,9 +117,22 @@ export default async function MedleyPage({ params }: MedleyPageProps) {
 
     const breadcrumbItems = [
         { label: 'ホーム', href: '/' },
-        { label: 'ニコニコ動画', href: '/' }, // Redirect to home since /niconico alone doesn't exist
+        { label: 'ニコニコ動画', href: '/' },
         { label: medleyData?.title || videoId }
     ];
+
+    // Prefetch data for React Query hydration
+    const queryClient = new QueryClient();
+    await Promise.all([
+      queryClient.prefetchQuery({
+        queryKey: medleyKeys.detail(videoId),
+        queryFn: () => fetchMedley(videoId),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: medleyKeys.songs(videoId),
+        queryFn: () => fetchMedleySongs(videoId),
+      }),
+    ]);
 
     return (
         <>
@@ -179,7 +197,9 @@ export default async function MedleyPage({ params }: MedleyPageProps) {
                     }}
                 />
             )}
-            <MedleyPageClient videoId={videoId} platform="niconico" />
+            <HydrationBoundary state={dehydrate(queryClient)}>
+              <MedleyView platform="niconico" videoId={videoId} />
+            </HydrationBoundary>
         </>
     );
 }

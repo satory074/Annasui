@@ -16,7 +16,8 @@ function createAdapter(
       if (!iframe) return null;
       return new NicoPlayerAdapter(iframe, videoId);
     case "youtube":
-      return new YouTubePlayerAdapter(videoId);
+      if (!iframe) return null;
+      return new YouTubePlayerAdapter(iframe, videoId);
     default:
       return null;
   }

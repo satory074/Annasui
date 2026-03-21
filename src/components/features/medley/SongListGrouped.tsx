@@ -26,6 +26,7 @@ interface SongListProps {
   originalVideoUrl?: string;
   onAddSong?: () => void;
   onEditSong?: (song: SongSection) => void;
+  onUpdateSongTime?: (songId: number, updates: Partial<Pick<SongSection, 'startTime' | 'endTime'>>) => void;
 }
 
 interface SongGroup {
@@ -48,6 +49,112 @@ const SONG_COLORS = [
   "#6366f1", // purple-indigo
 ];
 
+/** Set startTime to current playback time */
+function SetStartIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <line x1="6" y1="5" x2="6" y2="19" strokeWidth={2.5} strokeLinecap="round" />
+      <polygon points="10,12 20,6 20,18" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
+/** Set endTime to current playback time */
+function SetEndIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <polygon points="4,6 4,18 14,12" fill="currentColor" stroke="none" />
+      <line x1="18" y1="5" x2="18" y2="19" strokeWidth={2.5} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Copy previous song's endTime to this song's startTime */
+function CopyFromPrevIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path d="M19 12H5" strokeWidth={2} strokeLinecap="round" />
+      <path d="M11 6l-6 6 6 6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="19" y1="5" x2="19" y2="19" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/** Copy next song's startTime to this song's endTime */
+function CopyFromNextIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path d="M5 12h14" strokeWidth={2} strokeLinecap="round" />
+      <path d="M13 6l6 6-6 6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      <line x1="5" y1="5" x2="5" y2="19" strokeWidth={2} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+interface TimeActionButtonsProps {
+  seg: SongSection;
+  sortedSongs: SongSection[];
+  currentTime: number;
+  onUpdateSongTime: (songId: number, updates: Partial<Pick<SongSection, 'startTime' | 'endTime'>>) => void;
+  size: "sm" | "md";
+}
+
+function TimeActionButtons({ seg, sortedSongs, currentTime, onUpdateSongTime, size }: TimeActionButtonsProps) {
+  const segIndex = sortedSongs.findIndex((s) => s.id === seg.id);
+  const prevSong = segIndex > 0 ? sortedSongs[segIndex - 1] : null;
+  const nextSong = segIndex < sortedSongs.length - 1 ? sortedSongs[segIndex + 1] : null;
+
+  const btnClass = size === "sm"
+    ? "h-5 w-5 p-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+    : "h-6 w-6 p-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity";
+  const iconClass = size === "sm" ? "w-3 h-3" : "w-3.5 h-3.5";
+
+  return (
+    <>
+      <Button
+        variant="ghost"
+        size="sm"
+        className={btnClass}
+        onClick={(e) => { e.stopPropagation(); onUpdateSongTime(seg.id, { startTime: currentTime }); }}
+        title="現在の再生位置を開始時刻に設定"
+      >
+        <SetStartIcon className={iconClass} />
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className={btnClass}
+        onClick={(e) => { e.stopPropagation(); onUpdateSongTime(seg.id, { endTime: currentTime }); }}
+        title="現在の再生位置を終了時刻に設定"
+      >
+        <SetEndIcon className={iconClass} />
+      </Button>
+      {prevSong && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={btnClass}
+          onClick={(e) => { e.stopPropagation(); onUpdateSongTime(seg.id, { startTime: prevSong.endTime }); }}
+          title="前の曲の終了時刻を開始時刻に設定"
+        >
+          <CopyFromPrevIcon className={iconClass} />
+        </Button>
+      )}
+      {nextSong && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={btnClass}
+          onClick={(e) => { e.stopPropagation(); onUpdateSongTime(seg.id, { endTime: nextSong.startTime }); }}
+          title="次の曲の開始時刻を終了時刻に設定"
+        >
+          <CopyFromNextIcon className={iconClass} />
+        </Button>
+      )}
+    </>
+  );
+}
+
 function getGroupKey(song: SongSection): string {
   if (song.songId) return song.songId;
   return `${song.title}|${song.artist.join(",")}`;
@@ -64,6 +171,7 @@ export default function SongListGrouped({
   onSongHoverEnd,
   onAddSong,
   onEditSong,
+  onUpdateSongTime,
   selectedSong,
 }: SongListProps) {
   const effectiveDuration = actualPlayerDuration || duration;
@@ -278,6 +386,15 @@ export default function SongListGrouped({
                             <div className="text-[10px] text-gray-400 font-mono text-right leading-tight">
                               {formatTime(seg.startTime)}→{formatTime(seg.endTime)}
                             </div>
+                            {onUpdateSongTime && (
+                              <TimeActionButtons
+                                seg={seg}
+                                sortedSongs={sortedSongs}
+                                currentTime={currentTime}
+                                onUpdateSongTime={onUpdateSongTime}
+                                size="sm"
+                              />
+                            )}
                             {onEditSong && (
                               <Button
                                 variant="ghost"
@@ -313,6 +430,15 @@ export default function SongListGrouped({
                       <div className="flex-shrink-0 text-[10px] text-gray-400 font-mono text-right leading-tight">
                         {formatTime(firstSeg.startTime)}→{formatTime(firstSeg.endTime)}
                       </div>
+                      {onUpdateSongTime && (
+                        <TimeActionButtons
+                          seg={firstSeg}
+                          sortedSongs={sortedSongs}
+                          currentTime={currentTime}
+                          onUpdateSongTime={onUpdateSongTime}
+                          size="md"
+                        />
+                      )}
                       {onEditSong && (
                         <Button
                           variant="ghost"

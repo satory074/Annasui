@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import { SongSection } from '@/types';
 import SongThumbnail from '@/components/ui/song/SongThumbnail';
-import { formatTime } from '@/lib/utils/time';
 
 interface RightSidebarProps {
   currentTime: number;
@@ -102,11 +101,6 @@ export const RightSidebar: React.FC<RightSidebarProps> = ({
                 {/* アーティスト */}
                 <p className="text-xs text-gray-600 text-center w-full">
                   {song.artist}
-                </p>
-
-                {/* 時間範囲 */}
-                <p className="text-xs text-gray-500 font-mono">
-                  {formatTime(song.startTime)} - {formatTime(song.endTime)}
                 </p>
 
                 {/* 編集ボタン */}

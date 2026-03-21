@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useMedleyData } from "@/hooks/useMedleyData";
 import { useCurrentTrack } from "@/hooks/useCurrentTrack";
 import { useMedleyEdit } from "@/hooks/useMedleyEdit";
@@ -1048,6 +1048,14 @@ export default function MedleyPlayer({
         logger.info('編集モーダルをツールチップから開きました:', { songTitle: song.title, songId: song.id });
     };
 
+    // 楽曲の時刻をワンクリックで更新
+    const handleUpdateSongTime = useCallback((songId: number, updates: Partial<Pick<SongSection, 'startTime' | 'endTime'>>) => {
+        const song = editingSongs.find(s => s.id === songId);
+        if (!song) return;
+        updateSong({ ...song, ...updates });
+        logger.info('⏱️ 楽曲の時刻を更新しました', { songId, updates });
+    }, [editingSongs, updateSong]);
+
     // 楽曲をダブルクリックして編集モーダルを開く
     const handleEditSongClick = (song: SongSection) => {
         setEditingSong(song);
@@ -1347,6 +1355,7 @@ export default function MedleyPlayer({
                         originalVideoUrl=""
                         onAddSong={isAuthenticated ? handleAddNewSong : undefined}
                         onEditSong={isAuthenticated ? handleEditSongClick : undefined}
+                        onUpdateSongTime={isAuthenticated ? handleUpdateSongTime : undefined}
                     />
                 )}
 

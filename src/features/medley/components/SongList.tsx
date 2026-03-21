@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatTimeSimple } from "@/lib/utils/time";
 import { useTimelineStore } from "../store";
 import type { SongSection } from "../types";
+import { logger } from "@/lib/utils/logger";
 
 interface SongListProps {
   songs: SongSection[];
@@ -157,6 +158,79 @@ export function SongList({
             {/* Edit controls */}
             {isEditMode && (
               <div className="flex gap-1 shrink-0">
+                {/* Time action buttons */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    useTimelineStore.getState().updateSong(song.id, { startTime: currentTime });
+                    logger.info('⏱️ 開始時刻を現在の再生位置に設定', { songId: song.id, currentTime });
+                  }}
+                  title="現在の再生位置を開始時刻に設定"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <line x1="6" y1="5" x2="6" y2="19" strokeWidth={2.5} strokeLinecap="round" />
+                    <polygon points="10,12 20,6 20,18" fill="currentColor" stroke="none" />
+                  </svg>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 w-7 p-0"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    useTimelineStore.getState().updateSong(song.id, { endTime: currentTime });
+                    logger.info('⏱️ 終了時刻を現在の再生位置に設定', { songId: song.id, currentTime });
+                  }}
+                  title="現在の再生位置を終了時刻に設定"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <polygon points="4,6 4,18 14,12" fill="currentColor" stroke="none" />
+                    <line x1="18" y1="5" x2="18" y2="19" strokeWidth={2.5} strokeLinecap="round" />
+                  </svg>
+                </Button>
+                {index > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const prevSong = sorted[index - 1];
+                      useTimelineStore.getState().updateSong(song.id, { startTime: prevSong.endTime });
+                      logger.info('⏱️ 前の曲の終了時刻を開始時刻に設定', { songId: song.id, prevEndTime: prevSong.endTime });
+                    }}
+                    title="前の曲の終了時刻を開始時刻に設定"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M19 12H5" strokeWidth={2} strokeLinecap="round" />
+                      <path d="M11 6l-6 6 6 6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                      <line x1="19" y1="5" x2="19" y2="19" strokeWidth={2} strokeLinecap="round" />
+                    </svg>
+                  </Button>
+                )}
+                {index < sorted.length - 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const nextSong = sorted[index + 1];
+                      useTimelineStore.getState().updateSong(song.id, { endTime: nextSong.startTime });
+                      logger.info('⏱️ 次の曲の開始時刻を終了時刻に設定', { songId: song.id, nextStartTime: nextSong.startTime });
+                    }}
+                    title="次の曲の開始時刻を終了時刻に設定"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path d="M5 12h14" strokeWidth={2} strokeLinecap="round" />
+                      <path d="M13 6l6 6-6 6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+                      <line x1="5" y1="5" x2="5" y2="19" strokeWidth={2} strokeLinecap="round" />
+                    </svg>
+                  </Button>
+                )}
                 {onEdit && (
                   <Button
                     variant="ghost"

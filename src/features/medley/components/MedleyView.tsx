@@ -302,7 +302,7 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     <div className="flex max-w-[1920px] mx-auto">
       {/* Main content */}
       <div className="flex-1 bg-white shadow-lg">
-        <div className="pt-16">
+        <div>
           {/* Video player */}
           <VideoPlayer
             platform={platform as PlatformType}

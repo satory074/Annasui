@@ -5,6 +5,7 @@ import { fetchMedley, fetchMedleySongs } from "@/features/medley/queries/functio
 import { MedleyView } from "@/features/medley/components/MedleyView";
 import { getMedleyByVideoId } from "@/lib/api/medleys";
 import { getThumbnailUrl } from "@/lib/utils/thumbnail";
+import AppHeader from "@/components/layout/AppHeader";
 import Breadcrumb from "@/components/ui/Breadcrumb";
 import { logger } from '@/lib/utils/logger';
 
@@ -136,7 +137,8 @@ export default async function MedleyPage({ params }: MedleyPageProps) {
 
     return (
         <>
-            <div className="bg-white border-b border-gray-200">
+            <AppHeader variant="player" />
+            <div className="bg-white border-b border-gray-200 pt-16">
                 <div className="max-w-6xl mx-auto px-4 py-2">
                     <Breadcrumb items={breadcrumbItems} />
                 </div>

@@ -210,16 +210,6 @@ export default function SongListGrouped({
     return order.map((key) => map.get(key)!);
   }, [sortedSongs]);
 
-  // Detect overlaps for a given song
-  const detectOverlaps = (song: SongSection) => {
-    const overlappingSongs = songs.filter(
-      (other) =>
-        other.id !== song.id &&
-        song.startTime < other.endTime &&
-        song.endTime > other.startTime
-    );
-    return { hasOverlap: overlappingSongs.length > 0 };
-  };
 
   const totalSegments = sortedSongs.length;
   const totalGroups = groups.length;
@@ -285,9 +275,6 @@ export default function SongListGrouped({
               !!actualPlayerDuration &&
               group.segments.every((s) => s.startTime >= actualPlayerDuration);
             const isEmpty = firstSeg.title?.startsWith("空の楽曲");
-            const hasOverlap = group.segments.some(
-              (s) => detectOverlaps(s).hasOverlap
-            );
 
             // Active segment for click-to-seek
             const activeSeg =
@@ -362,11 +349,7 @@ export default function SongListGrouped({
                         ×{group.segments.length}
                       </span>
                     )}
-                    {hasOverlap && (
-                      <span className="text-[10px] text-yellow-600 bg-yellow-100 px-1 rounded">
-                        ⚠
-                      </span>
-                    )}
+
                     {isBeyond && (
                       <span className="text-[10px] text-red-600 bg-red-100 px-1 rounded">
                         超過

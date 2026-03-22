@@ -10,7 +10,6 @@ export type ModalId =
   | "login"
   | "restore"
   | "createMedley"
-  | "bulkEdit"
   | "importSetlist";
 
 interface UIStore {

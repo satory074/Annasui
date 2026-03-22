@@ -5,7 +5,7 @@ import Image from "next/image";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import { MedleyData } from "@/types";
 import { getVideoMetadata, VideoMetadata } from "@/lib/utils/videoMetadata";
-import { CreateMedleyDebugPanel } from "@/components/ui/debug/CreateMedleyDebugPanel";
+import { CreateMedleyDebugPanel } from "./CreateMedleyDebugPanel";
 import { extractVideoId } from "@/lib/utils/thumbnail";
 import { logger } from "@/lib/utils/logger";
 

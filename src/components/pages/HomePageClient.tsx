@@ -6,7 +6,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createMedley, deleteMedley } from "@/lib/api/medleys";
 import { MedleyData, SongSection } from "@/types";
-import CreateMedleyModal from "@/components/features/medley/CreateMedleyModal";
+import CreateMedleyModal from "@/features/medley/components/CreateMedleyModal";
 import AppHeader from "@/components/layout/AppHeader";
 import { LoginModal } from "@/features/auth/components/LoginModal";
 import { getThumbnailUrl, getYouTubeThumbnail } from "@/lib/utils/thumbnail";

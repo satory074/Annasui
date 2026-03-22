@@ -63,7 +63,7 @@ All runtime data fetching and mutations use Supabase JS via `src/lib/api/medleys
 - Inline shortcut help bar shown below video player (user: `←`/`→` ±5s; editor adds undo/redo/live)
 - `FixedPlayerBar` rendered at bottom (hidden during live annotation mode)
 
-All new code goes in `src/features/`. Legacy `src/components/features/` retains only `ImportSetlistModal`, `ManualSongAddModal`, `CreateMedleyModal`, and library components still used by active pages.
+All new code goes in `src/features/`. Legacy `src/components/features/` retains only `ImportSetlistModal` and library components still used by active pages.
 
 ### Zustand Stores (3 stores in `src/features/`)
 

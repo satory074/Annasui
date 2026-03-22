@@ -39,6 +39,15 @@ export function usePlayer(
 
     adapterRef.current = adapter;
 
+    // Register adapter methods in store so FixedPlayerBar can call them
+    usePlayerStore.getState().registerAdapter({
+      play: () => adapter.play(),
+      pause: () => adapter.pause(),
+      seek: (time: number) => adapter.seek(time),
+      setVolume: (vol: number) => adapter.setVolume(vol),
+      toggleFullscreen: () => adapter.toggleFullscreen(),
+    });
+
     const unsubTime = adapter.onTimeUpdate((time) => {
       usePlayerStore.getState().setCurrentTime(time);
     });
@@ -53,6 +62,7 @@ export function usePlayer(
       unsubTime();
       unsubDuration();
       unsubPlaying();
+      usePlayerStore.getState().unregisterAdapter();
       adapter.destroy();
       adapterRef.current = null;
     };

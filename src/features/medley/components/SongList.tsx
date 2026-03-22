@@ -11,6 +11,7 @@ import { logger } from "@/lib/utils/logger";
 interface SongListProps {
   songs: SongSection[];
   currentTime: number;
+  duration: number;
   isEditMode: boolean;
   onSeek?: (time: number) => void;
   onEdit?: (song: SongSection) => void;
@@ -21,6 +22,7 @@ interface SongListProps {
 export function SongList({
   songs,
   currentTime,
+  duration,
   isEditMode,
   onSeek,
   onEdit,
@@ -131,25 +133,49 @@ export function SongList({
               </div>
             )}
 
+            {/* Index number */}
+            <span className="font-mono text-xs text-gray-400 w-8 text-right shrink-0">
+              #{index + 1}
+            </span>
+
             {/* Color indicator */}
             <div
-              className="w-3 h-3 rounded-full shrink-0"
+              className="w-1 self-stretch rounded-full shrink-0"
               style={{ backgroundColor: song.color }}
             />
 
-            {/* Song info */}
+            {/* Song info + inline position bar */}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {song.title}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {Array.isArray(song.artist)
-                  ? song.artist.join(", ")
-                  : song.artist}
-              </p>
+              <div className="flex items-baseline gap-1">
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {song.title}
+                </p>
+                <span className="text-xs text-gray-400 shrink-0">/</span>
+                <p className="text-xs text-gray-500 truncate">
+                  {Array.isArray(song.artist)
+                    ? song.artist.join(", ")
+                    : song.artist}
+                </p>
+              </div>
+              {/* Inline position bar */}
+              {duration > 0 && (
+                <div className="relative h-1 bg-gray-200 rounded-full mt-1 overflow-hidden">
+                  <div
+                    className="absolute top-0 h-full rounded-full opacity-70"
+                    style={{
+                      left: `${(song.startTime / duration) * 100}%`,
+                      width: `${Math.max(((song.endTime - song.startTime) / duration) * 100, 0.5)}%`,
+                      backgroundColor: song.color,
+                    }}
+                  />
+                </div>
+              )}
             </div>
 
-            {/* Time badge — hidden per design decision */}
+            {/* Time range */}
+            <span className="font-mono text-xs text-gray-500 whitespace-nowrap shrink-0 hidden sm:inline">
+              {formatTimeSimple(song.startTime)}→{formatTimeSimple(song.endTime)}
+            </span>
 
             {/* Edit controls */}
             {isEditMode && (

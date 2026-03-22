@@ -60,7 +60,8 @@ All runtime data fetching and mutations use Supabase JS via `src/lib/api/medleys
 - Player abstracted via `PlayerAdapter` interface (`src/features/player/adapters/types.ts`)
 - `handleAddSong` opens `SongSearchModal` → user selects from DB → `SongEditModal` opens with `prefill`
 - **Keyboard shortcuts** (edit mode): `Ctrl+Z` undo, `Ctrl+Shift+Z` / `Ctrl+Y` redo — skipped when INPUT/TEXTAREA focused
-- Inline shortcut help bar shown below `PlayerControls` (user: `←`/`→` ±5s; editor adds undo/redo/live)
+- Inline shortcut help bar shown below video player (user: `←`/`→` ±5s; editor adds undo/redo/live)
+- `FixedPlayerBar` rendered at bottom (hidden during live annotation mode)
 
 All new code goes in `src/features/`. Legacy `src/components/features/` retains only `ImportSetlistModal`, `ManualSongAddModal`, `CreateMedleyModal`, and library components still used by active pages.
 
@@ -73,7 +74,10 @@ All new code goes in `src/features/`. Legacy `src/components/features/` retains 
   - Open with data: `openModalWith("songEdit", { song })` — read back via `(modalData.song as SongSection) ?? null`
   - New song: `openModalWith("songEdit", { song: null, isNew: true })` — modal checks `isNew={!modalData.song}`
   - Prefilled new song (from SongSearchModal): `openModalWith("songEdit", { song: null, isNew: true, prefill: { title, artist: string[] } })` — `SongEditModal` reads `prefill` prop to pre-populate title/artist fields
-- **`player/store.ts`** — Playback state. Use fine-grained selectors `useCurrentTime()`, `useIsPlaying()`, `useDuration()`, `useVolume()`, `useLiveMode()` to minimize re-renders. Includes `liveMode: boolean` + `setLiveMode()` for live annotation mode.
+- **`player/store.ts`** — Playback state + adapter dispatch. Use fine-grained selectors `useCurrentTime()`, `useIsPlaying()`, `useDuration()`, `useVolume()`, `useLiveMode()` to minimize re-renders. Includes `liveMode: boolean` + `setLiveMode()` for live annotation mode.
+  - **Adapter registration**: `usePlayer` hook calls `registerAdapter({ play, pause, seek, setVolume, toggleFullscreen })` on mount, `unregisterAdapter()` on cleanup. This exposes player controls globally.
+  - **Public dispatch**: `play()`, `pause()`, `seek(time)`, `togglePlayPause()`, `toggleFullscreen()` — delegate to `_adapter` (null-safe). Call via `usePlayerStore.getState().seek(time)` from any component (e.g., `FixedPlayerBar`, `SongList`).
+  - **IMPORTANT**: For seek, always use `usePlayerStore.getState().seek(time)` (dispatches to adapter + updates state), NOT `setCurrentTime(time)` (state-only, doesn't move the player).
 
 ### Provider Hierarchy (`src/app/providers.tsx`)
 QueryClientProvider (staleTime 60s, retry 1) → AuthProvider → Toaster → children (+ ReactQueryDevtools)
@@ -127,6 +131,9 @@ Fixed-bottom bar for real-time annotation during playback (edit mode only in `Me
 
 ### Player Adapter Pattern
 `PlayerAdapter` interface (`src/features/player/adapters/types.ts`) abstracts `play()`, `pause()`, `seek(seconds)`, `setVolume()`, event handlers, etc. Implementations: `NicoPlayerAdapter` (postMessage) and `YouTubePlayerAdapter` (IFrame API).
+
+### FixedPlayerBar (`src/features/player/components/FixedPlayerBar.tsx`)
+Fixed-bottom player bar (`fixed bottom-0 z-50 bg-gray-800`). 3-column layout: title/creator (left, hidden on mobile) | playback controls + time (center) | volume + fullscreen (right, hidden on mobile). Draggable seek bar with hover tooltip. Hidden when `liveMode && isEditMode` (LiveAnnotationBar takes same position). Props: `title?: string`, `creator?: string`.
 
 ### ID Architecture (3 distinct types)
 | ID | Type | Purpose |

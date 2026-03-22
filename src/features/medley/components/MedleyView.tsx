@@ -10,7 +10,7 @@ import { usePlayerStore, useCurrentTime, useLiveMode } from "@/features/player/s
 import { useAuth } from "@/features/auth/context";
 import { useSaveSongs, useRestoreSnapshot } from "../hooks/useMedleyMutations";
 import { VideoPlayer } from "@/features/player/components/VideoPlayer";
-import { PlayerControls } from "@/features/player/components/PlayerControls";
+import { FixedPlayerBar } from "@/features/player/components/FixedPlayerBar";
 import { RightSidebar } from "@/features/player/components/RightSidebar";
 import { TimelineSection } from "./TimelineSection";
 import { SongList } from "./SongList";
@@ -84,7 +84,7 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   const displaySongs = isEditMode ? timelineSongs : songs;
 
   const handleSeek = useCallback((time: number) => {
-    usePlayerStore.getState().setCurrentTime(time);
+    usePlayerStore.getState().seek(time);
   }, []);
 
   const handleEditSong = useCallback(
@@ -299,7 +299,7 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   }
 
   return (
-    <div className="flex max-w-[1920px] mx-auto">
+    <div className="flex max-w-[1920px] mx-auto pb-24">
       {/* Main content */}
       <div className="flex-1 bg-white shadow-lg">
         <div>
@@ -374,9 +374,6 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
               )}
             </div>
 
-            {/* Player controls */}
-            <PlayerControls />
-
             {/* Keyboard shortcuts help */}
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
               <span>
@@ -415,6 +412,7 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
             <SongList
               songs={displaySongs}
               currentTime={currentTime}
+              duration={duration}
               isEditMode={isEditMode}
               onSeek={handleSeek}
               onEdit={isAuthenticated ? handleEditSong : undefined}
@@ -483,6 +481,14 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
         onImport={handleImportSetlist}
         prefillText={modalData.prefillText as string | undefined}
       />
+
+      {/* Fixed player bar (hidden during live annotation) */}
+      {!(liveMode && isEditMode) && (
+        <FixedPlayerBar
+          title={medley?.title}
+          creator={medley?.creator}
+        />
+      )}
 
       {/* Live annotation bar */}
       {liveMode && isEditMode && (

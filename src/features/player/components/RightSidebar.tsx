@@ -29,7 +29,7 @@ export function RightSidebar({ songs, currentTime }: RightSidebarProps) {
   }, [songs, currentTime]);
 
   return (
-    <div className="w-80 bg-gray-50 sticky top-16 self-start max-h-[calc(100vh-4rem)] overflow-y-auto p-4 space-y-3">
+    <div className="w-80 bg-gray-50 h-full overflow-y-auto p-4 space-y-3">
       <div className="flex items-center gap-2">
         <h2 className="text-sm font-semibold text-gray-700">現在再生中</h2>
         {activeSongs.length > 0 && (

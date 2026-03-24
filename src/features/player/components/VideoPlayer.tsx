@@ -133,7 +133,7 @@ export function VideoPlayer({ platform, videoId }: VideoPlayerProps) {
   }
 
   return (
-    <div className="w-full aspect-video bg-black relative">
+    <div className="w-full aspect-video max-h-[50vh] bg-black relative flex items-center justify-center">
       {isLoading && (
         <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-10">
           <div className="text-center text-white p-8">
@@ -179,7 +179,7 @@ export function VideoPlayer({ platform, videoId }: VideoPlayerProps) {
         key={retryKey}
         ref={iframeRef}
         src={embedUrl}
-        className="w-full h-full"
+        className="max-w-full max-h-full w-full aspect-video"
         allow="autoplay; fullscreen; encrypted-media"
         allowFullScreen
         title={`${platform} player`}

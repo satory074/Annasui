@@ -291,17 +291,18 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   }
 
   return (
-    <div className="flex max-w-[1920px] mx-auto pb-24">
+    <div className="flex max-w-[1920px] mx-auto h-[calc(100vh-7rem)] overflow-hidden">
       {/* Main content */}
-      <div className="flex-1 bg-white shadow-lg">
-        <div>
+      <div className="flex-1 bg-white shadow-lg flex flex-col overflow-hidden">
+        <div className="shrink-0">
           {/* Video player */}
           <VideoPlayer
             platform={platform as PlatformType}
             videoId={videoId}
           />
+        </div>
 
-          <div className="px-4 py-4 space-y-4">
+        <div className="px-4 py-2 space-y-2 overflow-y-auto flex-1 min-h-0">
             {/* Medley title */}
             <div className="flex items-center justify-between">
               <div>
@@ -394,11 +395,10 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
               isRestoring={restoreSnapshot.isPending}
             />
           </div>
-        </div>
       </div>
 
       {/* Right sidebar (desktop) */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block h-full overflow-hidden">
         <RightSidebar songs={displaySongs} currentTime={currentTime} />
       </div>
 

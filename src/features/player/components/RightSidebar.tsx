@@ -22,7 +22,7 @@ export function RightSidebar({ songs, currentTime }: RightSidebarProps) {
 
     const seen = new Set<string>();
     return active.filter((s) => {
-      const key = s.title;
+      const key = s.songId ?? s.title;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;

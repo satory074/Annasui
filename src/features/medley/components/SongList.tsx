@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useState, useRef } from "react";
+import { useCallback, useState, useRef, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatTimeSimple } from "@/lib/utils/time";
 import { useTimelineStore } from "../store";
 import type { SongSection } from "../types";
 import { logger } from "@/lib/utils/logger";
+import { groupSongSections, findNearestSection } from "../utils/groupSongs";
+import type { SongListRow } from "../utils/groupSongs";
 
 interface SongListProps {
   songs: SongSection[];
@@ -45,6 +47,21 @@ export function SongList({
   );
 
   const sorted = [...songs].sort((a, b) => a.startTime - b.startTime);
+
+  // Group songs by songId in view mode only
+  const rows: SongListRow[] = useMemo(() => {
+    if (isEditMode) return sorted.map((s) => ({ type: "single" as const, section: s }));
+    return groupSongSections(sorted);
+  }, [sorted, isEditMode]);
+
+  const handleGroupedClick = useCallback(
+    (sections: SongSection[]) => {
+      const nearest = findNearestSection(sections, currentTime);
+      selectSong(nearest.id);
+      onSeek?.(nearest.startTime);
+    },
+    [selectSong, onSeek, currentTime]
+  );
 
   // Drag handlers
   const handleDragStart = (e: React.DragEvent<HTMLDivElement>, index: number) => {
@@ -94,9 +111,84 @@ export function SongList({
     );
   }
 
+  // Track display index for numbering (accounts for grouped rows)
+  let displayIndex = 0;
+
   return (
     <div className="space-y-1">
-      {sorted.map((song, index) => {
+      {rows.map((row) => {
+        if (row.type === "grouped") {
+          const currentIndex = ++displayIndex;
+          const { sections, displayTitle, displayArtist, displayColor, songId } = row;
+          const isActive = sections.some(
+            (s) => currentTime >= s.startTime && currentTime < s.endTime
+          );
+          const isSelected = sections.some((s) => s.id === selectedSongId);
+
+          return (
+            <div
+              key={`group-${songId}`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                isActive
+                  ? "bg-orange-50 border border-orange-200"
+                  : isSelected
+                  ? "bg-blue-50 border border-blue-200"
+                  : "hover:bg-gray-50 border border-transparent"
+              }`}
+              onClick={() => handleGroupedClick(sections)}
+            >
+              {/* Index number */}
+              <span className="font-mono text-xs text-gray-400 w-8 text-right shrink-0">
+                #{currentIndex}
+              </span>
+
+              {/* Color indicator */}
+              <div
+                className="w-1 self-stretch rounded-full shrink-0"
+                style={{ backgroundColor: displayColor }}
+              />
+
+              {/* Song info + multi-segment position bar */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-baseline gap-1">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {displayTitle}
+                  </p>
+                  <span className="text-xs text-orange-500 font-medium shrink-0">
+                    {sections.length}区間
+                  </span>
+                  <span className="text-xs text-gray-400 shrink-0">/</span>
+                  <p className="text-xs text-gray-500 truncate">
+                    {Array.isArray(displayArtist)
+                      ? displayArtist.join(", ")
+                      : displayArtist}
+                  </p>
+                </div>
+                {/* Multi-segment position bar */}
+                {duration > 0 && (
+                  <div className="relative h-1 bg-gray-200 rounded-full mt-1 overflow-hidden">
+                    {sections.map((s) => (
+                      <div
+                        key={s.id}
+                        className="absolute top-0 h-full rounded-full opacity-70"
+                        style={{
+                          left: `${(s.startTime / duration) * 100}%`,
+                          width: `${Math.max(((s.endTime - s.startTime) / duration) * 100, 0.5)}%`,
+                          backgroundColor: displayColor,
+                        }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        }
+
+        // SingleSongRow
+        const song = row.section;
+        const index = sorted.indexOf(song);
+        const currentIndex = ++displayIndex;
         const isActive =
           currentTime >= song.startTime && currentTime < song.endTime;
         const isSelected = selectedSongId === song.id;
@@ -135,7 +227,7 @@ export function SongList({
 
             {/* Index number */}
             <span className="font-mono text-xs text-gray-400 w-8 text-right shrink-0">
-              #{index + 1}
+              #{currentIndex}
             </span>
 
             {/* Color indicator */}

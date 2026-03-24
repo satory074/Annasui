@@ -12,7 +12,6 @@ import { useSaveSongs, useRestoreSnapshot } from "../hooks/useMedleyMutations";
 import { VideoPlayer } from "@/features/player/components/VideoPlayer";
 import { FixedPlayerBar } from "@/features/player/components/FixedPlayerBar";
 import { RightSidebar } from "@/features/player/components/RightSidebar";
-import { TimelineSection } from "./TimelineSection";
 import { SongList } from "./SongList";
 import { EditHistoryPanel } from "./EditHistoryPanel";
 import { LoginModal } from "@/features/auth/components/LoginModal";
@@ -161,13 +160,6 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [isEditMode, undo, redo]);
-
-  const handleSongTimeChange = useCallback(
-    (songId: string, startTime: number, endTime: number) => {
-      useTimelineStore.getState().updateSong(songId, { startTime, endTime });
-    },
-    []
-  );
 
   const handleReorder = useCallback((reorderedSongs: SongSection[]) => {
     useTimelineStore.getState().setSongs(reorderedSongs);
@@ -373,15 +365,6 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
                 <p className="text-xs text-red-600 mt-1">{descriptionError}</p>
               )}
             </div>
-            {/* Timeline */}
-            <TimelineSection
-              songs={displaySongs}
-              duration={duration}
-              currentTime={currentTime}
-              onSeek={handleSeek}
-              onSongTimeChange={isEditMode ? handleSongTimeChange : undefined}
-            />
-
             {/* Song list */}
             <SongList
               songs={displaySongs}

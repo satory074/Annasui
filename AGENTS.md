@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Development
 - `npm run dev` — Start dev server (http://localhost:3000)
 - `npm run build` — Production build
-- `npm run lint` — ESLint (ignored during builds via `ignoreDuringBuilds: true`)
+- `npm run lint` — ESLint flat config (`eslint.config.mjs`, NOT `.eslintrc`; ignored during builds via `ignoreDuringBuilds: true`)
 - `npm run typecheck` — TypeScript type checking (`tsc --noEmit`)
 - `npm run build && npm run typecheck && npm run lint` — Pre-deployment validation
 
@@ -35,6 +35,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Server Management
 - `lsof -ti:3000,3001,3002,3003,3004 | xargs kill -9` — Kill all dev servers
 - Always stop dev servers after testing to prevent performance issues
+
+### CI/CD (GitHub Actions)
+- `.github/workflows/firebase-hosting-pull-request.yml` — Firebase preview deploy on PR
+- `.github/workflows/firebase-hosting-merge.yml` — Production deploy on merge to main
+- `.github/workflows/supabase-backup.yml` — Automated Supabase DB backups
 
 ## Project Overview
 
@@ -238,3 +243,9 @@ Production env vars set via Firebase console.
 - All save operations require `nickname` parameter
 - `Searchable` interface must accept `null` for `artist` field (Drizzle schema has `text("artist")` which is `string | null`)
 - Modal upsert pattern: `const exists = songs.find(s => s.id === song.id); exists ? updateSong(id, song) : addSong(song)` — used in `handleModalSave` in MedleyView
+
+## Additional Documentation
+- [`TONMANUAL.md`](./TONMANUAL.md) — Full design system: color palette, typography, component patterns, voice & tone
+- [`docs/TECHNICAL_REFERENCE.md`](./docs/TECHNICAL_REFERENCE.md) — Detailed technical specs and architecture
+- [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md) — Comprehensive troubleshooting guide
+- [`CHANGELOG.md`](./CHANGELOG.md) — Version history

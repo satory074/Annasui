@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import SongThumbnail from "@/components/ui/song/SongThumbnail";
 import type { SongSection } from "@/features/medley/types";
 
 interface RightSidebarProps {
@@ -51,64 +52,76 @@ export function RightSidebar({ songs, currentTime }: RightSidebarProps) {
               className="border-gray-200 animate-in fade-in slide-in-from-right-2"
               style={{ animationDelay: `${i * 50}ms` }}
             >
-              <CardContent className="p-3">
-                <div className="flex items-start gap-2">
-                  <div
-                    className="w-2 h-2 rounded-full mt-1.5 shrink-0"
-                    style={{ backgroundColor: song.color }}
-                  />
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">
-                      {song.title}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {Array.isArray(song.artist)
-                        ? song.artist.join(", ")
-                        : song.artist}
-                    </p>
+              <CardContent className="p-0">
+                <SongThumbnail
+                  title={song.title}
+                  size="lg"
+                  isClickable={false}
+                  niconicoLink={song.niconicoLink}
+                  youtubeLink={song.youtubeLink}
+                  spotifyLink={song.spotifyLink}
+                  applemusicLink={song.applemusicLink}
+                  className="rounded-t-lg rounded-b-none"
+                />
+                <div className="p-3">
+                  <div className="flex items-start gap-2">
+                    <div
+                      className="w-2 h-2 rounded-full mt-1.5 shrink-0"
+                      style={{ backgroundColor: song.color }}
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {song.title}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {Array.isArray(song.artist)
+                          ? song.artist.join(", ")
+                          : song.artist}
+                      </p>
 
-                    {/* Platform links */}
-                    <div className="flex gap-1 mt-1">
-                      {song.niconicoLink && (
-                        <a
-                          href={song.niconicoLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
-                        >
-                          nico
-                        </a>
-                      )}
-                      {song.youtubeLink && (
-                        <a
-                          href={song.youtubeLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
-                        >
-                          YT
-                        </a>
-                      )}
-                      {song.spotifyLink && (
-                        <a
-                          href={song.spotifyLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
-                        >
-                          Spotify
-                        </a>
-                      )}
-                      {song.applemusicLink && (
-                        <a
-                          href={song.applemusicLink}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
-                        >
-                          Apple
-                        </a>
-                      )}
+                      {/* Platform links */}
+                      <div className="flex gap-1 mt-1">
+                        {song.niconicoLink && (
+                          <a
+                            href={song.niconicoLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
+                          >
+                            nico
+                          </a>
+                        )}
+                        {song.youtubeLink && (
+                          <a
+                            href={song.youtubeLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
+                          >
+                            YT
+                          </a>
+                        )}
+                        {song.spotifyLink && (
+                          <a
+                            href={song.spotifyLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
+                          >
+                            Spotify
+                          </a>
+                        )}
+                        {song.applemusicLink && (
+                          <a
+                            href={song.applemusicLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs px-1.5 py-0.5 bg-gray-100 rounded text-gray-600 hover:bg-gray-200"
+                          >
+                            Apple
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

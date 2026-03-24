@@ -62,8 +62,8 @@ All runtime data fetching and mutations use Supabase JS via `src/lib/api/medleys
 - Player abstracted via `PlayerAdapter` interface (`src/features/player/adapters/types.ts`)
 - `handleAddSong` opens `SongSearchModal` → user selects from DB → `SongEditModal` opens with `prefill`
 - **Keyboard shortcuts** (edit mode): `Ctrl+Z` undo, `Ctrl+Shift+Z` / `Ctrl+Y` redo — skipped when INPUT/TEXTAREA focused
-- Inline shortcut help bar shown below video player (user: `←`/`→` ±5s; editor adds undo/redo/live)
 - `FixedPlayerBar` rendered at bottom (hidden during live annotation mode)
+- **Viewport-constrained layout**: Video player capped at `max-h-[50vh]`, main content area uses `h-[calc(100vh-7rem)]` with `overflow-y-auto` so the entire page fits without scrolling on 1080p screens
 
 All new code goes in `src/features/`. Legacy `src/components/features/` retains only `ImportSetlistModal` and library components still used by active pages.
 

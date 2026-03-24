@@ -373,32 +373,6 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
                 <p className="text-xs text-red-600 mt-1">{descriptionError}</p>
               )}
             </div>
-
-            {/* Keyboard shortcuts help */}
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-400">
-              <span>
-                <kbd className="px-1 bg-gray-100 border border-gray-300 rounded">←</kbd>{" "}
-                <kbd className="px-1 bg-gray-100 border border-gray-300 rounded">→</kbd>{" "}
-                シーク ±5秒
-              </span>
-              {isEditMode && (
-                <>
-                  <span>
-                    <kbd className="px-1 bg-gray-100 border border-gray-300 rounded">Ctrl+Z</kbd>{" "}
-                    元に戻す
-                  </span>
-                  <span>
-                    <kbd className="px-1 bg-gray-100 border border-gray-300 rounded">Ctrl+Shift+Z</kbd>{" "}
-                    やり直す
-                  </span>
-                  <span>
-                    <kbd className="px-1 bg-gray-100 border border-gray-300 rounded">Ctrl+L</kbd>{" "}
-                    ライブ入力
-                  </span>
-                </>
-              )}
-            </div>
-
             {/* Timeline */}
             <TimelineSection
               songs={displaySongs}

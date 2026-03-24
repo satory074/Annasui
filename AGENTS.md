@@ -29,6 +29,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `firebase deploy --only hosting` — Deploy to production
 - `rm -rf .next && npm run build && firebase deploy --only hosting` — Clean build + deploy (when cache causes issues)
 - Always verify in production: https://anasui-e6f49.web.app
+- **Node version**: Must use Node 20 (pinned in `.nvmrc`). Homebrew's Node (`/opt/homebrew/bin/node`) may differ from nvm — ensure `firebase` CLI resolves to nvm's Node 20: `PATH="$HOME/.nvm/versions/node/v20.19.3/bin:$PATH" firebase deploy --only hosting`
+- **Cloud Run auto-updates disabled**: The Cloud Function uses `--runtime-update-policy=on-deploy` (not `automaticUpdatePolicy`). Do NOT re-enable automatic base image updates — it causes 409 revision conflicts during hosting finalize.
 
 ### Server Management
 - `lsof -ti:3000,3001,3002,3003,3004 | xargs kill -9` — Kill all dev servers
@@ -224,6 +226,8 @@ Production env vars set via Firebase console.
 - **AI setlist parser returns error**: `GEMINI_API_KEY` not set in Firebase console → UI falls back to regex automatically with a warning banner. Set the key in Firebase App Hosting environment config.
 - **「説明文から取り込む」shows no description on YouTube**: YouTube oEmbed doesn't include video descriptions. This is expected; button will show "この動画の説明文が見つかりませんでした".
 - **LiveAnnotationBar Space key not working**: Space only marks time when focus is outside an input. If an input is focused, Space types a space character instead.
+- **Firebase deploy 409 "Failed to replace Run service"**: Cloud Run's `automaticUpdatePolicy` causes revision naming conflicts during hosting finalize. Fix: `gcloud functions deploy ssranasuie6f49 --gen2 --region=asia-northeast1 --project=anasui-e6f49 --runtime-update-policy=on-deploy --source=.firebase/anasui-e6f49/functions --entry-point=ssranasuie6f49 --runtime=nodejs20 --trigger-http`
+- **Firebase deploy uses wrong Node version**: Homebrew Node (`/opt/homebrew/bin/node`) may be v24+ while `firebase-frameworks` requires `^16 || ^18 || ^20 || ^22`. Ensure nvm Node 20 is first in PATH when running `firebase deploy`.
 
 ## Code Conventions
 

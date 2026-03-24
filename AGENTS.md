@@ -136,6 +136,10 @@ Fixed-bottom bar for real-time annotation during playback (edit mode only in `Me
 
 `src/app/library/page.tsx` → `LibraryPageClient` — shows `song_master` with usage counts, duplicate detection (`src/lib/utils/duplicateSongs.ts`), and merge UI. Requires `force-dynamic`. `upsertArtist()` and `mergeDuplicateSongs()` are in `src/lib/utils/songDatabase.ts`.
 
+### Song List Grouping (View Mode Only)
+
+`src/features/medley/utils/groupSongs.ts` — In view mode, `SongList` groups sections sharing the same `songId` into a single `GroupedSongRow` with a multi-segment position bar and `N区間` badge. Edit mode always shows individual rows. `findNearestSection(sections, currentTime)` determines which section to seek when a grouped row is clicked. Types: `GroupedSongRow | SingleSongRow` → `SongListRow`.
+
 ### Player Adapter Pattern
 `PlayerAdapter` interface (`src/features/player/adapters/types.ts`) abstracts `play()`, `pause()`, `seek(seconds)`, `setVolume()`, event handlers, etc. Implementations: `NicoPlayerAdapter` (postMessage) and `YouTubePlayerAdapter` (IFrame API).
 

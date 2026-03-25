@@ -138,7 +138,7 @@ Fixed-bottom bar for real-time annotation during playback (edit mode only in `Me
 
 ### Song List Grouping (View Mode Only)
 
-`src/features/medley/utils/groupSongs.ts` — In view mode, `SongList` groups sections sharing the same `songId` into a single `GroupedSongRow` with a multi-segment position bar and `N区間` badge. Edit mode always shows individual rows. `findNearestSection(sections, currentTime)` determines which section to seek when a grouped row is clicked. Types: `GroupedSongRow | SingleSongRow` → `SongListRow`.
+`src/features/medley/utils/groupSongs.ts` — In view mode, `SongList` groups sections sharing the same `songId` into a single `GroupedSongRow` with a multi-segment position bar. Edit mode always shows individual rows. View mode hides time ranges (`0:46→1:07`) for a cleaner display; edit mode shows them. `findNearestSection(sections, currentTime)` determines which section to seek when a grouped row is clicked. Types: `GroupedSongRow | SingleSongRow` → `SongListRow`.
 
 ### Player Adapter Pattern
 `PlayerAdapter` interface (`src/features/player/adapters/types.ts`) abstracts `play()`, `pause()`, `seek(seconds)`, `setVolume()`, event handlers, etc. Implementations: `NicoPlayerAdapter` (postMessage) and `YouTubePlayerAdapter` (IFrame API).

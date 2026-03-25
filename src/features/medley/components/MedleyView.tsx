@@ -13,6 +13,7 @@ import { VideoPlayer } from "@/features/player/components/VideoPlayer";
 import { FixedPlayerBar } from "@/features/player/components/FixedPlayerBar";
 import { RightSidebar } from "@/features/player/components/RightSidebar";
 import { SongList } from "./SongList";
+import { TimelineView } from "./TimelineView";
 import { EditHistoryPanel } from "./EditHistoryPanel";
 import { LoginModal } from "@/features/auth/components/LoginModal";
 import { SongEditModal } from "./SongEditModal";
@@ -60,6 +61,8 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   const setSongs = useTimelineStore((s) => s.setSongs);
   const isEditMode = useUIStore((s) => s.isEditMode);
   const setEditMode = useUIStore((s) => s.setEditMode);
+  const viewMode = useUIStore((s) => s.viewMode);
+  const setViewMode = useUIStore((s) => s.setViewMode);
   const openModal = useUIStore((s) => s.openModal);
   const modalData = useUIStore((s) => s.modalData);
   const openModalWith = useUIStore((s) => s.openModalWith);
@@ -314,7 +317,39 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
                 )}
               </div>
               {!authLoading && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 items-center">
+                  {/* View mode toggle */}
+                  <div className="flex rounded-md border border-gray-300 overflow-hidden">
+                    <button
+                      className={`px-2 py-1 text-xs transition-colors ${
+                        viewMode === "list"
+                          ? "bg-gray-800 text-white"
+                          : "bg-white text-gray-600 hover:bg-gray-100"
+                      }`}
+                      onClick={() => setViewMode("list")}
+                      title="リスト表示"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                    </button>
+                    <button
+                      className={`px-2 py-1 text-xs transition-colors border-l border-gray-300 ${
+                        viewMode === "timeline"
+                          ? "bg-gray-800 text-white"
+                          : "bg-white text-gray-600 hover:bg-gray-100"
+                      }`}
+                      onClick={() => setViewMode("timeline")}
+                      title="タイムライン表示"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <rect x="2" y="8" width="6" height="8" rx="1" strokeWidth={1.5} />
+                        <rect x="9" y="6" width="8" height="12" rx="1" strokeWidth={1.5} />
+                        <rect x="18" y="9" width="4" height="6" rx="1" strokeWidth={1.5} />
+                      </svg>
+                    </button>
+                  </div>
+
                   {isEditMode && (
                     <>
                       <Button
@@ -366,17 +401,28 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
                 <p className="text-xs text-red-600 mt-1">{descriptionError}</p>
               )}
             </div>
-            {/* Song list */}
-            <SongList
-              songs={displaySongs}
-              currentTime={currentTime}
-              duration={duration}
-              isEditMode={isEditMode}
-              onSeek={handleSeek}
-              onEdit={isAuthenticated ? handleEditSong : undefined}
-              onDelete={isAuthenticated ? handleDeleteSong : undefined}
-              onReorder={isAuthenticated ? handleReorder : undefined}
-            />
+            {/* Song list / Timeline */}
+            {viewMode === "timeline" ? (
+              <TimelineView
+                songs={displaySongs}
+                currentTime={currentTime}
+                duration={duration}
+                isEditMode={isEditMode}
+                onSeek={handleSeek}
+                onEdit={isAuthenticated ? handleEditSong : undefined}
+              />
+            ) : (
+              <SongList
+                songs={displaySongs}
+                currentTime={currentTime}
+                duration={duration}
+                isEditMode={isEditMode}
+                onSeek={handleSeek}
+                onEdit={isAuthenticated ? handleEditSong : undefined}
+                onDelete={isAuthenticated ? handleDeleteSong : undefined}
+                onReorder={isAuthenticated ? handleReorder : undefined}
+              />
+            )}
 
             {/* Add song button (edit mode only) */}
             {isEditMode && (
@@ -397,10 +443,12 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
           </div>
       </div>
 
-      {/* Right sidebar (desktop) */}
-      <div className="hidden lg:block h-full overflow-hidden">
-        <RightSidebar songs={displaySongs} currentTime={currentTime} />
-      </div>
+      {/* Right sidebar (desktop, hidden in timeline mode) */}
+      {viewMode === "list" && (
+        <div className="hidden lg:block h-full overflow-hidden">
+          <RightSidebar songs={displaySongs} currentTime={currentTime} />
+        </div>
+      )}
 
       {/* Login modal */}
       <LoginModal

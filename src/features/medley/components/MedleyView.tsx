@@ -302,6 +302,7 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
           <VideoPlayer
             platform={platform as PlatformType}
             videoId={videoId}
+            compact={viewMode === "timeline"}
           />
         </div>
 
@@ -443,12 +444,10 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
           </div>
       </div>
 
-      {/* Right sidebar (desktop, hidden in timeline mode) */}
-      {viewMode === "list" && (
-        <div className="hidden lg:block h-full overflow-hidden">
-          <RightSidebar songs={displaySongs} currentTime={currentTime} />
-        </div>
-      )}
+      {/* Right sidebar (desktop) */}
+      <div className="hidden lg:block h-full overflow-hidden">
+        <RightSidebar songs={displaySongs} currentTime={currentTime} />
+      </div>
 
       {/* Login modal */}
       <LoginModal

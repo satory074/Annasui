@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 interface VideoPlayerProps {
   platform: PlatformType;
   videoId: string;
+  compact?: boolean;
 }
 
 function getEmbedUrl(platform: PlatformType, videoId: string): string {
@@ -43,7 +44,7 @@ function getPlatformLabel(platform: PlatformType): string {
   }
 }
 
-export function VideoPlayer({ platform, videoId }: VideoPlayerProps) {
+export function VideoPlayer({ platform, videoId, compact }: VideoPlayerProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -133,7 +134,7 @@ export function VideoPlayer({ platform, videoId }: VideoPlayerProps) {
   }
 
   return (
-    <div className="w-full aspect-video max-h-[50vh] bg-black relative flex items-center justify-center">
+    <div className={`w-full aspect-video ${compact ? "max-h-[25vh]" : "max-h-[50vh]"} bg-black relative flex items-center justify-center`}>
       {isLoading && (
         <div className="absolute inset-0 bg-gray-900 flex items-center justify-center z-10">
           <div className="text-center text-white p-8">

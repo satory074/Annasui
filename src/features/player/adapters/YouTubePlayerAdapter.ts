@@ -131,8 +131,8 @@ export class YouTubePlayerAdapter implements PlayerAdapter {
   }
 
   setVolume(volume: number): void {
-    // PlayerAdapter volume is 0-100, YouTube API is also 0-100
-    this.player?.setVolume(volume);
+    // PlayerAdapter volume is 0-1, YouTube API expects 0-100
+    this.player?.setVolume(volume * 100);
   }
 
   toggleFullscreen(): void {

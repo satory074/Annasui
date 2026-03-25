@@ -19,7 +19,6 @@
   --gradient-secondary: linear-gradient(135deg, #5b6dee 0%, #4c63d2 100%);
   --gradient-accent: linear-gradient(90deg, #00d9a3 0%, #06b981 100%);
   --gradient-music: linear-gradient(90deg, #ff8c42 0%, #ffa55c 100%);
-  --gradient-timeline: linear-gradient(90deg, #ff8c42 0%, #00d9a3 50%, #5b6dee 100%);
   
   /* Interactive Gradients */
   --gradient-hover: linear-gradient(135deg, #ffa55c 0%, #ffb876 100%);
@@ -93,8 +92,7 @@
     --gradient-secondary: linear-gradient(135deg, #8a99ff 0%, #7788ee 100%);
     --gradient-accent: linear-gradient(90deg, #00f5b0 0%, #22e595 100%);
     --gradient-music: linear-gradient(90deg, #ff9944 0%, #ffb366 100%);
-    --gradient-timeline: linear-gradient(90deg, #ff9944 0%, #00f5b0 50%, #8a99ff 100%);
-    
+      
     /* Dark Interactive Gradients */
     --gradient-hover: linear-gradient(135deg, #ffb366 0%, #ffc999 100%);
     --gradient-active: linear-gradient(135deg, #ff7722 0%, #ff9944 100%);
@@ -124,7 +122,6 @@
   --gradient-secondary: linear-gradient(135deg, #8a99ff 0%, #7788ee 100%);
   --gradient-accent: linear-gradient(90deg, #00f5b0 0%, #22e595 100%);
   --gradient-music: linear-gradient(90deg, #ff9944 0%, #ffb366 100%);
-  --gradient-timeline: linear-gradient(90deg, #ff9944 0%, #00f5b0 50%, #8a99ff 100%);
   
   /* Dark Interactive Gradients */
   --gradient-hover: linear-gradient(135deg, #ffb366 0%, #ffc999 100%);

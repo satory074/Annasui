@@ -43,7 +43,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Medlean** — Multi-platform medley annotation platform. Supports Niconico (full iframe integration), YouTube (full IFrame API integration), Spotify/Apple Music (thumbnails). Features: interactive timelines, advanced editing, nickname-based authentication, contributor tracking.
+**Medlean** — Multi-platform medley annotation platform. Supports Niconico (full iframe integration), YouTube (full IFrame API integration), Spotify/Apple Music (thumbnails). Features: song list with playback tracking, advanced editing, nickname-based authentication, contributor tracking.
 
 **Tech Stack**: Next.js 15.5.7, React 19, TypeScript, TailwindCSS 4, Supabase 2.45.0, Firebase Hosting, Zustand (state + temporal undo/redo via zundo), React Query v5, React Hook Form + Zod v4, Drizzle ORM (local dev only)
 

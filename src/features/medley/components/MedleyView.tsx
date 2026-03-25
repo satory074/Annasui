@@ -296,13 +296,17 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   return (
     <div className="flex max-w-[1920px] mx-auto h-[calc(100vh-7rem)] overflow-hidden">
       {/* Main content */}
-      <div className="flex-1 bg-white shadow-lg flex flex-col overflow-hidden">
-        <div className="shrink-0">
+      <div className="flex-1 bg-white shadow-lg flex flex-col overflow-hidden relative">
+        <div className={
+          viewMode === "timeline"
+            ? "absolute bottom-16 right-4 z-30"
+            : "shrink-0"
+        }>
           {/* Video player */}
           <VideoPlayer
             platform={platform as PlatformType}
             videoId={videoId}
-            compact={viewMode === "timeline"}
+            overlay={viewMode === "timeline"}
           />
         </div>
 

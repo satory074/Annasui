@@ -64,6 +64,8 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   const modalData = useUIStore((s) => s.modalData);
   const openModalWith = useUIStore((s) => s.openModalWith);
   const closeModal = useUIStore((s) => s.closeModal);
+  const videoDisplayMode = useUIStore((s) => s.videoDisplayMode);
+  const setVideoDisplayMode = useUIStore((s) => s.setVideoDisplayMode);
 
   // Undo/Redo
   const { undo, redo } = useTimelineHistory();
@@ -294,14 +296,103 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     <div className="flex max-w-[1920px] mx-auto h-[calc(100vh-7rem)] overflow-hidden">
       {/* Main content */}
       <div className="flex-1 bg-white shadow-lg flex flex-col overflow-hidden relative">
-        <div className="shrink-0">
-          {/* Video player */}
+        {/* Video player wrapper — mode-dependent className, single render to avoid iframe remount */}
+        <div
+          className={
+            videoDisplayMode === "pip"
+              ? "fixed bottom-16 right-4 z-40 w-[320px] h-[180px] rounded-lg shadow-2xl overflow-hidden border border-gray-700"
+              : videoDisplayMode === "collapsed"
+                ? "sr-only"
+                : "shrink-0 relative"
+          }
+        >
           <VideoPlayer
             platform={platform as PlatformType}
             videoId={videoId}
-            overlay={false}
+            overlay={videoDisplayMode === "pip"}
           />
+          {/* Normal mode: overlay controls on top-right of video */}
+          {videoDisplayMode === "normal" && (
+            <div className="absolute top-2 right-2 flex gap-1 z-10">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 bg-black/40 hover:bg-black/60 text-white"
+                onClick={() => setVideoDisplayMode("collapsed")}
+                title="動画を折りたたむ"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path fillRule="evenodd" d="M14.77 12.79a.75.75 0 01-1.06-.02L10 8.832 6.29 12.77a.75.75 0 11-1.08-1.04l4.25-4.5a.75.75 0 011.08 0l4.25 4.5a.75.75 0 01-.02 1.06z" clipRule="evenodd" />
+                </svg>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 w-7 p-0 bg-black/40 hover:bg-black/60 text-white"
+                onClick={() => setVideoDisplayMode("pip")}
+                title="ピクチャ・イン・ピクチャ"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                  <path d="M3.25 4A2.25 2.25 0 001 6.25v7.5A2.25 2.25 0 003.25 16h13.5A2.25 2.25 0 0019 13.75v-7.5A2.25 2.25 0 0016.75 4H3.25zM2.5 6.25a.75.75 0 01.75-.75h13.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75.75H11v-4.25A1.25 1.25 0 009.75 9h-3.5A1.25 1.25 0 005 10.25v4.25H3.25a.75.75 0 01-.75-.75v-7.5z" />
+                </svg>
+              </Button>
+            </div>
+          )}
+          {/* PiP mode: restore and close buttons inside the PiP window */}
+          {videoDisplayMode === "pip" && (
+            <div className="absolute top-1 right-1 flex gap-1 z-10">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 text-white"
+                onClick={() => setVideoDisplayMode("normal")}
+                title="通常表示に戻す"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                  <path fillRule="evenodd" d="M4.25 5.5a.75.75 0 00-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 00.75-.75v-4a.75.75 0 011.5 0v4A2.25 2.25 0 0112.75 17h-8.5A2.25 2.25 0 012 14.75v-8.5A2.25 2.25 0 014.25 4h5a.75.75 0 010 1.5h-5z" clipRule="evenodd" />
+                  <path fillRule="evenodd" d="M6.194 12.753a.75.75 0 001.06.053L16.5 4.44v2.81a.75.75 0 001.5 0v-4.5a.75.75 0 00-.75-.75h-4.5a.75.75 0 000 1.5h2.553l-9.056 8.194a.75.75 0 00-.053 1.06z" clipRule="evenodd" />
+                </svg>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 bg-black/50 hover:bg-black/70 text-white"
+                onClick={() => setVideoDisplayMode("collapsed")}
+                title="動画を閉じる"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                  <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+                </svg>
+              </Button>
+            </div>
+          )}
         </div>
+
+        {/* Collapsed mode: expand bar */}
+        {videoDisplayMode === "collapsed" && (
+          <div className="shrink-0 flex items-center gap-2 px-4 py-1.5 bg-gray-100 border-b border-gray-200">
+            <button
+              onClick={() => setVideoDisplayMode("normal")}
+              className="flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+              </svg>
+              動画を表示
+            </button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-gray-500 hover:text-gray-900"
+              onClick={() => setVideoDisplayMode("pip")}
+              title="ピクチャ・イン・ピクチャ"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
+                <path d="M3.25 4A2.25 2.25 0 001 6.25v7.5A2.25 2.25 0 003.25 16h13.5A2.25 2.25 0 0019 13.75v-7.5A2.25 2.25 0 0016.75 4H3.25zM2.5 6.25a.75.75 0 01.75-.75h13.5a.75.75 0 01.75.75v7.5a.75.75 0 01-.75.75H11v-4.25A1.25 1.25 0 009.75 9h-3.5A1.25 1.25 0 005 10.25v4.25H3.25a.75.75 0 01-.75-.75v-7.5z" />
+              </svg>
+            </Button>
+          </div>
+        )}
 
         <div className="px-4 py-2 space-y-2 flex-1 min-h-0 overflow-y-auto">
             {/* Medley title */}

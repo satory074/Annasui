@@ -154,9 +154,6 @@ export function SongList({
                   <p className="text-sm font-medium text-gray-900 truncate">
                     {displayTitle}
                   </p>
-                  <span className="text-xs text-orange-500 font-medium shrink-0">
-                    {sections.length}区間
-                  </span>
                   <span className="text-xs text-gray-400 shrink-0">/</span>
                   <p className="text-xs text-gray-500 truncate">
                     {Array.isArray(displayArtist)
@@ -264,10 +261,12 @@ export function SongList({
               )}
             </div>
 
-            {/* Time range */}
-            <span className="font-mono text-xs text-gray-500 whitespace-nowrap shrink-0 hidden sm:inline">
-              {formatTimeSimple(song.startTime)}→{formatTimeSimple(song.endTime)}
-            </span>
+            {/* Time range — edit mode only */}
+            {isEditMode && (
+              <span className="font-mono text-xs text-gray-500 whitespace-nowrap shrink-0 hidden sm:inline">
+                {formatTimeSimple(song.startTime)}→{formatTimeSimple(song.endTime)}
+              </span>
+            )}
 
             {/* Edit controls */}
             {isEditMode && (

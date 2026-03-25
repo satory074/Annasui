@@ -62,7 +62,7 @@ export class NicoPlayerAdapter implements PlayerAdapter {
   }
 
   setVolume(volume: number): void {
-    this.enqueue("volumeChange", { volume: volume / 100 });
+    this.enqueue("volumeChange", { volume });
   }
 
   toggleFullscreen(): void {

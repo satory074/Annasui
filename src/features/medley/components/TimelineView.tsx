@@ -79,7 +79,7 @@ export function TimelineView({
   }
 
   return (
-    <div className="flex flex-col border border-gray-200 rounded-lg overflow-hidden bg-white" ref={containerRef}>
+    <div className="flex flex-col flex-1 border border-gray-200 rounded-lg overflow-hidden bg-white" ref={containerRef}>
       {/* Zoom controls */}
       <div className="flex items-center justify-between px-2 py-1 bg-gray-50 border-b border-gray-200">
         <span className="text-[10px] text-gray-400 font-mono">
@@ -95,7 +95,7 @@ export function TimelineView({
       {/* Scrollable timeline area */}
       <div
         ref={scrollContainerRef}
-        className="overflow-x-auto overflow-y-hidden"
+        className="overflow-x-auto overflow-y-hidden flex-1 min-h-0"
         onWheel={handleWheel}
       >
         {/* Ruler */}
@@ -107,8 +107,8 @@ export function TimelineView({
 
         {/* Track area */}
         <div
-          className="relative bg-gray-100 cursor-crosshair"
-          style={{ width: totalWidth, height: 48 }}
+          className="relative bg-gray-100 cursor-crosshair min-h-[48px] h-full"
+          style={{ width: totalWidth }}
           onClick={handleTrackClick}
         >
           {/* Song blocks */}

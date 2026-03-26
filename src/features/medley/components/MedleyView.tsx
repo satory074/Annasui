@@ -66,6 +66,12 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   const closeModal = useUIStore((s) => s.closeModal);
   const videoDisplayMode = useUIStore((s) => s.videoDisplayMode);
   const setVideoDisplayMode = useUIStore((s) => s.setVideoDisplayMode);
+  const focusMode = useUIStore((s) => s.focusMode);
+  const setFocusMode = useUIStore((s) => s.setFocusMode);
+  const titleCollapsed = useUIStore((s) => s.titleCollapsed);
+  const toggleTitleCollapsed = useUIStore((s) => s.toggleTitleCollapsed);
+  const historyCollapsed = useUIStore((s) => s.historyCollapsed);
+  const toggleHistoryCollapsed = useUIStore((s) => s.toggleHistoryCollapsed);
 
   // Undo/Redo
   const { undo, redo } = useTimelineHistory();
@@ -162,6 +168,20 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [isEditMode, undo, redo]);
+
+  // Ctrl+Shift+F / Cmd+Shift+F: toggle focus mode
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!(e.ctrlKey || e.metaKey) || !e.shiftKey || e.key !== "F") return;
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+      e.preventDefault();
+      const current = useUIStore.getState().focusMode;
+      useUIStore.getState().setFocusMode(!current);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
 
   const handleReorder = useCallback((reorderedSongs: SongSection[]) => {
     useTimelineStore.getState().setSongs(reorderedSongs);
@@ -395,67 +415,159 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
         )}
 
         <div className="px-4 py-2 space-y-2 flex-1 min-h-0 overflow-y-auto">
-            {/* Medley title */}
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">
-                  {medley?.title ?? "Loading..."}
-                </h1>
-                {medley?.creator && (
-                  <p className="text-sm text-gray-500">{medley.creator}</p>
-                )}
-              </div>
-              {!authLoading && (
-                <div className="flex flex-wrap gap-2 items-center">
-                  {isEditMode && (
-                    <>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleOpenImportSetlist}
-                        title="セットリストテキストから一括インポート"
-                      >
-                        一括インポート
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleFetchDescription}
-                        disabled={descriptionLoading}
-                        title="動画の説明文からセットリストを取り込む"
-                      >
-                        {descriptionLoading ? "取得中..." : "説明文から取り込む"}
-                      </Button>
-                      <Button
-                        variant={liveMode ? "default" : "outline"}
-                        size="sm"
-                        onClick={handleToggleLiveMode}
-                        title="ライブ入力モード (Ctrl+L)"
-                      >
-                        {liveMode ? "ライブ入力中" : "ライブ入力"}
-                      </Button>
-                    </>
-                  )}
-                  <Button
-                    variant={isEditMode ? "default" : "outline"}
-                    size="sm"
-                    onClick={handleToggleEdit}
+            {/* Medley title — collapsible */}
+            <div className="transition-all duration-200 ease-out motion-reduce:transition-none">
+              {titleCollapsed ? (
+                /* Collapsed: compact single-line bar */
+                <div className="flex items-center justify-between gap-2">
+                  <button
+                    onClick={toggleTitleCollapsed}
+                    className="flex items-center gap-1.5 min-w-0 text-left group"
+                    title="タイトルを展開"
                   >
-                    {isEditMode ? "編集中" : "編集"}
-                  </Button>
-                  {isEditMode && (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors">
+                      <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                    </svg>
+                    <h1 className="text-sm font-bold text-gray-900 truncate">
+                      {medley?.title ?? "Loading..."}
+                    </h1>
+                  </button>
+                  <div className="flex gap-2 items-center shrink-0">
+                    {/* Focus mode toggle */}
                     <Button
+                      variant="ghost"
                       size="sm"
-                      onClick={handleSave}
-                      disabled={saveSongs.isPending}
+                      className="h-7 w-7 p-0"
+                      onClick={() => setFocusMode(!focusMode)}
+                      title={focusMode ? "フォーカスモード解除 (Ctrl+Shift+F)" : "フォーカスモード (Ctrl+Shift+F)"}
                     >
-                      {saveSongs.isPending ? "保存中..." : "保存"}
+                      {focusMode ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-orange-500">
+                          <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06l-1.745-1.745a10.029 10.029 0 003.3-4.38 1.651 1.651 0 000-1.185A10.004 10.004 0 009.999 3a9.956 9.956 0 00-4.744 1.194L3.28 2.22zM7.752 6.69l1.092 1.092a2.5 2.5 0 013.374 3.373l1.092 1.092a4 4 0 00-5.558-5.558z" clipRule="evenodd" />
+                          <path d="M10.748 13.93l2.523 2.523A9.987 9.987 0 0110 17a10.003 10.003 0 01-9.335-6.41 1.651 1.651 0 010-1.186A10.007 10.007 0 014.06 5.12l1.81 1.81A4 4 0 0010.748 13.93z" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                          <path d="M3.75 3.75a.75.75 0 00-1.5 0v3.5a.75.75 0 001.5 0V5.81l2.72 2.72a.75.75 0 001.06-1.06L4.81 4.75h1.44a.75.75 0 000-1.5h-3.5zM16.25 3.75a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0V5.81l-2.72 2.72a.75.75 0 01-1.06-1.06l2.72-2.72h-1.44a.75.75 0 010-1.5h3.5zM3.75 16.25a.75.75 0 01-.75-.75v-3.5a.75.75 0 011.5 0v1.44l2.72-2.72a.75.75 0 011.06 1.06L5.56 14.5h1.44a.75.75 0 010 1.5h-3.5zM16.25 16.25a.75.75 0 00.75-.75v-3.5a.75.75 0 00-1.5 0v1.44l-2.72-2.72a.75.75 0 00-1.06 1.06l2.72 2.72h-1.44a.75.75 0 000 1.5h3.5z" />
+                        </svg>
+                      )}
                     </Button>
+                    {!authLoading && (
+                      <>
+                        <Button
+                          variant={isEditMode ? "default" : "outline"}
+                          size="sm"
+                          onClick={handleToggleEdit}
+                        >
+                          {isEditMode ? "編集中" : "編集"}
+                        </Button>
+                        {isEditMode && (
+                          <Button
+                            size="sm"
+                            onClick={handleSave}
+                            disabled={saveSongs.isPending}
+                          >
+                            {saveSongs.isPending ? "保存中..." : "保存"}
+                          </Button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                /* Expanded: full title area */
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <button
+                      onClick={toggleTitleCollapsed}
+                      className="shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+                      title="タイトルを折りたたむ"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                    <div>
+                      <h1 className="text-xl font-bold text-gray-900">
+                        {medley?.title ?? "Loading..."}
+                      </h1>
+                      {medley?.creator && (
+                        <p className="text-sm text-gray-500">{medley.creator}</p>
+                      )}
+                    </div>
+                  </div>
+                  {!authLoading && (
+                    <div className="flex flex-wrap gap-2 items-center">
+                      {/* Focus mode toggle */}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => setFocusMode(!focusMode)}
+                        title={focusMode ? "フォーカスモード解除 (Ctrl+Shift+F)" : "フォーカスモード (Ctrl+Shift+F)"}
+                      >
+                        {focusMode ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-orange-500">
+                            <path fillRule="evenodd" d="M3.28 2.22a.75.75 0 00-1.06 1.06l14.5 14.5a.75.75 0 101.06-1.06l-1.745-1.745a10.029 10.029 0 003.3-4.38 1.651 1.651 0 000-1.185A10.004 10.004 0 009.999 3a9.956 9.956 0 00-4.744 1.194L3.28 2.22zM7.752 6.69l1.092 1.092a2.5 2.5 0 013.374 3.373l1.092 1.092a4 4 0 00-5.558-5.558z" clipRule="evenodd" />
+                            <path d="M10.748 13.93l2.523 2.523A9.987 9.987 0 0110 17a10.003 10.003 0 01-9.335-6.41 1.651 1.651 0 010-1.186A10.007 10.007 0 014.06 5.12l1.81 1.81A4 4 0 0010.748 13.93z" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                            <path d="M3.75 3.75a.75.75 0 00-1.5 0v3.5a.75.75 0 001.5 0V5.81l2.72 2.72a.75.75 0 001.06-1.06L4.81 4.75h1.44a.75.75 0 000-1.5h-3.5zM16.25 3.75a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0V5.81l-2.72 2.72a.75.75 0 01-1.06-1.06l2.72-2.72h-1.44a.75.75 0 010-1.5h3.5zM3.75 16.25a.75.75 0 01-.75-.75v-3.5a.75.75 0 011.5 0v1.44l2.72-2.72a.75.75 0 011.06 1.06L5.56 14.5h1.44a.75.75 0 010 1.5h-3.5zM16.25 16.25a.75.75 0 00.75-.75v-3.5a.75.75 0 00-1.5 0v1.44l-2.72-2.72a.75.75 0 00-1.06 1.06l2.72 2.72h-1.44a.75.75 0 000 1.5h3.5z" />
+                          </svg>
+                        )}
+                      </Button>
+                      {isEditMode && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleOpenImportSetlist}
+                            title="セットリストテキストから一括インポート"
+                          >
+                            一括インポート
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleFetchDescription}
+                            disabled={descriptionLoading}
+                            title="動画の説明文からセットリストを取り込む"
+                          >
+                            {descriptionLoading ? "取得中..." : "説明文から取り込む"}
+                          </Button>
+                          <Button
+                            variant={liveMode ? "default" : "outline"}
+                            size="sm"
+                            onClick={handleToggleLiveMode}
+                            title="ライブ入力モード (Ctrl+L)"
+                          >
+                            {liveMode ? "ライブ入力中" : "ライブ入力"}
+                          </Button>
+                        </>
+                      )}
+                      <Button
+                        variant={isEditMode ? "default" : "outline"}
+                        size="sm"
+                        onClick={handleToggleEdit}
+                      >
+                        {isEditMode ? "編集中" : "編集"}
+                      </Button>
+                      {isEditMode && (
+                        <Button
+                          size="sm"
+                          onClick={handleSave}
+                          disabled={saveSongs.isPending}
+                        >
+                          {saveSongs.isPending ? "保存中..." : "保存"}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  {descriptionError && (
+                    <p className="text-xs text-red-600 mt-1">{descriptionError}</p>
                   )}
                 </div>
-              )}
-              {descriptionError && (
-                <p className="text-xs text-red-600 mt-1">{descriptionError}</p>
               )}
             </div>
             {/* Song list */}
@@ -480,17 +592,46 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
               </button>
             )}
 
-            {/* Edit history */}
-            <EditHistoryPanel
-              entries={editHistory}
-              onRestore={isAuthenticated ? handleRestore : undefined}
-              isRestoring={restoreSnapshot.isPending}
-            />
+            {/* Edit history — collapsible */}
+            <div className="transition-all duration-200 ease-out motion-reduce:transition-none">
+              {historyCollapsed ? (
+                <button
+                  onClick={toggleHistoryCollapsed}
+                  className="flex items-center gap-1.5 w-full text-left py-1 group"
+                  title="編集履歴を展開"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors">
+                    <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                  </svg>
+                  <span className="text-sm font-semibold text-gray-700">編集履歴</span>
+                  {editHistory.length > 0 && (
+                    <span className="text-xs text-gray-400">({editHistory.length})</span>
+                  )}
+                </button>
+              ) : (
+                <div>
+                  <button
+                    onClick={toggleHistoryCollapsed}
+                    className="flex items-center gap-1.5 mb-1 group"
+                    title="編集履歴を折りたたむ"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 shrink-0 text-gray-400 group-hover:text-gray-600 transition-colors">
+                      <path fillRule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z" clipRule="evenodd" />
+                    </svg>
+                  </button>
+                  <EditHistoryPanel
+                    entries={editHistory}
+                    onRestore={isAuthenticated ? handleRestore : undefined}
+                    isRestoring={restoreSnapshot.isPending}
+                  />
+                </div>
+              )}
+            </div>
           </div>
       </div>
 
-      {/* Right sidebar (desktop) */}
-      <div className="hidden lg:block h-full overflow-hidden">
+      {/* Right sidebar (desktop) — hidden in focus mode */}
+      <div className={`h-full overflow-hidden ${focusMode ? "hidden" : "hidden lg:block"}`}>
         <RightSidebar songs={displaySongs} currentTime={currentTime} />
       </div>
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { SongSection } from "@/types";
 import BaseModal from "@/components/ui/modal/BaseModal";
 import { Button } from "@/components/ui/button";
+import { randomPastelColor } from "@/lib/utils/color";
 import type { ParsedSetlistEntry } from "@/features/medley/import/types";
 import { useAutoMatcher } from "@/features/song-database/hooks/useAutoMatcher";
 
@@ -350,7 +351,7 @@ export default function ImportSetlistModal({
         artist: entry.artist ? [entry.artist] : [],
         startTime: Math.round(entry.startTime * 10) / 10,
         endTime: Math.round((entry.endTime ?? entry.startTime + 30) * 10) / 10,
-        color: `bg-${["blue", "green", "purple", "yellow", "pink", "indigo"][index % 6]}-400`,
+        color: randomPastelColor(),
         niconicoLink: "",
         youtubeLink: "",
         spotifyLink: "",

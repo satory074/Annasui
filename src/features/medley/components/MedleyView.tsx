@@ -291,7 +291,16 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
       openModalWith("songEdit", {
         song: null,
         isNew: true,
-        prefill: { title: song.title, artist: song.artist.map((a) => a.name) },
+        prefill: {
+          title: song.title,
+          artist: song.artist.map((a) => a.name),
+          links: {
+            niconicoLink: song.niconicoLink ?? undefined,
+            youtubeLink: song.youtubeLink ?? undefined,
+            spotifyLink: song.spotifyLink ?? undefined,
+            applemusicLink: song.applemusicLink ?? undefined,
+          },
+        },
       });
     },
     [closeModal, openModalWith]
@@ -605,7 +614,7 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
         onClose={closeModal}
         song={(modalData.song as SongSection) ?? null}
         isNew={!modalData.song}
-        prefill={modalData.prefill as { title?: string; artist?: string[] } | undefined}
+        prefill={modalData.prefill as { title?: string; artist?: string[]; links?: { niconicoLink?: string; youtubeLink?: string; spotifyLink?: string; applemusicLink?: string } } | undefined}
         allSongs={timelineSongs}
         currentTime={currentTime}
         maxDuration={duration}

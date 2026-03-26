@@ -13,6 +13,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { parseTimeInput, formatTimeSimple } from "@/lib/utils/time";
+import { randomPastelColor } from "@/lib/utils/color";
+import { useExtractColor } from "../hooks/useExtractColor";
 import type { SongSection } from "../types";
 
 interface SongEditModalProps {
@@ -20,32 +22,22 @@ interface SongEditModalProps {
   onClose: () => void;
   song: SongSection | null;
   isNew?: boolean;
-  prefill?: { title?: string; artist?: string[] };
+  prefill?: {
+    title?: string;
+    artist?: string[];
+    links?: {
+      niconicoLink?: string;
+      youtubeLink?: string;
+      spotifyLink?: string;
+      applemusicLink?: string;
+    };
+  };
   allSongs?: SongSection[];
   currentTime?: number;
   maxDuration?: number;
   onSave: (song: SongSection) => void;
   onDelete?: (id: string) => void;
   onSeek?: (time: number) => void;
-}
-
-function randomPastelColor(): string {
-  const hue = Math.floor(Math.random() * 360);
-  const s = 55 + Math.floor(Math.random() * 20);
-  const l = 60 + Math.floor(Math.random() * 15);
-  // Convert HSL to hex
-  const h = hue / 360;
-  const sl = s / 100;
-  const ll = l / 100;
-  const a = sl * Math.min(ll, 1 - ll);
-  const f = (n: number) => {
-    const k = (n + h * 12) % 12;
-    const color = ll - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
-    return Math.round(255 * color)
-      .toString(16)
-      .padStart(2, "0");
-  };
-  return `#${f(0)}${f(8)}${f(4)}`;
 }
 
 export function SongEditModal({
@@ -68,10 +60,13 @@ export function SongEditModal({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
+  const [extractedColor, setExtractedColor] = useState<string | null>(null);
+  const { extractColor, isExtracting } = useExtractColor();
 
   // Initialize form when modal opens
   useEffect(() => {
     if (!isOpen) return;
+    setExtractedColor(null);
     if (song) {
       setTitle(song.title);
       setArtistInput(song.artist.join(", "));
@@ -85,6 +80,12 @@ export function SongEditModal({
       setEndTimeInput(
         formatTimeSimple(Math.min(currentTime + 30, maxDuration || currentTime + 30))
       );
+      // Extract color from prefill links
+      if (prefill?.links) {
+        extractColor(prefill.links).then((color) => {
+          if (color) setExtractedColor(color);
+        });
+      }
     }
     setErrors({});
     setDeleteDialogOpen(false);
@@ -125,7 +126,7 @@ export function SongEditModal({
           artist: artists,
           startTime,
           endTime,
-          color: randomPastelColor(),
+          color: extractedColor ?? randomPastelColor(),
         };
 
     onSave(saved);
@@ -158,9 +159,22 @@ export function SongEditModal({
       maxWidth="md"
       ariaLabel={isNew ? "楽曲を追加" : "楽曲を編集"}
     >
-      <h2 className="text-xl font-bold mb-4 text-gray-900">
-        {isNew ? "楽曲を追加" : "楽曲を編集"}
-      </h2>
+      <div className="flex items-center gap-2 mb-4">
+        <h2 className="text-xl font-bold text-gray-900">
+          {isNew ? "楽曲を追加" : "楽曲を編集"}
+        </h2>
+        {isNew && (
+          isExtracting ? (
+            <span className="inline-block w-3 h-3 rounded-full border-2 border-orange-400 border-t-transparent animate-spin" />
+          ) : extractedColor ? (
+            <span
+              className="inline-block w-3 h-3 rounded-full border border-gray-300"
+              style={{ backgroundColor: extractedColor }}
+              title={`抽出色: ${extractedColor}`}
+            />
+          ) : null
+        )}
+      </div>
 
       {Object.keys(errors).length > 0 && (
         <div

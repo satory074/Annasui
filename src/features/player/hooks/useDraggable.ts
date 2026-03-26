@@ -28,6 +28,10 @@ export function useDraggable(): UseDraggableReturn {
       // Only drag on primary button
       if (e.button !== 0) return;
 
+      // Don't initiate drag when clicking interactive elements (buttons, links)
+      const target = e.target as HTMLElement;
+      if (target.closest("button, a, [role='button']")) return;
+
       const el = (e.currentTarget as HTMLElement).closest(
         "[data-draggable-container]",
       ) as HTMLElement | null;

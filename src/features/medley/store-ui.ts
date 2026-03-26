@@ -19,12 +19,18 @@ interface UIStore {
   openModal: ModalId | null;
   modalData: Record<string, unknown>;
   videoDisplayMode: VideoDisplayMode;
+  focusMode: boolean;
+  titleCollapsed: boolean;
+  historyCollapsed: boolean;
 
   toggleEditMode: () => void;
   setEditMode: (mode: boolean) => void;
   openModalWith: (id: ModalId, data?: Record<string, unknown>) => void;
   closeModal: () => void;
   setVideoDisplayMode: (mode: VideoDisplayMode) => void;
+  setFocusMode: (mode: boolean) => void;
+  toggleTitleCollapsed: () => void;
+  toggleHistoryCollapsed: () => void;
 }
 
 export const useUIStore = create<UIStore>()(
@@ -34,6 +40,9 @@ export const useUIStore = create<UIStore>()(
       openModal: null,
       modalData: {},
       videoDisplayMode: "normal",
+      focusMode: false,
+      titleCollapsed: false,
+      historyCollapsed: false,
 
       toggleEditMode: () =>
         set((s) => ({ isEditMode: !s.isEditMode })),
@@ -42,6 +51,17 @@ export const useUIStore = create<UIStore>()(
         set({ openModal: id, modalData: data }),
       closeModal: () => set({ openModal: null, modalData: {} }),
       setVideoDisplayMode: (mode) => set({ videoDisplayMode: mode }),
+      setFocusMode: (mode) =>
+        set({
+          focusMode: mode,
+          videoDisplayMode: mode ? "collapsed" : "normal",
+          titleCollapsed: mode,
+          historyCollapsed: mode,
+        }),
+      toggleTitleCollapsed: () =>
+        set((s) => ({ titleCollapsed: !s.titleCollapsed })),
+      toggleHistoryCollapsed: () =>
+        set((s) => ({ historyCollapsed: !s.historyCollapsed })),
     }),
     { name: "ui-store" }
   )

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { medleyKeys } from "../queries/keys";
 import { fetchMedley, fetchMedleySongs, fetchEditHistory } from "../queries/functions-supabase";
@@ -20,6 +20,7 @@ import { SongSearchModal } from "@/features/song-database/components/SongSearchM
 import { LiveAnnotationBar } from "./LiveAnnotationBar";
 import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
 import { Button } from "@/components/ui/button";
+import { useDraggable } from "@/features/player/hooks/useDraggable";
 import type { PlatformType, SongSection } from "../types";
 import type { SongSection as LegacySongSection } from "@/types";
 import type { SongDatabaseEntry } from "@/lib/utils/songDatabase";
@@ -70,6 +71,24 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   const setFocusMode = useUIStore((s) => s.setFocusMode);
   const historyCollapsed = useUIStore((s) => s.historyCollapsed);
   const toggleHistoryCollapsed = useUIStore((s) => s.toggleHistoryCollapsed);
+
+  // PiP drag
+  const { position: pipPosition, isDragging: isPipDragging, handlePointerDown: handlePipPointerDown, resetPosition: resetPipPosition } = useDraggable();
+
+  // Reset PiP position when leaving PiP mode
+  useEffect(() => {
+    if (videoDisplayMode !== "pip") {
+      resetPipPosition();
+    }
+  }, [videoDisplayMode, resetPipPosition]);
+
+  const pipStyle = useMemo(() => {
+    if (videoDisplayMode !== "pip") return undefined;
+    if (pipPosition) {
+      return { top: pipPosition.y, left: pipPosition.x, bottom: "auto" as const, right: "auto" as const };
+    }
+    return { bottom: 64, right: 16 };
+  }, [videoDisplayMode, pipPosition]);
 
   // Undo/Redo
   const { undo, redo } = useTimelineHistory();
@@ -316,13 +335,15 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
       <div className="flex-1 bg-white shadow-lg flex flex-col overflow-hidden relative">
         {/* Video player wrapper — mode-dependent className, single render to avoid iframe remount */}
         <div
+          data-draggable-container
           className={
             videoDisplayMode === "pip"
-              ? "fixed bottom-16 right-4 z-40 w-[320px] h-[180px] rounded-lg shadow-2xl overflow-hidden border border-gray-700"
+              ? "fixed z-40 w-[320px] h-[180px] rounded-lg shadow-2xl overflow-hidden border border-gray-700"
               : videoDisplayMode === "collapsed"
                 ? "sr-only"
                 : "shrink-0 relative"
           }
+          style={pipStyle}
         >
           <VideoPlayer
             platform={platform as PlatformType}
@@ -356,9 +377,13 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
               </Button>
             </div>
           )}
-          {/* PiP mode: restore and close buttons inside the PiP window */}
+          {/* PiP mode: drag handle + restore and close buttons */}
           {videoDisplayMode === "pip" && (
-            <div className="absolute top-1 right-1 flex gap-1 z-10">
+            <div
+              className="absolute top-0 left-0 right-0 h-8 flex items-center justify-end gap-1 px-1 z-10 bg-gradient-to-b from-black/50 to-transparent"
+              style={{ cursor: isPipDragging ? "grabbing" : "grab" }}
+              onPointerDown={handlePipPointerDown}
+            >
               <Button
                 variant="ghost"
                 size="sm"

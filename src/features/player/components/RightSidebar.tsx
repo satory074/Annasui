@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import SongThumbnail from "@/components/ui/song/SongThumbnail";
 import type { SongSection } from "@/features/medley/types";
+import { formatTime } from "@/lib/utils/time";
 
 interface RightSidebarProps {
   songs: SongSection[];
@@ -122,6 +123,26 @@ export function RightSidebar({ songs, currentTime }: RightSidebarProps) {
                           </a>
                         )}
                       </div>
+
+                      {/* Progress bar */}
+                      {song.endTime > song.startTime && (
+                        <div className="mt-2">
+                          <div className="h-1 rounded-full bg-gray-200 overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-[width] duration-300 ease-linear"
+                              style={{
+                                width: `${Math.min(100, Math.max(0, ((currentTime - song.startTime) / (song.endTime - song.startTime)) * 100))}%`,
+                                backgroundColor: song.color,
+                              }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-gray-400 mt-0.5">
+                            {formatTime(Math.max(0, currentTime - song.startTime))}
+                            {" / "}
+                            {formatTime(song.endTime - song.startTime)}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

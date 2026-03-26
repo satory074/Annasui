@@ -68,6 +68,7 @@ All runtime data fetching and mutations use Supabase JS via `src/lib/api/medleys
 - `handleAddSong` opens `SongSearchModal` → user selects from DB → `SongEditModal` opens with `prefill`
 - **Keyboard shortcuts** (edit mode): `Ctrl+Z` undo, `Ctrl+Shift+Z` / `Ctrl+Y` redo — skipped when INPUT/TEXTAREA focused
 - `FixedPlayerBar` rendered at bottom (hidden during live annotation mode)
+- **PiP mode**: Video can be toggled to picture-in-picture (draggable via `useDraggable` hook). Position resets to bottom-right on mode exit.
 - **Viewport-constrained layout**: Video player capped at `max-h-[50vh]`, main content area uses `h-[calc(100vh-7rem)]` with `overflow-y-auto` so the entire page fits without scrolling on 1080p screens
 
 All new code goes in `src/features/`. Legacy `src/components/features/` retains only `ImportSetlistModal` and library components still used by active pages.
@@ -140,11 +141,19 @@ Fixed-bottom bar for real-time annotation during playback (edit mode only in `Me
 
 `src/features/medley/utils/groupSongs.ts` — In view mode, `SongList` groups sections sharing the same `songId` into a single `GroupedSongRow` with a multi-segment position bar. Edit mode always shows individual rows. View mode hides time ranges (`0:46→1:07`) for a cleaner display; edit mode shows them. `findNearestSection(sections, currentTime)` determines which section to seek when a grouped row is clicked. Types: `GroupedSongRow | SingleSongRow` → `SongListRow`.
 
-### Player Adapter Pattern
-`PlayerAdapter` interface (`src/features/player/adapters/types.ts`) abstracts `play()`, `pause()`, `seek(seconds)`, `setVolume()`, event handlers, etc. Implementations: `NicoPlayerAdapter` (postMessage) and `YouTubePlayerAdapter` (IFrame API).
+### Player System (`src/features/player/`)
 
-### FixedPlayerBar (`src/features/player/components/FixedPlayerBar.tsx`)
-Fixed-bottom player bar (`fixed bottom-0 z-50 bg-gray-800`). 3-column layout: title/creator (left, hidden on mobile) | playback controls + time (center) | volume + fullscreen (right, hidden on mobile). Draggable seek bar with hover tooltip. Hidden when `liveMode && isEditMode` (LiveAnnotationBar takes same position). Props: `title?: string`, `creator?: string`.
+**Adapter pattern**: `PlayerAdapter` interface (`adapters/types.ts`) abstracts `play()`, `pause()`, `seek(seconds)`, `setVolume()`, event handlers. Implementations: `NicoPlayerAdapter` (postMessage) and `YouTubePlayerAdapter` (IFrame API).
+
+**Key components**:
+- **`VideoPlayer`** — Wrapper for Niconico/YouTube iframe embeds with loading, error, and retry states. `overlay` prop enables PiP styling.
+- **`FixedPlayerBar`** — Fixed-bottom player bar (`fixed bottom-0 z-50`). 3-column layout: title/creator | playback controls + seek bar | volume + fullscreen. Hidden when `liveMode && isEditMode`.
+- **`RightSidebar`** — Shows currently playing songs (via `useCurrentTrack`), deduplicates by title, displays thumbnails and platform links.
+
+**Key hooks** (`hooks/`):
+- **`usePlayer`** — Creates/registers `PlayerAdapter`, manages lifecycle and event subscriptions.
+- **`useCurrentTrack(songs)`** — Returns `SongSection[]` matching `currentTime` (supports overlapping segments).
+- **`useDraggable()`** — Pointer events-based drag hook for PiP window. Returns `{ position, isDragging, handlePointerDown, resetPosition }`. Skips drag on `button`/`a`/`[role="button"]` clicks. Clamps to viewport.
 
 ### ID Architecture (3 distinct types)
 | ID | Type | Purpose |

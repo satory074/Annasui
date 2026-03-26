@@ -20,7 +20,6 @@ interface UIStore {
   modalData: Record<string, unknown>;
   videoDisplayMode: VideoDisplayMode;
   focusMode: boolean;
-  titleCollapsed: boolean;
   historyCollapsed: boolean;
 
   toggleEditMode: () => void;
@@ -29,7 +28,6 @@ interface UIStore {
   closeModal: () => void;
   setVideoDisplayMode: (mode: VideoDisplayMode) => void;
   setFocusMode: (mode: boolean) => void;
-  toggleTitleCollapsed: () => void;
   toggleHistoryCollapsed: () => void;
 }
 
@@ -41,7 +39,6 @@ export const useUIStore = create<UIStore>()(
       modalData: {},
       videoDisplayMode: "normal",
       focusMode: false,
-      titleCollapsed: false,
       historyCollapsed: false,
 
       toggleEditMode: () =>
@@ -54,12 +51,9 @@ export const useUIStore = create<UIStore>()(
       setFocusMode: (mode) =>
         set({
           focusMode: mode,
-          videoDisplayMode: mode ? "collapsed" : "normal",
-          titleCollapsed: mode,
+          videoDisplayMode: mode ? "pip" : "normal",
           historyCollapsed: mode,
         }),
-      toggleTitleCollapsed: () =>
-        set((s) => ({ titleCollapsed: !s.titleCollapsed })),
       toggleHistoryCollapsed: () =>
         set((s) => ({ historyCollapsed: !s.historyCollapsed })),
     }),

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { usePlayerStore } from "@/features/player/store";
 import { useTimelineStore } from "../store";
 import { Button } from "@/components/ui/button";
+import { randomPastelColor } from "@/lib/utils/color";
 
 interface LiveAnnotationBarProps {
   onClose: () => void;
@@ -64,7 +65,7 @@ export function LiveAnnotationBar({ onClose }: LiveAnnotationBarProps) {
       artist: artist.trim() ? [artist.trim()] : [],
       startTime: Math.round(startTime * 10) / 10,
       endTime: Math.round((endTime + 30) * 10) / 10,
-      color: `bg-${["blue", "green", "purple", "yellow", "pink", "indigo"][songs.length % 6]}-400`,
+      color: randomPastelColor(),
       niconicoLink: "",
       youtubeLink: "",
       spotifyLink: "",

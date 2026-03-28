@@ -74,9 +74,9 @@ export default function VersionPage() {
   if (loading) {
     return (
       <>
-        <AppHeader variant="default" />
-        <div className="min-h-screen pt-[var(--header-height)] bg-gradient-to-br from-orange-50 to-indigo-50">
-          <div className="max-w-4xl mx-auto p-6">
+        <AppHeader />
+        <div className="min-h-screen pt-[var(--header-height)] bg-[var(--background)]">
+          <div className="max-w-[var(--content-max-w-narrow)] mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded mb-4"></div>
               <div className="h-4 bg-gray-200 rounded mb-2"></div>
@@ -91,9 +91,9 @@ export default function VersionPage() {
 
   return (
     <>
-      <AppHeader variant="default" />
-      <div className="min-h-screen pt-[var(--header-height)] bg-gradient-to-br from-orange-50 to-indigo-50">
-        <div className="max-w-4xl mx-auto p-6">
+      <AppHeader />
+      <div className="min-h-screen pt-[var(--header-height)] bg-[var(--background)]">
+        <div className="max-w-[var(--content-max-w-narrow)] mx-auto px-4 sm:px-6 lg:px-8 py-6">
           {/* ヘッダーセクション */}
           <div className="text-center mb-12">
             <div className="inline-flex items-center space-x-3 mb-4">

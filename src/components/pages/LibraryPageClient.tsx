@@ -267,7 +267,7 @@ export default function LibraryPageClient() {
     return (
       <>
         <AppHeader />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-[var(--background)] pt-[var(--header-height)] flex items-center justify-center">
           <div className="text-gray-600">読み込み中...</div>
         </div>
       </>
@@ -278,7 +278,7 @@ export default function LibraryPageClient() {
     return (
       <>
         <AppHeader />
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="min-h-screen bg-[var(--background)] pt-[var(--header-height)] flex items-center justify-center">
           <div className="bg-white p-8 rounded-lg shadow-md max-w-md w-full">
             <h2 className="text-2xl font-bold mb-4">ログインが必要です</h2>
             <p className="text-gray-600 mb-6">
@@ -300,8 +300,8 @@ export default function LibraryPageClient() {
   return (
     <>
       <AppHeader />
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-[var(--background)] pt-[var(--header-height)] py-8">
+        <div className="max-w-[var(--content-max-w-wide)] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>

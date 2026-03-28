@@ -12,7 +12,7 @@ interface AppHeaderProps {
 }
 
 export default function AppHeader({
-  variant = "default"
+  variant = "home"
 }: AppHeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isVersionModalOpen, setIsVersionModalOpen] = useState(false);
@@ -57,9 +57,9 @@ export default function AppHeader({
     }
   ].filter(item => !item.requiresAuth || isAuthenticated);
 
-  const headerBg = variant === "home" 
-    ? "bg-white border-b border-gray-200" 
-    : "bg-gradient-to-r from-gray-800 to-gray-900 text-white";
+  const headerBg = variant === "player"
+    ? "bg-gradient-to-r from-gray-800 to-gray-900 text-white"
+    : "bg-white border-b border-gray-200";
 
   return (
     <header className={`${headerBg} shadow-sm fixed top-0 left-0 right-0 z-[100] w-full`}>
@@ -88,7 +88,7 @@ export default function AppHeader({
                   key={item.href}
                   href={item.href}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    variant === "home"
+                    variant !== "player"
                       ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
                       : "text-gray-300 hover:text-white hover:bg-gray-700"
                   }`}
@@ -108,7 +108,7 @@ export default function AppHeader({
               <>
                 {/* User Display */}
                 <div className={`hidden sm:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium ${
-                  variant === "home"
+                  variant !== "player"
                     ? "text-gray-700 bg-gray-100"
                     : "text-gray-300 bg-gray-700"
                 }`}>
@@ -121,7 +121,7 @@ export default function AppHeader({
                 <button
                   onClick={logout}
                   className={`hidden sm:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    variant === "home"
+                    variant !== "player"
                       ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50 border border-gray-200"
                       : "text-gray-300 hover:text-white hover:bg-gray-700 bg-gray-700"
                   }`}
@@ -138,7 +138,7 @@ export default function AppHeader({
               <button
                 onClick={() => setLoginModalOpen(true)}
                 className={`hidden sm:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  variant === "home"
+                  variant !== "player"
                     ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50 border border-gray-200"
                     : "text-gray-300 hover:text-white hover:bg-gray-700 bg-gray-700"
                 }`}
@@ -157,7 +157,7 @@ export default function AppHeader({
               target="_blank"
               rel="noopener noreferrer"
               className={`hidden sm:flex items-center space-x-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                variant === "home"
+                variant !== "player"
                   ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50 border border-gray-200"
                   : "text-gray-300 hover:text-white hover:bg-gray-700 bg-gray-700"
               }`}
@@ -174,7 +174,7 @@ export default function AppHeader({
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               aria-label={isMobileMenuOpen ? "メニューを閉じる" : "メニューを開く"}
               className={`md:hidden p-2 rounded-lg transition-colors ${
-                variant === "home"
+                variant !== "player"
                   ? "text-gray-600 hover:text-orange-600 hover:bg-orange-50"
                   : "text-gray-300 hover:text-white hover:bg-gray-700"
               }`}
@@ -193,7 +193,7 @@ export default function AppHeader({
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div ref={mobileMenuRef} className={`md:hidden border-t ${variant === "home" ? "border-gray-200" : "border-gray-700"}`}>
+          <div ref={mobileMenuRef} className={`md:hidden border-t ${variant !== "player" ? "border-gray-200" : "border-gray-700"}`}>
             <div className="px-2 py-3 space-y-1">
               {navigationItems.map((item) => (
                 <Link
@@ -201,7 +201,7 @@ export default function AppHeader({
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
-                    variant === "home"
+                    variant !== "player"
                       ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
                       : "text-gray-300 hover:text-white hover:bg-gray-700"
                   }`}
@@ -216,7 +216,7 @@ export default function AppHeader({
                 <>
                   {/* Mobile User Display */}
                   <div className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium ${
-                    variant === "home"
+                    variant !== "player"
                       ? "text-gray-700 bg-gray-100"
                       : "text-gray-300 bg-gray-700"
                   }`}>
@@ -232,7 +232,7 @@ export default function AppHeader({
                       setIsMobileMenuOpen(false);
                     }}
                     className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
-                      variant === "home"
+                      variant !== "player"
                         ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
                         : "text-gray-300 hover:text-white hover:bg-gray-700"
                     }`}
@@ -251,7 +251,7 @@ export default function AppHeader({
                     setIsMobileMenuOpen(false);
                   }}
                   className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
-                    variant === "home"
+                    variant !== "player"
                       ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
                       : "text-gray-300 hover:text-white hover:bg-gray-700"
                   }`}
@@ -269,7 +269,7 @@ export default function AppHeader({
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-base font-medium transition-colors ${
-                  variant === "home"
+                  variant !== "player"
                     ? "text-gray-700 hover:text-orange-600 hover:bg-orange-50"
                     : "text-gray-300 hover:text-white hover:bg-gray-700"
                 }`}

@@ -71,6 +71,24 @@ All runtime data fetching and mutations use Supabase JS via `src/lib/api/medleys
 - **PiP mode**: Video can be toggled to picture-in-picture (draggable via `useDraggable` hook). Position resets to bottom-right on mode exit.
 - **Viewport-constrained layout**: Video player capped at `max-h-[50vh]`, main content area uses CSS custom properties (`--header-height`, `--breadcrumb-height`) for viewport calc so the entire page fits without scrolling on 1080p screens. Layout dimensions are centralized in `src/app/globals.css` `:root`.
 
+### Unified Page Layout
+
+All non-player pages follow a consistent layout pattern:
+- **Header**: White `AppHeader` (default variant `"home"`). Only player pages (`variant="player"`) use the dark header.
+- **Background**: `bg-[var(--background)]` (`#fffbf7` warm white) — never use `bg-gray-50`, `bg-gray-100`, or gradients for page backgrounds.
+- **Header offset**: All pages use `pt-[var(--header-height)]` to prevent content from being hidden under the fixed header.
+- **Responsive padding**: `px-4 sm:px-6 lg:px-8` on all pages.
+- **Max-width tiers** (CSS custom properties in `globals.css`):
+
+| Tier | CSS Variable | Value | Pages |
+|------|-------------|-------|-------|
+| Player | `--content-max-w-player` | 1920px | Niconico, YouTube |
+| Home | `--content-max-w-home` | 72rem | Home |
+| Wide | `--content-max-w-wide` | 80rem | Library |
+| Narrow | `--content-max-w-narrow` | 56rem | Settings, Profile, Version, Privacy, Terms |
+
+Legal pages (Privacy, Terms) use client components (`PrivacyPageClient`, `TermsPageClient`) with `AppHeader` and `force-dynamic`.
+
 All new code goes in `src/features/`. Legacy `src/components/features/` retains only `ImportSetlistModal` and library components still used by active pages.
 
 ### Zustand Stores (3 stores in `src/features/`)

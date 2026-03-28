@@ -132,8 +132,24 @@ export async function POST(request: NextRequest) {
     // population-based selection instead of the 6 named swatches.
     const allColors: Swatch[] = vibrant.result?.colors ?? [];
 
+    // Score = population * saturation, with penalties for skin tones and grays
+    function scoreSwatch(s: Swatch): number {
+      const [h, sat] = s.hsl; // h: 0-1, sat: 0-1
+      const hDeg = h * 360;
+      let score = s.population * sat;
+
+      // Penalize low-saturation (grays, muddy colors)
+      if (sat < 0.15) score *= 0.3;
+
+      // Penalize skin-tone hue (15-45°) with moderate saturation
+      // High-saturation oranges (S >= 0.55) are not penalized
+      if (hDeg >= 15 && hDeg <= 45 && sat < 0.55) score *= 0.5;
+
+      return score;
+    }
+
     // Filter out near-white (L > 90%) and near-black (L < 10%) which
-    // aren't useful as UI accent colors, then pick the most frequent.
+    // aren't useful as UI accent colors, then pick the highest-scoring.
     const candidates = allColors.filter((s) => {
       const [, , l] = s.hsl;
       return l > 0.1 && l < 0.9;
@@ -142,7 +158,7 @@ export async function POST(request: NextRequest) {
     const swatch =
       candidates.length > 0
         ? candidates.reduce((best, cur) =>
-            cur.population > best.population ? cur : best
+            scoreSwatch(cur) > scoreSwatch(best) ? cur : best
           )
         : // Fallback to named swatches if all quantized colors were filtered out
           palette.Vibrant ??
@@ -156,6 +172,11 @@ export async function POST(request: NextRequest) {
       logger.debug("[Color API] No swatch extracted from image");
       return NextResponse.json({ color: null });
     }
+
+    const [hDbg, sDbg] = swatch.hsl;
+    logger.debug(
+      `[Color API] Winner: hue=${(hDbg * 360).toFixed(0)}° sat=${(sDbg * 100).toFixed(0)}% pop=${swatch.population} score=${scoreSwatch(swatch).toFixed(0)}`
+    );
 
     const hex = swatch.hex;
     const pastel = toPastelHex(hex);

@@ -73,11 +73,24 @@ All runtime data fetching and mutations use Supabase JS via `src/lib/api/medleys
 
 ### Unified Page Layout
 
-All non-player pages follow a consistent layout pattern:
+All non-player pages follow this exact DOM structure pattern:
+```tsx
+<>
+  <AppHeader />
+  <div className="min-h-screen bg-[var(--background)] pt-[var(--header-height)]">
+    <div className="max-w-[var(--content-max-w-TYPE)] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Page content */}
+    </div>
+  </div>
+</>
+```
+
+Key rules:
+- **AppHeader is always OUTSIDE the content wrapper** — wrapped in a Fragment, never nested inside the `min-h-screen` div.
 - **Header**: White `AppHeader` (default variant `"home"`). Only player pages (`variant="player"`) use the dark header.
+- **Header inner max-width**: Always `--content-max-w-wide` (80rem) for non-player pages — matches the widest content page (Library).
 - **Background**: `bg-[var(--background)]` (`#fffbf7` warm white) — never use `bg-gray-50`, `bg-gray-100`, or gradients for page backgrounds.
-- **Header offset**: All pages use `pt-[var(--header-height)]` to prevent content from being hidden under the fixed header.
-- **Responsive padding**: `px-4 sm:px-6 lg:px-8` on all pages.
+- **Vertical padding**: `py-8` on all non-player pages (no exceptions).
 - **Max-width tiers** (CSS custom properties in `globals.css`):
 
 | Tier | CSS Variable | Value | Pages |

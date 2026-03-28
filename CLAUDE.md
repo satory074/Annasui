@@ -104,6 +104,17 @@ Single shared password (`EDIT_PASSWORD` env var, server-side only) + user nickna
 
 CRUD for medleys is in `src/lib/api/medleys.ts` (Supabase JS, handles validation + sanitization); query wrappers in `src/features/medley/queries/functions-supabase.ts`.
 
+### Color Extraction API (`/api/color/extract/`)
+
+Extracts a dominant color from song thumbnails for UI accent colors. Resolves platform links to thumbnails (Niconico CDN → YouTube → Spotify oEmbed), runs through node-vibrant, then converts to pastel via `toPastelHex()` (`src/lib/utils/color.ts`).
+
+**3-pass cascade algorithm**:
+1. Named swatches (Vibrant → DarkVibrant → LightVibrant → Muted → DarkMuted → LightMuted) — skip skin tones (hue 10-50°, moderate sat) and low saturation (<15%)
+2. Quantized colors scored by `sat² × pop⁰·⁵` (saturation-dominant) — filter: sat > 0.35, lightness 0.1-0.9, no skin tones
+3. Fallback: any non-null named swatch (skin tone acceptable)
+
+Result stored in `medley_songs.color`. Batch update: `node scripts/batch-update-colors.js` (hits production API, `--dry-run` for preview).
+
 ### Song Database Feature (`src/features/song-database/`)
 
 Parallel to `src/components/features/` (legacy). Used in `MedleyView` for DB-backed song search.
@@ -227,6 +238,10 @@ NEXT_PUBLIC_SUPABASE_URL=https://...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 DATABASE_URL=postgresql://...          # Optional: only for drizzle-kit (migrations, studio) — NOT used at runtime
 GEMINI_API_KEY=...                     # Server-side only — for AI setlist parser (F1). Without it, AI mode falls back to regex with warning banner.
+# Debug (development only)
+NEXT_PUBLIC_DEBUG_LOGS=true            # Optional: enable debug logging
+NEXT_PUBLIC_DEBUG_BYPASS_AUTH=true     # Optional: bypass auth on localhost
+NEXT_PUBLIC_DEBUG_PASSWORD=...         # Optional: debug mode via ?debug=true&debug_key=...
 ```
 
 Production env vars set via Firebase console.

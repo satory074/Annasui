@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Vibrant } from "node-vibrant/node";
+import type { Swatch } from "@vibrant/color";
 import { toPastelHex } from "@/lib/utils/color";
 import { logger } from "@/lib/utils/logger";
 
@@ -124,24 +125,32 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ color: null });
     }
 
-    const palette = await Vibrant.from(imageBuffer).getPalette();
+    const vibrant = new Vibrant(imageBuffer);
+    const palette = await vibrant.getPalette();
 
-    // Pick the swatch with the highest population (most pixels)
-    const swatches = [
-      palette.Vibrant,
-      palette.LightVibrant,
-      palette.DarkVibrant,
-      palette.Muted,
-      palette.DarkMuted,
-      palette.LightMuted,
-    ].filter((s): s is NonNullable<typeof s> => s !== null);
+    // Access the full quantized color list (default 64 colors) for true
+    // population-based selection instead of the 6 named swatches.
+    const allColors: Swatch[] = vibrant.result?.colors ?? [];
+
+    // Filter out near-white (L > 90%) and near-black (L < 10%) which
+    // aren't useful as UI accent colors, then pick the most frequent.
+    const candidates = allColors.filter((s) => {
+      const [, , l] = s.hsl;
+      return l > 0.1 && l < 0.9;
+    });
 
     const swatch =
-      swatches.length > 0
-        ? swatches.reduce((best, cur) =>
+      candidates.length > 0
+        ? candidates.reduce((best, cur) =>
             cur.population > best.population ? cur : best
           )
-        : null;
+        : // Fallback to named swatches if all quantized colors were filtered out
+          palette.Vibrant ??
+          palette.Muted ??
+          palette.DarkVibrant ??
+          palette.LightVibrant ??
+          palette.DarkMuted ??
+          palette.LightMuted;
 
     if (!swatch) {
       logger.debug("[Color API] No swatch extracted from image");

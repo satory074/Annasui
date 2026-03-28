@@ -128,45 +128,58 @@ export async function POST(request: NextRequest) {
     const vibrant = new Vibrant(imageBuffer);
     const palette = await vibrant.getPalette();
 
-    // Access the full quantized color list (default 64 colors) for true
-    // population-based selection instead of the 6 named swatches.
-    const allColors: Swatch[] = vibrant.result?.colors ?? [];
-
-    // Score = population * saturation, with penalties for skin tones and grays
-    function scoreSwatch(s: Swatch): number {
-      const [h, sat] = s.hsl; // h: 0-1, sat: 0-1
+    function isSkinTone(s: Swatch): boolean {
+      const [h, sat, l] = s.hsl;
       const hDeg = h * 360;
-      let score = s.population * sat;
-
-      // Penalize low-saturation (grays, muddy colors)
-      if (sat < 0.15) score *= 0.3;
-
-      // Penalize skin-tone hue (15-45°) with moderate saturation
-      // High-saturation oranges (S >= 0.55) are not penalized
-      if (hDeg >= 15 && hDeg <= 45 && sat < 0.55) score *= 0.5;
-
-      return score;
+      return hDeg >= 10 && hDeg <= 50 && sat > 0.15 && sat < 0.65 && l > 0.2 && l < 0.8;
     }
 
-    // Filter out near-white (L > 90%) and near-black (L < 10%) which
-    // aren't useful as UI accent colors, then pick the highest-scoring.
-    const candidates = allColors.filter((s) => {
-      const [, , l] = s.hsl;
-      return l > 0.1 && l < 0.9;
-    });
+    function isLowSaturation(s: Swatch): boolean {
+      return s.hsl[1] < 0.15;
+    }
 
-    const swatch =
-      candidates.length > 0
-        ? candidates.reduce((best, cur) =>
-            scoreSwatch(cur) > scoreSwatch(best) ? cur : best
-          )
-        : // Fallback to named swatches if all quantized colors were filtered out
-          palette.Vibrant ??
-          palette.Muted ??
-          palette.DarkVibrant ??
-          palette.LightVibrant ??
-          palette.DarkMuted ??
-          palette.LightMuted;
+    const namedSwatches = [
+      palette.Vibrant,
+      palette.DarkVibrant,
+      palette.LightVibrant,
+      palette.Muted,
+      palette.DarkMuted,
+      palette.LightMuted,
+    ];
+
+    // Pass 1: Named swatch that is neither skin tone nor low saturation
+    let swatch: Swatch | null = null;
+    let source = "none";
+    for (const candidate of namedSwatches) {
+      if (candidate && !isSkinTone(candidate) && !isLowSaturation(candidate)) {
+        swatch = candidate;
+        source = "named";
+        break;
+      }
+    }
+
+    // Pass 2: Quantized colors with saturation-dominant scoring
+    if (!swatch) {
+      const allColors: Swatch[] = vibrant.result?.colors ?? [];
+      const quantizedCandidates = allColors.filter((s) => {
+        const [, sat, l] = s.hsl;
+        return sat > 0.35 && l > 0.1 && l < 0.9 && !isSkinTone(s);
+      });
+      if (quantizedCandidates.length > 0) {
+        swatch = quantizedCandidates.reduce((best, cur) => {
+          const scoreCur = Math.pow(cur.hsl[1], 2) * Math.pow(cur.population, 0.5);
+          const scoreBest = Math.pow(best.hsl[1], 2) * Math.pow(best.population, 0.5);
+          return scoreCur > scoreBest ? cur : best;
+        });
+        source = "quantized";
+      }
+    }
+
+    // Pass 3: Any non-null named swatch (skin tone acceptable)
+    if (!swatch) {
+      swatch = namedSwatches.find((s) => s != null) ?? null;
+      if (swatch) source = "fallback";
+    }
 
     if (!swatch) {
       logger.debug("[Color API] No swatch extracted from image");
@@ -175,7 +188,7 @@ export async function POST(request: NextRequest) {
 
     const [hDbg, sDbg] = swatch.hsl;
     logger.debug(
-      `[Color API] Winner: hue=${(hDbg * 360).toFixed(0)}° sat=${(sDbg * 100).toFixed(0)}% pop=${swatch.population} score=${scoreSwatch(swatch).toFixed(0)}`
+      `[Color API] Winner (${source}): hue=${(hDbg * 360).toFixed(0)}° sat=${(sDbg * 100).toFixed(0)}% pop=${swatch.population}`
     );
 
     const hex = swatch.hex;

@@ -7,10 +7,10 @@ import { Button } from "@/components/ui/button";
 
 // プラットフォーム表示用の設定
 const PLATFORM_CONFIG = {
-  niconico: { name: "ニコニコ動画", icon: "🎬", color: "text-orange-600 dark:text-orange-400" },
-  youtube: { name: "YouTube", icon: "📺", color: "text-red-600 dark:text-red-400" },
-  spotify: { name: "Spotify", icon: "🎵", color: "text-green-600 dark:text-green-400" },
-  appleMusic: { name: "Apple Music", icon: "🍎", color: "text-red-600 dark:text-red-400" }
+  niconico: { name: "ニコニコ動画", icon: "🎬", color: "text-orange-600" },
+  youtube: { name: "YouTube", icon: "📺", color: "text-red-600" },
+  spotify: { name: "Spotify", icon: "🎵", color: "text-green-600" },
+  appleMusic: { name: "Apple Music", icon: "🍎", color: "text-red-600" }
 };
 
 // 複数リンクを表示するコンポーネント

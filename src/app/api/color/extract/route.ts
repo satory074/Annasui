@@ -126,14 +126,22 @@ export async function POST(request: NextRequest) {
 
     const palette = await Vibrant.from(imageBuffer).getPalette();
 
-    // Fallback chain for best swatch
+    // Pick the swatch with the highest population (most pixels)
+    const swatches = [
+      palette.Vibrant,
+      palette.LightVibrant,
+      palette.DarkVibrant,
+      palette.Muted,
+      palette.DarkMuted,
+      palette.LightMuted,
+    ].filter((s): s is NonNullable<typeof s> => s !== null);
+
     const swatch =
-      palette.Vibrant ??
-      palette.LightVibrant ??
-      palette.DarkVibrant ??
-      palette.Muted ??
-      palette.DarkMuted ??
-      palette.LightMuted;
+      swatches.length > 0
+        ? swatches.reduce((best, cur) =>
+            cur.population > best.population ? cur : best
+          )
+        : null;
 
     if (!swatch) {
       logger.debug("[Color API] No swatch extracted from image");

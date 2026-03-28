@@ -130,6 +130,7 @@ export function FixedPlayerBar({ title, creator }: FixedPlayerBarProps) {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 bg-gray-800 border-t border-gray-700 text-white">
+      <div className="max-w-[var(--content-max-w-player)] mx-auto">
       {/* Seek bar (full-width, on top of the bar) */}
       <div
         ref={seekBarRef}
@@ -295,6 +296,7 @@ export function FixedPlayerBar({ title, creator }: FixedPlayerBarProps) {
             </svg>
           </button>
         </div>
+      </div>
       </div>
     </div>
   );

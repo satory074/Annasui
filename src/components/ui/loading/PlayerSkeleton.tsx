@@ -3,7 +3,7 @@ import { Skeleton } from './Skeleton'
 
 export function PlayerSkeleton() {
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="max-w-[var(--content-max-w-home)] mx-auto px-4 py-8">
       <div className="space-y-6">
         {/* Header skeleton */}
         <div className="space-y-2">

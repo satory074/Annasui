@@ -281,11 +281,11 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="min-h-screen bg-gray-50 pt-[var(--header-height)]">
             {/* New App Header */}
             <AppHeader variant="home" />
 
-            <div className="max-w-6xl mx-auto py-8 px-4">
+            <div className="max-w-[var(--content-max-w-home)] mx-auto py-8 px-4">
                 {/* Page Title and Actions */}
                 <div className="mb-8">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-6">

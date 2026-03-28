@@ -257,7 +257,7 @@ export default function LibraryPageClient() {
 
   // Sort indicator component
   const SortIndicator = ({ field }: { field: SortField }) => (
-    <span className={`ml-1 ${sortField === field ? 'text-blue-600' : 'text-gray-300'}`}>
+    <span className={`ml-1 ${sortField === field ? 'text-indigo-600' : 'text-gray-300'}`}>
       {sortField === field ? (sortOrder === "asc" ? "▲" : "▼") : "⇅"}
     </span>
   );
@@ -330,7 +330,7 @@ export default function LibraryPageClient() {
                 onClick={() => setActiveTab("songs")}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === "songs"
-                    ? "border-blue-500 text-blue-600"
+                    ? "border-indigo-500 text-indigo-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
@@ -340,7 +340,7 @@ export default function LibraryPageClient() {
                 onClick={() => setActiveTab("duplicates")}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === "duplicates"
-                    ? "border-blue-500 text-blue-600"
+                    ? "border-indigo-500 text-indigo-600"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
@@ -362,7 +362,7 @@ export default function LibraryPageClient() {
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="楽曲名、アーティスト名で検索..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
             </div>
           )}
@@ -383,8 +383,8 @@ export default function LibraryPageClient() {
               </div>
             ) : (
               <div>
-                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm text-blue-700">
+                <div className="mb-4 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                  <p className="text-sm text-indigo-700">
                     <strong>重複管理について:</strong> 表記揺れにより同じ楽曲が複数登録されている可能性があります。
                     マスターとなる楽曲を選択し、「マージ実行」をクリックすると、他の楽曲の参照がマスターに統合されます。
                     重複でない場合は「重複ではない」をクリックして非表示にできます。
@@ -422,7 +422,7 @@ export default function LibraryPageClient() {
                         key={field}
                         onClick={() => handleSort(field)}
                         className={`px-2 py-1 text-xs rounded-md border transition-colors ${
-                          sortField === field ? 'bg-blue-50 border-blue-300 text-blue-700' : 'border-gray-200 text-gray-600'
+                          sortField === field ? 'bg-indigo-50 border-indigo-300 text-indigo-700' : 'border-gray-200 text-gray-600'
                         }`}
                       >
                         {labels[field]}
@@ -473,7 +473,7 @@ export default function LibraryPageClient() {
                           <div className="flex gap-1 shrink-0">
                             <button
                               onClick={() => handleEditSong(song)}
-                              className="p-1.5 text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                              className="p-1.5 text-indigo-600 hover:bg-indigo-50 rounded transition-colors"
                               title="編集"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -508,7 +508,7 @@ export default function LibraryPageClient() {
                       </th>
                       <th
                         scope="col"
-                        className={`px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors ${sortField === "title" ? "bg-blue-50" : ""}`}
+                        className={`px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors ${sortField === "title" ? "bg-indigo-50" : ""}`}
                         onClick={() => handleSort("title")}
                       >
                         <div className="flex items-center">
@@ -520,7 +520,7 @@ export default function LibraryPageClient() {
                       </th>
                       <th
                         scope="col"
-                        className={`px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors ${sortField === "artist" ? "bg-blue-50" : ""}`}
+                        className={`px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors ${sortField === "artist" ? "bg-indigo-50" : ""}`}
                         onClick={() => handleSort("artist")}
                       >
                         <div className="flex items-center">
@@ -537,7 +537,7 @@ export default function LibraryPageClient() {
                       </th>
                       <th
                         scope="col"
-                        className={`px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors ${sortField === "updatedAt" ? "bg-blue-50" : ""}`}
+                        className={`px-6 py-3 text-left cursor-pointer hover:bg-gray-100 transition-colors ${sortField === "updatedAt" ? "bg-indigo-50" : ""}`}
                         onClick={() => handleSort("updatedAt")}
                       >
                         <div className="flex items-center">
@@ -610,7 +610,7 @@ export default function LibraryPageClient() {
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <button
                               onClick={() => handleEditSong(song)}
-                              className="text-blue-600 hover:text-blue-900 mr-3 transition-colors"
+                              className="text-indigo-600 hover:text-indigo-900 mr-3 transition-colors"
                             >
                               編集
                             </button>

@@ -240,7 +240,7 @@ export default function DuplicateGroupCard({ group, onMergeComplete, onDismiss }
                 key={song.id}
                 className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
                   selectedPrimary === song.id
-                    ? 'border-blue-500 bg-blue-50'
+                    ? 'border-indigo-500 bg-indigo-50'
                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                 }`}
               >
@@ -276,7 +276,7 @@ export default function DuplicateGroupCard({ group, onMergeComplete, onDismiss }
                     </span>
                   )}
                   {selectedPrimary === song.id && (
-                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs">
+                    <span className="px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded text-xs">
                       マスター
                     </span>
                   )}

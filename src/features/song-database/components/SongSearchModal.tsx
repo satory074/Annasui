@@ -30,7 +30,7 @@ const matchLabels: Record<MatchType, string> = {
 
 const matchColors: Record<MatchType, string> = {
   exact: "bg-green-100 text-green-800",
-  startsWith: "bg-blue-100 text-blue-800",
+  startsWith: "bg-indigo-100 text-indigo-800",
   wordMatch: "bg-purple-100 text-purple-800",
   partialMatch: "bg-yellow-100 text-yellow-800",
   fuzzyMatch: "bg-gray-100 text-gray-800",

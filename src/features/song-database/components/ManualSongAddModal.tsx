@@ -323,21 +323,21 @@ export default function ManualSongAddModal({
 
         {/* 類似楽曲の警告（song_masterテーブル全体から検索） */}
         {similarSongs.length > 0 && (
-          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="mt-4 p-3 bg-indigo-50 border border-indigo-200 rounded-md">
             <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 text-blue-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg className="w-5 h-5 text-indigo-500 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
               </svg>
               <div className="flex-1">
-                <p className="text-sm font-medium text-blue-700 mb-2">
+                <p className="text-sm font-medium text-indigo-700 mb-2">
                   データベースに類似の楽曲が見つかりました
                 </p>
-                <p className="text-xs text-blue-600 mb-3">
+                <p className="text-xs text-indigo-600 mb-3">
                   既存の楽曲を使用すると、重複登録を防げます。
                 </p>
                 <ul className="space-y-2">
                   {similarSongs.map((result) => (
-                    <li key={result.song.id} className="flex items-center justify-between bg-white p-2 rounded border border-blue-100">
+                    <li key={result.song.id} className="flex items-center justify-between bg-white p-2 rounded border border-indigo-100">
                       <div className="flex-1 min-w-0 mr-2">
                         <span className="text-sm font-medium text-gray-900 block truncate">{result.song.title}</span>
                         <span className="text-xs text-gray-500 block truncate">

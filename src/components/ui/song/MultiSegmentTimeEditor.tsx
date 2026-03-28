@@ -120,7 +120,7 @@ function SegmentRow({
         {onSeek && onTogglePlayPause && (
           <button
             onClick={() => onTogglePreview(segment.id)}
-            className="p-1 text-xs bg-mint-600 text-white rounded hover:bg-olive-700 focus:outline-none focus:ring-1 focus:ring-mint-600"
+            className="p-1 text-xs bg-mint-600 text-white rounded hover:bg-mint-700 focus:outline-none focus:ring-1 focus:ring-mint-600"
             title={isPreviewPlaying ? "プレビュー停止" : "区間の最初から再生"}
           >
             {isPreviewPlaying ? (
@@ -164,7 +164,7 @@ function SegmentRow({
         {hasMultiple ? (
           <button
             onClick={() => onRemoveSegment(segment.id)}
-            className="p-1 text-xs bg-brick-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-brick-600"
+            className="p-1 text-xs bg-red-500 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-1 focus:ring-red-500"
             title="区間を削除"
           >
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -344,7 +344,7 @@ export default function MultiSegmentTimeEditor({
       startTime: defaultStart,
       endTime: defaultEnd,
       segmentNumber: maxSegmentNumber + 1,
-      color: `bg-blue-${400 + (maxSegmentNumber % 3) * 100}`
+      color: `bg-indigo-${400 + (maxSegmentNumber % 3) * 100}`
     };
 
     logger.debug('✅ New segment created', newSegment);
@@ -454,7 +454,7 @@ export default function MultiSegmentTimeEditor({
             <h4 className="text-base font-medium text-gray-700">タイムラインプレビュー</h4>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-500">📍 現在:</span>
-              <span className="text-lg font-bold text-blue-600 tabular-nums">
+              <span className="text-lg font-bold text-indigo-600 tabular-nums">
                 {formatTimeSimple(currentTime)}
               </span>
             </div>
@@ -480,7 +480,7 @@ export default function MultiSegmentTimeEditor({
               <div
                 key={segment.id}
                 className={`absolute h-full bg-orange-500 border-2 border-orange-600 rounded-sm ${
-                  previewingSegmentId === segment.id ? 'ring-2 ring-blue-400 z-10' : ''
+                  previewingSegmentId === segment.id ? 'ring-2 ring-indigo-400 z-10' : ''
                 } hover:bg-orange-600 transition-colors cursor-pointer`}
                 style={{
                   left: `${(segment.startTime / maxDuration) * 100}%`,

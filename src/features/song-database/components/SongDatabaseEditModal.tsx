@@ -177,7 +177,7 @@ export default function SongDatabaseEditModal({
             type="text"
             value={formData.title}
             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+            className={`w-full px-3 py-2 border rounded-md text-gray-900 focus:ring-2 focus:ring-orange-500 focus:border-transparent ${
               errors.title ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="楽曲名を入力"
@@ -228,7 +228,7 @@ export default function SongDatabaseEditModal({
               type="url"
               value={formData.niconicoLink || ""}
               onChange={(e) => setFormData({ ...formData, niconicoLink: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               placeholder="https://www.nicovideo.jp/watch/..."
             />
           </div>
@@ -240,7 +240,7 @@ export default function SongDatabaseEditModal({
               type="url"
               value={formData.youtubeLink || ""}
               onChange={(e) => setFormData({ ...formData, youtubeLink: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               placeholder="https://www.youtube.com/watch?v=..."
             />
           </div>
@@ -252,7 +252,7 @@ export default function SongDatabaseEditModal({
               type="url"
               value={formData.spotifyLink || ""}
               onChange={(e) => setFormData({ ...formData, spotifyLink: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               placeholder="https://open.spotify.com/track/..."
             />
           </div>
@@ -264,7 +264,7 @@ export default function SongDatabaseEditModal({
               type="url"
               value={formData.applemusicLink || ""}
               onChange={(e) => setFormData({ ...formData, applemusicLink: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-900 text-sm focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               placeholder="https://music.apple.com/..."
             />
           </div>

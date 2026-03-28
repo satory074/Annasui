@@ -12,8 +12,8 @@ interface EditHistoryPanelProps {
 
 const actionLabels: Record<string, { label: string; color: string }> = {
   create_medley: { label: "作成", color: "bg-green-100 text-green-800" },
-  update_medley: { label: "更新", color: "bg-blue-100 text-blue-800" },
-  update_songs: { label: "楽曲更新", color: "bg-blue-100 text-blue-800" },
+  update_medley: { label: "更新", color: "bg-indigo-100 text-indigo-800" },
+  update_songs: { label: "楽曲更新", color: "bg-indigo-100 text-indigo-800" },
   add_song: { label: "楽曲追加", color: "bg-purple-100 text-purple-800" },
   delete_song: { label: "楽曲削除", color: "bg-red-100 text-red-800" },
   restore_snapshot: { label: "復元", color: "bg-yellow-100 text-yellow-800" },

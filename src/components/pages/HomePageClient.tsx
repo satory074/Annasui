@@ -311,7 +311,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                             </button>
 
                             {/* Medley count display */}
-                            <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm">
+                            <div className="hidden sm:flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm">
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                     <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
@@ -335,7 +335,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     }}
                                     className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                                         searchMode === "medley"
-                                            ? "border-blue-500 text-blue-600"
+                                            ? "border-indigo-500 text-indigo-600"
                                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                     }`}
                                 >
@@ -353,7 +353,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                     }}
                                     className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                                         searchMode === "song"
-                                            ? "border-blue-500 text-blue-600"
+                                            ? "border-indigo-500 text-indigo-600"
                                             : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                                     }`}
                                 >
@@ -419,7 +419,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                                 setSortOrder(newSortOrder);
                                                 setCurrentPage(1);
                                             }}
-                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900"
                                         >
                                             <option value="createdAt-desc">🆕 新着順</option>
                                             <option value="viewCount-desc">🔥 人気順（再生回数）</option>
@@ -446,7 +446,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                                 setSongSortOrder(newSortOrder);
                                                 setCurrentPage(1);
                                             }}
-                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                                            className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900"
                                         >
                                             <option value="songTitle-asc">タイトル(昇順)</option>
                                             <option value="songTitle-desc">タイトル(降順)</option>
@@ -470,7 +470,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                             setItemsPerPage(newItemsPerPage);
                                             setCurrentPage(1);
                                         }}
-                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm text-gray-900"
+                                        className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm text-gray-900"
                                     >
                                         <option value={8}>8件</option>
                                         <option value={16}>16件</option>
@@ -715,13 +715,13 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                                         {formatDuration(medley.duration)}
                                     </div>
 
-                                    <div className="absolute bottom-3 left-3 bg-blue-600/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md font-medium">
+                                    <div className="absolute bottom-3 left-3 bg-indigo-600/90 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md font-medium">
                                         {medley.songs.length}曲
                                     </div>
                                 </div>
                                 
                                 <div className="p-4">
-                                    <h2 className="text-display text-base font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+                                    <h2 className="text-display text-base font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-orange-600 transition-colors">
                                         {medley.title}
                                     </h2>
                                     <p className="text-sm text-gray-600 mb-3 line-clamp-1">

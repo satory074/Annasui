@@ -10,9 +10,9 @@ export default function SettingsPage() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false)
 
   return (
-    <div className="min-h-screen bg-gray-100 pt-[var(--header-height)]">
-      <AppHeader variant="default" />
-      <div className="max-w-4xl mx-auto py-8 px-4">
+    <div className="min-h-screen bg-[var(--background)] pt-[var(--header-height)]">
+      <AppHeader />
+      <div className="max-w-[var(--content-max-w-narrow)] mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-4 mb-6">

@@ -256,6 +256,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 DATABASE_URL=postgresql://...          # Optional: only for drizzle-kit (migrations, studio) — NOT used at runtime
 GEMINI_API_KEY=...                     # Server-side only — for AI setlist parser (F1). Without it, AI mode falls back to regex with warning banner.
+NEXT_PUBLIC_GA_MEASUREMENT_ID=G-...    # Optional: GA4 measurement ID. Without it, analytics script is not loaded.
 # Debug (development only)
 NEXT_PUBLIC_DEBUG_LOGS=true            # Optional: enable debug logging
 NEXT_PUBLIC_DEBUG_BYPASS_AUTH=true     # Optional: bypass auth on localhost

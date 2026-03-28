@@ -281,10 +281,9 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
     };
 
     return (
-        <div className="min-h-screen bg-[var(--background)] pt-[var(--header-height)]">
-            {/* New App Header */}
+        <>
             <AppHeader variant="home" />
-
+            <div className="min-h-screen bg-[var(--background)] pt-[var(--header-height)]">
             <div className="max-w-[var(--content-max-w-home)] mx-auto py-8 px-4 sm:px-6 lg:px-8">
                 {/* Page Title and Actions */}
                 <div className="mb-8">
@@ -842,6 +841,7 @@ export default function HomePageClient({ initialMedleys }: HomePageClientProps) 
                     setShowCreateMedleyModal(true);
                 }}
             />
-        </div>
+            </div>
+        </>
     );
 }

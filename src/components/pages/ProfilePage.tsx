@@ -8,8 +8,9 @@ export default function ProfilePage() {
   const router = useRouter()
 
   return (
-    <div className="min-h-screen bg-[var(--background)] pt-[var(--header-height)]">
+    <>
       <AppHeader />
+      <div className="min-h-screen bg-[var(--background)] pt-[var(--header-height)]">
       <div className="max-w-[var(--content-max-w-narrow)] mx-auto py-8 px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -56,5 +57,6 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+    </>
   )
 }

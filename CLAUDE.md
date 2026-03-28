@@ -69,7 +69,7 @@ All runtime data fetching and mutations use Supabase JS via `src/lib/api/medleys
 - **Keyboard shortcuts** (edit mode): `Ctrl+Z` undo, `Ctrl+Shift+Z` / `Ctrl+Y` redo — skipped when INPUT/TEXTAREA focused
 - `FixedPlayerBar` rendered at bottom (hidden during live annotation mode)
 - **PiP mode**: Video can be toggled to picture-in-picture (draggable via `useDraggable` hook). Position resets to bottom-right on mode exit.
-- **Viewport-constrained layout**: Video player capped at `max-h-[50vh]`, main content area uses `h-[calc(100vh-7rem)]` with `overflow-y-auto` so the entire page fits without scrolling on 1080p screens
+- **Viewport-constrained layout**: Video player capped at `max-h-[50vh]`, main content area uses CSS custom properties (`--header-height`, `--breadcrumb-height`) for viewport calc so the entire page fits without scrolling on 1080p screens. Layout dimensions are centralized in `src/app/globals.css` `:root`.
 
 All new code goes in `src/features/`. Legacy `src/components/features/` retains only `ImportSetlistModal` and library components still used by active pages.
 

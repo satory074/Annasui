@@ -283,7 +283,10 @@ Production env vars set via Firebase console.
 ## Code Conventions
 
 - Use `logger.debug/info/warn/error()` instead of `console.log` (`src/lib/utils/logger.ts`)
-- **Never use raw `bg-blue-*` for action buttons** — always use `<Button>` from `src/components/ui/button`. Variants: `default` (orange, primary actions), `destructive` (red, deletes), `outline` (secondary), `secondary` (gray, auxiliary), `ghost` (toolbar/inline), `link`. Exception: `bg-blue-*` is allowed only for brand-color labels (e.g. Facebook) and non-interactive badges.
+- **Never use `blue-*` outside debug panels** — use `indigo-*` for info/tabs/metadata, `orange-*` for focus rings/brand. Always use `<Button>` from `src/components/ui/button` for action buttons. Variants: `default` (orange, primary actions), `destructive` (red, deletes), `outline` (secondary), `secondary` (gray, auxiliary), `ghost` (toolbar/inline), `link`.
+- **Focus rings**: `focus:ring-orange-500` (inputs) or `focus-visible:ring-ring` (buttons). Never `focus:ring-blue-500`.
+- **Info/metadata backgrounds**: `bg-indigo-50` + `text-indigo-700`. Never `bg-blue-50`.
+- **Semantic colors**: Success=Mint, Warning=Amber, Error=Red, Info=Indigo. See TONMANUAL.md §2.
 - Auth guard pattern: `authLoading ? <Loading /> : isAuthenticated ? <EditUI /> : <LoginPrompt />`
 - Conditionally pass edit callbacks: `onEdit={isAuthenticated ? handleEdit : undefined}`
 - All save operations require `nickname` parameter

@@ -333,7 +333,7 @@ export default function CreateMedleyModal({
               <p className="mt-1 text-sm text-red-600">{errors.videoUrl}</p>
             )}
             {loadingMessage && (
-              <p className="mt-1 text-sm text-blue-600">{loadingMessage}</p>
+              <p className="mt-1 text-sm text-indigo-600">{loadingMessage}</p>
             )}
             <p className="mt-1 text-sm text-gray-500">
               URLを入力後、「取得」ボタンで動画情報を自動入力できます

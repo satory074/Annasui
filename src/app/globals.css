@@ -1,43 +1,38 @@
 @import "tailwindcss";
 
 :root {
-  /* Legacy Color System (for compatibility) */
+  /* Core Neutrals */
   --background: #fffbf7;
   --foreground: #1a1a2e;
-  --primary: #667eea;
-  --primary-hover: #5a67d8;
-  --secondary: #f3f4f6;
-  --accent: #ec4899;
-  --accent-hover: #db2777;
-  --accent-light: #fce7f3;
   --surface: #f9fafb;
   --border: #e5e7eb;
   --text-secondary: #6b7280;
-  
-  /* Vibrant Orange Color System */
+
+  /* Brand Gradients */
   --gradient-primary: linear-gradient(135deg, #ff8c42 0%, #ffa55c 100%);
   --gradient-secondary: linear-gradient(135deg, #5b6dee 0%, #4c63d2 100%);
-  --gradient-accent: linear-gradient(90deg, #00d9a3 0%, #06b981 100%);
-  --gradient-music: linear-gradient(90deg, #ff8c42 0%, #ffa55c 100%);
-  
-  /* Interactive Gradients */
   --gradient-hover: linear-gradient(135deg, #ffa55c 0%, #ffb876 100%);
   --gradient-active: linear-gradient(135deg, #ff7728 0%, #ff8c42 100%);
-  --gradient-focus: linear-gradient(135deg, #ff8c42 0%, #5b6dee 100%);
-  
-  /* Solid Colors for Vibrant Orange System */
+
+  /* Brand Solid Colors */
   --color-orange-primary: #ff8c42;
   --color-orange-secondary: #ffa55c;
   --color-indigo-primary: #5b6dee;
   --color-indigo-secondary: #4c63d2;
   --color-mint-primary: #00d9a3;
   --color-mint-secondary: #06b981;
-  --color-vibrant-primary: #ff8c42;
-  --color-vibrant-secondary: #ffa55c;
-  
-  /* Background Gradients */
-  --gradient-surface: linear-gradient(180deg, #fff9f5 0%, #fff5eb 100%);
-  --gradient-card: linear-gradient(135deg, #fffbf7 0%, #fff5f0 100%);
+
+  /* Semantic Colors */
+  --color-success: #00d9a3;
+  --color-success-light: #e6faf4;
+  --color-warning: #f59e0b;
+  --color-warning-light: #fffbeb;
+  --color-error: #ef4444;
+  --color-error-light: #fef2f2;
+  --color-info: #5b6dee;
+  --color-info-light: #eef0fd;
+  --color-orange-dark: #e07030;  /* Text on white (4.1:1 contrast) */
+  --color-ring: #ff8c42;         /* Unified focus ring color */
 
   /* Layout Dimensions */
   --header-height: 4rem;          /* 64px = h-16 */
@@ -51,32 +46,20 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-ring: var(--color-ring);
 
-  /* Vibrant Orange Theme Colors */
+  /* Brand Theme Colors */
   --color-orange-600: var(--color-orange-primary);
   --color-orange-700: var(--color-orange-secondary);
   --color-indigo-600: var(--color-indigo-primary);
   --color-indigo-700: var(--color-indigo-secondary);
   --color-mint-600: var(--color-mint-primary);
   --color-mint-700: var(--color-mint-secondary);
-  --color-vibrant-600: var(--color-vibrant-primary);
-  --color-vibrant-700: var(--color-vibrant-secondary);
 
-  /* Legacy mappings for compatibility - being phased out */
-  --color-caramel-600: var(--color-orange-primary);
-  --color-caramel-700: var(--color-orange-secondary);
-  --color-caramel-50: #fff5f0;
-  --color-sienna-600: var(--color-indigo-primary);
-  --color-sienna-700: var(--color-indigo-secondary);
-  --color-olive-600: var(--color-mint-primary);
-  --color-brick-600: #ef4444;
-
-  /* Typography - New font system */
+  /* Typography */
   --font-display: var(--font-display);
   --font-ui: var(--font-ui);
   --font-accent: var(--font-accent);
-
-  /* Legacy font variables for compatibility */
   --font-sans: var(--font-ui);
   --font-mono: var(--font-accent);
 }
@@ -85,60 +68,28 @@
   :root {
     --background: #242438;
     --foreground: #f1f3f5;
-    --primary: #818cf8;
-    --primary-hover: #6366f1;
-    --secondary: #2a2a3e;
-    --accent: #f472b6;
-    --accent-hover: #ec4899;
-    --accent-light: #831843;
     --surface: #2a2a3e;
     --border: #4a4a5e;
     --text-secondary: #b1b5c3;
-    
-    /* Dark Mode Vibrant Orange Gradients */
+
     --gradient-primary: linear-gradient(135deg, #ff9944 0%, #ffb366 100%);
     --gradient-secondary: linear-gradient(135deg, #8a99ff 0%, #7788ee 100%);
-    --gradient-accent: linear-gradient(90deg, #00f5b0 0%, #22e595 100%);
-    --gradient-music: linear-gradient(90deg, #ff9944 0%, #ffb366 100%);
-      
-    /* Dark Interactive Gradients */
     --gradient-hover: linear-gradient(135deg, #ffb366 0%, #ffc999 100%);
     --gradient-active: linear-gradient(135deg, #ff7722 0%, #ff9944 100%);
-    --gradient-focus: linear-gradient(135deg, #ff9944 0%, #8a99ff 100%);
-    
-    /* Dark Background Gradients */
-    --gradient-surface: linear-gradient(180deg, #242438 0%, #3a2d2a 100%);
-    --gradient-card: linear-gradient(135deg, #2a2a3e 0%, #453530 100%);
   }
 }
 
 .dark {
   --background: #1a1a2e !important;
   --foreground: #f0f0f0 !important;
-  --primary: #818cf8;
-  --primary-hover: #6366f1;
-  --secondary: #1f2937 !important;
-  --accent: #f472b6;
-  --accent-hover: #ec4899;
-  --accent-light: #831843;
   --surface: #1f2937 !important;
   --border: #374151 !important;
   --text-secondary: #9ca3af !important;
-  
-  /* Dark Mode Vibrant Orange Gradients */
+
   --gradient-primary: linear-gradient(135deg, #ff9944 0%, #ffb366 100%);
   --gradient-secondary: linear-gradient(135deg, #8a99ff 0%, #7788ee 100%);
-  --gradient-accent: linear-gradient(90deg, #00f5b0 0%, #22e595 100%);
-  --gradient-music: linear-gradient(90deg, #ff9944 0%, #ffb366 100%);
-  
-  /* Dark Interactive Gradients */
   --gradient-hover: linear-gradient(135deg, #ffb366 0%, #ffc999 100%);
   --gradient-active: linear-gradient(135deg, #ff7722 0%, #ff9944 100%);
-  --gradient-focus: linear-gradient(135deg, #ff9944 0%, #8a99ff 100%);
-  
-  /* Dark Background Gradients */
-  --gradient-surface: linear-gradient(180deg, #1a1a2e 0%, #2d2540 100%);
-  --gradient-card: linear-gradient(135deg, #1f2937 0%, #374151 100%);
 }
 
 body {

@@ -132,7 +132,7 @@ export function SongList({
                 isActive
                   ? "bg-orange-50 border border-orange-200"
                   : isSelected
-                  ? "bg-blue-50 border border-blue-200"
+                  ? "bg-indigo-50 border border-indigo-200"
                   : "hover:bg-gray-50 border border-transparent"
               }`}
               onClick={() => handleGroupedClick(sections)}
@@ -203,9 +203,9 @@ export function SongList({
               isActive
                 ? "bg-orange-50 border border-orange-200"
                 : isSelected
-                ? "bg-blue-50 border border-blue-200"
+                ? "bg-indigo-50 border border-indigo-200"
                 : "hover:bg-gray-50 border border-transparent"
-            } ${isDropTarget ? "border-t-2 border-t-blue-400" : ""}`}
+            } ${isDropTarget ? "border-t-2 border-t-indigo-400" : ""}`}
             onClick={() => handleClick(song)}
           >
             {/* Drag handle (edit mode only) */}

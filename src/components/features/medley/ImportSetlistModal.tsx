@@ -513,8 +513,8 @@ export default function ImportSetlistModal({
         {activeTab === "text" && (
           <>
             {/* Format help */}
-            <div className="p-3 bg-blue-50 rounded-md">
-              <div className="text-sm text-blue-800 grid grid-cols-2 gap-2">
+            <div className="p-3 bg-indigo-50 rounded-md">
+              <div className="text-sm text-indigo-800 grid grid-cols-2 gap-2">
                 <div>
                   <p className="font-medium mb-1">基本形式:</p>
                   <ul className="space-y-0.5 ml-2 text-xs">
@@ -569,7 +569,7 @@ export default function ImportSetlistModal({
         {/* ── CSV tab ── */}
         {activeTab === "csv" && (
           <>
-            <div className="p-3 bg-blue-50 rounded-md text-sm text-blue-800">
+            <div className="p-3 bg-indigo-50 rounded-md text-sm text-indigo-800">
               <p className="font-medium mb-1">CSV / TSV ペースト</p>
               <p className="text-xs">
                 カラム例: <code>開始時間, 曲名, アーティスト</code>（タブ区切り自動検出）

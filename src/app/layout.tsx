@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { Fraunces } from "next/font/google";
 import { Onest } from "next/font/google";
 import { Space_Grotesk } from "next/font/google";
@@ -85,6 +86,9 @@ export default function RootLayout({
           </ErrorBoundary>
         </Providers>
       </body>
+      {process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID && (
+        <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID} />
+      )}
     </html>
   );
 }

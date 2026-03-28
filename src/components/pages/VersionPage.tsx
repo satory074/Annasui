@@ -75,7 +75,7 @@ export default function VersionPage() {
     return (
       <>
         <AppHeader variant="default" />
-        <div className="min-h-screen pt-16 bg-gradient-to-br from-orange-50 to-indigo-50">
+        <div className="min-h-screen pt-[var(--header-height)] bg-gradient-to-br from-orange-50 to-indigo-50">
           <div className="max-w-4xl mx-auto p-6">
             <div className="animate-pulse">
               <div className="h-8 bg-gray-200 rounded mb-4"></div>
@@ -92,7 +92,7 @@ export default function VersionPage() {
   return (
     <>
       <AppHeader variant="default" />
-      <div className="min-h-screen pt-16 bg-gradient-to-br from-orange-50 to-indigo-50">
+      <div className="min-h-screen pt-[var(--header-height)] bg-gradient-to-br from-orange-50 to-indigo-50">
         <div className="max-w-4xl mx-auto p-6">
           {/* ヘッダーセクション */}
           <div className="text-center mb-12">

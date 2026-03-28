@@ -98,7 +98,7 @@ export default function BaseModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 pt-16 pb-24"
+      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 pt-[var(--header-height)] pb-24"
       onClick={onClose}
       role="presentation"
     >

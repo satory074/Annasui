@@ -38,6 +38,12 @@
   /* Background Gradients */
   --gradient-surface: linear-gradient(180deg, #fff9f5 0%, #fff5eb 100%);
   --gradient-card: linear-gradient(135deg, #fffbf7 0%, #fff5f0 100%);
+
+  /* Layout Dimensions */
+  --header-height: 4rem;          /* 64px = h-16 */
+  --breadcrumb-height: 3rem;      /* breadcrumb area on player pages */
+  --content-max-w-player: 1920px; /* Player page max width */
+  --content-max-w-home: 72rem;    /* 1152px = max-w-6xl */
 }
 
 @theme inline {

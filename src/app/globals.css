@@ -64,34 +64,6 @@
   --font-mono: var(--font-accent);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #242438;
-    --foreground: #f1f3f5;
-    --surface: #2a2a3e;
-    --border: #4a4a5e;
-    --text-secondary: #b1b5c3;
-
-    --gradient-primary: linear-gradient(135deg, #ff9944 0%, #ffb366 100%);
-    --gradient-secondary: linear-gradient(135deg, #8a99ff 0%, #7788ee 100%);
-    --gradient-hover: linear-gradient(135deg, #ffb366 0%, #ffc999 100%);
-    --gradient-active: linear-gradient(135deg, #ff7722 0%, #ff9944 100%);
-  }
-}
-
-.dark {
-  --background: #1a1a2e !important;
-  --foreground: #f0f0f0 !important;
-  --surface: #1f2937 !important;
-  --border: #374151 !important;
-  --text-secondary: #9ca3af !important;
-
-  --gradient-primary: linear-gradient(135deg, #ff9944 0%, #ffb366 100%);
-  --gradient-secondary: linear-gradient(135deg, #8a99ff 0%, #7788ee 100%);
-  --gradient-hover: linear-gradient(135deg, #ffb366 0%, #ffc999 100%);
-  --gradient-active: linear-gradient(135deg, #ff7722 0%, #ff9944 100%);
-}
-
 body {
   background: var(--background);
   color: var(--foreground);

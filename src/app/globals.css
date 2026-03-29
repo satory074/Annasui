@@ -37,7 +37,6 @@
   /* Layout Dimensions */
   --header-height: 4rem;          /* 64px = h-16 */
   --breadcrumb-height: 3rem;      /* breadcrumb area on player pages */
-  --content-max-w-player: 1920px; /* Player page max width */
   --content-max-w-home: 72rem;    /* 1152px = max-w-6xl */
   --content-max-w-wide: 80rem;    /* 1280px = max-w-7xl */
   --content-max-w-narrow: 56rem;  /* 896px = max-w-4xl */

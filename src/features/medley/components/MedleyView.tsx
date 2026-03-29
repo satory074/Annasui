@@ -339,7 +339,7 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   }
 
   return (
-    <div className="flex max-w-[var(--content-max-w-player)] mx-auto h-[calc(100vh-var(--header-height)-var(--breadcrumb-height))] overflow-hidden">
+    <div className="flex max-w-[var(--content-max-w-wide)] mx-auto h-[calc(100vh-var(--header-height)-var(--breadcrumb-height))] overflow-hidden">
       {/* Main content */}
       <div className="flex-1 bg-white shadow-lg flex flex-col overflow-hidden relative">
         {/* Video player wrapper — mode-dependent className, single render to avoid iframe remount */}

@@ -305,26 +305,6 @@ export function SongList({
                     <line x1="18" y1="5" x2="18" y2="19" strokeWidth={2.5} strokeLinecap="round" />
                   </svg>
                 </Button>
-                {index > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 w-7 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      const prevSong = sorted[index - 1];
-                      useTimelineStore.getState().updateSong(song.id, { startTime: prevSong.endTime });
-                      logger.info('⏱️ 前の曲の終了時刻を開始時刻に設定', { songId: song.id, prevEndTime: prevSong.endTime });
-                    }}
-                    title="前の曲の終了時刻を開始時刻に設定"
-                  >
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path d="M19 12H5" strokeWidth={2} strokeLinecap="round" />
-                      <path d="M11 6l-6 6 6 6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                      <line x1="19" y1="5" x2="19" y2="19" strokeWidth={2} strokeLinecap="round" />
-                    </svg>
-                  </Button>
-                )}
                 {index < sorted.length - 1 && (
                   <Button
                     variant="ghost"

@@ -97,7 +97,7 @@ Key rules:
 |------|-------------|-------|-------|
 | Player | `--content-max-w-player` | 1920px | Niconico, YouTube |
 | Home | `--content-max-w-home` | 72rem | Home |
-| Wide | `--content-max-w-wide` | 80rem | Library |
+| Wide | `--content-max-w-wide` | 80rem | Library, Stats |
 | Narrow | `--content-max-w-narrow` | 56rem | Settings, Profile, Version, Privacy, Terms |
 
 Legal pages (Privacy, Terms) use client components (`PrivacyPageClient`, `TermsPageClient`) with `AppHeader` and `force-dynamic`.
@@ -174,6 +174,16 @@ Fixed-bottom bar for real-time annotation during playback (edit mode only in `Me
 - **Ctrl+L**: exits live mode, sets last song's endTime to currentTime
 - Activated via "ライブ入力" button in edit toolbar; controlled by `liveMode` in `player/store.ts`
 - Props: `onClose`
+
+### Stats Page (`/stats`) — `src/features/stats/`
+
+5-tab analytics dashboard (概要 / 楽曲 / アーティスト / メドレー / 探索). No auth required.
+
+- **Data layer**: `src/lib/api/stats.ts` — fetches all tables via Supabase JS, aggregates client-side (data is small enough). Uses `buildArtistMap()` for proper artist display from `song_artist_relations`.
+- **Hooks**: `src/features/stats/hooks/useStatsData.ts` — React Query hooks with 5-minute staleTime. Each tab calls only the hooks it needs.
+- **Charts**: Recharts (`recharts` package) — `ResponsiveContainer` wraps all charts. Chart components in `src/features/stats/components/charts/`.
+- **Explorer tab**: Two modes — CrossTabBuilder (dynamic chart generation from data source + axis selection) and QueryBuilder (WHERE-clause filtering on raw table data). Both operate on `getAllRawData()` results client-side.
+- **Types**: `src/features/stats/types.ts` — includes `DIMENSION_OPTIONS`, `TABLE_COLUMNS`, `OPERATOR_LABELS` constants.
 
 ### Library Page (`/library`)
 

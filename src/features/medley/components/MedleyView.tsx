@@ -183,6 +183,48 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [isEditMode, undo, redo]);
 
+  // ←/→: navigate songs, [/]: set start/end time (edit mode only)
+  useEffect(() => {
+    if (!isEditMode) return;
+    const handler = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+
+      const { songs: storeSongs, selectedSongId, selectSong, updateSong } = useTimelineStore.getState();
+      if (!selectedSongId) return;
+
+      const sorted = [...storeSongs].sort((a, b) => a.startTime - b.startTime);
+      const currentIndex = sorted.findIndex((s) => s.id === selectedSongId);
+      if (currentIndex === -1) return;
+
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        if (currentIndex < sorted.length - 1) {
+          const next = sorted[currentIndex + 1];
+          selectSong(next.id);
+          usePlayerStore.getState().seek(next.startTime);
+        }
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        if (currentIndex > 0) {
+          const prev = sorted[currentIndex - 1];
+          selectSong(prev.id);
+          usePlayerStore.getState().seek(prev.startTime);
+        }
+      } else if (e.key === "[") {
+        e.preventDefault();
+        const ct = usePlayerStore.getState().currentTime;
+        updateSong(selectedSongId, { startTime: ct });
+      } else if (e.key === "]") {
+        e.preventDefault();
+        const ct = usePlayerStore.getState().currentTime;
+        updateSong(selectedSongId, { endTime: ct });
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isEditMode]);
+
   // Ctrl+Shift+F / Cmd+Shift+F: toggle focus mode
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {

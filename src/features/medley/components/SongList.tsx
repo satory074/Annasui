@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { formatTimeSimple } from "@/lib/utils/time";
 import { useTimelineStore } from "../store";
+import { usePlayerStore } from "@/features/player/store";
 import type { SongSection } from "../types";
 import { logger } from "@/lib/utils/logger";
 import { groupSongSections, findNearestSection } from "../utils/groupSongs";
@@ -341,6 +342,27 @@ export function SongList({
                       <path d="M5 12h14" strokeWidth={2} strokeLinecap="round" />
                       <path d="M13 6l6 6-6 6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
                       <line x1="5" y1="5" x2="5" y2="19" strokeWidth={2} strokeLinecap="round" />
+                    </svg>
+                  </Button>
+                )}
+                {index < sorted.length - 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 w-7 p-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const ct = usePlayerStore.getState().currentTime;
+                      const nextSong = sorted[index + 1];
+                      useTimelineStore.getState().updateSong(song.id, { endTime: ct });
+                      useTimelineStore.getState().updateSong(nextSong.id, { startTime: ct });
+                    }}
+                    title="現在の再生位置を終了時刻に＆次の曲の開始時刻に設定 ( Shift+] )"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <polygon points="4,6 4,18 10,12" fill="currentColor" stroke="none" />
+                      <line x1="12" y1="5" x2="12" y2="19" strokeWidth={2.5} strokeLinecap="round" />
+                      <polygon points="20,6 20,18 14,12" fill="currentColor" stroke="none" />
                     </svg>
                   </Button>
                 )}

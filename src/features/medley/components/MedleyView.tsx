@@ -218,6 +218,14 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
         e.preventDefault();
         const ct = usePlayerStore.getState().currentTime;
         updateSong(selectedSongId, { endTime: ct });
+      } else if (e.key === "}") {
+        e.preventDefault();
+        if (currentIndex < sorted.length - 1) {
+          const ct = usePlayerStore.getState().currentTime;
+          const nextSong = sorted[currentIndex + 1];
+          updateSong(selectedSongId, { endTime: ct });
+          updateSong(nextSong.id, { startTime: ct });
+        }
       }
     };
     window.addEventListener("keydown", handler);

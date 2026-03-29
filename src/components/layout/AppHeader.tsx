@@ -73,7 +73,7 @@ export default function AppHeader({
 
   return (
     <header className={`${headerBg} shadow-sm fixed top-0 left-0 right-0 z-[100] w-full`}>
-      <div className={`${variant === "player" ? "max-w-[var(--content-max-w-player)]" : "max-w-[var(--content-max-w-wide)]"} mx-auto px-4`}>
+      <div className="max-w-[var(--content-max-w-wide)] mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Left side - Logo and Navigation */}
           <div className="flex items-center space-x-6">

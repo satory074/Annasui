@@ -88,16 +88,15 @@ All non-player pages follow this exact DOM structure pattern:
 Key rules:
 - **AppHeader is always OUTSIDE the content wrapper** — wrapped in a Fragment, never nested inside the `min-h-screen` div.
 - **Header**: White `AppHeader` (default variant `"home"`). Only player pages (`variant="player"`) use the dark header.
-- **Header inner max-width**: Always `--content-max-w-wide` (80rem) for non-player pages — matches the widest content page (Library).
+- **Header inner max-width**: Always `--content-max-w-wide` (80rem) for all pages (including player pages).
 - **Background**: `bg-[var(--background)]` (`#fffbf7` warm white) — never use `bg-gray-50`, `bg-gray-100`, or gradients for page backgrounds.
 - **Vertical padding**: `py-8` on all non-player pages (no exceptions).
 - **Max-width tiers** (CSS custom properties in `globals.css`):
 
 | Tier | CSS Variable | Value | Pages |
 |------|-------------|-------|-------|
-| Player | `--content-max-w-player` | 1920px | Niconico, YouTube |
 | Home | `--content-max-w-home` | 72rem | Home |
-| Wide | `--content-max-w-wide` | 80rem | Library, Stats |
+| Wide | `--content-max-w-wide` | 80rem | Library, Stats, Niconico, YouTube (player) |
 | Narrow | `--content-max-w-narrow` | 56rem | Settings, Profile, Version, Privacy, Terms |
 
 Legal pages (Privacy, Terms) use client components (`PrivacyPageClient`, `TermsPageClient`) with `AppHeader` and `force-dynamic`.

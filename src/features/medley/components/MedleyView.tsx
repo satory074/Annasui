@@ -183,9 +183,8 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     return () => window.removeEventListener("keydown", handler);
   }, [isEditMode, undo, redo]);
 
-  // ←/→: navigate songs, [/]: set start/end time (edit mode only)
+  // ←/→: navigate songs, [/]: set start/end time
   useEffect(() => {
-    if (!isEditMode) return;
     const handler = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
@@ -223,7 +222,7 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [isEditMode]);
+  }, []);
 
   // Ctrl+Shift+F / Cmd+Shift+F: toggle focus mode
   useEffect(() => {

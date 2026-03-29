@@ -6,7 +6,7 @@ import { medleyKeys } from "../queries/keys";
 import { fetchMedley, fetchMedleySongs, fetchEditHistory } from "../queries/functions-supabase";
 import { useTimelineStore, useTimelineHistory } from "../store";
 import { useUIStore } from "../store-ui";
-import { usePlayerStore, useCurrentTime, useLiveMode } from "@/features/player/store";
+import { usePlayerStore, useCurrentTime } from "@/features/player/store";
 import { useAuth } from "@/features/auth/context";
 import { useSaveSongs, useRestoreSnapshot } from "../hooks/useMedleyMutations";
 import { VideoPlayer } from "@/features/player/components/VideoPlayer";
@@ -17,7 +17,6 @@ import { EditHistoryPanel } from "./EditHistoryPanel";
 import { LoginModal } from "@/features/auth/components/LoginModal";
 import { SongEditModal } from "./SongEditModal";
 import { SongSearchModal } from "@/features/song-database/components/SongSearchModal";
-import { LiveAnnotationBar } from "./LiveAnnotationBar";
 import ImportSetlistModal from "@/components/features/medley/ImportSetlistModal";
 import { Button } from "@/components/ui/button";
 import { useDraggable } from "@/features/player/hooks/useDraggable";
@@ -34,8 +33,6 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
   const { isAuthenticated, nickname, loading: authLoading } = useAuth();
   const currentTime = useCurrentTime();
   const duration = usePlayerStore((s) => s.duration);
-  const liveMode = useLiveMode();
-
   const [descriptionLoading, setDescriptionLoading] = useState(false);
   const [descriptionError, setDescriptionError] = useState<string>("");
 
@@ -276,15 +273,6 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
     }
   }, [isAuthenticated, platform, videoId, openModalWith]);
 
-  const handleToggleLiveMode = useCallback(() => {
-    if (!isAuthenticated) {
-      openModalWith("login");
-      return;
-    }
-    const current = usePlayerStore.getState().liveMode;
-    usePlayerStore.getState().setLiveMode(!current);
-  }, [isAuthenticated, openModalWith]);
-
   const handleSongSearchSelect = useCallback(
     (song: SongDatabaseEntry) => {
       closeModal();
@@ -497,14 +485,6 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
                       >
                         {descriptionLoading ? "取得中..." : "説明文から取り込む"}
                       </Button>
-                      <Button
-                        variant={liveMode ? "default" : "outline"}
-                        size="sm"
-                        onClick={handleToggleLiveMode}
-                        title="ライブ入力モード (Ctrl+L)"
-                      >
-                        {liveMode ? "ライブ入力中" : "ライブ入力"}
-                      </Button>
                     </>
                   )}
                   <Button
@@ -631,20 +611,11 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
         prefillText={modalData.prefillText as string | undefined}
       />
 
-      {/* Fixed player bar (hidden during live annotation) */}
-      {!(liveMode && isEditMode) && (
-        <FixedPlayerBar
-          title={medley?.title}
-          creator={medley?.creator}
-        />
-      )}
-
-      {/* Live annotation bar */}
-      {liveMode && isEditMode && (
-        <LiveAnnotationBar
-          onClose={() => usePlayerStore.getState().setLiveMode(false)}
-        />
-      )}
+      {/* Fixed player bar */}
+      <FixedPlayerBar
+        title={medley?.title}
+        creator={medley?.creator}
+      />
     </div>
   );
 }

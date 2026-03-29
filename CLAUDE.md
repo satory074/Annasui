@@ -67,7 +67,7 @@ All runtime data fetching and mutations use Supabase JS via `src/lib/api/medleys
 - Player abstracted via `PlayerAdapter` interface (`src/features/player/adapters/types.ts`)
 - `handleAddSong` opens `SongSearchModal` → user selects from DB → `SongEditModal` opens with `prefill`
 - **Keyboard shortcuts** (edit mode): `Ctrl+Z` undo, `Ctrl+Shift+Z` / `Ctrl+Y` redo — skipped when INPUT/TEXTAREA focused
-- `FixedPlayerBar` rendered at bottom (hidden during live annotation mode)
+- `FixedPlayerBar` rendered at bottom
 - **PiP mode**: Video can be toggled to picture-in-picture (draggable via `useDraggable` hook). Position resets to bottom-right on mode exit.
 - **Viewport-constrained layout**: Video player capped at `max-h-[50vh]`, main content area uses CSS custom properties (`--header-height`, `--breadcrumb-height`) for viewport calc so the entire page fits without scrolling on 1080p screens. Layout dimensions are centralized in `src/app/globals.css` `:root`.
 
@@ -112,7 +112,7 @@ All new code goes in `src/features/`. Legacy `src/components/features/` retains 
   - Open with data: `openModalWith("songEdit", { song })` — read back via `(modalData.song as SongSection) ?? null`
   - New song: `openModalWith("songEdit", { song: null, isNew: true })` — modal checks `isNew={!modalData.song}`
   - Prefilled new song (from SongSearchModal): `openModalWith("songEdit", { song: null, isNew: true, prefill: { title, artist: string[] } })` — `SongEditModal` reads `prefill` prop to pre-populate title/artist fields
-- **`player/store.ts`** — Playback state + adapter dispatch. Use fine-grained selectors `useCurrentTime()`, `useIsPlaying()`, `useDuration()`, `useVolume()`, `useLiveMode()` to minimize re-renders. Includes `liveMode: boolean` + `setLiveMode()` for live annotation mode.
+- **`player/store.ts`** — Playback state + adapter dispatch. Use fine-grained selectors `useCurrentTime()`, `useIsPlaying()`, `useDuration()`, `useVolume()` to minimize re-renders.
   - **Adapter registration**: `usePlayer` hook calls `registerAdapter({ play, pause, seek, setVolume, toggleFullscreen })` on mount, `unregisterAdapter()` on cleanup. This exposes player controls globally.
   - **Public dispatch**: `play()`, `pause()`, `seek(time)`, `togglePlayPause()`, `toggleFullscreen()` — delegate to `_adapter` (null-safe). Call via `usePlayerStore.getState().seek(time)` from any component (e.g., `FixedPlayerBar`, `SongList`).
   - **IMPORTANT**: For seek, always use `usePlayerStore.getState().seek(time)` (dispatches to adapter + updates state), NOT `setCurrentTime(time)` (state-only, doesn't move the player).
@@ -164,16 +164,6 @@ Enhanced for bulk import:
 - **DB auto-matching** — `useAutoMatcher` adds color-coded badges per row; confirm (✓) / reject (✕) buttons; confirmed rows get `songId` set on import
 - `ParsedSetlistEntry` type lives in `src/features/medley/import/types.ts`
 
-### LiveAnnotationBar (`src/features/medley/components/LiveAnnotationBar.tsx`)
-
-Fixed-bottom bar for real-time annotation during playback (edit mode only in `MedleyView`):
-- **Space** (focus outside input): marks current time as song start
-- **Enter**: commits song (updates previous song's endTime, adds new song, clears title, keeps artist)
-- **Tab**: cycles between title and artist fields
-- **Ctrl+L**: exits live mode, sets last song's endTime to currentTime
-- Activated via "ライブ入力" button in edit toolbar; controlled by `liveMode` in `player/store.ts`
-- Props: `onClose`
-
 ### Stats Page (`/stats`) — `src/features/stats/`
 
 5-tab analytics dashboard (概要 / 楽曲 / アーティスト / メドレー / 探索). No auth required.
@@ -198,7 +188,7 @@ Fixed-bottom bar for real-time annotation during playback (edit mode only in `Me
 
 **Key components**:
 - **`VideoPlayer`** — Wrapper for Niconico/YouTube iframe embeds with loading, error, and retry states. `overlay` prop enables PiP styling.
-- **`FixedPlayerBar`** — Fixed-bottom player bar (`fixed bottom-0 z-50`). 3-column layout: title/creator | playback controls + seek bar | volume + fullscreen. Hidden when `liveMode && isEditMode`.
+- **`FixedPlayerBar`** — Fixed-bottom player bar (`fixed bottom-0 z-50`). 3-column layout: title/creator | playback controls + seek bar | volume + fullscreen.
 - **`RightSidebar`** — Shows currently playing songs (via `useCurrentTrack`), deduplicates by title, displays thumbnails with full-width progress bar flush under each thumbnail, and platform links.
 
 **Key hooks** (`hooks/`):
@@ -299,7 +289,6 @@ Production env vars set via Firebase console.
 - **Artist not updating after merge**: `song_master.artist` is NOT displayed in library; artist display comes from `song_artist_relations`. Use `upsertArtist()` + delete/insert on `song_artist_relations` to update. Updating `song_master.artist` alone has no visible effect.
 - **AI setlist parser returns error**: `GEMINI_API_KEY` not set in Firebase console → UI falls back to regex automatically with a warning banner. Set the key in Firebase App Hosting environment config.
 - **「説明文から取り込む」shows no description on YouTube**: YouTube oEmbed doesn't include video descriptions. This is expected; button will show "この動画の説明文が見つかりませんでした".
-- **LiveAnnotationBar Space key not working**: Space only marks time when focus is outside an input. If an input is focused, Space types a space character instead.
 - **Firebase deploy 409 "Failed to replace Run service"**: Cloud Run's `automaticUpdatePolicy` causes revision naming conflicts during hosting finalize. Fix: `gcloud functions deploy ssranasuie6f49 --gen2 --region=asia-northeast1 --project=anasui-e6f49 --runtime-update-policy=on-deploy --source=.firebase/anasui-e6f49/functions --entry-point=ssranasuie6f49 --runtime=nodejs20 --trigger-http`
 - **Firebase deploy uses wrong Node version**: Homebrew Node (`/opt/homebrew/bin/node`) may be v24+ while `firebase-frameworks` requires `^16 || ^18 || ^20 || ^22`. Ensure nvm Node 20 is first in PATH when running `firebase deploy`.
 

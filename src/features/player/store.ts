@@ -16,8 +16,6 @@ interface PlayerStore {
   isPlaying: boolean;
   duration: number;
   volume: number;
-  liveMode: boolean;
-
   // Adapter dispatch (internal)
   _adapter: AdapterMethods | null;
 
@@ -26,7 +24,6 @@ interface PlayerStore {
   setIsPlaying: (playing: boolean) => void;
   setDuration: (duration: number) => void;
   setVolume: (volume: number) => void;
-  setLiveMode: (mode: boolean) => void;
 
   // Adapter registration
   registerAdapter: (fns: AdapterMethods) => void;
@@ -47,7 +44,6 @@ export const usePlayerStore = create<PlayerStore>()(
       isPlaying: false,
       duration: 0,
       volume: 1,
-      liveMode: false,
 
       _adapter: null,
 
@@ -55,7 +51,6 @@ export const usePlayerStore = create<PlayerStore>()(
       setIsPlaying: (playing) => set({ isPlaying: playing }),
       setDuration: (duration) => set({ duration: duration }),
       setVolume: (volume) => set({ volume: volume }),
-      setLiveMode: (mode) => set({ liveMode: mode }),
 
       registerAdapter: (fns) => set({ _adapter: fns }),
       unregisterAdapter: () => set({ _adapter: null }),
@@ -85,4 +80,3 @@ export const useCurrentTime = () => usePlayerStore((s) => s.currentTime);
 export const useIsPlaying = () => usePlayerStore((s) => s.isPlaying);
 export const useDuration = () => usePlayerStore((s) => s.duration);
 export const useVolume = () => usePlayerStore((s) => s.volume);
-export const useLiveMode = () => usePlayerStore((s) => s.liveMode);

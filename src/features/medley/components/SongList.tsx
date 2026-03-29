@@ -281,7 +281,7 @@ export function SongList({
                     useTimelineStore.getState().updateSong(song.id, { startTime: currentTime });
                     logger.info('⏱️ 開始時刻を現在の再生位置に設定', { songId: song.id, currentTime });
                   }}
-                  title="現在の再生位置を開始時刻に設定"
+                  title="現在の再生位置を開始時刻に設定 ( [ )"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <line x1="6" y1="5" x2="6" y2="19" strokeWidth={2.5} strokeLinecap="round" />
@@ -297,7 +297,7 @@ export function SongList({
                     useTimelineStore.getState().updateSong(song.id, { endTime: currentTime });
                     logger.info('⏱️ 終了時刻を現在の再生位置に設定', { songId: song.id, currentTime });
                   }}
-                  title="現在の再生位置を終了時刻に設定"
+                  title="現在の再生位置を終了時刻に設定 ( ] )"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <polygon points="4,6 4,18 14,12" fill="currentColor" stroke="none" />

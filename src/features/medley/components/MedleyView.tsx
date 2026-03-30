@@ -196,14 +196,14 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
       const currentIndex = sorted.findIndex((s) => s.id === selectedSongId);
       if (currentIndex === -1) return;
 
-      if (e.key === "ArrowRight") {
+      if (e.key === "ArrowRight" && !e.shiftKey) {
         e.preventDefault();
         if (currentIndex < sorted.length - 1) {
           const next = sorted[currentIndex + 1];
           selectSong(next.id);
           usePlayerStore.getState().seek(next.startTime);
         }
-      } else if (e.key === "ArrowLeft") {
+      } else if (e.key === "ArrowLeft" && !e.shiftKey) {
         e.preventDefault();
         if (currentIndex > 0) {
           const prev = sorted[currentIndex - 1];
@@ -226,6 +226,26 @@ export function MedleyView({ platform, videoId }: MedleyViewProps) {
           updateSong(selectedSongId, { endTime: ct });
           updateSong(nextSong.id, { startTime: ct });
         }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // Shift+←/→: skip 5 seconds backward/forward
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (!e.shiftKey || e.ctrlKey || e.metaKey) return;
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const target = e.target as HTMLElement;
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA") return;
+
+      e.preventDefault();
+      const { currentTime, duration, seek } = usePlayerStore.getState();
+      if (e.key === "ArrowLeft") {
+        seek(Math.max(0, currentTime - 5));
+      } else {
+        seek(Math.min(duration, currentTime + 5));
       }
     };
     window.addEventListener("keydown", handler);

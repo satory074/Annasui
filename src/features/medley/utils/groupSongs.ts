@@ -69,6 +69,22 @@ export function groupSongSections(songs: SongSection[]): SongListRow[] {
 }
 
 /**
+ * rows を展開してフラットな SongSection[] を返す。
+ * グループ内の区間は startTime 順で展開される。
+ */
+export function flattenRowsToSections(rows: SongListRow[]): SongSection[] {
+  const result: SongSection[] = [];
+  for (const row of rows) {
+    if (row.type === "grouped") {
+      result.push(...row.sections);
+    } else {
+      result.push(row.section);
+    }
+  }
+  return result;
+}
+
+/**
  * currentTime に最も近い区間を返す。
  * - 区間内にいればその区間
  * - 区間の間にいれば次の区間

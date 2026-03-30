@@ -40,12 +40,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `.github/workflows/firebase-hosting-pull-request.yml` — Firebase preview deploy on PR
 - `.github/workflows/firebase-hosting-merge.yml` — Production deploy on merge to main
 - `.github/workflows/supabase-backup.yml` — Automated Supabase DB backups
+- **Note**: CI only runs `npm ci && npm run build` — no lint or typecheck. Run `npm run build && npm run typecheck && npm run lint` locally before pushing.
 
 ## Project Overview
 
 **Medlean** — Multi-platform medley annotation platform. Supports Niconico (full iframe integration), YouTube (full IFrame API integration), Spotify/Apple Music (thumbnails). Features: song list with playback tracking, advanced editing, nickname-based authentication, contributor tracking.
 
 **Tech Stack**: Next.js 15.5.7, React 19, TypeScript, TailwindCSS 4, Supabase 2.45.0, Firebase Hosting, Zustand (state + temporal undo/redo via zundo), React Query v5, React Hook Form + Zod v4, Drizzle ORM (local dev only)
+
+**Fonts** (Google Fonts via CSS variables): `--font-display` → Fraunces (serif, headings), `--font-ui` → Onest (sans-serif, main body), `--font-accent` → Space Grotesk (geometric sans, accents)
 
 ## Core Architecture
 
@@ -66,7 +69,7 @@ All runtime data fetching and mutations use Supabase JS via `src/lib/api/medleys
 - Zustand stores for timeline and UI state; React Query mutations for saves
 - Player abstracted via `PlayerAdapter` interface (`src/features/player/adapters/types.ts`)
 - `handleAddSong` opens `SongSearchModal` → user selects from DB → `SongEditModal` opens with `prefill`
-- **Keyboard shortcuts** (edit mode): `Ctrl+Z` undo, `Ctrl+Shift+Z` / `Ctrl+Y` redo — skipped when INPUT/TEXTAREA focused
+- **Keyboard shortcuts**: `Ctrl+Z` undo, `Ctrl+Shift+Z` / `Ctrl+Y` redo (edit mode), `←/→` song navigation (edit mode, requires selection), `[`/`]` set start/end time, `Shift+]` set end + next start, `Shift+←/→` skip 5 seconds backward/forward (both modes, no selection needed), `Ctrl+Shift+F` toggle focus mode — all skipped when INPUT/TEXTAREA focused
 - `FixedPlayerBar` rendered at bottom
 - **PiP mode**: Video can be toggled to picture-in-picture (draggable via `useDraggable` hook). Position resets to bottom-right on mode exit.
 - **Viewport-constrained layout**: Video player capped at `max-h-[50vh]`, main content area uses CSS custom properties (`--header-height`, `--breadcrumb-height`) for viewport calc so the entire page fits without scrolling on 1080p screens. Layout dimensions are centralized in `src/app/globals.css` `:root`.
@@ -125,7 +128,7 @@ Single shared password (`EDIT_PASSWORD` env var, server-side only) + user nickna
 
 ### Route Architecture
 - **`src/app/niconico/[videoId]/page.tsx`** and **`src/app/youtube/[videoId]/page.tsx`** render `MedleyView` with Supabase JS `HydrationBoundary` prefetch
-- Pages using `useAuth` need `export const dynamic = "force-dynamic"`
+- Nearly all pages use `export const dynamic = "force-dynamic"` (auth, sessionStorage, or Supabase runtime queries). Only static pages: `_not-found`, `robots.txt`, `sitemap.xml`, `stats`.
 
 ### Data Flow
 1. **Server → Client**: Page prefetches with Supabase JS (`functions-supabase.ts`) → React Query `HydrationBoundary` → client hydrates
@@ -242,6 +245,7 @@ When `overrides.artist` is provided, the function updates `song_artist_relations
 - **MUST** use `trailingSlash: true` in `next.config.ts`
 - **MUST** include trailing slashes in API URLs: `/api/thumbnail/niconico/${id}/`
 - Firebase auto-adds slashes causing redirect loops without this
+- Cloud Run backend: `asia-northeast1`, 512MiB memory, concurrency 10, max 10 instances, min 0
 
 ### Niconico Player
 - **NEVER** use `sandbox` attribute on iframe (blocks postMessage)

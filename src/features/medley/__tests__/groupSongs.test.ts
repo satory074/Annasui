@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   groupSongSections,
   findNearestSection,
+  flattenRowsToSections,
   type SongListRow,
 } from "../utils/groupSongs";
 import type { SongSection } from "../types";
@@ -88,6 +89,62 @@ describe("groupSongSections", () => {
     expect(rows).toHaveLength(2);
     expect(rows[0].type).toBe("grouped");
     expect(rows[1].type).toBe("grouped");
+  });
+});
+
+describe("flattenRowsToSections", () => {
+  it("空配列 → 空配列", () => {
+    expect(flattenRowsToSections([])).toEqual([]);
+  });
+
+  it("SingleSongRow のみ → そのまま展開", () => {
+    const songs = [makeSong({ title: "A" }), makeSong({ title: "B" })];
+    const rows = songs.map((s) => ({ type: "single" as const, section: s }));
+    const result = flattenRowsToSections(rows);
+    expect(result).toHaveLength(2);
+    expect(result[0].title).toBe("A");
+    expect(result[1].title).toBe("B");
+  });
+
+  it("GroupedSongRow → 区間を展開", () => {
+    const s1 = makeSong({ title: "A", startTime: 0, endTime: 10 });
+    const s2 = makeSong({ title: "A", startTime: 50, endTime: 60 });
+    const rows: SongListRow[] = [
+      {
+        type: "grouped",
+        songId: "shared",
+        sections: [s1, s2],
+        displayTitle: "A",
+        displayArtist: ["Artist"],
+        displayColor: "#ff0000",
+      },
+    ];
+    const result = flattenRowsToSections(rows);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toBe(s1);
+    expect(result[1]).toBe(s2);
+  });
+
+  it("混合: Single + Grouped → 正しい順序で展開", () => {
+    const s1 = makeSong({ title: "First" });
+    const s2 = makeSong({ title: "G1", startTime: 10, endTime: 20 });
+    const s3 = makeSong({ title: "G1", startTime: 30, endTime: 40 });
+    const s4 = makeSong({ title: "Last" });
+    const rows: SongListRow[] = [
+      { type: "single", section: s1 },
+      {
+        type: "grouped",
+        songId: "g",
+        sections: [s2, s3],
+        displayTitle: "G1",
+        displayArtist: ["Artist"],
+        displayColor: "#ff0000",
+      },
+      { type: "single", section: s4 },
+    ];
+    const result = flattenRowsToSections(rows);
+    expect(result).toHaveLength(4);
+    expect(result.map((r) => r.title)).toEqual(["First", "G1", "G1", "Last"]);
   });
 });
 
